@@ -1,0 +1,26 @@
+{
+  "canisters": {
+    "cero_trade_project_backend": {
+      "main": "src/cero_trade_project_backend/main.mo",
+      "type": "motoko"
+    },
+    "cero_trade_project_frontend": {
+      "dependencies": [
+        "cero_trade_project_backend"
+      ],
+      "source": [
+        "src/cero_trade_project_frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "cero_trade_project_frontend"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
