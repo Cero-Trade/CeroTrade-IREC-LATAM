@@ -1,31 +1,27 @@
 {
   "canisters": {
     "user": {
-      "main": "src/cero_trade_project_backend/user/main.mo",
+      "main": "src/cero_trade_project_backend/user/user.mo",
       "type": "motoko"
     },
     "user_index": {
-      "main": "src/cero_trade_project_backend/user_index/main.mo",
+      "main": "src/cero_trade_project_backend/user_index/user_index.mo",
       "type": "motoko"
     },
     "token": {
-      "main": "src/cero_trade_project_backend/token/main.mo",
+      "main": "src/cero_trade_project_backend/token/token.mo",
       "type": "motoko"
     },
     "token_index": {
-      "main": "src/cero_trade_project_backend/token_index/main.mo",
+      "main": "src/cero_trade_project_backend/token_index/token_index.mo",
       "type": "motoko"
     },
     "agent": {
-      "main": "src/cero_trade_project_backend/agent/main.mo",
+      "main": "src/cero_trade_project_backend/agent/agent.mo",
       "type": "motoko"
     },
     "marketplace": {
-      "main": "src/cero_trade_project_backend/marketplace/main.mo",
-      "type": "motoko"
-    },
-    "cero_trade_project_backend": {
-      "main": "src/cero_trade_project_backend/cero_trade_project_backend/main.mo",
+      "main": "src/cero_trade_project_backend/marketplace/marketplace.mo",
       "type": "motoko"
     },
     "cero_trade_project_frontend": {
@@ -35,8 +31,7 @@
         "token",
         "token_index",
         "agent",
-        "marketplace",
-        "cero_trade_project_backend"
+        "marketplace"
       ],
       "source": ["src/cero_trade_project_frontend/dist"],
       "type": "assets",
