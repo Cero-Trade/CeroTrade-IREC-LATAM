@@ -1,26 +1,60 @@
 {
   "canisters": {
-    "cero_trade_project_backend": {
-      "main": "src/cero_trade_project_backend/main.mo",
+    "user": {
+      "main": "src/cero_trade_project_backend/user/user.mo",
+      "type": "motoko"
+    },
+    "user_index": {
+      "main": "src/cero_trade_project_backend/user_index/user_index.mo",
+      "type": "motoko"
+    },
+    "token": {
+      "main": "src/cero_trade_project_backend/token/token.mo",
+      "type": "motoko"
+    },
+    "token_index": {
+      "main": "src/cero_trade_project_backend/token_index/token_index.mo",
+      "type": "motoko"
+    },
+    "agent": {
+      "main": "src/cero_trade_project_backend/agent/agent.mo",
+      "type": "motoko"
+    },
+    "marketplace": {
+      "main": "src/cero_trade_project_backend/marketplace/marketplace.mo",
       "type": "motoko"
     },
     "cero_trade_project_frontend": {
       "dependencies": [
-        "cero_trade_project_backend"
+        "user",
+        "user_index",
+        "token",
+        "token_index",
+        "agent",
+        "marketplace"
       ],
-      "source": [
-        "src/cero_trade_project_frontend/dist"
-      ],
+      "source": ["src/cero_trade_project_frontend/dist"],
       "type": "assets",
       "workspace": "cero_trade_project_frontend"
     }
   },
   "defaults": {
     "build": {
-      "args": "",
       "packtool": ""
     }
   },
-  "output_env_file": ".env",
+  "networks": {
+    "local": {
+      "bind": "127.0.0.1:4943",
+      "type": "ephemeral"
+    },
+    "ic": {
+      "providers": [
+        "https://mainnet.dfinity.network"
+      ],
+      "type": "persistent"
+    }
+  },
+  "output_env_file": ".env.local",
   "version": 1
 }
