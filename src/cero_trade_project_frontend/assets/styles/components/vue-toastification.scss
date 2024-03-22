@@ -1,0 +1,81 @@
+@use '@/assets/styles/utils/variables.scss' as *;
+
+.Vue-Toastification {
+  $opacity: .4;
+  $border-radius: 25px;
+
+  &__toast {
+    background-color: $surface;
+    border-radius: $border-radius;
+    border: 1px solid;
+
+    * { color: $foreground }
+
+    &--default {
+      border-color: $accent;
+
+      path { fill: $accent }
+      .Vue-Toastification__progress-bar { background-color: rgb(var(--v-theme-accent), $opacity) }
+    }
+
+    &--info {
+      border-color: $secondary;
+      
+      path { fill: $secondary }
+      .Vue-Toastification__progress-bar { background-color: rgb(var(--v-theme-secondary), $opacity) }
+    }
+
+    &--error {
+      border-color: $error;
+      
+      path { fill: $error }
+      .Vue-Toastification__progress-bar { background-color: rgb(var(--v-theme-error), $opacity) }
+    }
+
+    &--success {
+      border-color: $success;
+      
+      path { fill: $success }
+      .Vue-Toastification__progress-bar { background-color: rgb(var(--v-theme-success), $opacity) }
+    }
+
+    &--warning {
+      border-color: $warning;
+      
+      path { fill: $warning }
+      .Vue-Toastification__progress-bar { background-color: rgb(var(--v-theme-warning), $opacity) }
+    }
+  }
+
+
+  &__progress-bar {
+    margin-inline: calc($border-radius / 2);
+    border-radius: 10px;
+  }
+}
+
+// $vt-namespace: 'Vue-Toastification' !default;
+// $vt-toast-min-width: 326px !default;
+// $vt-toast-max-width: 600px !default;
+// $vt-toast-background: #ffffff !default;
+
+// $vt-toast-min-height: 64px !default;
+// $vt-toast-max-height: 800px !default;
+
+// $vt-color-default: #1976d2 !default;
+// $vt-text-color-default: #fff !default;
+// $vt-color-info: #2196f3 !default;
+// $vt-text-color-info: #fff !default;
+// $vt-color-success: #4caf50 !default;
+// $vt-text-color-success: #fff !default;
+// $vt-color-warning: #ffc107 !default;
+// $vt-text-color-warning: #fff !default;
+// $vt-color-error: #ff5252 !default;
+// $vt-text-color-error: #fff !default;
+
+// $vt-color-progress-default: linear-gradient(to right, #4cd964, #5ac8fa, #007aff, #34aadc, #5856d6, #ff2d55) !default;
+
+// $vt-mobile: "only screen and (max-width : 600px)" !default;
+// $vt-not-mobile: "only screen and (min-width : 600px)" !default;
+// $vt-font-family: "Lato", Helvetica, "Roboto", Arial, sans-serif !default;
+// $vt-z-index: 9999 !default;

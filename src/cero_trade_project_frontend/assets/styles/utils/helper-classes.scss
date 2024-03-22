@@ -1,0 +1,331 @@
+@use "mixins.scss";
+@use "variables.scss" as vars;
+//---------------------------------------------------------------------------------------------//
+//====================================== helper classes =======================================//
+//---------------------------------------------------------------------------------------------//
+
+//*- parent -//
+.parent {
+  max-width: var(--parent) !important;
+  width: 100%;
+  margin-inline: auto;
+}
+
+//*- subparent -//
+.subparent {
+  max-width: var(--subparent) !important;
+  width: 100%;
+  margin-inline: auto;
+}
+
+//*- full-screen -//
+.full-screen {
+  width: 100vw !important;
+  margin-inline: calc(50% - 50vw);
+}
+
+//*- margin-global -//
+.margin-global {
+  padding-inline: var(--margin-global);
+}
+
+//*- pixel border -//
+.pixelBorder {
+  --c-size: 4.5px;
+  
+  padding: var(--c-size);
+  position: relative;
+  isolation: isolate;
+  clip-path: vars.$clip-path;
+  
+  &::before, &::after {
+    content: "" !important;
+    position: absolute !important;
+    opacity: 1 !important;
+    z-index: -1 !important;
+    clip-path: vars.$clip-path;
+    inset: 0;
+  }
+  
+  // border
+  &::before {
+    background-color: var(--accent) !important;
+  }
+  
+  // body
+  &::after {
+    inset: var(--c-size);
+    background-color: var(--bg);
+  }
+}
+
+//*- buttons -//
+.btn {
+  --bg: rgb(var(--v-theme-primary));
+  --c: #000000;
+  --b: 0px;
+  --p: .8em 1em;
+  --w: initial;
+  --max-w: none;
+  --min-w: none;
+  --h: initial;
+  --max-h: none;
+  --min-h: 36px;
+  --g: 5px;
+  --br: 10px;
+  &:has(> .v-btn__content > :only-child) {--br: 10px};
+  --bs: 0px;
+  --fs: max(14px, .8em);
+  --fw: 700!important;
+  --ls: -0.005em;
+  --lh: 1;
+  --f: initial;
+  --t: initial;
+  
+  background: var(--bg) !important;
+  color: var(--c) !important;
+  box-shadow: var(--bs) !important;
+  border-radius: var(--br) !important;
+  font-size: var(--fs);
+  padding: var(--p) !important;
+  width: var(--w) !important;
+  max-width: var(--max-w) !important;
+  min-width: var(--min-w) !important;
+  height: var(--h) !important;
+  max-height: var(--max-h) !important;
+  min-height: var(--min-h) !important;
+  border: var(--b);
+  transform: var(--t);
+  filter: var(--f);
+  
+  & :is(span, img, i) {
+    color: var(--c);
+    font-size: 1em;
+    font-weight: var(--fw) !important;
+    text-transform: var(--tt, initial);
+    letter-spacing: var(--ls);
+    line-height: var(--lh);
+  }
+  
+  // margin
+  &, > .v-btn__content {
+    display: flex;
+    gap: var(--g);
+  }
+}
+
+.btn2 {
+  --bg: #fff;
+  --c: #000000;
+  --b: 1px solid #EAECF0;
+  --p: .8em 1em;
+  --w: initial;
+  --max-w: none;
+  --min-w: none;
+  --h: initial;
+  --max-h: none;
+  --min-h: 36px;
+  --g: 5px;
+  --br: 10px;
+  &:has(> .v-btn__content > :only-child) {--br: 10px};
+  --bs: 0px;
+  --fs: max(16px, 1em);
+  --fw: 500;
+  --ls: -0.005em;
+  --lh: 1;
+  --f: initial;
+  --t: initial;
+  --b: 1px solid rgba(0,0,0,0.25);
+  
+  border: var(--b) !important;
+  background: var(--bg) !important;
+  color: var(--c) !important;
+  box-shadow: var(--bs) !important;
+  border-radius: var(--br) !important;
+  font-size: var(--fs);
+  padding: var(--p) !important;
+  width: var(--w) !important;
+  max-width: var(--max-w) !important;
+  min-width: var(--min-w) !important;
+  height: var(--h) !important;
+  max-height: var(--max-h) !important;
+  min-height: var(--min-h) !important;
+  border: var(--b);
+  transform: var(--t);
+  filter: var(--f);
+  
+  & :is(span, img, i) {
+    color: var(--c);
+    font-size: 1em;
+    font-weight: var(--fw) !important;
+    text-transform: var(--tt, initial);
+    letter-spacing: var(--ls);
+    line-height: var(--lh);
+  }
+  
+  // margin
+  &, > .v-btn__content {
+    display: flex;
+    gap: var(--g);
+  }
+}
+
+//*- cards -//
+.card {
+  --w: initial;
+  --max-w: none;
+  --min-w: none;
+  --h: initial;
+  --max-h: none;
+  --min-h: none;
+  --bg: rgb(var(--v-theme-surface));
+  --c: rgb(var(--v-theme-foreground));
+  --b: initial;
+  --p: 1em;
+  --br: 30px;
+  --bs: 0px 0px 1px 1px rgba(0, 0, 0, 0.15);
+  --f: initial;
+  --t: initial;
+
+  width: var(--w) !important;
+  max-width: var(--max-w) !important;
+  min-width: var(--min-w) !important;
+  height: var(--h) !important;
+  max-height: var(--max-h) !important;
+  min-height: var(--min-h) !important;
+  background: var(--bg) !important;
+  color: var(--c) !important;
+  box-shadow: var(--bs) !important;
+  border-radius: var(--br) !important;
+  padding: var(--p);
+  border: var(--b) !important;
+  transform: var(--t);
+  filter: var(--f);
+}
+
+
+.start {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+.astart {
+  display: flex;
+  align-items: flex-start;
+}
+.jstart {
+  display: flex;
+  justify-content: flex-start;
+}
+.tstart {text-align: start}
+.end {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+.aend {
+  display: flex;
+  align-items: flex-end;
+}
+.jend {
+  display: flex;
+  justify-content: flex-end;
+}
+.tend {text-align: end}
+.center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.acenter {
+  display: flex;
+  align-items: center;
+}
+.jcenter {
+  display: flex;
+  justify-content: center;
+}
+.tcenter {text-align: center}
+.space {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.tspace {text-align: justify}
+.jspace {
+  display: flex;
+  justify-content: space-between;
+}
+.spacea {
+  display: flex;
+  justify-content: space-around;
+}
+.spacee {
+  display: flex;
+  justify-content: space-evenly;
+}
+.relative {position: relative}
+.centera {
+  position: absolute;
+  margin: auto;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.divrow {
+  display: flex;
+  flex-direction: row;
+}
+.divrow_inv {
+  display: flex;
+  flex-direction: row-reverse;
+}
+.divcol {
+  display: flex;
+  flex-direction: column;
+}
+.divcol_inv {
+  display: flex;
+  flex-direction: column-reverse;
+}
+.wrap {
+  --fb: initial;
+  display: flex;
+  flex-wrap: wrap;
+  & > * {flex-basis: var(--fb) !important}
+}
+.bold{
+  font-weight: 700!important;
+}
+.border-card{
+  border: 1px solid rgba(0,0,0,0.25);
+  border-radius: 10px;
+  padding: 15px 20px;
+}
+.sheet-img{
+  border: 1px solid rgba(0,0,0,0.25)!important;
+  display: grid!important;
+  place-items: center!important;
+  width: max-content!important;
+  border-radius: 50%!important;
+  padding: 5px!important;
+}
+.double-sheet{
+  background-color: #F9FAFB; 
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  width: max-content;
+  padding: 10px;
+
+  .v-sheet{
+   background-color: #F2F4F7;
+   display: grid;
+   place-items: center;
+   border-radius: 50%;
+   width: max-content;
+   padding: 10px;
+  }
+ }
