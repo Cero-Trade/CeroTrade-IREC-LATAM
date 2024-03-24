@@ -59,6 +59,6 @@
       "type": "persistent"
     }
   },
-  "output_env_file": ".env.local",
+  "output_env_file": ".env",
   "version": 1
 }

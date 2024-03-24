@@ -1,5 +1,6 @@
 import { Actor, HttpAgent } from "@dfinity/agent";
 import { AuthClient } from "@dfinity/auth-client";
+import { app as vueApp } from "@/main";
 
 // canisters
 import * as marketplace from "../../../.dfx/local/canisters/marketplace"
@@ -10,58 +11,40 @@ import * as user from "../../../.dfx/local/canisters/user"
 import * as user_index from "../../../.dfx/local/canisters/user_index"
 
 
-export const canisterImpl = {
-  // canisterId: '' // <-- prod
-  canisterId: '' // <-- develop
-}
+export const canisterImpl = { canisterId: process.env.CERO_TRADE_PROJECT_FRONTEND_CANISTER_ID }
 
 export const ICP_PROVIDE_COLLECTION = {
-  authClient: 'authClient',
-  agent: 'agent',
-  marketplace:'marketplace',
-  token: 'token',
-  token_index: 'token_index',
-  user: 'user',
-  user_index: 'user_index',
+  authClient: 'authClient'
+}
+export const createActor = (canisterId, idlFactory, options) => {
+  const isDevelopment = process.env.DFX_NETWORK !== "ic",
+  identity = vueApp._instance.provides.authClient.getIdentity(),
+  agent = new HttpAgent({ identity: isDevelopment ? null : identity, ...options?.agentOptions });
+  
+  // Fetch root key for certificate validation during development
+  if (isDevelopment) {
+    agent.fetchRootKey().catch(err=>{
+      console.warn("Unable to fetch root key. Check to ensure that your local replica is running");
+      console.error(err);
+    });
+  }
+
+  // Creates an actor with using the candid interface and the HttpAgent
+  return Actor.createActor(idlFactory, {
+    agent,
+    canisterId,
+    ...options?.actorOptions,
+  });
 }
 
-export default async (app) => {
-  const
-  authClient = await AuthClient.create(),
-  identity = authClient.getIdentity(),
+export const useMarketplaceCanister = () => createActor(marketplace.canisterId, marketplace.idlFactory)
+export const useTokenCanister = () => createActor(token.canisterId, token.idlFactory)
+export const useTokenIndexCanister = () => createActor(token_index.canisterId, token_index.idlFactory)
+export const useAgentCanister = () => createActor(agent.canisterId, agent.idlFactory)
+export const useUserCanister = () => createActor(user.canisterId, user.idlFactory)
+export const useUserIndexCanister = () => createActor(user_index.canisterId, user_index.idlFactory)
 
-  // actors
-  agentActor = Actor.createActor(agent.idlFactory, {
-    agent: new HttpAgent({ identity }),
-    canisterId: users.canisterId,
-  }),
-  marketplaceActor = Actor.createActor(marketplace.idlFactory, {
-    agent: new HttpAgent({ identity }),
-    canisterId: marketplace.canisterId,
-  }),
-  tokenActor = Actor.createActor(token.idlFactory, {
-    agent: new HttpAgent({ identity }),
-    canisterId: token.canisterId,
-  }),
-  token_indexActor = Actor.createActor(token_index.idlFactory, {
-    agent: new HttpAgent({ identity }),
-    canisterId: token_index.canisterId,
-  }),
-  userActor = Actor.createActor(user.idlFactory, {
-    agent: new HttpAgent({ identity }),
-    canisterId: user.canisterId,
-  }),
-  user_indexActor = Actor.createActor(user_index.idlFactory, {
-    agent: new HttpAgent({ identity }),
-    canisterId: user_index.canisterId,
-  })
-  // provide data to vue
-  app
-    .provide('authClient', authClient)
-    .provide('agent', agentActor)
-    .provide('marketplace', marketplaceActor)
-    .provide('token', tokenActor)
-    .provide('token_index', token_indexActor)
-    .provide('user', userActor)
-    .provide('user_index', user_indexActor)
+export default async (app) => {
+  const authClient = await AuthClient.create()
+  app.provide('authClient', authClient)
 }

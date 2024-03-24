@@ -126,9 +126,11 @@ router.beforeEach(async (to, from, next) => {
   if (to.path === '/') return next({ name: 'Dashboard', query: canisterImpl })
   else if (to.path === '/auth') return next({ name: 'Login', query: canisterImpl })
 
+  if (!Object.keys(to.query).includes('canisterId'))
+    next({ name: to.name, query: canisterImpl });
 
-  //!FIXME commented for testing
-  /* // this route requires auth, check if logged in
+  /* //!FIXME commented for testing
+  // this route requires auth, check if logged in
   // if not, redirect to login page.
   const isAuthenticated = await inject(ICP_PROVIDE_COLLECTION.authClient).isAuthenticated()
   // const tokenAuth = useStorage().getStorageSync("tokenAuth")
