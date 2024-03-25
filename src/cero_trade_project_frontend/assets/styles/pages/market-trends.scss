@@ -1,0 +1,40 @@
+@use "@/assets/styles/main.scss" as *;
+//---------------------------------------------------------------------------------------------//
+//========================================= market trends =====================================//
+//---------------------------------------------------------------------------------------------//
+
+#market-trends {
+  @extend .parent;
+  @extend .margin-global;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  margin-block: 30px;
+
+  h3, h4, h6, h5{
+    font-weight: 700;
+  }
+
+  .select{
+    min-height: 40px!important;
+    max-height: 40px!important;
+    color: #000!important;
+
+    .v-field{
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 10px;
+    }
+
+    .v-select__selections{
+      margin-block: 0px!important;
+    }
+
+    .v-field__input{
+      max-height: 40px!important;
+      min-height: 40px!important;
+      padding-block: 0px;
+      color: #000!important;
+      font-weight: 300;
+    }
+  }
+}

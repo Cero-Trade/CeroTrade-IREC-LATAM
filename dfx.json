@@ -33,9 +33,13 @@
         "agent",
         "marketplace"
       ],
-      "source": ["src/cero_trade_project_frontend/dist"],
-      "type": "assets",
-      "workspace": "cero_trade_project_frontend"
+      "frontend": {
+        "entrypoint": "dist/index.html"
+      },
+      "source": [
+        "dist/"
+      ],
+      "type": "assets"
     }
   },
   "defaults": {
@@ -55,6 +59,6 @@
       "type": "persistent"
     }
   },
-  "output_env_file": ".env.local",
+  "output_env_file": ".env",
   "version": 1
 }

@@ -1,0 +1,673 @@
+@use "@/assets/styles/main.scss" as *;
+//---------------------------------------------------------------------------------------------//
+//========================================= rec-single ========================================//
+//---------------------------------------------------------------------------------------------//
+
+
+#rec-single {
+  @extend .parent;
+  @extend .margin-global;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  margin-block: 30px;
+
+  .div-avatar-asset{
+    background-color: $primary;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    position: relative;
+
+    .flag{
+      border: 4px solid #fff;
+      border-radius: 50%;
+      width: 30px;
+      top: -10px;
+      position: absolute;
+      left: -12px;
+    }
+
+    .icon-div{
+      border: 1px solid rgba(0,0,0,0.25);
+      background-color: #fff;
+      border-radius: 50%;
+      width: 25px;
+      bottom: -10px;
+      position: absolute;
+      right: -12px;
+      padding: 3px;
+
+      .icon{
+        font-size: 15px;
+      }
+    }
+  }
+
+  .relative{
+    position: relative;
+  }
+  #chart{
+    width: 350px; 
+    margin-top: 20px;   
+    margin-left: -60px; 
+    @include media(max, 1470px){margin-left: -65px;}
+    @include media(max, 1420px){margin-left: -75px;}
+    @include media(max, 1300px){margin-left: -80px;}
+    @include media(max, 1280px){
+      margin-left: 0px;
+      margin-inline: auto;
+    }
+    @include media(max, 420px){
+      width: 300px;
+    }
+  }
+  .v-btn{
+    border-radius: 10px!important;
+  }
+
+  h3, h4, h6, h5{
+    font-weight: 700;
+  }
+  .green-chip{
+    background-color: #ECFDF3;
+    border-radius: 10px!important;
+    border: 1px solid #ABEFC6;
+    color: #067647;
+    padding-inline: 5px;
+    font-size: 15px;
+
+    .v-icon{
+      color: #079455;
+      font-size: 16px;
+    }
+  }
+
+  .cards-rec{
+    // min-height: 100%!important;
+    .blue{
+      color: #2970FF;
+    }
+
+    .grey{
+      color: #98A2B3;
+    }
+
+    .yellow{
+      color: #FDB022;
+    }
+  }
+
+  .select{
+    min-height: 40px!important;
+    max-height: 40px!important;
+
+    .v-field{
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 10px;
+    }
+
+    .v-select__selections{
+      margin-block: 0px!important;
+    }
+
+    .v-field__input{
+      max-height: 40px!important;
+      min-height: 40px!important;
+      padding-block: 0px;
+      color: #000;
+      font-weight: 300;
+    }
+  }
+
+  .card-currency{
+    label{
+      color: #475467;
+    }
+  }
+
+  .btn2{
+    border: 1px solid rgba(0,0,0,0.25)!important;
+    background-color: #fff!important;
+  }
+
+  .absolute-card{
+    min-height: 100%!important; 
+    position: relative;
+
+    @include media(max, 1280px){
+      min-height: 80px!important;
+    }
+  }
+
+  .absolute-card-portfolio{
+    min-height: 48%!important; 
+
+    @include media(max, 1280px){
+      min-height: 80px!important;
+    }
+  }
+
+  .input{
+    max-height: 45px!important;
+    height: 45px;
+
+    i{
+      font-size: 20px;
+    }
+
+    .v-field{
+      height: 40px!important;
+      max-height: 40px!important;
+      min-height: 1px!important;
+      border-radius: 10px!important;
+    }
+
+    input{
+      color: #000!important;
+      font-size: 13px;
+      height: 40px!important;
+      max-height: 40px!important;
+      min-height: 1px!important;
+      margin-top: -5px;
+    }
+
+    .v-field__input{
+      padding-left: 15px;
+      padding-block: 5px;
+      height: 40px!important;
+      max-height: 40px!important;
+      min-height: 1px!important;
+    }
+  }
+
+  .v-slide-group__content{
+    gap: 20px;
+  }
+  .v-tab{
+    padding-inline: 5px!important;
+    min-width: 1px!important;
+    width: max-content!important;
+  }
+  .blue{
+    color: #2970FF;
+  }
+
+  .grey{
+    color: #98A2B3;
+  }
+
+  .yellow{
+    color: #FDB022;
+  }
+
+  .tab-btn{
+    @include media(max, 960px){
+      padding-inline: 10px!important;
+      width: max-content!important;
+      min-width: 1px!important;
+      span{
+        font-size: 12px;
+      }
+    }
+  }
+
+  .deletemobile{
+    @include media(max, 960px){
+      display: none;
+    }
+  }
+
+  .showmobile{
+    display: none;
+    @include media(max, 960px){
+      display: grid;
+    }
+  }
+}
+
+
+
+
+
+// //////////////////////// dialogs////////////////////////////////////
+
+
+
+.v-dialog{
+  .v-overlay__content{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .dialog-card-tokenize{
+      width: 600px;
+      max-width: 600px!important;
+      position: relative;
+      padding-block: 20px!important;
+      @include media(max, 660px){
+        width: 100vw!important;
+      }
+
+      .tertiary{
+        color: $tertiary;
+      }
+
+      h6{
+        font-weight: 700;
+      }
+  
+      .div-check-items{
+        border: 1px solid rgba(0,0,0,0.25);
+        border-radius: 10px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .close{
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        color: $tertiary;
+      }
+  
+      .v-btn{
+        border: 1px solid rgba(0,0,0,0.25)!important;
+        width: 49%!important;
+        border-radius: 10px!important;
+        --fw: 700!important;
+      }
+    }
+  }
+}
+
+.v-dialog{
+  .v-overlay__content{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .dialog-card-detokenize{
+      width: 600px;
+      max-width: 600px!important;
+      position: relative;
+      padding-block: 20px!important;
+      @include media(max, 660px){
+        width: 100vw!important;
+      }
+
+      .select{
+        min-height: 40px!important;
+        max-height: 40px!important;
+    
+        .v-field{
+          border: 1px solid rgba(0,0,0,0.1);
+          border-radius: 10px;
+        }
+    
+        .v-select__selections{
+          margin-block: 0px!important;
+        }
+    
+        .v-field__input{
+          max-height: 40px!important;
+          min-height: 40px!important;
+          padding-block: 5px;
+          color: #000;
+          font-weight: 300;
+        }
+      }
+
+      .cards-rec{
+        min-height: 330px!important;
+      }
+
+      .h5-mobile{
+        @include media(max, 660px){
+          font-size: 16px;
+          margin-bottom: 0px;
+          font-weight: 700;
+
+          img{
+            width: 35px!important;
+          }
+        }
+      }
+
+      .mobile-border-card{
+        @include media(max, 660px){
+          padding-inline: 10px !important;
+
+          span{
+            font-size: 11px;
+          }
+
+          .double-sheet{
+            margin-right: 5px!important;
+          }
+        }
+      }
+
+      .div-textfield-select{
+        display: flex;
+        gap: 0px;
+        align-items: center;
+        border-radius: 10px;
+        border: 1px solid rgba(0,0,0,0.25);
+        .select{
+          margin-top: -5px;
+          max-width: max-content!important;
+          .v-field__input{
+            padding-left: 0px;
+            color: #000;
+          }
+
+          .v-field{
+            border: 0px!important;
+          }
+        }
+    
+         .input{
+          max-height: 45px!important;
+          height: 45px;
+    
+          i{
+            font-size: 20px;
+          }
+    
+          .v-field{
+            height: 40px!important;
+            max-height: 40px!important;
+            min-height: 1px!important;
+            border-radius: 10px!important;
+          }
+    
+          input{
+            color: #000!important;
+            font-size: 13px;
+            height: 40px!important;
+            max-height: 40px!important;
+            min-height: 1px!important;
+            margin-top: -5px;
+          }
+    
+          .v-field__input{
+            padding-left: 10px;
+            padding-block: 5px;
+            height: 40px!important;
+            max-height: 40px!important;
+            min-height: 1px!important;
+          }
+        }
+      }
+
+      .blue{
+        color: #2970FF;
+      }
+  
+      .grey{
+        color: #98A2B3;
+      }
+  
+      .yellow{
+        color: #FDB022;
+      }
+
+      .tertiary{
+        color: $tertiary;
+      }
+
+      h6{
+        font-weight: 700;
+      }
+  
+      .div-check-items{
+        border: 1px solid rgba(0,0,0,0.25);
+        border-radius: 10px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .close{
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        color: $tertiary;
+      }
+  
+      .v-btn{
+        border: 1px solid rgba(0,0,0,0.25)!important;
+        width: 49%!important;
+        border-radius: 10px!important;
+        --fw: 700!important;
+      }
+
+      .div-radio-sell{
+        border: 1px solid rgba(0,0,0,0.25);
+        border-radius: 10px;
+        padding: 10px 20px;
+        margin-block: 15px;
+        display: flex;
+        align-items: center;
+        position: relative;
+        cursor: pointer;
+
+        .radio-right{
+          position: absolute;
+          top: 10px;
+          right: 10px;
+        }
+      }
+    }
+  }
+}
+
+.v-dialog{
+  overflow: visible!important;
+  .v-overlay__content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    .card-dialog-participant{
+      width: 900px;
+      max-width: 900px!important;
+      position: relative;
+      padding-block: 20px!important;
+      @include media(max, 660px){
+        width: 100vw!important;
+      }
+
+      .divcol-mobile{
+        @include media(max, 660px){
+          flex-direction: column;
+
+          .v-btn{
+            min-width: 250px!important;
+          }
+        }
+      }
+
+      .h5-mobile{
+        @include media(max, 660px){
+          font-size: 16px;
+          margin-bottom: 0px;
+          font-weight: 700;
+
+          img{
+            width: 35px!important;
+          }
+        }
+      }
+
+      h6{
+        font-weight: 700!important;
+      }
+
+      .tertiary{
+        color: $tertiary;
+      }
+      .close{
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        color: $tertiary;
+      }
+
+      img{
+        border-radius: 0px;
+        border: 0px solid #fff!important;
+        background-color: transparent!important;
+        box-shadow: 0px;
+        padding: 0px;
+      }
+
+      .v-btn{
+        border: 1px solid rgba(0,0,0,0.25)!important;
+        width: max-content!important;
+        border-radius: 10px!important;
+        --fw: 700!important;
+        min-height: 30px!important;
+        height: 40px!important;
+        min-width: 49%!important;
+      }
+
+      .check{
+        background-color: #F2F4F7;
+        border-radius: 50%;
+        padding: 10px;
+        font-size: 15px;
+        color: #667085;
+      }
+
+      .check-green{
+        background-color: #DCFAE6;
+        border-radius: 50%;
+        padding: 10px;
+        font-size: 15px;
+        color: #17B26A;
+      }
+    }
+  }
+}
+
+
+
+.border{
+  border: 1px solid rgba(0,0,0,0.25);
+  border-radius: 10px;
+  padding: 10px 20px;
+}
+
+
+// /////////////// Data Table//////////////////////
+
+.my-data-table th{
+  background-color: transparent!important;
+  border: 1px solid #f2f3f6;
+  min-height: 1px!important;
+  height: 40px!important;
+  max-height: 40px!important;
+
+  span{
+    color: #000;
+    opacity: 1;
+    font-weight: 700;
+  }
+}
+
+.my-data-table th:first-of-type{
+  border-top-left-radius: 10px;
+}
+
+.my-data-table th:last-of-type{
+  border-top-right-radius: 10px;
+}
+
+.my-data-table td{
+  background-color: transparent!important;
+  // border: 1px solid #EAECF0;
+  border: 1px solid #f2f3f6;
+  min-height: 1px!important;
+  height: 40px!important;
+  max-height: 40px!important;
+  color: #475467;
+}
+
+.my-data-table tr:last-of-type > td:first-of-type{
+  border-bottom-left-radius: 10px;
+}
+
+.my-data-table tr:last-of-type > td:last-of-type{
+  border-bottom-right-radius: 10px;
+}
+
+.my-data-table tr > td{
+  min-height: 1px!important;
+  height: 40px!important;
+  max-height: 40px!important;
+}
+
+.v-data-table-footer{
+  margin-top: 10px;
+}
+
+.blue{
+  color: #2970FF;
+}
+
+.grey{
+  color: #98A2B3;
+}
+
+.yellow{
+  color: #FDB022;
+}
+
+.red-chip-table{
+  background-color: #FEF3F2;
+  border-radius: 10px!important;
+  border: 1px solid #FECDCA;
+  color: #B42318;
+  padding-inline: 5px!important;
+  font-size: 13px;
+
+  .v-icon{
+    color: #D92D20;
+    font-size: 16px;
+  }
+}
+
+.green-chip-table{
+  background-color: #ECFDF3;
+  border-radius: 10px!important;
+  border: 1px solid #ABEFC6;
+  color: #067647;
+  padding-inline: 5px!important;
+  font-size: 13px;
+
+  .v-icon{
+    color: #079455;
+    font-size: 16px;
+  }
+}
+
+.chip-currency{
+  color: #475467; 
+  padding-inline: 5px; 
+  border: 1px solid #EAECF0; 
+  border-radius: 5px;
+}
+
+
+.chip-table{
+  padding-inline: 5px!important;
+  border: 1px solid rgba(0,0,0,0.25);
+}
+
+.v-data-table-footer{
+  display: none!important;
+}

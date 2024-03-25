@@ -1,0 +1,46 @@
+@use "@/assets/styles/main" as *;
+//---------------------------------------------------------------------------------------------//
+//======================================== login ==============================================//
+//---------------------------------------------------------------------------------------------//
+
+#login {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 10px;
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    width: min(450px, 100%);
+  }
+
+  .v-input {
+    .v-field {
+      border-radius: 15px;
+      box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.3);
+
+      &__input {
+        height: 65px;
+      }
+    }
+  }
+
+  a, label {
+    font-size: 16px;
+    font-weight: 500;
+    opacity: 1;
+  }
+  
+  button {
+    height: 55px;
+    border-radius: 10px;
+    box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.3);
+    span {
+      font-weight: 500;
+    }
+  }
+}

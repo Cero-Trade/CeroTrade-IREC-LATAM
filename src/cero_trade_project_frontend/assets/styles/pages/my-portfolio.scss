@@ -1,0 +1,311 @@
+@use "@/assets/styles/main.scss" as *;
+//---------------------------------------------------------------------------------------------//
+//========================================= my portfolio ========================================//
+//---------------------------------------------------------------------------------------------//
+
+#my-portfolio {
+  @extend .parent;
+  @extend .margin-global;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  margin-block: 30px;
+
+  .delete-mobile{
+    @include media(max, 960px){
+      display: none;
+    }
+  }
+
+  h3, h5, h4{
+    font-weight: 700;
+  }
+
+  .select{
+    min-height: 40px!important;
+    max-height: 40px!important;
+
+    .v-field{
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 10px;
+    }
+
+    .v-select__selections{
+      margin-block: 0px!important;
+    }
+
+    .v-field__input{
+      max-height: 40px!important;
+      min-height: 40px!important;
+      padding-block: 0px;
+      color: #000;
+      font-weight: 700;
+    }
+  }
+
+  .v-btn{
+    border-radius: 10px!important;
+    background-color: #fff!important;
+    border: 1px solid rgba(0,0,0,0.1)!important;
+    --fw: 700!important;
+    max-height: 40px!important;
+    min-height: 40px!important;
+  }
+
+  .input{
+    max-height: 45px!important;
+    height: 45px;
+
+    ::placeholder{
+      color: #000;
+      opacity: 1;
+      font-weight: 700;
+    }
+
+    i{
+      font-size: 20px;
+      color: #000;
+      opacity: 1;
+    }
+
+    .v-field{
+      height: 40px!important;
+      max-height: 40px!important;
+      min-height: 1px!important;
+      border-radius: 10px!important;
+    }
+
+    input{
+      color: #000!important;
+      font-size: 14px;
+      height: 40px!important;
+      max-height: 40px!important;
+      min-height: 1px!important;
+      margin-top: -5px;
+    }
+
+    .v-field__input{
+      padding-left: 15px;
+      padding-block: 5px;
+      height: 40px!important;
+      max-height: 40px!important;
+      min-height: 1px!important;
+    }
+  }
+
+  .card-mwh{
+    min-height: 100px!important; 
+    position: relative;
+    min-width: 300px!important;
+    max-width: 400px!important;
+  }
+
+  .btn-toggle{
+    border: 0px!important;
+    background-color: transparent!important;
+    padding: 10px!important;
+    border-radius: 10px!important;
+    min-height: 1px!important;
+    min-width: 1px!important;
+    width: 35px!important;
+    height: 35px!important;
+  }
+
+  .v-btn-group--density-default.v-btn-group {
+    height: 48px;
+    background-color: #EAECF0;
+    padding-inline: 5px;
+    border-radius: 10px;
+  }
+
+  .btn2{
+    border: 2px solid #EAECF0;
+    background-color: var(--bg, #fff) !important;
+    padding-inline: 10px!important;
+  }
+
+  .cards-my-transactions{
+    h6{
+      font-weight: 700!important;
+    }
+
+    .red-chip{
+      background-color: #FEF3F2;
+      border-radius: 10px!important;
+      border: 1px solid #FECDCA;
+      color: #B42318;
+      padding-inline: 5px;
+      font-size: 15px;
+  
+      .v-icon{
+        color: #D92D20;
+        font-size: 16px;
+      }
+    }
+
+    .green-chip{
+      background-color: #ECFDF3;
+      border-radius: 10px!important;
+      border: 1px solid #ABEFC6;
+      color: #067647;
+      padding-inline: 5px;
+      font-size: 15px;
+  
+      .v-icon{
+        color: #079455;
+        font-size: 16px;
+      }
+    }
+
+    .btn-dots{
+      padding: 10px!important;
+      min-height: 1px!important;
+      min-width: 1px!important;
+      width: 40px!important;
+      height: 40px!important;
+    }
+
+    .blue{
+      color: #2970FF;
+    }
+
+    .grey{
+      color: #98A2B3;
+    }
+
+    .yellow{
+      color: #FDB022;
+    }
+  }
+
+  .tab-btn{
+    @include media(max, 960px){
+      padding-inline: 10px!important;
+      width: max-content!important;
+      min-width: 1px!important;
+      span{
+        font-size: 12px;
+      }
+    }
+  }
+
+  .show-mobile{
+    display: none;
+    @include media(max, 960px){
+      display: grid;
+    }
+  }
+}
+
+
+.card-menu{
+  background-color: #fff!important;
+  border-radius: 5px!important;
+  width: 150px!important;
+  border: 1px solid #b9b8b8;
+  a{
+    color: #000;
+    margin-left: 5px!important;
+    cursor: pointer;
+    font-weight: 700;
+  }
+}
+
+
+
+// /////////////// Data Table//////////////////////
+
+.my-data-table th{
+  background-color: transparent!important;
+  border: 1px solid #f2f3f6;
+  min-height: 1px!important;
+  height: 40px!important;
+  max-height: 40px!important;
+
+  span{
+    color: #000;
+    opacity: 1;
+    font-weight: 700;
+  }
+}
+
+.my-data-table th:first-of-type{
+  border-top-left-radius: 10px;
+}
+
+.my-data-table th:last-of-type{
+  border-top-right-radius: 10px;
+}
+
+.my-data-table td{
+  background-color: transparent!important;
+  border: 1px solid #f2f3f6;
+  min-height: 1px!important;
+  height: 40px!important;
+  max-height: 40px!important;
+  color: #475467;
+}
+
+.my-data-table tr:last-of-type > td:first-of-type{
+  border-bottom-left-radius: 10px;
+}
+
+.my-data-table tr:last-of-type > td:last-of-type{
+  border-bottom-right-radius: 10px;
+}
+
+.my-data-table tr > td{
+  min-height: 1px!important;
+  height: 40px!important;
+  max-height: 40px!important;
+}
+
+.v-data-table-footer{
+  margin-top: 10px;
+}
+
+.blue{
+  color: #2970FF;
+}
+
+.grey{
+  color: #98A2B3;
+}
+
+.yellow{
+  color: #FDB022;
+}
+
+.red-chip-table{
+  background-color: #FEF3F2;
+  border-radius: 10px!important;
+  border: 1px solid #FECDCA;
+  color: #B42318;
+  padding-inline: 5px!important;
+  font-size: 13px;
+
+  .v-icon{
+    color: #D92D20;
+    font-size: 16px;
+  }
+}
+
+.green-chip-table{
+  background-color: #ECFDF3;
+  border-radius: 10px!important;
+  border: 1px solid #ABEFC6;
+  color: #067647;
+  padding-inline: 5px!important;
+  font-size: 13px;
+
+  .v-icon{
+    color: #079455;
+    font-size: 16px;
+  }
+}
+
+
+.chip-table{
+  padding-inline: 5px!important;
+  border: 1px solid rgba(0,0,0,0.25);
+}

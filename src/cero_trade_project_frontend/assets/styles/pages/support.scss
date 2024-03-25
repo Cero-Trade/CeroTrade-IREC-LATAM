@@ -1,0 +1,41 @@
+@use "@/assets/styles/main.scss" as *;
+//---------------------------------------------------------------------------------------------//
+//========================================= support ========================================//
+//---------------------------------------------------------------------------------------------//
+
+#support {
+  @extend .parent;
+  @extend .margin-global;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  margin-block: 30px;
+
+  .span-navigation{
+    color:#475467 ;
+    font-size: 16px; 
+    font-weight: 700;
+  }
+
+  .icon-img{
+    width: 20px;
+  }
+
+  .green-span{
+    color: #00555B;
+  }
+
+  .grey-span{
+    color:#475467;
+  }
+
+  .card-bg-diferent{
+    background-color: #F9FAFB!important; 
+    min-height: 100px!important; 
+    max-width: 300px!important;
+  }
+
+  .font12{
+    font-size: 12px;
+  }
+}
