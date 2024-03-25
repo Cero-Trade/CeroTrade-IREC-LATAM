@@ -3,12 +3,7 @@ import { AuthClient } from "@dfinity/auth-client";
 import { app as vueApp } from "@/main";
 
 // canisters
-import * as marketplace from "../../../.dfx/local/canisters/marketplace"
-import * as token from "../../../.dfx/local/canisters/token"
-import * as token_index from "../../../.dfx/local/canisters/token_index"
-import * as agent from "../../../.dfx/local/canisters/agent"
-import * as user from "../../../.dfx/local/canisters/user"
-import * as user_index from "../../../.dfx/local/canisters/user_index"
+import * as agentCanister from "../../../.dfx/local/canisters/agent"
 
 
 export const canisterImpl = { canisterId: process.env.CERO_TRADE_PROJECT_FRONTEND_CANISTER_ID }
@@ -37,12 +32,7 @@ export const createActor = (canisterId, idlFactory, options) => {
   });
 }
 
-export const useMarketplaceCanister = () => createActor(marketplace.canisterId, marketplace.idlFactory)
-export const useTokenCanister = () => createActor(token.canisterId, token.idlFactory)
-export const useTokenIndexCanister = () => createActor(token_index.canisterId, token_index.idlFactory)
-export const useAgentCanister = () => createActor(agent.canisterId, agent.idlFactory)
-export const useUserCanister = () => createActor(user.canisterId, user.idlFactory)
-export const useUserIndexCanister = () => createActor(user_index.canisterId, user_index.idlFactory)
+export const useAgentCanister = () => createActor(agentCanister.canisterId, agentCanister.idlFactory)
 
 export default async (app) => {
   const authClient = await AuthClient.create()

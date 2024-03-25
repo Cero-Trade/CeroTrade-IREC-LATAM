@@ -129,15 +129,18 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import '@/assets/styles/pages/home.scss'
+import countries from '@/assets/sources/json/countries-all.json'
+import { ref, onBeforeMount } from 'vue'
+import { useAgentCanister } from '@/services/icp-provider'
 
-export default {
-  data(){
-    return{
-      windowStep: 1,
-      show_password: false,
-    }
-  },
-}
+const
+windowStep = ref(1),
+show_password = ref(false),
+agentCanister = useAgentCanister()
+
+onBeforeMount(() => {
+  console.log(agentCanister);
+})
 </script>
