@@ -94,7 +94,7 @@
               </v-col>
 
               <v-col cols="12">
-                <v-btn class="center btn" @click="windowStep = 2">
+                <v-btn class="center btn" @click="windowStep++">
                   Create account
                   <img src="@/assets/sources/icons/arrow-right.svg" alt="arrow-right icon">
                 </v-btn>
@@ -117,11 +117,23 @@
             <v-row>
               <v-col cols="12" class="jstart astart divcol">
                 <label for="otp" style="font-weight: 700; color: #000;">Secure Code</label>
-                <v-otp-input id="otp"></v-otp-input>
+                <!-- TODO put here register method on event -->
+                <v-otp-input
+                  id="otp"
+                  @finish="register"
+                ></v-otp-input>
               </v-col>
             </v-row>
 
-            <v-btn class="btn2 mt-4">Resend code</v-btn>
+            <div class="d-flex mt-4" style="gap: 10px; width: 100% !important;">
+              <v-btn class="btn" @click="windowStep--">
+                <img src="@/assets/sources/icons/arrow-right.svg" alt="arrow-right icon" style="rotate: 180deg;">
+                Go back
+              </v-btn>
+
+              <!-- TODO button overflowed here -->
+              <v-btn class="btn2">Resend code</v-btn>
+            </div>
           </v-card>
         </div>
       </v-window-item>
@@ -133,14 +145,22 @@
 import '@/assets/styles/pages/home.scss'
 import countries from '@/assets/sources/json/countries-all.json'
 import { ref, onBeforeMount } from 'vue'
-import { useAgentCanister } from '@/services/icp-provider'
+import { AgentCanister } from '@/repository/agent-canister';
+import { useRouter } from 'vue-router';
 
 const
-windowStep = ref(1),
-show_password = ref(false),
-agentCanister = useAgentCanister()
+  router = useRouter(),
 
-onBeforeMount(() => {
-  console.log(agentCanister);
-})
+windowStep = ref(1),
+show_password = ref(false)
+
+onBeforeMount(getData)
+
+function getData() {
+  console.log("get data");
+}
+
+async function register() {
+  await AgentCanister.register()
+}
 </script>

@@ -1,10 +1,7 @@
-export class AgentCanister {
-  agent: any
-  constructor({ agent }) {
-    this.agent = agent
-  }
+import { useAgentCanister as agent } from "@/services/icp-provider";
 
-  async init(): Promise<void> {
-    console.log("here", this.agent);
+export class AgentCanister {
+  static async register(): Promise<void> {
+    console.log("here", agent());
   }
 }
