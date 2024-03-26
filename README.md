@@ -18,9 +18,22 @@ cp src/declarations/token/* .dfx/local/canisters/token/
 cp src/declarations/token_index/* .dfx/local/canisters/token_index/
 cp src/declarations/agent/* .dfx/local/canisters/agent/
 cp src/declarations/marketplace/* .dfx/local/canisters/marketplace/
+cp src/declarations/http_service/* .dfx/local/canisters/http_service/
 
 # deploy canisters
 dfx deploy
+```
+
+### Deployig only backend canisters
+
+```
+dfx deploy user
+dfx deploy user_index
+dfx deploy token
+dfx deploy token_index
+dfx deploy agent
+dfx deploy marketplace
+dfx deploy http_service
 ```
 
 ### Compiles and hot-reloads for development
