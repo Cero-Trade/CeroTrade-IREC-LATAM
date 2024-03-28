@@ -18,7 +18,7 @@
     .btn2{
       background-color: #fff!important; 
       border: 1px solid #EAECF0!important;
-      min-width: 100%!important;
+      &:not(.not) { min-width: 100%!important }
 
       span{
         font-weight: 700!important;

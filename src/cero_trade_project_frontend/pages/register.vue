@@ -4,7 +4,7 @@
     <v-window v-model="windowStep" :show-arrows="false">
       <!-- registration -->
       <v-window-item :value="1">
-        <div class="container-windows-step">
+        <v-form ref="companyFormRef" class="container-windows-step" @submit.prevent="nextStep">
           <v-card class="card card-register">
             <v-sheet class="sheet-img mb-6">
               <img src="@/assets/sources/icons/logo.svg" alt="Logo" class="img-logo">
@@ -15,15 +15,19 @@
               <v-col xl="6" lg="6" md="6" cols="12">
                 <label for="companey-name">Company name</label>
                 <v-text-field 
+                v-model="companyForm.name"
                 id="company-name" class="input" variant="solo" flat elevation="0" 
                 placeholder="olivia@cerotrade.com"
+                :rules="[globalRules.required]"
                 ></v-text-field>
               </v-col>
               <v-col xl="6" lg="6" md="6" sm="12" cols="12">
                 <label for="companey-id">Company ID</label>
                 <v-text-field 
+                v-model="companyForm.id"
                 id="company-id" class="input" variant="solo" flat elevation="0" 
                 placeholder="123456789"
+                :rules="[globalRules.required]"
                 >
                   <template #append-inner>
                     <img src="@/assets/sources/icons/help-circle.svg" alt="help-circle icon">
@@ -31,11 +35,16 @@
                 </v-text-field>
               </v-col>
               <v-col xl="6" lg="6" md="6" sm="12" cols="12">
-                <label for="city">City</label>
-                <v-select 
-                id="city" class="input" variant="solo" flat elevation="0" 
-                placeholder="New York"
+                <label for="country">Country</label>
+                <v-select
+                v-model="companyForm.country"
+                id="country" class="input" variant="solo" flat 
+                :items="countries"
+                item-title="name"
+                item-value="code"
+                elevation="0" placeholder="USA"
                 menu-icon=""
+                :rules="[globalRules.required]"
                 >
                   <template #append-inner="{ isFocused }">
                     <img
@@ -47,28 +56,28 @@
                 </v-select>
               </v-col>
               <v-col xl="6" lg="6" md="6" sm="12" cols="12">
-                <label for="country">Country</label>
-                <v-select
-                id="country" class="input" variant="solo" flat 
-                elevation="0" placeholder="USA"
-                menu-icon=""
-                >
-                  <template #append-inner="{ isFocused }">
-                    <img
-                      src="@/assets/sources/icons/chevron-down.svg"
-                      alt="chevron-down icon"
-                      :style="`transform: ${isFocused.value ? 'rotate(180deg)' : 'none'};`"
-                    >
-                  </template>
-                </v-select>
+                <label for="city">City</label>
+                <v-text-field
+                  v-model="companyForm.city"
+                  id="city" class="input" variant="solo" flat elevation="0" 
+                  placeholder="New York"
+                  menu-icon=""
+                  :rules="[globalRules.required]"
+                ></v-text-field>
               </v-col>
               <v-col cols="12">
                 <label for="company-address">Company address</label>
-                <v-text-field id="company-address" class="input" variant="solo" flat elevation="0" placeholder="Enter your company full address"></v-text-field>
+                <v-text-field
+                v-model="companyForm.address" id="company-address" class="input" variant="solo" flat elevation="0" placeholder="Enter your company full address"
+                :rules="[globalRules.required]"
+                ></v-text-field>
               </v-col>
               <v-col cols="12">
                 <label for="email-address">Email address</label>
-                <v-text-field id="email-address" class="input" variant="solo" flat elevation="0" placeholder="Enter your email address"></v-text-field>
+                <v-text-field
+                v-model="companyForm.email" id="email-address" class="input" variant="solo" flat elevation="0" placeholder="Enter your email address"
+                :rules="[globalRules.email]"
+                ></v-text-field>
               </v-col>
               <!-- <v-col xl="6" lg="6" md="6" sm="12" cols="12">
                 <label for="password">Password</label>
@@ -94,14 +103,14 @@
               </v-col>
 
               <v-col cols="12">
-                <v-btn class="center btn" @click="windowStep++">
+                <v-btn class="center btn" @click="nextStep">
                   Create account
                   <img src="@/assets/sources/icons/arrow-right.svg" alt="arrow-right icon">
                 </v-btn>
               </v-col>
             </v-row>
           </v-card>
-        </div>
+        </v-form>
       </v-window-item>
 
       <!-- Verification Email -->
@@ -131,8 +140,7 @@
                 Go back
               </v-btn>
 
-              <!-- TODO button overflowed here -->
-              <v-btn class="btn2">Resend code</v-btn>
+              <v-btn class="btn2 not flex-grow-1">Resend code</v-btn>
             </div>
           </v-card>
         </div>
@@ -147,20 +155,35 @@ import countries from '@/assets/sources/json/countries-all.json'
 import { ref, onBeforeMount } from 'vue'
 import { AgentCanister } from '@/repository/agent-canister';
 import { useRouter } from 'vue-router';
+import variables from '@/mixins/variables';
 
 const
   router = useRouter(),
+  { globalRules } = variables,
 
 windowStep = ref(1),
-show_password = ref(false)
+companyFormRef = ref(),
+companyForm = ref({
+  id: null,
+  name: null,
+  country: null,
+  city: null,
+  address: null,
+  email: null,
+})
 
 onBeforeMount(getData)
 
-function getData() {
-  console.log("get data");
+function getData() {}
+
+async function nextStep() {
+  const validForm = await companyFormRef.value.validate()
+  if (!validForm.valid) return;
+
+  windowStep.value++
 }
 
 async function register() {
-  await AgentCanister.register()
+  await AgentCanister.register(companyForm.value)
 }
 </script>
