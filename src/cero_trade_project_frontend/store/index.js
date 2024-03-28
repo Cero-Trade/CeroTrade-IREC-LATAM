@@ -10,6 +10,7 @@ const store = createStore({
       email: undefined,
       avatar: undefined,
     },
+    authClient: null,
   },
   mutations: {
     setProfile(state, profile) {
@@ -21,6 +22,9 @@ const store = createStore({
     setLoaderState(state, value) {
       state.loader = value
     },
+    setAuthClient(state, value) {
+      state.authClient = value
+    }
   },
   actions: {
     // modalConnect() {

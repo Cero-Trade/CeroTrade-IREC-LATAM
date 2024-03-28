@@ -24,7 +24,7 @@ cp src/declarations/http_service/* .dfx/local/canisters/http_service/
 dfx deploy
 ```
 
-### Deployig only backend canisters
+### Deploying only backend canisters
 
 ```
 dfx deploy user

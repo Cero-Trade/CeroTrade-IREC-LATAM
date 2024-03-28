@@ -73,18 +73,12 @@
 
 <script>
 import '@/assets/styles/pages/login.scss'
-import { ClientAuthApi } from '@/repository/auth-client-api'
-import { ICP_PROVIDE_COLLECTION } from '@/services/icp-provider'
-import { ref, inject } from 'vue'
+import { AuthClientApi } from '@/repository/auth-client-api'
+import { ref } from 'vue'
 
 export default {
   setup() {
-    const
-      client = inject(ICP_PROVIDE_COLLECTION.authClient),
-      clientAuthApi = new ClientAuthApi({ client })
-
     return {
-      clientAuthApi,
       windowStep: ref(1),
       show_password: ref(false)
     }
@@ -94,10 +88,10 @@ export default {
   },
   methods: {
     loginII() {
-      this.clientAuthApi.signIn(() => this.$router.push('/'))
+      AuthClientApi.signIn(() => this.$router.push('/'))
     },
     logoutII() {
-      this.clientAuthApi.signOut()
+      AuthClientApi.signOut()
     }
   }
 }

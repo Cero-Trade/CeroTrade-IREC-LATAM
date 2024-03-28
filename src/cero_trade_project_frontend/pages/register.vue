@@ -156,9 +156,11 @@ import { ref, onBeforeMount } from 'vue'
 import { AgentCanister } from '@/repository/agent-canister';
 import { useRouter } from 'vue-router';
 import variables from '@/mixins/variables';
+import { useToast } from 'vue-toastification';
 
 const
   router = useRouter(),
+  toast = useToast(),
   { globalRules } = variables,
 
 windowStep = ref(1),
@@ -184,6 +186,11 @@ async function nextStep() {
 }
 
 async function register() {
-  await AgentCanister.register(companyForm.value)
+  try {
+    const res = await AgentCanister.register(companyForm.value)
+    toast.success(res)
+  } catch (error) {
+    toast.error(error)
+  }
 }
 </script>

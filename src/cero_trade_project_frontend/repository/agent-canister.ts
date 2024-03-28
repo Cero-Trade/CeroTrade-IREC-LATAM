@@ -1,4 +1,4 @@
-import { useAgentCanister as agent } from "@/services/icp-provider";
+import { useAgentCanister as agent, getErrorMessage } from "@/services/icp-provider";
 
 export class AgentCanister {
   static async register(data: {
@@ -8,7 +8,11 @@ export class AgentCanister {
     city: string,
     address: string,
     email: string,
-  }): Promise<void> {
-    console.log("here", data, agent());
+  }): Promise<string> {
+    try {
+      return await agent().register(JSON.stringify(data)) as string
+    } catch (error) {
+      throw getErrorMessage(error)
+    }
   }
 }

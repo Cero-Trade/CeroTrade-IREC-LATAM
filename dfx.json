@@ -1,11 +1,11 @@
 {
   "canisters": {
     "users": {
-      "main": "src/cero_trade_project_backend/users/users.mo",
+      "main": "src/cero_trade_project_backend/users.mo",
       "type": "motoko"
     },
     "user_index": {
-      "main": "src/cero_trade_project_backend/user_index/user_index.mo",
+      "main": "src/cero_trade_project_backend/user_index.mo",
       "type": "motoko"
     },
     "token": {
@@ -21,9 +21,16 @@
       "type": "motoko"
     },
     "agent": {
-      "main": "src/cero_trade_project_backend/agent/agent.mo",
+      "main": "src/cero_trade_project_backend/agent.mo",
       "type": "motoko",
-      "dependencies": ["http_service"]
+      "dependencies": [
+        "http_service",
+        "users",
+        "user_index",
+        "token",
+        "token_index",
+        "marketplace"
+      ]
     },
     "http_service": {
       "main": "src/cero_trade_project_backend/http_service/http_service.mo",

@@ -9,8 +9,8 @@ import Text "mo:base/Text";
 import Iter "mo:base/Iter";
 import Buffer "mo:base/Buffer";
 
-//import the custom types you have in Types.mo
-import Types "./http_service_types";
+// types
+import HT "./http_service_types";
 
 //Actor
 actor HttpService {
@@ -29,8 +29,8 @@ actor HttpService {
   };
 
   // CREATE TRANSFORM FUNCTION
-  public query func transform(raw : Types.TransformArgs) : async Types.CanisterHttpResponsePayload {
-    let transformed : Types.CanisterHttpResponsePayload = {
+  public query func transform(raw : HT.TransformArgs) : async HT.CanisterHttpResponsePayload {
+    let transformed : HT.CanisterHttpResponsePayload = {
       status = raw.response.status;
       body = raw.response.body;
       headers = [
@@ -52,17 +52,17 @@ actor HttpService {
   };
 
 
-  public func get(url: Text, args: { headers: [Types.HttpHeader]; }) : async Text {
+  public func get(url: Text, args: { headers: [HT.HttpHeader]; }) : async Text {
     // SETUP ARGUMENTS FOR HTTP GET request
 
     // Transform context
-    let transform_context : Types.TransformContext = {
+    let transform_context : HT.TransformContext = {
       function = transform;
       context = Blob.fromArray([]);
     };
 
     // The HTTP request
-    let http_request : Types.HttpRequestArgs = {
+    let http_request : HT.HttpRequestArgs = {
       url = url;
       max_response_bytes = null; //optional for request
       headers = generateHeaders(url, args.headers);
@@ -75,11 +75,11 @@ actor HttpService {
   };
 
 
-  public func post(url: Text, args: { headers: [Types.HttpHeader]; bodyJson: Text }) : async Text {
+  public func post(url: Text, args: { headers: [HT.HttpHeader]; bodyJson: Text }) : async Text {
     // SETUP ARGUMENTS FOR HTTP GET request
 
     // Transform context
-    let transform_context : Types.TransformContext = {
+    let transform_context : HT.TransformContext = {
       function = transform;
       context = Blob.fromArray([]);
     };
@@ -88,7 +88,7 @@ actor HttpService {
     let request_body_as_nat8: [Nat8] = Blob.toArray(request_body_as_Blob);
 
     // The HTTP request
-    let http_request : Types.HttpRequestArgs = {
+    let http_request : HT.HttpRequestArgs = {
       url = url;
       max_response_bytes = null; //optional for request
       headers = generateHeaders(url, args.headers);
@@ -100,7 +100,7 @@ actor HttpService {
     await sendRequest(http_request)
   };
 
-  private func generateHeaders(url: Text, customHeaders: [Types.HttpHeader]) : [Types.HttpHeader] {
+  private func generateHeaders(url: Text, customHeaders: [HT.HttpHeader]) : [HT.HttpHeader] {
     // prepare headers for the system http_request call
     let default_headers  = [
       { name = "Host"; value = extractHost(url) # port },
@@ -108,15 +108,15 @@ actor HttpService {
     ];
 
     //<!-- TODO try to implements undeprecated merge array -->
-    // let merged_headers = Buffer.fromArray<Types.HttpHeader>(default_headers).append(Buffer.fromArray<Types.HttpHeader>(customHeaders));
+    // let merged_headers = Buffer.fromArray<HT.HttpHeader>(default_headers).append(Buffer.fromArray<HT.HttpHeader>(customHeaders));
     // let request_headers = Buffer.toArray(merged_headers);
     Array.append(default_headers, customHeaders);
   };
 
-  private func sendRequest(request: Types.HttpRequestArgs) : async Text {
+  private func sendRequest(request: HT.HttpRequestArgs) : async Text {
     // DECLARE MANAGEMENT CANISTER
     //You need this so you can use it to make the HTTP request
-    let ic : Types.IC = actor ("aaaaa-aa");
+    let ic : HT.IC = actor ("aaaaa-aa");
 
     // ADD CYCLES TO PAY FOR HTTP REQUEST
 
@@ -131,7 +131,7 @@ actor HttpService {
 
     // MAKE HTTPS REQUEST AND WAIT FOR RESPONSE
     //Since the cycles were added above, you can just call the management canister with HTTPS outcalls below
-    let http_response : Types.HttpResponsePayload = await ic.http_request(request);
+    let http_response : HT.HttpResponsePayload = await ic.http_request(request);
 
     // DECODE THE RESPONSE
 

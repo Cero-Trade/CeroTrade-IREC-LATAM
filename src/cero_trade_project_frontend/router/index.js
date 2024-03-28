@@ -1,9 +1,10 @@
 // Composables
 import { createRouter, createWebHistory } from 'vue-router'
 import { useStorage } from "vue3-storage-secure";
-import { inject, nextTick } from 'vue'
+import { nextTick } from 'vue'
 import { APP_NAMES } from '@/plugins/dictionary';
-import { ICP_PROVIDE_COLLECTION, canisterImpl } from '@/services/icp-provider';
+import { canisterImpl } from '@/services/icp-provider';
+import { AuthClientApi } from '@/repository/auth-client-api';
 
 // route imports
 import DefaultLayout from '@/layouts/default-layout.vue'
@@ -123,19 +124,28 @@ const router = createRouter({
 
 
 router.beforeEach(async (to, from, next) => {
-  if (to.path === '/') return next({ name: 'Dashboard', query: { ...canisterImpl, ...to.query } })
-  else if (to.path === '/auth' || to.path === '/login') return next({ name: 'Login', query: { ...canisterImpl, ...to.query } })
+  switch (to.path) {
+    case '/':
+      return next({ name: 'Dashboard', query: { ...canisterImpl, ...to.query } })
 
+    case '/auth':
+    case '/login':
+      return next({ name: 'Login', query: { ...canisterImpl, ...to.query } })
+
+    case '/register':
+      return next({ name: 'Register', query: { ...canisterImpl, ...to.query } })
+  }
+  
   if (!Object.keys(to.query).includes('canisterId'))
-    next({ name: to.name, query: { ...canisterImpl, ...to.query } });
+  next({ name: to.name, query: { ...canisterImpl, ...to.query } });
 
-  /* //!FIXME commented for testing
+  //!FIXME commented for testing
   // this route requires auth, check if logged in
   // if not, redirect to login page.
-  const isAuthenticated = await inject(ICP_PROVIDE_COLLECTION.authClient).isAuthenticated()
+  const isAuthenticated = await AuthClientApi.isAuthenticated()
   // const tokenAuth = useStorage().getStorageSync("tokenAuth")
   if (to.matched.some(record => record.meta.requiresAuth) && !isAuthenticated)
-    return next({ name: 'Login', query: { ...canisterImpl, ...to.query } }) */
+    return next({ name: 'Login', query: { ...canisterImpl, ...to.query } })
 
   // go to wherever I'm going
   next()

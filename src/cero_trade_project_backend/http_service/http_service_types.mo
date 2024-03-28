@@ -1,4 +1,6 @@
 module {
+  public let apiUrl = "https://api.cerotrade.cl/";
+
   public type Result<S, E> = {
     #ok : S;
     #err : E;

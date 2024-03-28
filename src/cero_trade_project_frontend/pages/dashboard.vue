@@ -376,9 +376,6 @@
   import RenewableChart from '@/components/renewable-chart.vue'
   import MwhChart from '@/components/mwh-chart.vue'
   import IrecChart from '@/components/irec-chart.vue'
-  import { inject } from 'vue'
-  import { ICP_PROVIDE_COLLECTION } from '@/services/icp-provider'
-//   import { MarketCanister } from '@/repository/market-canister'
   
   export default {
     components: {
@@ -388,13 +385,6 @@
       IrecChart
     },
     data(){
-        //--- PREV CANISTER CODE ---
-      // TODO this is for showcase marketCanister
-    //   const
-    //   market = inject(ICP_PROVIDE_COLLECTION.market),
-    //   marketCanister = new MarketCanister({ market })
-    //   marketCanister.init()
-  
       return{
         walletStatus: false,
         status2fa: false,

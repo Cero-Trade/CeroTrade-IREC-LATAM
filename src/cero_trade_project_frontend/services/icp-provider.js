@@ -8,12 +8,9 @@ import * as agentCanister from "../../../.dfx/local/canisters/agent"
 
 export const canisterImpl = { canisterId: process.env.CERO_TRADE_PROJECT_FRONTEND_CANISTER_ID }
 
-export const ICP_PROVIDE_COLLECTION = {
-  authClient: 'authClient'
-}
 export const createActor = (canisterId, idlFactory, options) => {
   const isDevelopment = process.env.DFX_NETWORK !== "ic",
-  identity = vueApp._instance.provides.authClient.getIdentity(),
+  identity = vueApp._context.provides.authClient.getIdentity(),
   agent = new HttpAgent({ identity: isDevelopment ? null : identity, ...options?.agentOptions });
   
   // Fetch root key for certificate validation during development
@@ -32,7 +29,12 @@ export const createActor = (canisterId, idlFactory, options) => {
   });
 }
 
+export const getErrorMessage = (error) => error.message.split('Reject text: ')[1].trim()
+
+
 export const useAgentCanister = () => createActor(agentCanister.canisterId, agentCanister.idlFactory)
+
+export const useAuthClient = () => vueApp._context.provides.authClient
 
 export default async (app) => {
   const authClient = await AuthClient.create()
