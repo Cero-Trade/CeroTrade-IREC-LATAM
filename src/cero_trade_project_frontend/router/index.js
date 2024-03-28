@@ -124,7 +124,7 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   if (to.path === '/') return next({ name: 'Dashboard', query: { ...canisterImpl, ...to.query } })
-  else if (to.path === '/auth') return next({ name: 'Login', query: { ...canisterImpl, ...to.query } })
+  else if (to.path === '/auth' || to.path === '/login') return next({ name: 'Login', query: { ...canisterImpl, ...to.query } })
 
   if (!Object.keys(to.query).includes('canisterId'))
     next({ name: to.name, query: { ...canisterImpl, ...to.query } });
