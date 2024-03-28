@@ -12,6 +12,11 @@ actor class Users() = this {
   let users: HM.HashMap<T.UID, T.UserInfo> = HM.HashMap(16, Principal.equal, Principal.hash);
 
 
+  /// get size of users collection
+  public query func length(): async Nat {
+    users.size();
+  };
+
   /// register user to cero trade
   public func registerUser(uid: T.UID, token: Text): async T.CanisterID {
     let userInfo = T.createUserInfo(uid, token, users.size()+1);
