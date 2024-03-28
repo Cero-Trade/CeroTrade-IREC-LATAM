@@ -16,7 +16,7 @@ actor UserIndex {
   };
 
   /// get canister id that allow current user
-  public func getUserCanister(uid: T.UID) : async T.CanisterID {
+  public query func getUserCanister(uid: T.UID) : async T.CanisterID {
     switch (userDict.get(uid)) {
       case (null) { throw Error.reject("User not found"); };
       case (?cid) { return cid; };

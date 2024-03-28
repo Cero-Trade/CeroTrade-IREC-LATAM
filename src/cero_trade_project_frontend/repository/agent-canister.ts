@@ -1,4 +1,4 @@
-import { useAgentCanister as agent, getErrorMessage } from "@/services/icp-provider";
+import { useAgentCanister as agent, getErrorMessage, getErrorStatus } from "@/services/icp-provider";
 
 export class AgentCanister {
   static async register(data: {

@@ -22,7 +22,7 @@ actor class Users() = this {
   };
 
   /// get user from users collection
-  public func getUserInfo(uid: T.UID) : async T.UserInfo {
+  public query func getUserInfo(uid: T.UID) : async T.UserInfo {
     switch (users.get(uid)) {
       case (null) { throw Error.reject("User not found"); };
       case (?info) { return info; };
@@ -30,7 +30,7 @@ actor class Users() = this {
   };
 
   /// get vaultToken from user
-  public func getUserToken(uid: T.UID) : async Text {
+  public query func getUserToken(uid: T.UID) : async Text {
     switch (users.get(uid)) {
       case (null) { throw Error.reject("User not found"); };
       case (?info) { return info.vaultToken; };

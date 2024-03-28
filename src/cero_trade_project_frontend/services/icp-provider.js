@@ -29,6 +29,8 @@ export const createActor = (canisterId, idlFactory, options) => {
   });
 }
 
+export const getErrorStatus = (error) => Number(error.message.split('Reject code: ')[1].split('Reject text: ')[0].trim())
+
 export const getErrorMessage = (error) => error.message.split('Reject text: ')[1].trim()
 
 
