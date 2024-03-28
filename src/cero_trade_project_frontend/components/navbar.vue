@@ -3,31 +3,31 @@
     <div id="navbar__wrapper">
       <div class="center divrow displaynone" style="gap: 15px;">
         <img src="@/assets/sources/logos/logo-navbar.svg" alt="Logo" class="mr-14">
-        <span class="center nav-text" :class="{ 'lime': $route.path === '/dashboard' }" @click="$router.push(basePath('/dashboard'))">
+        <span class="center nav-text" :class="{ 'lime': $route.path === '/dashboard' }" @click="$router.push('/dashboard')">
           <img v-if="$route.path != '/dashboard'" src="@/assets/sources/icons/home-white.svg" alt="Home" class="mr-2"> 
           <img v-if="$route.path == '/dashboard'" src="@/assets/sources/icons/home-green.svg" alt="Home" class="mr-2"> 
           Home
         </span>
 
-        <span class="center nav-text" :class="{ 'lime': $route.path === '/my-portfolio' }" @click="$router.push(basePath('/my-portfolio'))">
+        <span class="center nav-text" :class="{ 'lime': $route.path === '/my-portfolio' }" @click="$router.push('/my-portfolio')">
           <img v-if="$route.path != '/my-portfolio'" src="@/assets/sources/icons/wallet-white.svg" alt="Wallet" class="mr-2"> 
           <img v-if="$route.path == '/my-portfolio'" src="@/assets/sources/icons/wallet-green.svg" alt="Wallet" class="mr-2"> 
           My portfolio
         </span>
 
-        <span class="center nav-text" :class="{ 'lime': $route.path === '/marketplace' }" @click="$router.push(basePath('/marketplace'))">
+        <span class="center nav-text" :class="{ 'lime': $route.path === '/marketplace' }" @click="$router.push('/marketplace')">
           <img v-if="$route.path != '/marketplace'" src="@/assets/sources/icons/marketplace.svg" alt="marketplace" class="mr-2"> 
           <img v-if="$route.path == '/marketplace'" src="@/assets/sources/icons/marketplace-green.svg" alt="marketplace" class="mr-2"> 
           Marketplace
         </span>
 
-        <span class="center nav-text" :class="{ 'lime': $route.path === '/settings' }" @click="$router.push(basePath('/settings'))">
+        <span class="center nav-text" :class="{ 'lime': $route.path === '/settings' }" @click="$router.push('/settings')">
           <img v-if="$route.path != '/settings'" src="@/assets/sources/icons/config.svg" alt="settings" class="mr-2"> 
           <img v-if="$route.path == '/settings'" src="@/assets/sources/icons/config-green.svg" alt="settings" class="mr-2"> 
           Settings
         </span>
 
-        <span class="center nav-text" :class="{ 'lime': $route.path === '/support' }" @click="$router.push(basePath('/support'))">
+        <span class="center nav-text" :class="{ 'lime': $route.path === '/support' }" @click="$router.push('/support')">
           <img v-if="$route.path != '/support'" src="@/assets/sources/icons/support.svg" alt="support" class="mr-2"> 
           <img v-if="$route.path == '/support'" src="@/assets/sources/icons/support-green.svg" alt="support" class="mr-2"> 
           Support
@@ -36,7 +36,7 @@
 
       <div class="center divrow displaynone" style="gap: 20px;">
         <img src="@/assets/sources/icons/bell.svg" alt="bell icon">
-        <v-sheet class="center divrow pointer" style="gap: 10px; background-color: transparent;" @click="$router.push(basePath('/profile'))">
+        <v-sheet class="center divrow pointer" style="gap: 10px; background-color: transparent;" @click="$router.push('/profile')">
           <img src="@/assets/sources/images/avatar-online.svg" alt="Avatar">
           <div class="divcol">
             <span style="font-weight: 700; color: #fff;">Sysiphus</span>
@@ -49,7 +49,7 @@
       <img src="@/assets/sources/logos/logo-mobile.svg" alt="Logo" class="logo-mobile show-mobile">
 
       <div class="right-mobile" style="gap: 20px;">
-        <img src="@/assets/sources/images/avatar-online.svg" alt="Avatar" class="pointer" style="width: 35px;" @click="$router.push(basePath('/profile'))">
+        <img src="@/assets/sources/images/avatar-online.svg" alt="Avatar" class="pointer" style="width: 35px;" @click="$router.push('/profile')">
         <img src="@/assets/sources/icons/bell.svg" alt="bell icon">
         <img src="@/assets/sources/icons/menu-bars-mobile.svg" alt="Menu Bars" class="menu-bars show-mobile" @click.stop="drawer = !drawer">
       </div>
@@ -65,31 +65,31 @@
         <img src="@/assets/sources/logos/logo-navbar.svg" alt="Logo">
       </div>
       <div class="jcenter divcol mt-16" style="gap: 40px;">
-        <span class="center nav-text" :class="{ 'lime': $route.path === '/dashboard' }" @click="$router.push(basePath('/dashboard'))">
+        <span class="center nav-text" :class="{ 'lime': $route.path === '/dashboard' }" @click="$router.push('/dashboard')">
           <img v-if="$route.path != '/dashboard'" src="@/assets/sources/icons/home-white.svg" alt="Home" class="mr-2"> 
           <img v-if="$route.path == '/dashboard'" src="@/assets/sources/icons/home-green.svg" alt="Home" class="mr-2"> 
           Home
         </span>
 
-        <span class="center nav-text" :class="{ 'lime': $route.path === '/my-portfolio' }" @click="$router.push(basePath('/my-portfolio'))">
+        <span class="center nav-text" :class="{ 'lime': $route.path === '/my-portfolio' }" @click="$router.push('/my-portfolio')">
           <img v-if="$route.path != '/my-portfolio'" src="@/assets/sources/icons/wallet-white.svg" alt="Wallet" class="mr-2"> 
           <img v-if="$route.path == '/my-portfolio'" src="@/assets/sources/icons/wallet-green.svg" alt="Wallet" class="mr-2"> 
           My portfolio
         </span>
 
-        <span class="center nav-text" :class="{ 'lime': $route.path === '/marketplace' }" @click="$router.push(basePath('/marketplace'))">
+        <span class="center nav-text" :class="{ 'lime': $route.path === '/marketplace' }" @click="$router.push('/marketplace')">
           <img v-if="$route.path != '/marketplace'" src="@/assets/sources/icons/marketplace.svg" alt="marketplace" class="mr-2"> 
           <img v-if="$route.path == '/marketplace'" src="@/assets/sources/icons/marketplace-green.svg" alt="marketplace" class="mr-2"> 
           Marketplace
         </span>
 
-        <span class="center nav-text" :class="{ 'lime': $route.path === '/settings' }" @click="$router.push(basePath('/settings'))">
+        <span class="center nav-text" :class="{ 'lime': $route.path === '/settings' }" @click="$router.push('/settings')">
           <img v-if="$route.path != '/settings'" src="@/assets/sources/icons/config.svg" alt="settings" class="mr-2"> 
           <img v-if="$route.path == '/settings'" src="@/assets/sources/icons/config-green.svg" alt="settings" class="mr-2"> 
           Settings
         </span>
 
-        <span class="center nav-text" :class="{ 'lime': $route.path === '/support' }" @click="$router.push(basePath('/support'))">
+        <span class="center nav-text" :class="{ 'lime': $route.path === '/support' }" @click="$router.push('/support')">
           <img v-if="$route.path != '/support'" src="@/assets/sources/icons/support.svg" alt="support" class="mr-2"> 
           <img v-if="$route.path == '/support'" src="@/assets/sources/icons/support-green.svg" alt="support" class="mr-2"> 
           Support
@@ -118,12 +118,10 @@ import marketplace_green from '@/assets/sources/icons/marketplace-green.svg'
 import config_green from '@/assets/sources/icons/config-green.svg'
 import support_green from '@/assets/sources/icons/support-green.svg'
 import market_trends from '@/assets/sources/icons/market-trends.svg'
-import variables from '@/mixins/variables'
 
 export default {
   data() {
     return{
-      basePath: variables.basePath,
       drawer: false,
       dataNavbar:[
         {img: 'home', name: 'Home', link:'/dashboard', img_green: 'home_green'},

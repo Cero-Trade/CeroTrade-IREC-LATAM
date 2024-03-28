@@ -46,7 +46,7 @@
           <span class="tertiary" style="font-weight: 300;">
             Contact our Cero Trade team for any needed support.
           </span>
-          <v-btn class="btn mt-6" @click="$router.push(basePath('/support'))">
+          <v-btn class="btn mt-6" @click="$router.push('/support')">
             Contact Support
             <img src="@/assets/sources/icons/headphones-black.svg" alt="headphones icon" style="width: 15px">
           </v-btn>
@@ -922,11 +922,9 @@ import '@/assets/styles/pages/settings.scss'
 import icpIcon from '@/assets/sources/icons/internet-computer-icon.svg'
 import bankIcon from '@/assets/sources/icons/bank.svg'
 import { ref } from 'vue'
-import variables from '@/mixins/variables'
 
 export default{
   setup(){
-      const { basePath } = variables
       const tabsWindow = ref(1);
       const dialogNotification = ref(false);
       const show_password= ref(false);
@@ -968,7 +966,6 @@ export default{
       ]
 
     return{
-      basePath,
       tabsWindow,
       dialogNotification,
       show_password,

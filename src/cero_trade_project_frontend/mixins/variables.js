@@ -31,13 +31,6 @@ export default {
   getThemeSrc() {
     return `@/assets/sources/themes/${useTheme().name}/`
   },
-  basePath(url, options) {
-    options ??= {}
-
-    if (url) options['path'] = url
-    options['query'] = { ...canisterImpl, ...options.query  }
-    return options
-  },
 
   //?  life cycle
   // mounted() {},

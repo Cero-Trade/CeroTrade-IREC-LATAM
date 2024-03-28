@@ -12,7 +12,7 @@
       </span>
 
       <div class="flex-center" style="gap: 20px;">
-        <v-btn class="btn2" style="--bg: rgb(var(--v-theme-primary))" @click="$router.push(basePath('/my-transactions'))">My Transactions</v-btn>
+        <v-btn class="btn2" style="--bg: rgb(var(--v-theme-primary))" @click="$router.push('/my-transactions')">My Transactions</v-btn>
 
         <v-btn class="btn2">
           <img src="@/assets/sources/icons/pencil.svg" alt="pencil icon">
@@ -174,9 +174,9 @@
                   </template>
 
                   <v-card class="divcol pt-2 pb-2 pl-1 pr-1 card-menu" style="gap: 25px;">
-                    <a @click="$router.push(basePath('/rec-single-portfolio'))">Sell</a>
-                    <a @click="$router.push(basePath('/rec-single-portfolio'))">Redeem</a>
-                    <a @click="$router.push(basePath('/rec-single-portfolio'))">Take of market</a>
+                    <a @click="$router.push('/rec-single-portfolio')">Sell</a>
+                    <a @click="$router.push('/rec-single-portfolio')">Redeem</a>
+                    <a @click="$router.push('/rec-single-portfolio')">Take of market</a>
                   </v-card>
                 </v-menu>
               </div>
@@ -237,14 +237,12 @@ import ChileIcon from '@/assets/sources/icons/CL.svg'
 import WalletIcon from '@/assets/sources/icons/wallet-light.svg'
 import TokenizedIcon from '@/assets/sources/icons/tokenized-table.svg'
 import RedeemedIcon from '@/assets/sources/icons/redeemed-table.svg'
-import variables from '@/mixins/variables'
 
 
 export default{
   components: { RenewableChart },
   data(){
     return{
-      basePath: variables.basePath,
       checkboxCheckedIcon,
       checkboxBaseIcon,
       windowStep: undefined,
@@ -493,7 +491,7 @@ export default{
   },
   methods:{
     goDetails(){
-      this.$router.push(this.basePath('/rec-single-portfolio'))
+      this.$router.push('/rec-single-portfolio')
     }
   }
 }

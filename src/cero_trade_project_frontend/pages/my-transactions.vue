@@ -116,12 +116,10 @@ import BiomeEnergyIcon from '@/assets/sources/energies/biome.svg'
 import WindEnergyIcon from '@/assets/sources/energies/wind.svg'
 import SolarEnergyIcon from '@/assets/sources/energies/solar.svg'
 import ChileIcon from '@/assets/sources/icons/CL.svg'
-import variables from '@/mixins/variables'
 
 export default{
   data() {
     return{
-      basePath: variables.basePath,
       tabsMobile: 1,
       itemsPerPage: 100,
       windowStep: undefined,
@@ -358,7 +356,7 @@ export default{
 
   methods:{
     goDetails(){
-      this.$router.push(basePath('/rec-single-my-transactions'))
+      this.$router.push('/rec-single-my-transactions')
     },
   },
   watch: {

@@ -144,7 +144,7 @@
                           </template>
 
                           <v-card class="acenter jstart pt-2 pb-2 pl-1 pr-1 card-menu" style="gap: 25px;">
-                            <a @click="$router.push(basePath('/rec-single-marketplace'))">Buy</a>
+                            <a @click="$router.push('/rec-single-marketplace')">Buy</a>
                           </v-card>
                         </v-menu>
                       </div>
@@ -438,14 +438,12 @@ import BiomeEnergyIcon from '@/assets/sources/energies/biome.svg'
 import WindEnergyIcon from '@/assets/sources/energies/wind-color.svg'
 import SolarEnergyIcon from '@/assets/sources/energies/solar-color.svg'
 import ChileIcon from '@/assets/sources/icons/CL.svg'
-import variables from '@/mixins/variables'
 
 
 export default {
   components: { RenewableChart },
   data(){
     return{
-      basePath: variables.basePath,
       checkboxCheckedIcon,
       checkboxBaseIcon,
       windowStep: undefined,

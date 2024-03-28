@@ -37,7 +37,7 @@
               </v-col>
 
               <!-- <v-col cols="12">
-                <v-btn class="center btn" @click="windowStep = 2; $router.push(basePath('/dashboard'))">Log in <v-icon style="margin-bottom: -3px; margin-left: 5px;">mdi-login</v-icon></v-btn>
+                <v-btn class="center btn" @click="windowStep = 2; $router.push('/dashboard')">Log in <v-icon style="margin-bottom: -3px; margin-left: 5px;">mdi-login</v-icon></v-btn>
               </v-col> -->
             </v-row>
           </v-card>
@@ -76,17 +76,14 @@ import '@/assets/styles/pages/login.scss'
 import { ClientAuthApi } from '@/repository/auth-client-api'
 import { ICP_PROVIDE_COLLECTION } from '@/services/icp-provider'
 import { ref, inject } from 'vue'
-import variables from '@/mixins/variables'
 
 export default {
   setup() {
     const
-      { basePath } = variables,
       client = inject(ICP_PROVIDE_COLLECTION.authClient),
       clientAuthApi = new ClientAuthApi({ client })
 
     return {
-      basePath,
       clientAuthApi,
       windowStep: ref(1),
       show_password: ref(false)
@@ -97,7 +94,7 @@ export default {
   },
   methods: {
     loginII() {
-      this.clientAuthApi.signIn(() => this.$router.push(basePath('/')))
+      this.clientAuthApi.signIn(() => this.$router.push('/'))
     },
     logoutII() {
       this.clientAuthApi.signOut()
