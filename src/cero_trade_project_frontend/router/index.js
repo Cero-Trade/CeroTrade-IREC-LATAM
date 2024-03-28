@@ -123,11 +123,11 @@ const router = createRouter({
 
 
 router.beforeEach(async (to, from, next) => {
-  if (to.path === '/') return next({ name: 'Dashboard', query: canisterImpl })
-  else if (to.path === '/auth') return next({ name: 'Login', query: canisterImpl })
+  if (to.path === '/') return next({ name: 'Dashboard', query: { ...canisterImpl, ...to.query } })
+  else if (to.path === '/auth') return next({ name: 'Login', query: { ...canisterImpl, ...to.query } })
 
   if (!Object.keys(to.query).includes('canisterId'))
-    next({ name: to.name, query: canisterImpl });
+    next({ name: to.name, query: { ...canisterImpl, ...to.query } });
 
   /* //!FIXME commented for testing
   // this route requires auth, check if logged in
@@ -135,7 +135,7 @@ router.beforeEach(async (to, from, next) => {
   const isAuthenticated = await inject(ICP_PROVIDE_COLLECTION.authClient).isAuthenticated()
   // const tokenAuth = useStorage().getStorageSync("tokenAuth")
   if (to.matched.some(record => record.meta.requiresAuth) && !isAuthenticated)
-    return next({ name: 'Login', query: canisterImpl }) */
+    return next({ name: 'Login', query: { ...canisterImpl, ...to.query } }) */
 
   // go to wherever I'm going
   next()
