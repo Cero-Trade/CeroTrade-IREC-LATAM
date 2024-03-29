@@ -34,6 +34,8 @@
       }"
     >
       <template #selection>
+        <v-chip rounded="100px" class="v-img-input__length-chip">{{ formatBytes(model[0].size) }}</v-chip>
+
         <v-img
           :src="src"
           :alt="alt ?? 'image preview of selector'"
@@ -59,7 +61,7 @@
 
 <script setup>
 import { ref, watch, onBeforeMount, computed } from 'vue'
-import { getUrlFromFile, getFileFromUrl, isOnlyDigits } from '@/plugins/functions'
+import { getUrlFromFile, getFileFromUrl, isOnlyDigits, formatBytes } from '@/plugins/functions'
 
 const
   props = defineProps({
@@ -124,6 +126,19 @@ async function getData(value) {
 
 <style lang="scss">
 .v-img-input {
+  position: relative;
+
+  &__length-chip {
+    position: absolute;
+    right: 5px;
+    bottom: 5px;
+    z-index: 2;
+    background-color: hsl(0, 0%, 96%);
+
+    .v-chip__underlay { opacity: .3 }
+    .v-chip__content { color: #000 }
+  }
+
   .v-input {
 
     &__control {
@@ -139,6 +154,7 @@ async function getData(value) {
       border-radius: var(--border-radius);
       border: var(--border);
       padding: 0;
+      box-shadow: none;
 
       &__input {
         height: 100%;

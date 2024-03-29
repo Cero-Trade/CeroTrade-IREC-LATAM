@@ -1,4 +1,5 @@
 import store from '@/store'
+import imageCompression from 'browser-image-compression';
 
 /// Useful to set intersection threshold
 export function buildThresholdList() {
@@ -90,6 +91,13 @@ export async function getFileFromUrl(url, type = 'image/jpeg') {
   return file
 }
 
+export function formatBytes(bytes, decimals = 2) {
+  if (bytes === 0) return "0 B";
+  const suffixes = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+  let i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return `${(bytes / Math.pow(1024, i)).toFixed(decimals)} ${suffixes[i]}`;
+}
+
 export function getFilenameFromUrl(url) {
   const path = url.split('/')
 
@@ -114,4 +122,49 @@ export async function getImageSize(file) {
 
     reader.readAsDataURL(file);
   });
+}
+
+export async function getImageBlob(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = function() {
+      const blob = new Blob([reader.result], {type: file.type});
+      resolve(blob);
+    };
+    reader.onerror = (error) => reject(error);
+
+    reader.readAsDataURL(file);
+  });
+}
+
+export async function getImageArrayBuffer(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = function(evt) {
+      if (evt.target.readyState === FileReader.DONE) {
+        const arrayBuffer = evt.target.result,
+        byteArray = new Uint8Array(arrayBuffer),
+        fileByteArray = []
+
+        for (const byte of byteArray) fileByteArray.push(byte);
+        resolve(fileByteArray);
+      }
+    };
+    reader.onerror = (error) => reject(error);
+
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+export async function fileCompression(file, options) {
+  const blob = await imageCompression(file, options || {
+    maxSizeMB: 1,
+    maxWidthOrHeight: 1920,
+    useWebWorker: true,
+    initialQuality: 0.7,
+  })
+
+  return new File([blob], blob.name)
 }

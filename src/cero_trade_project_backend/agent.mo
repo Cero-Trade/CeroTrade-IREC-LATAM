@@ -1,6 +1,8 @@
 import Principal "mo:base/Principal";
 import Error "mo:base/Error";
 import Debug "mo:base/Debug";
+import Blob "mo:base/Blob";
+import Text "mo:base/Text";
 
 // canisters
 import HttpService "canister:http_service";
@@ -17,6 +19,7 @@ actor Agent {
   public shared(msg) func register(formInfo: Text) : async Text {
     // TODO just for debug
     Debug.print(Principal.toText(msg.caller));
+    Debug.print(formInfo);
 
     let uid = msg.caller;
 

@@ -2,7 +2,7 @@ import axios from "axios"
 import store from "@/store"
 import { useStorage } from "vue3-storage-secure"
 import { useTheme } from "vuetify/lib/framework.mjs"
-import { canisterImpl } from '@/services/icp-provider';
+import { formatBytes } from "@/plugins/functions"
 
 export default {
   // ? custom defines
@@ -12,6 +12,12 @@ export default {
     email: (v) => {
       const pattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
       return pattern.test(v) || 'Invalid email.'
+    },
+    limitFileSize: (v, s) => {
+      if (!v?.length) return true
+      else if (v[0].size > s) return `Max file size is ${formatBytes(s)}`
+
+      return true
     },
   },
   isProduction: process.env.NODE_ENV === 'production',

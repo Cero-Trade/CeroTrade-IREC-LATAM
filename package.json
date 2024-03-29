@@ -20,6 +20,7 @@
     "@vueuse/core": "^10.3.0",
     "apexcharts": "^3.41.1",
     "axios": "^1.4.0",
+    "browser-image-compression": "^2.0.2",
     "firebase": "^10.1.0",
     "html2canvas": "^1.4.1",
     "moment": "^2.29.4",

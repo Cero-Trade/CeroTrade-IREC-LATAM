@@ -9,7 +9,7 @@ import Error "mo:base/Error";
 import T "./types";
 
 actor class Users() = this {
-  let users: HM.HashMap<T.UID, T.UserInfo> = HM.HashMap(16, Principal.equal, Principal.hash);
+  var users: HM.HashMap<T.UID, T.UserInfo> = HM.HashMap(16, Principal.equal, Principal.hash);
 
 
   /// get size of users collection

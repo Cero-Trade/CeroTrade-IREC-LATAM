@@ -12,10 +12,22 @@
             <h5 class="mb-2">HELLO</h5>
             <p class="font300 color-grey">Please enter your company details</p>
             <v-row>
+              <v-col cols="12">
+                <label for="compnay-logo">Company logo</label>
+                <v-img-input
+                v-model="companyForm.companyLogo" id="compnay-logo" variant="solo"
+                border="1px solid #EAECF0"
+                rounded="10px"
+                sizes="120px"
+                prepend-icon=""
+                style="max-width: max-content !important;"
+                :rules="[globalRules.listRequired, () => globalRules.limitFileSize(companyForm.companyLogo, 3000000)]"
+                ></v-img-input>
+              </v-col>
               <v-col xl="6" lg="6" md="6" cols="12">
                 <label for="companey-name">Company name</label>
                 <v-text-field 
-                v-model="companyForm.name"
+                v-model="companyForm.companyName"
                 id="company-name" class="input" variant="solo" flat elevation="0" 
                 placeholder="olivia@cerotrade.com"
                 :rules="[globalRules.required]"
@@ -24,7 +36,7 @@
               <v-col xl="6" lg="6" md="6" sm="12" cols="12">
                 <label for="companey-id">Company ID</label>
                 <v-text-field 
-                v-model="companyForm.id"
+                v-model="companyForm.companyID"
                 id="company-id" class="input" variant="solo" flat elevation="0" 
                 placeholder="123456789"
                 :rules="[globalRules.required]"
@@ -129,13 +141,14 @@
                 <!-- TODO put here register method on event -->
                 <v-otp-input
                   id="otp"
+                  v-model="otp"
                   @finish="register"
                 ></v-otp-input>
               </v-col>
             </v-row>
 
             <div class="d-flex mt-4" style="gap: 10px; width: 100% !important;">
-              <v-btn class="btn" @click="windowStep--">
+              <v-btn class="btn" @click="previousStep">
                 <img src="@/assets/sources/icons/arrow-right.svg" alt="arrow-right icon" style="rotate: 180deg;">
                 Go back
               </v-btn>
@@ -166,17 +179,24 @@ const
 windowStep = ref(1),
 companyFormRef = ref(),
 companyForm = ref({
-  id: null,
-  name: null,
+  companyID: null,
+  companyName: null,
+  companyLogo: null,
   country: null,
   city: null,
   address: null,
   email: null,
-})
+}),
+otp = ref('')
 
 onBeforeMount(getData)
 
 function getData() {}
+
+function previousStep() {
+  otp.value = ''
+  windowStep.value--
+}
 
 async function nextStep() {
   const validForm = await companyFormRef.value.validate()
