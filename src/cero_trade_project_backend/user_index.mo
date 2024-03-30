@@ -8,7 +8,7 @@ import T "./types";
 import HT "./http_service/http_service_types";
 
 actor UserIndex {
-  var userDict: HM.HashMap<T.UID, T.CanisterID> = HM.HashMap(16, Principal.equal, Principal.hash);
+  let userDict: HM.HashMap<T.UID, T.CanisterID> = HM.HashMap(16, Principal.equal, Principal.hash);
 
   
   /// get size of userDict collection

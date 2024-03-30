@@ -74,6 +74,7 @@
 <script>
 import '@/assets/styles/pages/login.scss'
 import { AuthClientApi } from '@/repository/auth-client-api'
+import { useAgentCanister } from '@/services/icp-provider'
 import { ref } from 'vue'
 
 export default {
@@ -87,11 +88,19 @@ export default {
     this.logoutII()
   },
   methods: {
-    loginII() {
-      AuthClientApi.signIn(() => this.$router.push('/'))
+    async loginII() {
+      try {
+        await AuthClientApi.signIn(() => this.$router.push('/'))
+      } catch (error) {
+        this.$toast.error(error.toString())
+      }
     },
-    logoutII() {
-      AuthClientApi.signOut()
+    async logoutII() {
+      try {
+        await AuthClientApi.signOut()
+      } catch (error) {
+        this.$toast.error(error.toString())
+      }
     }
   }
 }

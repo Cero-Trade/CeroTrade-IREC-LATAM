@@ -110,8 +110,10 @@
                 ></v-text-field>
               </v-col> -->
 
-              <v-col cols="12">
-                <v-btn class="center btn2">Create Internet Identity <img src="@/assets/sources/icons/internet-computer-icon.svg" alt="IC icon" class="ic-icon"></v-btn>
+              <v-col v-if="AuthClientApi.isAnonymous()"cols="12">
+                <v-btn class="center btn2" @click="createII">
+                  Create Internet Identity <img src="@/assets/sources/icons/internet-computer-icon.svg" alt="IC icon" class="ic-icon">
+                </v-btn>
               </v-col>
 
               <v-col cols="12">
@@ -170,10 +172,14 @@ import { AgentCanister } from '@/repository/agent-canister';
 import { useRouter } from 'vue-router';
 import variables from '@/mixins/variables';
 import { useToast } from 'vue-toastification';
+import { AuthClientApi } from '@/repository/auth-client-api';
+import { useStorage } from 'vue3-storage-secure';
+import { storageSecureCollection } from '@/plugins/vue3-storage-secure'
 
 const
   router = useRouter(),
   toast = useToast(),
+  storage = useStorage(),
   { globalRules } = variables,
 
 windowStep = ref(1),
@@ -199,16 +205,34 @@ function previousStep() {
 }
 
 async function nextStep() {
+  if (AuthClientApi.isAnonymous()) return await createII()
+
   const validForm = await companyFormRef.value.validate()
   if (!validForm.valid) return;
 
   windowStep.value++
 }
 
+// TODO checkout this flow about ii creation and asociate to cero trade
+async function createII() {
+  const validForm = await companyFormRef.value.validate()
+  if (!validForm.valid) return;
+
+  try {
+    await AuthClientApi.signIn(nextStep)
+  } catch (error) {
+    this.$toast.error(error.toString())
+  }
+}
+
 async function register() {
   try {
-    const res = await AgentCanister.register(companyForm.value)
-    toast.success(res)
+    const token = await AgentCanister.register(companyForm.value)
+    storage.setSecureStorageSync(storageSecureCollection.tokenAuth, token)
+    console.log(token);
+
+    this.$router.push('/')
+    toast.success("You have registered successfuly")
   } catch (error) {
     toast.error(error)
   }

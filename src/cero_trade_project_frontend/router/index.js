@@ -1,6 +1,5 @@
 // Composables
 import { createRouter, createWebHistory } from 'vue-router'
-import { useStorage } from "vue3-storage-secure";
 import { nextTick } from 'vue'
 import { APP_NAMES } from '@/plugins/dictionary';
 import { canisterImpl } from '@/services/icp-provider';
@@ -143,7 +142,6 @@ router.beforeEach(async (to, from, next) => {
   // this route requires auth, check if logged in
   // if not, redirect to login page.
   const isAuthenticated = await AuthClientApi.isAuthenticated()
-  // const tokenAuth = useStorage().getStorageSync("tokenAuth")
   if (to.matched.some(record => record.meta.requiresAuth) && !isAuthenticated)
     return next({ name: 'Login', query: { ...canisterImpl, ...to.query } })
 

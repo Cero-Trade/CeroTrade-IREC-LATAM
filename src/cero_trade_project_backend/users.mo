@@ -4,12 +4,13 @@ import Text "mo:base/Text";
 import Debug "mo:base/Debug";
 import Nat "mo:base/Nat";
 import Error "mo:base/Error";
+import Bool "mo:base/Bool";
 
 // types
 import T "./types";
 
 actor class Users() = this {
-  var users: HM.HashMap<T.UID, T.UserInfo> = HM.HashMap(16, Principal.equal, Principal.hash);
+  let users: HM.HashMap<T.UID, T.UserInfo> = HM.HashMap(16, Principal.equal, Principal.hash);
 
 
   /// get size of users collection
@@ -39,6 +40,14 @@ actor class Users() = this {
     switch (users.get(uid)) {
       case (null) { throw Error.reject("User not found"); };
       case (?info) { return info.vaultToken; };
+    };
+  };
+
+  /// validate current token
+  public query func validateToken(uid: T.UID, token: Text): async Bool {
+    switch (users.get(uid)) {
+      case (null) { throw Error.reject("User not found"); };
+      case (?info) { return info.vaultToken == token; };
     };
   };
 

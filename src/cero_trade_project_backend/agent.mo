@@ -15,6 +15,11 @@ import HT "./http_service/http_service_types";
 
 actor Agent {
 
+  /// method to validate current token
+  public shared(msg) func validateToken(token: Text) : async Bool {
+    await Users.validateToken(msg.caller, token);
+  };
+
   /// register user into cero trade
   public shared(msg) func register(formInfo: Text) : async Text {
     // TODO just for debug
@@ -37,7 +42,7 @@ actor Agent {
       // register user index
       await UserIndex.registerUser(uid, cid);
 
-      "You have registered successfuly";
+      token
     } catch (error) {
       throw Error.reject(Error.message(error));
     };
