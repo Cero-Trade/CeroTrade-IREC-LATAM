@@ -110,9 +110,10 @@
                 ></v-text-field>
               </v-col> -->
 
-              <v-col v-if="AuthClientApi.isAnonymous()"cols="12">
+              <v-col cols="12">
                 <v-btn class="center btn2" @click="createII">
-                  Create Internet Identity <img src="@/assets/sources/icons/internet-computer-icon.svg" alt="IC icon" class="ic-icon">
+                  {{ AuthClientApi.isAnonymous() ? 'Create Internet Identity ' : 'Change Internet Identity ' }}
+                  <img src="@/assets/sources/icons/internet-computer-icon.svg" alt="IC icon" class="ic-icon">
                 </v-btn>
               </v-col>
 
@@ -215,9 +216,6 @@ async function nextStep() {
 
 // TODO checkout this flow about ii creation and asociate to cero trade
 async function createII() {
-  const validForm = await companyFormRef.value.validate()
-  if (!validForm.valid) return;
-
   try {
     await AuthClientApi.signIn(nextStep)
   } catch (error) {
