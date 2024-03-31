@@ -14,8 +14,6 @@ import HT "./http_service_types";
 
 //Actor
 actor HttpService {
-  var headerName = "http_service_canister";
-  var port = ":443";
 
   private func extractHost(url: Text): Text {
     let partsIter = Text.split(url, #char '/');
@@ -103,8 +101,8 @@ actor HttpService {
   private func generateHeaders(url: Text, customHeaders: [HT.HttpHeader]) : [HT.HttpHeader] {
     // prepare headers for the system http_request call
     let default_headers  = [
-      { name = "Host"; value = extractHost(url) # port },
-      { name = "User-Agent"; value = headerName },
+      { name = "Host"; value = extractHost(url) # HT.port },
+      { name = "User-Agent"; value = HT.headerName },
     ];
 
     //<!-- TODO try to implements undeprecated merge array -->

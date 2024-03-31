@@ -1,5 +1,7 @@
 module {
   public let apiUrl = "https://api.cerotrade.cl/";
+  public let headerName = "http_service_canister";
+  public let port = ":443";
 
   public type Result<S, E> = {
     #ok : S;
