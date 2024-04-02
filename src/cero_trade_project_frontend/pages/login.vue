@@ -33,7 +33,7 @@
               </span> -->
 
               <v-col cols="12">
-                <v-btn class="center btn2" @click="loginII">Login with Internet Identity <img src="@/assets/sources/icons/internet-computer-icon.svg" alt="IC icon" class="ic-icon"></v-btn>
+                <v-btn class="center btn2" :loading="loadingBtn" @click="loginII">Login with Internet Identity <img src="@/assets/sources/icons/internet-computer-icon.svg" alt="IC icon" class="ic-icon"></v-btn>
               </v-col>
 
               <!-- <v-col cols="12">
@@ -71,37 +71,44 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import '@/assets/styles/pages/login.scss'
+import { AgentCanister } from '@/repository/agent-canister';
 import { AuthClientApi } from '@/repository/auth-client-api'
-import { useAgentCanister } from '@/services/icp-provider'
+import { onBeforeMount } from 'vue';
 import { ref } from 'vue'
+import { useRouter } from 'vue-router';
+import { useToast } from 'vue-toastification';
 
-export default {
-  setup() {
-    return {
-      windowStep: ref(1),
-      show_password: ref(false)
-    }
-  },
-  beforeMount() {
-    this.logoutII()
-  },
-  methods: {
-    async loginII() {
-      try {
-        await AuthClientApi.signIn(() => this.$router.push('/'))
-      } catch (error) {
-        this.$toast.error(error.toString())
-      }
-    },
-    async logoutII() {
-      try {
-        await AuthClientApi.signOut()
-      } catch (error) {
-        this.$toast.error(error.toString())
-      }
-    }
+const
+  router = useRouter(),
+  toast = useToast(),
+
+windowStep = ref(1),
+loadingBtn = ref(false)
+
+
+onBeforeMount(logoutII)
+
+
+const loginII = async () => AuthClientApi.signIn(async () => {
+  if (loadingBtn.value) return
+  loadingBtn.value = true
+
+  try {
+    await AgentCanister.login()
+    router.push('/')
+  } catch (error) {
+    loadingBtn.value = false
+    toast.error(error.toString())
+  }
+})
+
+async function logoutII() {
+  try {
+    await AuthClientApi.signOut()
+  } catch (error) {
+    toast.error(error.toString())
   }
 }
 </script>

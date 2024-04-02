@@ -10,19 +10,14 @@ import UserIndex "canister:user_index";
 import Users "canister:users";
 
 // types
-import T "./types";
-import HT "./http_service/http_service_types";
+import T "../types";
+import HT "../http_service/http_service_types";
 
 actor Agent {
 
-  /// method to validate current token
-  public shared(msg) func validateToken(token: Text) : async Bool {
-    await Users.validateToken(msg.caller, token);
-  };
-
   /// register user into cero trade
-  public shared(msg) func register(formInfo: Text) : async Text {
-    // TODO just for debug
+  public shared(msg) func register(formInfo: Text): async() {
+    // WARN just for debug
     Debug.print(Principal.toText(msg.caller));
     Debug.print(formInfo);
 
@@ -41,10 +36,18 @@ actor Agent {
 
       // register user index
       await UserIndex.registerUser(uid, cid);
-
-      token
     } catch (error) {
       throw Error.reject(Error.message(error));
     };
+  };
+
+
+  /// login user into cero trade
+  public shared(msg) func login(): async() {
+    // WARN just for debug
+    Debug.print(Principal.toText(msg.caller));
+
+    let exists: Bool = await Users.checkPrincipal(msg.caller);
+    if (exists == false) throw Error.reject("User doesn't exists on cero trade");
   }
 }

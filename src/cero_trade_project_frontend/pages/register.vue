@@ -111,14 +111,14 @@
               </v-col> -->
 
               <v-col cols="12">
-                <v-btn class="center btn2" @click="createII">
+                <v-btn class="center btn2" :disabled="loadingBtn" @click="createII">
                   {{ AuthClientApi.isAnonymous() ? 'Create Internet Identity ' : 'Change Internet Identity ' }}
                   <img src="@/assets/sources/icons/internet-computer-icon.svg" alt="IC icon" class="ic-icon">
                 </v-btn>
               </v-col>
 
               <v-col cols="12">
-                <v-btn class="center btn" @click="nextStep">
+                <v-btn class="center btn" :loading="loadingBtn" @click="nextStep">
                   Create account
                   <img src="@/assets/sources/icons/arrow-right.svg" alt="arrow-right icon">
                 </v-btn>
@@ -141,7 +141,6 @@
             <v-row>
               <v-col cols="12" class="jstart astart divcol">
                 <label for="otp" style="font-weight: 700; color: #000;">Secure Code</label>
-                <!-- TODO put here register method on event -->
                 <v-otp-input
                   id="otp"
                   v-model="otp"
@@ -174,13 +173,10 @@ import { useRouter } from 'vue-router';
 import variables from '@/mixins/variables';
 import { useToast } from 'vue-toastification';
 import { AuthClientApi } from '@/repository/auth-client-api';
-import { useStorage } from 'vue3-storage-secure';
-import { storageSecureCollection } from '@/plugins/vue3-storage-secure'
 
 const
   router = useRouter(),
   toast = useToast(),
-  storage = useStorage(),
   { globalRules } = variables,
 
 windowStep = ref(1),
@@ -194,7 +190,8 @@ companyForm = ref({
   address: null,
   email: null,
 }),
-otp = ref('')
+otp = ref(''),
+loadingBtn = ref(false)
 
 onBeforeMount(getData)
 
@@ -211,10 +208,10 @@ async function nextStep() {
   const validForm = await companyFormRef.value.validate()
   if (!validForm.valid) return;
 
-  windowStep.value++
+  await register()
+  // windowStep.value++
 }
 
-// TODO checkout this flow about ii creation and asociate to cero trade
 async function createII() {
   try {
     await AuthClientApi.signIn(nextStep)
@@ -224,14 +221,16 @@ async function createII() {
 }
 
 async function register() {
-  try {
-    const token = await AgentCanister.register(companyForm.value)
-    storage.setSecureStorageSync(storageSecureCollection.tokenAuth, token)
-    console.log(token);
+  if (loadingBtn.value) return
+  loadingBtn.value = true
 
-    this.$router.push('/')
+  try {
+    await AgentCanister.register(companyForm.value)
+
+    router.push('/')
     toast.success("You have registered successfuly")
   } catch (error) {
+    loadingBtn.value = false
     toast.error(error)
   }
 }

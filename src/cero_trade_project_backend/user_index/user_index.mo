@@ -4,7 +4,7 @@ import Text "mo:base/Text";
 import Error "mo:base/Error";
 
 // types
-import T "./types";
+import T "../types";
 
 actor UserIndex {
   let userDict: HM.HashMap<T.UID, T.CanisterID> = HM.HashMap(16, Principal.equal, Principal.hash);

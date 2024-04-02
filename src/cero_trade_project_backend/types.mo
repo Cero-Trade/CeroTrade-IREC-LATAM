@@ -7,25 +7,30 @@ import Blob "mo:base/Blob";
 import Principal "mo:base/Principal";
 import TrieMap "mo:base/TrieMap";
 import Int "mo:base/Int";
+import Text "mo:base/Text";
+import Error "mo:base/Error";
 
 module {
   public type UID = Principal;
   public type CanisterID = Principal;
 
   public type UserInfo = {
-    userID: Nat;
     vaultToken: Text;
     principal: Principal;
+    ledger: Text;
     redemptions: [RedemInfo];
     portfolio: [TokenList];
     transactions: [TransactionInfo];
   };
 
-  public func createUserInfo(uid: UID, token: Text, id: Nat): UserInfo {
+  public func createUserInfo(uid: UID, token: Text, ledger: Blob): async UserInfo {
     {
-      userID = id;
       vaultToken = token;
       principal = uid;
+      ledger = switch(Text.decodeUtf8(ledger)) {
+        case(?value) value;
+        case(null) { throw Error.reject("ledger not valid") };
+      };
       redemptions = [];
       portfolio = [];
       transactions = [];
@@ -39,7 +44,7 @@ module {
     let portfolio = "[]";
     let transactions = "[]";
 
-    "{ \"userID\": \"" # Nat.toText(userInfo.userID) # "\", \"vaultToken\": \"" # userInfo.vaultToken # "\", \"principal\": \"" # principalText # "\", \"redemptions\": \"" # redemptions # "\", \"portfolio\": \"" # portfolio # "\", \"transactions\": \"" # transactions # "\" }";
+    "\", \"vaultToken\": \"" # userInfo.vaultToken # "\", \"principal\": \"" # principalText # "\", \"redemptions\": \"" # redemptions # "\", \"portfolio\": \"" # portfolio # "\", \"transactions\": \"" # transactions # "\" }";
   };
 
 
