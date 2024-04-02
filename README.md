@@ -65,3 +65,6 @@ https://internetcomputer.org/docs/current/developer-docs/setup/cycles/cycles-fau
 
 #### Mainnet deploy
 https://internetcomputer.org/docs/current/developer-docs/setup/deploy-mainnet
+
+### Mops site url
+https://mops.one/
