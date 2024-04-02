@@ -23,6 +23,9 @@ actor Agent {
 
     let uid = msg.caller;
 
+    let exists: Bool = await Users.checkPrincipal(uid);
+    if (exists == true) throw Error.reject("User already exists on cero trade");
+
     try {
       // tokenize userInfo in web2 backend
       let token = await HttpService.post(HT.apiUrl # "api/user/store", {
