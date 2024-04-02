@@ -35,6 +35,10 @@
               <v-col cols="12">
                 <v-btn class="center btn2" :loading="loadingBtn" @click="loginII">Login with Internet Identity <img src="@/assets/sources/icons/internet-computer-icon.svg" alt="IC icon" class="ic-icon"></v-btn>
               </v-col>
+              
+              <v-col cols="12">
+                <v-btn class="center btn" :loading="loadingBtn" @click="router.push('/auth/register')">Register account</v-btn>
+              </v-col>
 
               <!-- <v-col cols="12">
                 <v-btn class="center btn" @click="windowStep = 2; $router.push('/dashboard')">Log in <v-icon style="margin-bottom: -3px; margin-left: 5px;">mdi-login</v-icon></v-btn>

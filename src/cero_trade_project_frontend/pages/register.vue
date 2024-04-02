@@ -6,9 +6,14 @@
       <v-window-item :value="1">
         <v-form ref="companyFormRef" class="container-windows-step" @submit.prevent="nextStep">
           <v-card class="card card-register">
-            <v-sheet class="sheet-img mb-6">
-              <img src="@/assets/sources/icons/logo.svg" alt="Logo" class="img-logo">
-            </v-sheet>
+            <div class="d-flex align-center mb-6" style="gap: 5px;">
+              <v-btn icon style="width: 25px; height: 25px; background: transparent !important" elevation="0" to="/auth/login">
+                <v-icon>mdi-chevron-left</v-icon>
+              </v-btn>
+              <v-sheet class="sheet-img">
+                <img src="@/assets/sources/icons/logo.svg" alt="Logo" class="img-logo">
+              </v-sheet>
+            </div>
             <h5 class="mb-2">HELLO</h5>
             <p class="font300 color-grey">Please enter your company details</p>
             <v-row>
@@ -124,6 +129,11 @@
                 </v-btn>
               </v-col>
             </v-row>
+
+            <div class="d-flex align-center justify-center mt-10" style="gap: 5px;">
+              <span>i have an account </span>
+              <a class="text-tertiary wbold pointer" @click="router.push('/auth/login')">Go login</a>
+            </div>
           </v-card>
         </v-form>
       </v-window-item>
@@ -203,10 +213,10 @@ function previousStep() {
 }
 
 async function nextStep() {
-  if (AuthClientApi.isAnonymous()) return await createII()
-
   const validForm = await companyFormRef.value.validate()
   if (!validForm.valid) return;
+
+  if (AuthClientApi.isAnonymous()) return await createII()
 
   await register()
   // windowStep.value++
