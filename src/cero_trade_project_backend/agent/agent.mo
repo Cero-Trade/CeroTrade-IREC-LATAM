@@ -24,7 +24,7 @@ actor Agent {
     let uid = msg.caller;
 
     let exists: Bool = await Users.checkPrincipal(uid);
-    if (exists == true) throw Error.reject("User already exists on cero trade");
+    if (exists) throw Error.reject("User already exists on cero trade");
 
     try {
       // tokenize userInfo in web2 backend
@@ -51,6 +51,6 @@ actor Agent {
     Debug.print(Principal.toText(msg.caller));
 
     let exists: Bool = await Users.checkPrincipal(msg.caller);
-    if (exists == false) throw Error.reject("User doesn't exists on cero trade");
+    if (not exists) throw Error.reject("User doesn't exists on cero trade");
   }
 }
