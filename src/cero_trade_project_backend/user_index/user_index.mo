@@ -7,22 +7,22 @@ import Error "mo:base/Error";
 import T "../types";
 
 actor UserIndex {
-  let userDict: HM.HashMap<T.UID, T.CanisterID> = HM.HashMap(16, Principal.equal, Principal.hash);
+  let usersLocation: HM.HashMap<T.UID, T.CanisterID> = HM.HashMap(16, Principal.equal, Principal.hash);
 
-  
-  /// get size of userDict collection
+
+  /// get size of usersLocation collection
   public query func length(): async Nat {
-    userDict.size();
+    usersLocation.size();
   };
 
-  /// register [userDict] collection
+  /// register [usersLocation] collection
   public func registerUser(uid: T.UID, cid: T.CanisterID) : async() {
-    userDict.put(uid, cid);
+    usersLocation.put(uid, cid);
   };
 
   /// get canister id that allow current user
   public query func getUserCanister(uid: T.UID) : async T.CanisterID {
-    switch (userDict.get(uid)) {
+    switch (usersLocation.get(uid)) {
       case (null) { throw Error.reject("User not found"); };
       case (?cid) { return cid; };
     };
