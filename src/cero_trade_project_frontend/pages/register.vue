@@ -8,7 +8,7 @@
           <v-card class="card card-register">
             <div class="d-flex align-center mb-6" style="gap: 5px;">
               <v-btn icon style="width: 25px; height: 25px; background: transparent !important" elevation="0" to="/auth/login">
-                <v-icon>mdi-chevron-left</v-icon>
+                <img src="@/assets/sources/icons/arrow-left.svg" alt="arrow left">
               </v-btn>
               <v-sheet class="sheet-img">
                 <img src="@/assets/sources/icons/logo.svg" alt="Logo" class="img-logo">
