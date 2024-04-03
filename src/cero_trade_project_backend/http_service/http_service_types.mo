@@ -1,7 +1,19 @@
+import Error "mo:base/Error";
+import Nat "mo:base/Nat";
+
 module {
   public let apiUrl = "https://api.cerotrade.cl/";
   public let headerName = "http_service_canister";
   public let port = ":443";
+
+  public type HttpError = {
+    status : Nat;
+    body : Text;
+  };
+
+  public func httpError(http_error: HttpError): Error {
+    Error.reject("Http status: " # Nat.toText(http_error.status) # "\n" # "Http body: " # http_error.body)
+  };
 
   public type Result<S, E> = {
     #ok : S;

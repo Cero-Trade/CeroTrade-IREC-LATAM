@@ -24,6 +24,8 @@ actor class Users() = this {
   /// register user to cero trade
   public func registerUser(uid: T.UID, token: Text): async T.CanisterID {
     let userLedger = AccountIdentifier.accountIdentifier(uid, AccountIdentifier.defaultSubaccount());
+    Debug.print(debug_show (userLedger));
+
     let userInfo = await T.createUserInfo(uid, token, userLedger);
 
     users.put(uid, userInfo);

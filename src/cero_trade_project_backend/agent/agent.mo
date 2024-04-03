@@ -28,11 +28,11 @@ actor Agent {
 
     try {
       // tokenize userInfo in web2 backend
-      let token = await HttpService.post(HT.apiUrl # "api/user/store", {
+      let token = await HttpService.post(HT.apiUrl # "users/store", {
           headers = [];
           bodyJson = "{\"principal\":\"" # Principal.toText(uid) # "\",\"userInfo\":\"" # formInfo # "\"}"
         });
-      Debug.print(token);
+      Debug.print("token: " # token);
 
       // register user
       let cid = await Users.registerUser(uid, token);

@@ -113,7 +113,6 @@ actor HttpService {
 
   private func sendRequest(request: HT.HttpRequestArgs) : async Text {
     // DECLARE MANAGEMENT CANISTER
-    //You need this so you can use it to make the HTTP request
     let ic : HT.IC = actor ("aaaaa-aa");
 
     // ADD CYCLES TO PAY FOR HTTP REQUEST
@@ -151,6 +150,12 @@ actor HttpService {
     let decoded_text: Text = switch (Text.decodeUtf8(response_body)) {
         case (null) { "No value returned" };
         case (?y) { y };
+    };
+
+    // CHECK THE STATUS OF THE RESPONSE
+    // If the status is not in the range 200-299, it indicates an error.
+    if (http_response.status < 200 or http_response.status > 299) {
+      throw HT.httpError({ status = http_response.status; body = decoded_text });
     };
 
     decoded_text

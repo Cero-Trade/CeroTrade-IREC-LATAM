@@ -1,5 +1,5 @@
 import { fileCompression, getImageArrayBuffer } from "@/plugins/functions";
-import { useAgentCanister as agent, getErrorMessage } from "@/services/icp-provider";
+import { useAgentCanister as agent, getCanisterRejectCode, getErrorMessage, getStatusCode } from "@/services/icp-provider";
 
 export class AgentCanister {
   static async register(data: {
@@ -18,7 +18,12 @@ export class AgentCanister {
 
       await agent().register(userForm)
     } catch (error) {
-      console.error(error);
+      console.log({
+        error: getStatusCode(error),
+        message: getErrorMessage(error),
+        reject: getCanisterRejectCode(error)
+      });
+
       throw getErrorMessage(error)
     }
   }

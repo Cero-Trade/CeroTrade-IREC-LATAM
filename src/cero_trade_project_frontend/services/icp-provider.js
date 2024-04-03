@@ -29,9 +29,27 @@ export const createActor = (canisterId, idlFactory, options) => {
   });
 }
 
-export const getErrorStatus = (error) => Number(error.message.split('Reject code: ')[1].split('Reject text: ')[0].trim())
+// default texts
+const rejectCode = 'Reject code: ',
+rejectText = 'Reject text: ',
+httpStatus = 'Http status: ',
+httpBody = 'Http body: '
 
-export const getErrorMessage = (error) => error.message.split('Reject text: ')[1].trim()
+export const getCanisterRejectCode = (error) => Number(error.message.split(rejectCode)[1].split(rejectText)[0].trim())
+
+export const getStatusCode = (error) => {
+  const message = error.message.split(rejectText)[1].trim()
+  if (!message.includes(httpStatus)) return null
+
+  return Number(message.split(httpStatus)[1].split(httpBody)[0].trim())
+}
+
+export const getErrorMessage = (error) => {
+  const message = error.message.split(rejectText)[1].trim()
+  if (!message.includes(httpBody)) return message
+
+  return message.split(httpBody)[1].trim()
+}
 
 
 export const useAgentCanister = () => createActor(agentCanister.canisterId, agentCanister.idlFactory)
