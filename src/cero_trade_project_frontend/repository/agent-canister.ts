@@ -1,9 +1,9 @@
 import { fileCompression, getImageArrayBuffer } from "@/plugins/functions";
-import { useAgentCanister as agent, getCanisterRejectCode, getErrorMessage, getStatusCode } from "@/services/icp-provider";
+import { useAgentCanister as agent, getErrorMessage } from "@/services/icp-provider";
 
 export class AgentCanister {
   static async register(data: {
-    companyID: string,
+    companyId: string,
     companyName: string,
     companyLogo: [File],
     country: string,
@@ -12,18 +12,31 @@ export class AgentCanister {
     email: string,
   }): Promise<void> {
     try {
+      // store user
+      await agent().register({
+        companyId: data.companyId,
+        companyName: data.companyName,
+        country: data.country,
+        city: data.city,
+        address: data.address,
+        email: data.email,
+      })
+
+      // store user company logo
       const fileCompressed = await fileCompression(data.companyLogo[0]),
-      arrayBuffer = await getImageArrayBuffer(fileCompressed),
-      userForm = JSON.stringify({...data, companyLogo: arrayBuffer})
-
-      await agent().register(userForm)
+      arrayBuffer = await getImageArrayBuffer(fileCompressed)
+      await AgentCanister.storeCompanyLogo(arrayBuffer)
     } catch (error) {
-      console.log({
-        error: getStatusCode(error),
-        message: getErrorMessage(error),
-        reject: getCanisterRejectCode(error)
-      });
-
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+  
+  static async storeCompanyLogo(companyLogo: Blob): Promise<void> {
+    try {
+      await agent().storeCompanyLogo(companyLogo)
+    } catch (error) {
+      console.error(error);
       throw getErrorMessage(error)
     }
   }

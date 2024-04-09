@@ -41,7 +41,7 @@
               <v-col xl="6" lg="6" md="6" sm="12" cols="12">
                 <label for="companey-id">Company ID</label>
                 <v-text-field 
-                v-model="companyForm.companyID"
+                v-model="companyForm.companyId"
                 id="company-id" class="input" variant="solo" flat elevation="0" 
                 placeholder="123456789"
                 :rules="[globalRules.required]"
@@ -192,7 +192,7 @@ const
 windowStep = ref(1),
 companyFormRef = ref(),
 companyForm = ref({
-  companyID: null,
+  companyId: null,
   companyName: null,
   companyLogo: null,
   country: null,

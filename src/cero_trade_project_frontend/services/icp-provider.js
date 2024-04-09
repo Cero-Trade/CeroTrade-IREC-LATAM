@@ -35,16 +35,24 @@ rejectText = 'Reject text: ',
 httpStatus = 'Http status: ',
 httpBody = 'Http body: '
 
-export const getCanisterRejectCode = (error) => Number(error.message.split(rejectCode)[1].split(rejectText)[0].trim())
+export const getCanisterRejectCode = (error) => {
+  if (!error.message.includes(rejectCode)) return error.message
+
+  return Number(error.message.split(rejectCode)[1].split(rejectText)[0].trim())
+}
 
 export const getStatusCode = (error) => {
+  if (!error.message.includes(rejectText)) return error.message
+
   const message = error.message.split(rejectText)[1].trim()
-  if (!message.includes(httpStatus)) return null
+  if (!message.includes(httpStatus)) return error.message
 
   return Number(message.split(httpStatus)[1].split(httpBody)[0].trim())
 }
 
 export const getErrorMessage = (error) => {
+  if (!error.message.includes(rejectText)) return error.message
+
   const message = error.message.split(rejectText)[1].trim()
   if (!message.includes(httpBody)) return message
 

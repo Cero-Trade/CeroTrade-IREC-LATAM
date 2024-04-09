@@ -49,60 +49,12 @@ actor HttpService {
     transformed;
   };
 
-
-  public func get(url: Text, args: { headers: [HT.HttpHeader]; }) : async Text {
-    // SETUP ARGUMENTS FOR HTTP GET request
-
-    // Transform context
-    let transform_context : HT.TransformContext = {
-      function = transform;
-      context = Blob.fromArray([]);
-    };
-
-    // The HTTP request
-    let http_request : HT.HttpRequestArgs = {
-      url = url;
-      max_response_bytes = null; //optional for request
-      headers = generateHeaders(url, args.headers);
-      body = null; //optional for request
-      method = #get;
-      transform = ?transform_context;
-    };
-
-    await sendRequest(http_request)
-  };
-
-
-  public func post(url: Text, args: { headers: [HT.HttpHeader]; bodyJson: Text }) : async Text {
-    // SETUP ARGUMENTS FOR HTTP GET request
-
-    // Transform context
-    let transform_context : HT.TransformContext = {
-      function = transform;
-      context = Blob.fromArray([]);
-    };
-
-    let request_body_as_Blob: Blob = Text.encodeUtf8(args.bodyJson);
-    let request_body_as_nat8: [Nat8] = Blob.toArray(request_body_as_Blob);
-
-    // The HTTP request
-    let http_request : HT.HttpRequestArgs = {
-      url = url;
-      max_response_bytes = null; //optional for request
-      headers = generateHeaders(url, args.headers);
-      body = ?request_body_as_nat8; //provide body for POST request
-      method = #post;
-      transform = ?transform_context;
-    };
-
-    await sendRequest(http_request)
-  };
-
   private func generateHeaders(url: Text, customHeaders: [HT.HttpHeader]) : [HT.HttpHeader] {
     // prepare headers for the system http_request call
     let default_headers  = [
       { name = "Host"; value = extractHost(url) # HT.port },
       { name = "User-Agent"; value = HT.headerName },
+      { name = "Content-Type"; value = "application/json" },
     ];
 
     //<!-- TODO try to implements undeprecated merge array -->
@@ -148,8 +100,8 @@ actor HttpService {
     //  3. You use a switch to explicitly call out both cases of decoding the Blob into ?Text
     let response_body: Blob = Blob.fromArray(http_response.body);
     let decoded_text: Text = switch (Text.decodeUtf8(response_body)) {
-        case (null) { "No value returned" };
-        case (?y) { y };
+      case (null) "No value returned";
+      case (?y) y;
     };
 
     // CHECK THE STATUS OF THE RESPONSE
@@ -159,5 +111,54 @@ actor HttpService {
     };
 
     decoded_text
-  }
+  };
+
+
+  public func get(url: Text, args: { headers: [HT.HttpHeader]; }) : async Text {
+    // SETUP ARGUMENTS FOR HTTP GET request
+
+    // Transform context
+    let transform_context : HT.TransformContext = {
+      function = transform;
+      context = Blob.fromArray([]);
+    };
+
+    // The HTTP request
+    let http_request : HT.HttpRequestArgs = {
+      url = url;
+      max_response_bytes = null; //optional for request
+      headers = generateHeaders(url, args.headers);
+      body = null; //optional for request
+      method = #get;
+      transform = ?transform_context;
+    };
+
+    await sendRequest(http_request)
+  };
+
+
+  public func post(url: Text, args: { headers: [HT.HttpHeader]; bodyJson: Text }) : async Text {
+    // SETUP ARGUMENTS FOR HTTP POST request
+
+    // Transform context
+    let transform_context : HT.TransformContext = {
+      function = transform;
+      context = Blob.fromArray([]);
+    };
+
+    let request_body_as_Blob: Blob = Text.encodeUtf8(args.bodyJson);
+    let request_body_as_nat8: [Nat8] = Blob.toArray(request_body_as_Blob);
+
+    // The HTTP request
+    let http_request : HT.HttpRequestArgs = {
+      url = url;
+      max_response_bytes = null; //optional for request
+      headers = generateHeaders(url, args.headers);
+      body = ?request_body_as_nat8; //provide body for POST request
+      method = #post;
+      transform = ?transform_context;
+    };
+
+    await sendRequest(http_request)
+  };
 };

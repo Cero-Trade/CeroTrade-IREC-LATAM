@@ -37,7 +37,7 @@
               </v-col>
               
               <v-col cols="12">
-                <v-btn class="center btn" :loading="loadingBtn" @click="router.push('/auth/register')">Register account</v-btn>
+                <v-btn class="center btn" :disabled="loadingBtn" @click="router.push('/auth/register')">Register account</v-btn>
               </v-col>
 
               <!-- <v-col cols="12">

@@ -12,7 +12,7 @@ npm install
 # generate declarations
 dfx generate
 
-cp src/declarations/user/* .dfx/local/canisters/user/
+cp src/declarations/users/* .dfx/local/canisters/users/
 cp src/declarations/user_index/* .dfx/local/canisters/user_index/
 cp src/declarations/token/* .dfx/local/canisters/token/
 cp src/declarations/token_index/* .dfx/local/canisters/token_index/
@@ -22,12 +22,18 @@ cp src/declarations/http_service/* .dfx/local/canisters/http_service/
 
 # deploy canisters
 dfx deploy
+
+# reinstall token canister using [canister_id] and requested [token_id]
+dfx canister install canister_id --argument '(opt "token_id")' --mode reinstall
+
+# initialize token canister from token_index
+dfx canister call token_index initToken '("token_id")'
 ```
 
 ### Deploying only backend canisters
 
 ```
-dfx deploy user
+dfx deploy users
 dfx deploy user_index
 dfx deploy token
 dfx deploy token_index
