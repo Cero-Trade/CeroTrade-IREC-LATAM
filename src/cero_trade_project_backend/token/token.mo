@@ -6,7 +6,7 @@ import Nat "mo:base/Nat";
 
 // canisters
 import HttpService "canister:http_service";
-import Users "canister:users";
+import UserIndex "canister:user_index";
 
 // types
 import ICRC "../ICRC";
@@ -87,7 +87,7 @@ actor class Token(_tokenId: ?T.TokenId) = this {
     };
     irecs.put(uid, mintedAmount);
 
-    await Users.updatePorfolio(uid, {
+    await UserIndex.updatePorfolio(uid, {
       tokenId = tokenId;
       assetInfo = await getAssetInfo();
       totalAmount = amount;
@@ -104,7 +104,7 @@ actor class Token(_tokenId: ?T.TokenId) = this {
 
     irecs.put(uid, burnedAmount);
 
-    await Users.updatePorfolio(uid, {
+    await UserIndex.updatePorfolio(uid, {
       tokenId = tokenId;
       assetInfo = await getAssetInfo();
       totalAmount = amount;

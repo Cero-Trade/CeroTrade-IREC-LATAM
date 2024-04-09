@@ -9,6 +9,9 @@ dfx start
 # install dependencies
 npm install
 
+# install mops dependencies if havent
+npm i -g ic-mops
+
 # generate declarations
 dfx generate
 

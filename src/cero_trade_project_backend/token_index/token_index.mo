@@ -14,9 +14,7 @@ actor TokenIndex {
 
 
   /// get size of tokenLocation collection
-  public query func length(): async Nat {
-    tokenLocation.size();
-  };
+  public query func length(): async Nat { tokenLocation.size() };
 
 
   /// register [tokenLocation] collection

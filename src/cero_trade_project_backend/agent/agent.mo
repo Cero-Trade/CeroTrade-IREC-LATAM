@@ -10,7 +10,6 @@ import Serde "mo:serde";
 // canisters
 import HttpService "canister:http_service";
 import UserIndex "canister:user_index";
-import Users "canister:users";
 import TokenIndex "canister:token_index";
 
 // types
@@ -26,7 +25,7 @@ actor Agent {
     // WARN just for debug
     Debug.print(Principal.toText(caller));
 
-    let exists: Bool = await Users.checkPrincipal(caller);
+    let exists: Bool = await UserIndex.checkPrincipal(caller);
     if (exists) throw Error.reject(alreadyExists);
 
     try {
@@ -56,11 +55,8 @@ actor Agent {
       // WARN just for debug
       Debug.print("token: " # token);
 
-      // register user
-      let cid = await Users.registerUser(caller, trimmedToken);
-
       // register user index
-      await UserIndex.registerUser(caller, cid);
+      await UserIndex.registerUser(caller, trimmedToken);
     } catch (error) {
       throw Error.reject(Error.message(error));
     };
@@ -69,11 +65,8 @@ actor Agent {
 
   /// store user avatar into users collection
   public shared({ caller }) func storeCompanyLogo(avatar: [Nat8]): async() {
-    let exists: Bool = await Users.checkPrincipal(caller);
-    if (not exists) throw Error.reject(notExists);
-
     try {
-      await Users.storeCompanyLogo(caller, avatar);
+      await UserIndex.storeCompanyLogo(caller, avatar);
     } catch (error) {
       throw Error.reject(Error.message(error));
     };
@@ -85,14 +78,14 @@ actor Agent {
     // WARN just for debug
     Debug.print(Principal.toText(caller));
 
-    let exists: Bool = await Users.checkPrincipal(caller);
+    let exists: Bool = await UserIndex.checkPrincipal(caller);
     if (not exists) throw Error.reject(notExists);
   };
 
 
   /// performe mint with tokenId and amount requested
   public shared({ caller }) func mintToken(tokenId: T.TokenId, amount: Nat): async() {
-    let exists: Bool = await Users.checkPrincipal(caller);
+    let exists: Bool = await UserIndex.checkPrincipal(caller);
     if (not exists) throw Error.reject(notExists);
 
     await TokenIndex.mintToken(caller, tokenId, amount);
