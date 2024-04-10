@@ -18,6 +18,9 @@ actor UserIndex {
   /// get size of usersLocation collection
   public query func length(): async Nat { usersLocation.size() };
 
+  /// validate user existence (privated)
+  private func _checkPrincipal(uid: T.UID) : Bool { usersLocation.get(uid) != null };
+
   /// validate user existence
   public query func checkPrincipal(uid: T.UID) : async Bool { usersLocation.get(uid) != null };
 
@@ -32,7 +35,7 @@ actor UserIndex {
 
   /// store user avatar into users collection
   public func storeCompanyLogo(uid: T.UID, avatar: [Nat8]): async() {
-    let exists: Bool = await checkPrincipal(uid);
+    let exists: Bool = _checkPrincipal(uid);
     if (not exists) throw Error.reject(notExists);
 
     try {

@@ -89,5 +89,5 @@ actor Agent {
     if (not exists) throw Error.reject(notExists);
 
     await TokenIndex.mintToken(caller, tokenId, amount);
-  }
+  };
 }

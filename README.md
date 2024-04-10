@@ -11,6 +11,7 @@ npm install
 
 # install mops dependencies if havent
 npm i -g ic-mops
+mops install
 
 # generate declarations
 dfx generate
