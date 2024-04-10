@@ -11,7 +11,11 @@ npm install
 
 # install mops dependencies if havent
 npm i -g ic-mops
-mops install
+mops add base
+mops add account-identifier
+mops add serde
+mops add datetime
+
 
 # generate declarations
 dfx generate
