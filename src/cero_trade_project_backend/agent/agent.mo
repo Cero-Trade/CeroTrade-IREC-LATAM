@@ -83,6 +83,10 @@ actor Agent {
   };
 
 
+  /// delete user into cero trade
+  public shared({ caller }) func deleteUser(): async() { await UserIndex.deleteUser(caller) };
+
+
   /// performe mint with tokenId and amount requested
   public shared({ caller }) func mintToken(tokenId: T.TokenId, amount: Nat): async() {
     let exists: Bool = await UserIndex.checkPrincipal(caller);
@@ -90,4 +94,12 @@ actor Agent {
 
     await TokenIndex.mintToken(caller, tokenId, amount);
   };
+  
+
+  /// get profile information
+  public shared({ caller }) func getProfile(): async T.UserProfile { await UserIndex.getProfile(caller) };
+
+
+  /// get portfolio information
+  public shared({ caller }) func getPortfolio(): async [T.TokenInfo] { await UserIndex.getPortfolio(caller) };
 }

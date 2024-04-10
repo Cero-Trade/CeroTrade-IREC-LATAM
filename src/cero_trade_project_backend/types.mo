@@ -41,6 +41,10 @@ module {
     transactions: TM.TrieMap<TransactionId, TransactionInfo>;
   };
 
+  public type UserProfile = {
+    companyLogo: [Nat8];
+  };
+
   public type TokenInfo = {
     tokenId: TokenId;
     totalAmount: Nat;

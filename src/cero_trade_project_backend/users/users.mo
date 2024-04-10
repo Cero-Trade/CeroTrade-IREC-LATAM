@@ -12,14 +12,9 @@ import TM "mo:base/TrieMap";
 import Hash "mo:base/Hash";
 import Iter "mo:base/Iter";
 import AccountIdentifier "mo:account-identifier";
-import Serde "mo:serde";
-
-// canisters
-import HttpService "canister:http_service";
 
 // types
 import T "../types";
-import HT "../http_service/http_service_types";
 
 actor class Users() = this {
   stable let userNotFound: Text = "User not found";
@@ -30,14 +25,6 @@ actor class Users() = this {
   /// get size of users collection
   public query func length(): async Nat { users.size() };
 
-
-  /// validate user existence
-  public query func checkPrincipal(uid: T.UID) : async Bool {
-    switch(users.get(uid)) {
-      case(null) false;
-      case(?value) true;
-    };
-  };
 
   /// register user to cero trade
   public func registerUser(uid: T.UID, token: Text): async T.CanisterId {
@@ -57,27 +44,8 @@ actor class Users() = this {
   };
 
 
-  /// register user to cero trade
-  public func deleteUser(uid: T.UID): async() {
-    let token = switch(users.get(uid)) {
-      case(null) throw Error.reject(userNotFound);
-      case(?user) user.vaultToken;
-    };
-
-    let formData = { token };
-    let formBlob = to_candid(formData);
-    let formKeys = ["token"];
-
-    let res = await HttpService.post(HT.apiUrl # "users/delete", {
-        headers = [];
-        bodyJson = switch(Serde.JSON.toText(formBlob, formKeys, null)) {
-          case(#err(error)) throw Error.reject("Cannot serialize data");
-          case(#ok(value)) value;
-        };
-      });
-
-    let removedUser = users.remove(uid);
-  };
+  /// delete user to cero trade
+  public func deleteUser(uid: T.UID): async() { let removedUser = users.remove(uid) };
 
 
   /// store user company logo to cero trade

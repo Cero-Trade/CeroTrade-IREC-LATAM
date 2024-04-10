@@ -2,13 +2,15 @@
   "canisters": {
     "users": {
       "main": "src/cero_trade_project_backend/users/users.mo",
-      "type": "motoko",
-      "dependencies": [ "http_service" ]
+      "type": "motoko"
     },
     "user_index": {
       "main": "src/cero_trade_project_backend/user_index/user_index.mo",
       "type": "motoko",
-      "dependencies": [ "users" ]
+      "dependencies": [
+        "http_service",
+        "users"
+      ]
     },
     "token": {
       "main": "src/cero_trade_project_backend/token/token.mo",
