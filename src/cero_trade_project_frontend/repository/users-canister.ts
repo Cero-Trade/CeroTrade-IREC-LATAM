@@ -65,13 +65,15 @@ export class UsersCanister {
 
   static async getProfile(): Promise<UserProfileModel> {
     try {
-      const res = await agent().getProfile(),
-      profile = {
-        companyLogo: getUrlFromArrayBuffer(res['companyLogo']) || avatar
+      const { companyLogo, profile } = await agent().getProfile() as { companyLogo: [number], profile: string },
+      profileData = JSON.parse(profile),
+      userProfile = {
+        companyLogo: getUrlFromArrayBuffer(companyLogo) || avatar,
+        ...profileData
       }
 
-      store.commit('setProfile', profile)
-      return profile
+      store.commit('setProfile', userProfile)
+      return userProfile
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)

@@ -39,8 +39,8 @@
         <v-sheet class="center divrow pointer" style="gap: 10px; background-color: transparent;" @click="$router.push('/profile')">
           <v-img-load :src="UserProfileModel.get().companyLogo" alt="Avatar" cover rounded="50%" sizes="35px" />
           <div class="divcol">
-            <span style="font-weight: 700; color: #fff;">Sysiphus</span>
-            <span style="color: #98A2B3;">olivia@cerotrade.com</span>
+            <span style="font-weight: 700; color: #fff;">{{ UserProfileModel.get().companyName }}</span>
+            <span style="color: #98A2B3;">{{ UserProfileModel.get().email }}</span>
           </div>
         </v-sheet>
       </div>

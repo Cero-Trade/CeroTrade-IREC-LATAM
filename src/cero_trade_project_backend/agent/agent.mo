@@ -35,7 +35,7 @@ actor Agent {
 
 
   /// store user avatar into users collection
-  public shared({ caller }) func storeCompanyLogo(avatar: [Nat8]): async() { await UserIndex.storeCompanyLogo(caller, avatar) };
+  public shared({ caller }) func storeCompanyLogo(avatar: T.CompanyLogo): async() { await UserIndex.storeCompanyLogo(caller, avatar) };
 
 
   /// delete user into cero trade

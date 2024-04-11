@@ -49,7 +49,7 @@ actor class Users() = this {
 
 
   /// store user company logo to cero trade
-  public func storeCompanyLogo(uid: T.UID, avatar: Blob): async() {
+  public func storeCompanyLogo(uid: T.UID, avatar: T.CompanyLogo): async() {
     var userInfo = switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
       case (?info) {
@@ -62,7 +62,7 @@ actor class Users() = this {
 
 
   /// get user from usersAvatar collection
-  public query func getCompanyLogo(uid: T.UID) : async Blob {
+  public query func getCompanyLogo(uid: T.UID) : async T.CompanyLogo {
     switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
       case (?info) switch(info.companyLogo) {

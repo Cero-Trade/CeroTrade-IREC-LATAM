@@ -97,7 +97,7 @@ actor UserIndex {
   };
 
   /// store user avatar into users collection
-  public func storeCompanyLogo(uid: T.UID, avatar: [Nat8]): async() {
+  public func storeCompanyLogo(uid: T.UID, avatar: T.CompanyLogo): async() {
     let exists: Bool = _checkPrincipal(uid);
     if (not exists) throw Error.reject(notExists);
 
@@ -145,13 +145,15 @@ actor UserIndex {
     if (not exists) throw Error.reject(notExists);
 
     // TODO fetch other profile data from web2 data base
-    // let token = await Users.getUserToken(uid);
-    // let res = await HttpService.get(HT.apiUrl # "users/retrieve?token=" # token, { headers = [] });
-    // Debug.print(debug_show(res));
+    let token = await Users.getUserToken(uid);
+    let profile = await HttpService.get(HT.apiUrl # "users/retrieve/" # token, { headers = [] });
+    
+    Debug.print(debug_show(profile));
 
     // TODO evaluate how to search specific canister to call getCompanyLogo func
     let companyLogo = await Users.getCompanyLogo(uid);
-    { companyLogo }
+
+    { companyLogo; profile; }
   };
 
 

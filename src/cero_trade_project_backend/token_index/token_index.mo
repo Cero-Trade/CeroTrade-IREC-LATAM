@@ -32,8 +32,9 @@ actor class TokenIndex() = this {
 
 
   /// ! unused for now
+  // TODO try to implements this function
+  // TODO validate user authenticate to only admin
   // public shared ({ caller }) func registerWasmArray(array: [Nat]): async [Nat] {
-  //   // TODO validate user authenticate to only admin
   //   wasm_array := array;
   //   wasm_array
   // };
@@ -45,6 +46,7 @@ actor class TokenIndex() = this {
     switch(tokenDirectory.get(tokenId)) {
       case(?value) throw Error.reject("Token already exists");
       case(null) {
+        // TODO debug Cycles.balance()
         Cycles.add(300_000_000_000);
         let { canister_id } = await ic.create_canister({
           settings = ?{

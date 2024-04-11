@@ -13,7 +13,7 @@ module {
   public type TokenId = Text;
   public type TransactionId = Nat;
   public type RedemId = Nat;
-  public type ComanyLogo = Blob;
+  public type CompanyLogo = [Nat8];
 
 
   //
@@ -32,7 +32,7 @@ module {
   // Users
   //
   public type UserInfo = {
-    companyLogo: ?ComanyLogo;
+    companyLogo: ?CompanyLogo;
     vaultToken: Text;
     principal: Principal;
     ledger: Blob;
@@ -42,7 +42,8 @@ module {
   };
 
   public type UserProfile = {
-    companyLogo: [Nat8];
+    companyLogo: CompanyLogo;
+    profile: Text;
   };
 
   public type TokenInfo = {
