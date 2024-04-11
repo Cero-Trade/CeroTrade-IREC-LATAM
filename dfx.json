@@ -14,16 +14,12 @@
     },
     "token": {
       "main": "src/cero_trade_project_backend/token/token.mo",
-      "type": "motoko",
-      "dependencies": [
-        "http_service",
-        "users"
-      ]
+      "type": "motoko"
     },
     "token_index": {
       "main": "src/cero_trade_project_backend/token_index/token_index.mo",
       "type": "motoko",
-      "dependencies": [ "token" ]
+      "dependencies": [ "http_service" ]
     },
     "marketplace": {
       "main": "src/cero_trade_project_backend/marketplace/marketplace.mo",

@@ -4,14 +4,9 @@ import Error "mo:base/Error";
 import Principal "mo:base/Principal";
 import Nat "mo:base/Nat";
 
-// canisters
-import HttpService "canister:http_service";
-import UserIndex "canister:user_index";
-
 // types
 import ICRC "../ICRC";
 import T "../types";
-import HT "../http_service/http_service_types";
 
 
 actor class Token(_tokenId: ?T.TokenId) = this {
@@ -30,51 +25,19 @@ actor class Token(_tokenId: ?T.TokenId) = this {
   let irecs: HM.HashMap<T.UID, Nat> = HM.HashMap(16, Principal.equal, Principal.hash);
 
 
-  public shared ({ caller }) func init(): async T.CanisterId {
+  public func init(assetMetadata: T.AssetInfo): async() {
     // if (init_msg.caller != caller) throw Error.reject("Unauthorized call");
     if (isInitialized) throw Error.reject("Canister has been initialized");
 
-    /// fetch asset info using [tokenId]
-    // let asset = await HttpService.get("getToken" # tokenId, { headers = [] });
-
-    let volumeProduced = 1000;
-
-    assetInfo := ?{
-      assetType = "hydroenergy";
-      startDate = 2222;
-      endDate = 22222;
-      co2Emission = 100;
-      radioactivityEmnission = 10;
-      volumeProduced = volumeProduced;
-      deviceDetails = {
-        name = "machine";
-        deviceType = "type";
-        group = "hydroenergy"; // AssetType
-        description = "description";
-      };
-      specifications = {
-        deviceCode = "200";
-        capacity = 1000;
-        location = "location";
-        latitude = 0;
-        longitude = 1;
-        address = "address anywhere";
-        stateProvince = "texas";
-        country = "texas";
-      };
-      dates = [123321, 123123];
-    };
-    leftToMint := volumeProduced;
-
+    assetInfo := ?assetMetadata;
+    leftToMint := assetMetadata.volumeProduced;
     isInitialized := true;
-
-    Principal.fromActor(this)
   };
 
 
 
   /// add token to collection
-  public func mintToken(uid: T.UID, amount: Nat) : async () {
+  public func mintToken(uid: T.UID, amount: Nat) : async T.TokenInfo {
     if (leftToMint < amount) throw Error.reject("Limit tokens to mint is" # Nat.toText(leftToMint));
 
     /// update leftToMint amount info
@@ -82,34 +45,38 @@ actor class Token(_tokenId: ?T.TokenId) = this {
 
     // update user into irecs
     let mintedAmount = switch(irecs.get(uid)) {
-      case(?currentAmount) currentAmount + amount;
       case(null) amount;
+      case(?currentAmount) currentAmount + amount;
     };
     irecs.put(uid, mintedAmount);
 
-    await UserIndex.updatePorfolio(uid, {
+    {
       tokenId = tokenId;
       assetInfo = await getAssetInfo();
-      totalAmount = amount;
-      inMarket = mintedAmount; // TODO evaluate what value use
-    });
+      totalAmount = mintedAmount;
+      inMarket = leftToMint; // TODO evaluate what value use
+    }
   };
 
 
-  public func burn(uid: T.UID, amount: Nat): async () {
+  public func burnToken(uid: T.UID, amount: Nat): async T.TokenInfo {
     let burnedAmount: Nat = switch(irecs.get(uid)) {
       case(null) throw Error.reject(userNotFound);
-      case(?currentAmount) currentAmount - amount;
+      case(?currentAmount) {
+        if (currentAmount < amount) throw Error.reject("Limit tokens to burn is" # Nat.toText(currentAmount));
+
+        currentAmount - amount
+      };
     };
 
     irecs.put(uid, burnedAmount);
 
-    await UserIndex.updatePorfolio(uid, {
+    {
       tokenId = tokenId;
       assetInfo = await getAssetInfo();
-      totalAmount = amount;
-      inMarket = burnedAmount; // TODO evaluate what value use
-    });
+      totalAmount = burnedAmount;
+      inMarket = leftToMint; // TODO evaluate what value use
+    }
   };
 
 
@@ -122,7 +89,7 @@ actor class Token(_tokenId: ?T.TokenId) = this {
 
 
 
-  public func getAssetInfo(): async T.AssetInfo {
+  public query func getAssetInfo(): async T.AssetInfo {
     switch(assetInfo) {
       case(null) { throw Error.reject("Asset metadata have not generated") };
       case(?value) return value;

@@ -27,14 +27,15 @@ export function registerPlugins (app) {
   directives(app)
   vueDebounce(app)
 
+  // Use services
+  icpProvider(app)
+
   // Use plugins
   app
     .use(vuetify)
     .use(router)
     .use(store)
 
-  // Use services
-  icpProvider(app)
 
   // Use custom plugins
   // loadFonts()

@@ -24,7 +24,11 @@ export class AuthClientApi {
   }
 
   static async isAuthenticated(): Promise<boolean> {
-    return await client().isAuthenticated()
+    try {
+      return await client().isAuthenticated()
+    } catch (error) {
+      return false
+    }
   }
 
   static isAnonymous(): Boolean {

@@ -77,7 +77,7 @@
 
 <script setup>
 import '@/assets/styles/pages/login.scss'
-import { AgentCanister } from '@/repository/agent-canister';
+import { UsersCanister } from '@/repository/users-canister';
 import { AuthClientApi } from '@/repository/auth-client-api'
 import { onBeforeMount } from 'vue';
 import { ref } from 'vue'
@@ -100,7 +100,7 @@ const loginII = async () => AuthClientApi.signIn(async () => {
   loadingBtn.value = true
 
   try {
-    await AgentCanister.login()
+    await UsersCanister.login()
     router.push('/')
   } catch (error) {
     loadingBtn.value = false

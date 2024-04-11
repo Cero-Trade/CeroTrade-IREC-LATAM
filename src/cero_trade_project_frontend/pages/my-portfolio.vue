@@ -237,6 +237,9 @@ import ChileIcon from '@/assets/sources/icons/CL.svg'
 import WalletIcon from '@/assets/sources/icons/wallet-light.svg'
 import TokenizedIcon from '@/assets/sources/icons/tokenized-table.svg'
 import RedeemedIcon from '@/assets/sources/icons/redeemed-table.svg'
+import { UsersCanister } from '@/repository/users-canister'
+import { TokensCanister } from '@/repository/tokens-canister'
+// import { closeLoader, showLoader } from '@/plugins/functions'
 
 
 export default{
@@ -488,8 +491,43 @@ export default{
   },
   created() {
     this.windowStep = this.windowStepComputed;
+    this.getData()
   },
   methods:{
+    async getData() {
+      try {
+        await UsersCanister.getPortfolio()
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    async mintToken() {
+      try {
+        await TokensCanister.mintToken("1", 10)
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    async burnToken() {
+      try {
+        await TokensCanister.burnToken("1", 10)
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    // FIXME improved method just for testing
+    // async deleteAccount() {
+    //   showLoader()
+
+    //   try {
+    //     await UsersCanister.deleteUser()
+    //     closeLoader()
+
+    //     this.$router.push('/auth/login')
+    //   } catch (error) {
+    //     closeLoader()
+    //   }
+    // },
     goDetails(){
       this.$router.push('/rec-single-portfolio')
     }

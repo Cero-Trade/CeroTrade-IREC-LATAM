@@ -15,6 +15,10 @@ export function buildThresholdList() {
   return thresholds;
 }
 
+export function setAppLoader(value) {
+  store.commit('setAppLoaderState', value)
+}
+
 export function showLoader() {
   store.commit('setLoaderState', true)
 }
@@ -156,6 +160,19 @@ export async function getImageArrayBuffer(file) {
 
     reader.readAsArrayBuffer(file);
   });
+}
+
+export function getFileFromArrayBuffer(array, fileName) {
+  const blob = new Blob([array], { type: 'application/octet-stream' });
+  const file = new File([blob], fileName, { type: 'application/octet-stream' });
+  return file;
+}
+
+export function getUrlFromArrayBuffer(array, type) {
+  type ??= 'image/jpeg'
+  let blob = new Blob([array], {type});
+  let url = URL.createObjectURL(blob);
+  return url
 }
 
 export async function fileCompression(file, options) {

@@ -2,20 +2,15 @@ import { createStore } from 'vuex'
 
 const store = createStore({
   state: {
+    appLoader: true,
     drawer: true,
     loader: false,
-    profile: {
-      uid: undefined,
-      username: undefined,
-      email: undefined,
-      avatar: undefined,
-    },
+    profile: undefined,
     authClient: null,
   },
   mutations: {
-    setProfile(state, profile) {
-      state.profile = profile
-    },
+    setAppLoaderState(state, value) { state.appLoader = value },
+    setProfile(state, profile) { state.profile = profile },
     setDrawerState(state, value) {
       state.drawer = value
     },

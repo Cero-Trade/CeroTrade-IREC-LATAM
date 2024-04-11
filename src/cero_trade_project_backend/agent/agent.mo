@@ -92,9 +92,22 @@ actor Agent {
     let exists: Bool = await UserIndex.checkPrincipal(caller);
     if (not exists) throw Error.reject(notExists);
 
-    await TokenIndex.mintToken(caller, tokenId, amount);
+    let tokenInfo = await TokenIndex.mintToken(caller, tokenId, amount);
+
+    await UserIndex.updatePorfolio(caller, tokenInfo);
   };
-  
+
+
+  /// performe mint with tokenId and amount requested
+  public shared({ caller }) func burnToken(tokenId: T.TokenId, amount: Nat): async() {
+    let exists: Bool = await UserIndex.checkPrincipal(caller);
+    if (not exists) throw Error.reject(notExists);
+
+    let tokenInfo = await TokenIndex.burnToken(caller, tokenId, amount);
+
+    await UserIndex.updatePorfolio(caller, tokenInfo);
+  };
+
 
   /// get profile information
   public shared({ caller }) func getProfile(): async T.UserProfile { await UserIndex.getProfile(caller) };

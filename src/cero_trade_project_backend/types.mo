@@ -112,4 +112,54 @@ module {
     // TODO checkout usage of this date format
     dates: [Nat64];
   };
+
+
+
+  public type CanisterSettings = {
+    controllers: ?[Principal];
+    compute_allocation: ?Nat;
+    memory_allocation: ?Nat;
+    freezing_threshold: ?Nat;
+  };
+
+  public type WasmModule = Blob;
+
+  //3. Declaring the management canister which you use to make the Canister dictionary
+  public type IC = actor {
+    create_canister: shared {settings: ?CanisterSettings} -> async {canister_id: CanisterId};
+    update_settings : shared {
+      canister_id: Principal;
+      settings: CanisterSettings;
+    } -> async ();
+    canister_status: shared {canister_id: CanisterId} -> async {
+      status: { #stopped; #stopping; #running };
+      memory_size: Nat;
+      cycles: Nat;
+      settings: CanisterSettings;
+      idle_cycles_burned_per_day: Nat;
+      module_hash: ?[Nat8];
+    };
+    install_code : shared {
+      arg: Blob;
+      wasm_module: WasmModule;
+      mode: { #reinstall; #upgrade; #install };
+      canister_id: CanisterId;
+    } -> async ();
+    uninstall_code : shared {canister_id: CanisterId} -> async ();
+    deposit_cycles: shared {canister_id: CanisterId} -> async ();
+    start_canister: shared {canister_id: CanisterId} -> async ();
+    stop_canister: shared {canister_id: CanisterId} -> async ();
+    delete_canister: shared {canister_id: CanisterId} -> async ();
+  };
+
+  public type TokenInterface = actor {
+    init: (assetMetadata: AssetInfo) -> async ();
+    mintToken: (UID, Nat) -> async TokenInfo;
+    burnToken: (UID, Nat) -> async TokenInfo;
+    getUserMinted: query (UID) -> async Nat;
+    getAssetInfo: query () -> async AssetInfo;
+    getRemainingAmount: query () -> async Nat;
+    getTokenId: query () -> async TokenId;
+    getCanisterId: query () -> async Principal;
+  };
 }

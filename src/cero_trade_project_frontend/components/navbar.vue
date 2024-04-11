@@ -37,7 +37,7 @@
       <div class="center divrow displaynone" style="gap: 20px;">
         <img src="@/assets/sources/icons/bell.svg" alt="bell icon">
         <v-sheet class="center divrow pointer" style="gap: 10px; background-color: transparent;" @click="$router.push('/profile')">
-          <img src="@/assets/sources/images/avatar-online.svg" alt="Avatar">
+          <v-img-load :src="UserProfileModel.get().companyLogo" alt="Avatar" cover rounded="50%" sizes="35px" />
           <div class="divcol">
             <span style="font-weight: 700; color: #fff;">Sysiphus</span>
             <span style="color: #98A2B3;">olivia@cerotrade.com</span>
@@ -49,7 +49,7 @@
       <img src="@/assets/sources/logos/logo-mobile.svg" alt="Logo" class="logo-mobile show-mobile">
 
       <div class="right-mobile" style="gap: 20px;">
-        <img src="@/assets/sources/images/avatar-online.svg" alt="Avatar" class="pointer" style="width: 35px;" @click="$router.push('/profile')">
+        <v-img-load :src="UserProfileModel.get().companyLogo" alt="Avatar" cover rounded="50%" sizes="35px" class="pointer" @click="$router.push('/profile')" />
         <img src="@/assets/sources/icons/bell.svg" alt="bell icon">
         <img src="@/assets/sources/icons/menu-bars-mobile.svg" alt="Menu Bars" class="menu-bars show-mobile" @click.stop="drawer = !drawer">
       </div>
@@ -97,7 +97,7 @@
       </div>
       <template v-slot:append>
           <div class="pb-6 pl-3 pr-3">
-            <v-btn class="btn bold width100">
+            <v-btn class="btn bold width100" to="/auth/login">
               Logout
             </v-btn>
           </div>
@@ -106,7 +106,7 @@
   </nav>
 </template>
 
-<script>
+<script setup>
 import home from '@/assets/sources/icons/home-white.svg'
 import wallet from '@/assets/sources/icons/wallet-white.svg'
 import marketplace from '@/assets/sources/icons/marketplace.svg'
@@ -118,39 +118,38 @@ import marketplace_green from '@/assets/sources/icons/marketplace-green.svg'
 import config_green from '@/assets/sources/icons/config-green.svg'
 import support_green from '@/assets/sources/icons/support-green.svg'
 import market_trends from '@/assets/sources/icons/market-trends.svg'
+import { UsersCanister } from '@/repository/users-canister'
+import { useToast } from 'vue-toastification';
+import { useRouter } from 'vue-router'
+import { closeLoader, showLoader } from '@/plugins/functions'
+import { ref } from 'vue'
+import { UserProfileModel } from '@/models/userProfile'
 
-export default {
-  data() {
-    return{
-      drawer: false,
-      dataNavbar:[
-        {img: 'home', name: 'Home', link:'/dashboard', img_green: 'home_green'},
-        {img: 'wallet', name: 'My portfolio', link: '/my-portfolio', img_green: 'wallet_green' },
-        {img: 'marketplace', name: 'Marketplace', link:'marketplace', img_green: 'marketplace_green'},
-        // {img: 'market_trends', name:'Market trends', link: '/market-trends'},
-        {img: 'config', name:'Settings', link: '/settings', img_green: 'config_green'},
-        {img: 'support', name:'Support', link: '/support', img_green: 'support_green'}
-      ],
+const
+  router = useRouter(),
+  toast = useToast(),
 
-      iconMap: {
-        home,
-        wallet,
-        marketplace,
-        market_trends,
-        config,
-        support,
-        home_green,
-        wallet_green,
-        marketplace_green,
-        config_green,
-        support_green,
-      }
-    }
-  },
-
-  // mounted(){
-  //   console.log(this.$route.path, 'doiendfwe')
-  // }
+drawer = ref(false),
+dataNavbar = [
+  {img: 'home', name: 'Home', link:'/dashboard', img_green: 'home_green'},
+  {img: 'wallet', name: 'My portfolio', link: '/my-portfolio', img_green: 'wallet_green' },
+  {img: 'marketplace', name: 'Marketplace', link:'marketplace', img_green: 'marketplace_green'},
+  // {img: 'market_trends', name:'Market trends', link: '/market-trends'},
+  {img: 'config', name:'Settings', link: '/settings', img_green: 'config_green'},
+  {img: 'support', name:'Support', link: '/support', img_green: 'support_green'}
+],
+iconMap = {
+  home,
+  wallet,
+  marketplace,
+  market_trends,
+  config,
+  support,
+  home_green,
+  wallet_green,
+  marketplace_green,
+  config_green,
+  support_green,
 }
 </script>
 

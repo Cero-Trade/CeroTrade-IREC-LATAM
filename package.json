@@ -6,7 +6,8 @@
     "build": "vite build",
     "lint": "eslint . --fix --ignore-path .gitignore",
     "dev": "vite",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate-buffer": "node generate-buffer"
   },
   "dependencies": {
     "@connect2ic/core": "^0.1.6",
@@ -21,6 +22,7 @@
     "apexcharts": "^3.41.1",
     "axios": "^1.4.0",
     "browser-image-compression": "^2.0.2",
+    "clipboardy": "^4.0.0",
     "firebase": "^10.1.0",
     "html2canvas": "^1.4.1",
     "moment": "^2.29.4",

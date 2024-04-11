@@ -69,6 +69,7 @@ defineProps({
 
 <style lang="scss">
 .v-img-load {
+  border-radius: var(--border-radius);
 
   .v-img__img {
     border-radius: var(--border-radius);

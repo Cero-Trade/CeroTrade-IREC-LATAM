@@ -1,7 +1,6 @@
 # Cero Trade
 
 ## Project setup
-
 ```
 # init ic background replica
 dfx start
@@ -11,7 +10,7 @@ npm install
 
 # install mops dependencies if havent
 npm i -g ic-mops
-mops add base
+mops init
 mops add account-identifier
 mops add serde
 mops add datetime
@@ -30,34 +29,24 @@ cp src/declarations/http_service/* .dfx/local/canisters/http_service/
 
 # deploy canisters
 dfx deploy
-
-# reinstall token canister using [canister_id] and requested [token_id]
-dfx canister install canister_id --argument '(opt "token_id")' --mode reinstall
-
-# initialize token canister from token_index
-dfx canister call token_index initToken '("token_id")'
 ```
 
 ### Deploying only backend canisters
-
 ```
-dfx deploy users
-dfx deploy user_index
-dfx deploy token
-dfx deploy token_index
 dfx deploy agent
-dfx deploy marketplace
-dfx deploy http_service
+```
+
+### Deploying token canisters
+```
+dfx canister call token_index registerToken '("token_id")'
 ```
 
 ### Compiles and hot-reloads for development
-
 ```
 npm run dev
 ```
 
 ### Customize configuration
-
 See [Configuration Reference](https://vitejs.dev/config/).
 
 

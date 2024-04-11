@@ -1,7 +1,10 @@
-import { fileCompression, getImageArrayBuffer } from "@/plugins/functions";
+import { fileCompression, getUrlFromArrayBuffer, getImageArrayBuffer } from "@/plugins/functions";
 import { useAgentCanister as agent, getErrorMessage } from "@/services/icp-provider";
+import avatar from '@/assets/sources/images/avatar-online.svg'
+import store from "@/store";
+import { UserProfileModel } from "@/models/userProfile";
 
-export class AgentCanister {
+export class UsersCanister {
   static async register(data: {
     companyId: string,
     companyName: string,
@@ -25,7 +28,7 @@ export class AgentCanister {
       // store user company logo
       const fileCompressed = await fileCompression(data.companyLogo[0]),
       arrayBuffer = await getImageArrayBuffer(fileCompressed)
-      await AgentCanister.storeCompanyLogo(arrayBuffer)
+      await UsersCanister.storeCompanyLogo(arrayBuffer)
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)
@@ -44,6 +47,42 @@ export class AgentCanister {
   static async login(): Promise<void> {
     try {
       await agent().login()
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+  static async deleteUser(): Promise<void> {
+    try {
+      await agent().deleteUser()
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+
+  static async getProfile(): Promise<UserProfileModel> {
+    try {
+      const res = await agent().getProfile(),
+      profile = {
+        companyLogo: getUrlFromArrayBuffer(res['companyLogo']) || avatar
+      }
+
+      store.commit('setProfile', profile)
+      return profile
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+  static async getPortfolio(): Promise<any> {
+    try {
+      const res = await agent().getPortfolio()
+      // TODO create models
+      console.log(res);
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)
