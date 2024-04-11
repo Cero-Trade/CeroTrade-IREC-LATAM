@@ -4,10 +4,10 @@
 
 ```
 # init ic background replica
-dfx start
+dfx start --background --clean
 
 # install dependencies
-npm install
+npm ci
 
 # install mops dependencies if havent
 npm i -g ic-mops
@@ -16,6 +16,10 @@ mops add account-identifier
 mops add serde
 mops add datetime
 
+
+# crear canisters y compilar app
+dfx create --all
+dfx build
 
 # generate declarations
 dfx generate
