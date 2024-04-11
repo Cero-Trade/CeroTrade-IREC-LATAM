@@ -152,6 +152,22 @@ module {
     delete_canister: shared {canister_id: CanisterId} -> async ();
   };
 
+  public type UsersInterface = actor {
+    length: () -> async Nat;
+    registerUser: (uid: UID, token: Text) -> async CanisterId;
+    deleteUser: (uid: UID) -> async ();
+    storeCompanyLogo: (uid: UID, avatar: Blob) -> async ();
+    getCompanyLogo: (uid: UID) -> async Blob;
+    updatePorfolio: (uid: UID, token: TokenInfo) -> async ();
+    updateRedemptions: (uid: UID, redem: RedemInfo) -> async ();
+    updateTransactions: (uid: UID, tx: TransactionInfo) -> async ();
+    getPortfolio: (uid: UID) -> async [TokenInfo];
+    getRedemptions: (uid: UID) -> async [RedemInfo];
+    getTransactions: (uid: UID) -> async [TransactionInfo];
+    getUserToken: (uid: UID) -> async Text;
+    validateToken: (uid: UID, token: Text) -> async Bool;
+  };
+
   public type TokenInterface = actor {
     init: (assetMetadata: AssetInfo) -> async ();
     mintToken: (UID, Nat) -> async TokenInfo;

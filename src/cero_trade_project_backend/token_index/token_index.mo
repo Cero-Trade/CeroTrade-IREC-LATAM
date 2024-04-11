@@ -15,7 +15,7 @@ import HttpService "canister:http_service";
 // types
 import T "../types";
 import HT "../http_service/http_service_types";
-import Wasm "../wasm";
+import Wasm "../token/token_wasm";
 
 actor class TokenIndex() = this {
   stable let ic : T.IC = actor ("aaaaa-aa");
