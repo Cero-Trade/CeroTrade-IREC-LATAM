@@ -1,24 +1,26 @@
 # Cero Trade
 
 ## Project setup
+Init ic background replica
+
+`dfx start`
+
+Install dependencies
+
+`npm install`
+
+Install mops dependencies if havent
 ```
-# init ic background replica
-dfx start
-
-# install dependencies
-npm install
-
-# install mops dependencies if havent
 npm i -g ic-mops
 mops init
 mops add account-identifier
 mops add serde
 mops add datetime
+```
 
-
-# generate declarations
+Generate declarations
+```
 dfx generate
-
 cp src/declarations/users/* .dfx/local/canisters/users/
 cp src/declarations/user_index/* .dfx/local/canisters/user_index/
 cp src/declarations/token/* .dfx/local/canisters/token/
@@ -26,25 +28,32 @@ cp src/declarations/token_index/* .dfx/local/canisters/token_index/
 cp src/declarations/agent/* .dfx/local/canisters/agent/
 cp src/declarations/marketplace/* .dfx/local/canisters/marketplace/
 cp src/declarations/http_service/* .dfx/local/canisters/http_service/
-
-# deploy canisters
-dfx deploy
 ```
 
-### Deploying only backend canisters
+Deploy canisters
+
+`dfx deploy`
+
+To deploy only backend canisters run
+
+`dfx deploy agent`
+
+### Generate token wasm module
 ```
-dfx deploy agent
+dfx canister create token
+dfx build token
 ```
+To generate the wasm module like array run command below
+
+Note: must to add package.json field -> "type": "module",
+
+`npm run generate-buffer`
 
 ### Deploying token canisters
-```
-dfx canister call token_index registerToken '("token_id")'
-```
+`dfx canister call token_index registerToken '("token_id")'`
 
 ### Compiles and hot-reloads for development
-```
-npm run dev
-```
+`npm run dev`
 
 ### Customize configuration
 See [Configuration Reference](https://vitejs.dev/config/).

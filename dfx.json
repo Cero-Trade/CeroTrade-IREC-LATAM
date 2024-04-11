@@ -36,7 +36,6 @@
         "http_service",
         "users",
         "user_index",
-        "token",
         "token_index",
         "marketplace"
       ]

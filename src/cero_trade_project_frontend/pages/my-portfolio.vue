@@ -496,38 +496,13 @@ export default{
   methods:{
     async getData() {
       try {
-        await UsersCanister.getPortfolio()
+        const res = await UsersCanister.getPortfolio()
+        // TODO storage and use data below
+        console.log(res);
       } catch (error) {
         console.error(error);
       }
     },
-    async mintToken() {
-      try {
-        await TokensCanister.mintToken("1", 10)
-      } catch (error) {
-        console.error(error);
-      }
-    },
-    async burnToken() {
-      try {
-        await TokensCanister.burnToken("1", 10)
-      } catch (error) {
-        console.error(error);
-      }
-    },
-    // FIXME improved method just for testing
-    // async deleteAccount() {
-    //   showLoader()
-
-    //   try {
-    //     await UsersCanister.deleteUser()
-    //     closeLoader()
-
-    //     this.$router.push('/auth/login')
-    //   } catch (error) {
-    //     closeLoader()
-    //   }
-    // },
     goDetails(){
       this.$router.push('/rec-single-portfolio')
     }

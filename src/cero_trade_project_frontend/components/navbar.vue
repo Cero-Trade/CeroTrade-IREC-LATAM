@@ -123,7 +123,7 @@ import { useToast } from 'vue-toastification';
 import { useRouter } from 'vue-router'
 import { closeLoader, showLoader } from '@/plugins/functions'
 import { ref } from 'vue'
-import { UserProfileModel } from '@/models/userProfile'
+import { UserProfileModel } from '@/models/user-profile-model'
 
 const
   router = useRouter(),

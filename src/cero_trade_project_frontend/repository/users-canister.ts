@@ -2,7 +2,8 @@ import { fileCompression, getUrlFromArrayBuffer, getImageArrayBuffer } from "@/p
 import { useAgentCanister as agent, getErrorMessage } from "@/services/icp-provider";
 import avatar from '@/assets/sources/images/avatar-online.svg'
 import store from "@/store";
-import { UserProfileModel } from "@/models/userProfile";
+import { UserProfileModel } from "@/models/user-profile-model";
+import { TokenModel } from "@/models/token-model";
 
 export class UsersCanister {
   static async register(data: {
@@ -80,11 +81,9 @@ export class UsersCanister {
     }
   }
 
-  static async getPortfolio(): Promise<any> {
+  static async getPortfolio(): Promise<[TokenModel]> {
     try {
-      const res = await agent().getPortfolio()
-      // TODO create models
-      console.log(res);
+      return await agent().getPortfolio() as [TokenModel]
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)

@@ -144,11 +144,9 @@ actor UserIndex {
     let exists: Bool = _checkPrincipal(uid);
     if (not exists) throw Error.reject(notExists);
 
-    // TODO fetch other profile data from web2 data base
+    // TODO evaluate how to search specific canister to call getCompanyLogo func
     let token = await Users.getUserToken(uid);
     let profile = await HttpService.get(HT.apiUrl # "users/retrieve/" # token, { headers = [] });
-    
-    Debug.print(debug_show(profile));
 
     // TODO evaluate how to search specific canister to call getCompanyLogo func
     let companyLogo = await Users.getCompanyLogo(uid);
