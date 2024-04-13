@@ -13,7 +13,7 @@ Install mops dependencies globally if havent
 `npm i -g ic-mops`
 
 Otherwise install mops proyect dependencies
-`mops i`
+`mops install`
 
 Generate declarations
 ```
