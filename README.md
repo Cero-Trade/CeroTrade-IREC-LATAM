@@ -9,14 +9,11 @@ Install dependencies
 
 `npm install`
 
-Install mops dependencies if havent
-```
-npm i -g ic-mops
-mops init
-mops add account-identifier
-mops add serde
-mops add datetime
-```
+Install mops dependencies globally if havent
+`npm i -g ic-mops`
+
+Otherwise install mops proyect dependencies
+`mops i`
 
 Generate declarations
 ```
