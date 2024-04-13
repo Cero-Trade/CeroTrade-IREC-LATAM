@@ -47,7 +47,7 @@ module {
   };
 
   public type TokenStatus = {
-    #redeem: Text;
+    #redeemed: Text;
     #sold: Text;
     #forSale: Text;
     #notForSale: Text;
