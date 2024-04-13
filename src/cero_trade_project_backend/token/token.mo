@@ -55,6 +55,7 @@ actor class Token(_tokenId: ?T.TokenId) = this {
       assetInfo = await getAssetInfo();
       totalAmount = mintedAmount;
       inMarket = leftToMint; // TODO evaluate what value use
+      status = #forSale("for sale")
     }
   };
 
@@ -76,6 +77,7 @@ actor class Token(_tokenId: ?T.TokenId) = this {
       assetInfo = await getAssetInfo();
       totalAmount = burnedAmount;
       inMarket = leftToMint; // TODO evaluate what value use
+      status = #forSale("for sale")
     }
   };
 

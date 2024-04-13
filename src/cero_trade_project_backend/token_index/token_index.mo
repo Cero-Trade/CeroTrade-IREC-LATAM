@@ -69,12 +69,12 @@ actor class TokenIndex() = this {
 
           // TODO perfome data fetch asset info using [tokenId] here
           let energy = switch(tokenId) {
-            case("1") "hydroenergy";
-            case("2") "solarenergy";
-            case("3") "eolicenergy";
-            case("4") "termoenergy";
-            case("5") "nuclearenergy";
-            case _ "unknow";
+            case("1") #hydroenergy("hydro energy");
+            case("2") #solarenergy("solar energy");
+            case("3") #eolicenergy("eolic energy");
+            case("4") #termoenergy("termo energy");
+            case("5") #nuclearenergy("nuclear energy");
+            case _ #other("other");
           };
 
           let assetMetadata: T.AssetInfo = /* await HttpService.get("getToken" # tokenId, { headers = [] }) */
@@ -88,7 +88,7 @@ actor class TokenIndex() = this {
               deviceDetails = {
                 name = "machine";
                 deviceType = "type";
-                group = energy; // AssetType
+                group = energy;
                 description = "description";
               };
               specifications = {

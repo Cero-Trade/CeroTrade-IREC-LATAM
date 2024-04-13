@@ -1,12 +1,17 @@
+export type TokenStatus = "redeem"|"sold"|"forSale"|"notForSale";
+
 export interface TokenModel {
   tokenId: string;
   totalAmount: number;
   inMarket: number;
-  assetInfo: AssetInfoModel
+  assetInfo: AssetInfoModel;
+  status: TokenStatus;
 }
 
+export type AssetType = "hydroenergy"|"solarenergy"|"eolicenergy"|"termoenergy"|"nuclearenergy"|"other";
+
 export interface AssetInfoModel {
-  assetType: AssetType; // AssetType
+  assetType: AssetType;
   startDate: number;
   endDate: number;
   co2Emission: number;
@@ -20,7 +25,7 @@ export interface AssetInfoModel {
 export interface DeviceDetailsModel {
   name: string;
   deviceType: string;
-  group: AssetType; // AssetType
+  group: AssetType;
   description: string;
 };
 
@@ -34,5 +39,3 @@ export interface SpecificationsModel {
   stateProvince: string;
   country: string;
 };
-
-export type AssetType = "hydroenergy"|"wind"|"solar"|"other";

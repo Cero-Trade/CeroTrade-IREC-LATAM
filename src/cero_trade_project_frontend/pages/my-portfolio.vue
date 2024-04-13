@@ -116,22 +116,16 @@
             </v-checkbox>
           </template>
 
-          <template #[`item.asset_id`]="{ item }">
+          <!-- <template #[`item.asset_id`]="{ item }">
             <span class="acenter bold" style="color: #475467;">
               {{ item.asset_id }} 
             </span>
-          </template>
+          </template> -->
 
           <template #[`item.energy_source`]="{ item }">
             <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
               <img :src="energies[item.energy_source]" :alt="`${item.energy_source} icon`" style="width: 20px;">
               {{ item.energy_source }}
-            </span>
-          </template>
-
-          <template #[`item.price`]="{ item }">
-            <span class="divrow jspace acenter">
-              {{ item.price }} <v-sheet style="color: #475467; ;padding-inline: 5px; border: 1px solid rgba(0,0,0,0.25); border-radius: 5px;">{{ item.currency }}</v-sheet>
             </span>
           </template>
 
@@ -313,12 +307,8 @@ export default{
       dataMarketplace: [
         { 
           token_id: 1,
-          asset_id: '1234567',
-          icon_arrow: 'mdi-arrow-down',
-          percent: '20',
+          // asset_id: '1234567',
           price: 125.00,
-          currency: '$',
-          icon_source: 'mdi-waves',
           energy_source: 'hydro energy',
           country: 'chile',
           mwh: 32,
@@ -328,12 +318,8 @@ export default{
         },
         {
           token_id: 2,
-          asset_id: '1234567',
-          icon_arrow: 'mdi-arrow-up',
-          percent: '20',
+          // asset_id: '1234567',
           price: 125.00,
-          currency: '$',
-          icon_source: 'mdi-weather-sunny',
           energy_source: 'sun',
           country: 'chile',
           mwh: 32,
@@ -343,12 +329,8 @@ export default{
         },
         {
           token_id: 3,
-          asset_id: '1234567',
-          icon_arrow: 'mdi-arrow-down',
-          percent: '20',
+          // asset_id: '1234567',
           price: 125.00,
-          currency: '$',
-          icon_source: 'mdi-weather-windy',
           energy_source: 'wind energy',
           country: 'chile',
           mwh: 32,
@@ -358,12 +340,8 @@ export default{
         },
         {
           token_id: 4,
-          asset_id: '1234567',
-          icon_arrow: 'mdi-arrow-up',
-          percent: '20',
+          // asset_id: '1234567',
           price: 125.00,
-          currency: '$',
-          icon_source: 'mdi-weather-sunny',
           energy_source: 'sun',
           country: 'chile',
           mwh: 32,
@@ -373,12 +351,8 @@ export default{
         },
         {
           token_id: 5,
-          asset_id: '1234567',
-          icon_arrow: 'mdi-arrow-down',
-          percent: '20',
+          // asset_id: '1234567',
           price: 125.00,
-          currency: '$',
-          icon_source: 'mdi-weather-windy',
           energy_source: 'wind energy',
           country: 'chile',
           mwh: 32,
@@ -388,12 +362,8 @@ export default{
         },
         {
           token_id: 6,
-          asset_id: '1234567',
-          icon_arrow: 'mdi-arrow-up',
-          percent: '20',
+          // asset_id: '1234567',
           price: 125.00,
-          currency: '$',
-          icon_source: 'mdi-weather-sunny',
           energy_source: 'sun',
           country: 'chile',
           mwh: 32,
@@ -403,12 +373,8 @@ export default{
         },
         {
           token_id: 7,
-          asset_id: '1234567',
-          icon_arrow: 'mdi-arrow-down',
-          percent: '20',
+          // asset_id: '1234567',
           price: 125.00,
-          currency: '$',
-          icon_source: 'mdi-weather-windy',
           energy_source: 'wind energy',
           country: 'chile',
           mwh: 32,
@@ -418,12 +384,8 @@ export default{
         },
         {
           token_id: 8,
-          asset_id: '1234567',
-          icon_arrow: 'mdi-arrow-up',
-          percent: '20',
+          // asset_id: '1234567',
           price: 125.00,
-          currency: '$',
-          icon_source: 'mdi-weather-sunny',
           energy_source: 'sun',
           country: 'chile',
           mwh: 32,
@@ -433,12 +395,8 @@ export default{
         },
         {
           token_id: 9,
-          asset_id: '1234567',
-          icon_arrow: 'mdi-arrow-down',
-          percent: '20',
+          // asset_id: '1234567',
           price: 125.00,
-          currency: '$',
-          icon_source: 'mdi-weather-windy',
           energy_source: 'wind energy',
           country: 'chile',
           mwh: 32,
@@ -448,12 +406,8 @@ export default{
         },
         {
           token_id: 10,
-          asset_id: '1234567',
-          icon_arrow: 'mdi-arrow-up',
-          percent: '20',
+          // asset_id: '1234567',
           price: 125.00,
-          currency: '$',
-          icon_source: 'mdi-weather-sunny',
           energy_source: 'sun',
           country: 'chile',
           mwh: 32,

@@ -46,11 +46,19 @@ module {
     profile: Text;
   };
 
+  public type TokenStatus = {
+    #redeem: Text;
+    #sold: Text;
+    #forSale: Text;
+    #notForSale: Text;
+  };
+
   public type TokenInfo = {
     tokenId: TokenId;
     totalAmount: Nat;
     inMarket: Nat;
-    assetInfo: AssetInfo
+    assetInfo: AssetInfo;
+    status: TokenStatus
   };
   
   public type RedemInfo = {
@@ -78,15 +86,17 @@ module {
   //
   public type AssetType = {
     #hydroenergy: Text;
-    #wind: Text;
-    #solar: Text;
+    #solarenergy: Text;
+    #eolicenergy: Text;
+    #termoenergy: Text;
+    #nuclearenergy: Text;
     #other: Text;
   };
 
   public type DeviceDetails = {
     name: Text;
     deviceType: Text;
-    group: Text; // AssetType
+    group: AssetType;
     description: Text;
   };
 
@@ -102,7 +112,7 @@ module {
   };
 
   public type AssetInfo = {
-    assetType: Text; // AssetType
+    assetType: AssetType;
     startDate: Nat64;
     endDate: Nat64;
     co2Emission: Float;
