@@ -51,16 +51,14 @@ actor HttpService {
 
   private func generateHeaders(url: Text, customHeaders: [HT.HttpHeader]) : [HT.HttpHeader] {
     // prepare headers for the system http_request call
-    let default_headers  = [
+    let default_headers  = Buffer.fromArray<HT.HttpHeader>([
       { name = "Host"; value = extractHost(url) # HT.port },
       { name = "User-Agent"; value = HT.headerName },
       { name = "Content-Type"; value = "application/json" },
-    ];
+    ]);
 
-    //<!-- TODO try to implements undeprecated merge array -->
-    // let merged_headers = Buffer.fromArray<HT.HttpHeader>(default_headers).append(Buffer.fromArray<HT.HttpHeader>(customHeaders));
-    // let request_headers = Buffer.toArray(merged_headers);
-    Array.append(default_headers, customHeaders);
+    default_headers.append(Buffer.fromArray<HT.HttpHeader>(customHeaders));
+    Buffer.toArray<HT.HttpHeader>(default_headers);
   };
 
   private func sendRequest(request: HT.HttpRequestArgs) : async Text {

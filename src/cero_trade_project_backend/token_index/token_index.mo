@@ -8,6 +8,7 @@ import Array "mo:base/Array";
 import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
 import Nat64 "mo:base/Nat64";
+import Buffer "mo:base/Buffer";
 
 // canisters
 import HttpService "canister:http_service";
@@ -69,11 +70,12 @@ actor class TokenIndex() = this {
 
           // TODO perfome data fetch asset info using [tokenId] here
           let energy = switch(tokenId) {
-            case("1") #hydroenergy("hydro energy");
-            case("2") #solarenergy("solar energy");
-            case("3") #eolicenergy("eolic energy");
-            case("4") #termoenergy("termo energy");
-            case("5") #nuclearenergy("nuclear energy");
+            case("1") #hydro("hydro");
+            case("2") #ocean("ocean");
+            case("3") #geothermal("geothermal");
+            case("4") #biome("biome");
+            case("5") #wind("wind");
+            case("6") #sun("sun");
             case _ #other("other");
           };
 
@@ -84,7 +86,7 @@ actor class TokenIndex() = this {
               endDate: Nat64 = 18446744073709551615;
               co2Emission: Float = 11.22;
               radioactivityEmnission: Float = 10.20;
-              volumeProduced: Nat = 1000;
+              volumeProduced: Float = 1000;
               deviceDetails = {
                 name = "machine";
                 deviceType = "type";
@@ -98,8 +100,8 @@ actor class TokenIndex() = this {
                 latitude: Float = 0;
                 longitude: Float = 1;
                 address = "address anywhere";
-                stateProvince = "texas";
-                country = "texas";
+                stateProvince = "chile";
+                country = "chile";
               };
               dates: [Nat64] = [123321, 123123];
             };
@@ -180,17 +182,10 @@ actor class TokenIndex() = this {
 
 
 
-  public func getRemainingAmount(tokenId: T.TokenId): async Nat {
+  public func getRemainingAmount(tokenId: T.TokenId): async Float {
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
       case (?cid) return await TokenCanister(cid).getRemainingAmount();
-    };
-  };
-
-  public func getUserMinted(uid: T.UID, tokenId: T.TokenId): async Nat {
-    switch (tokenDirectory.get(tokenId)) {
-      case (null) throw Error.reject("Token not found");
-      case (?cid) return await TokenCanister(cid).getUserMinted(uid);
     };
   };
 
@@ -201,17 +196,33 @@ actor class TokenIndex() = this {
     };
   };
 
-  public func mintToken(uid: T.UID, tokenId: T.TokenId, amount: Nat): async T.TokenInfo {
+  public func mintToken(uid: T.UID, tokenId: T.TokenId, amount: Float): async() {
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
       case (?cid) await TokenCanister(cid).mintToken(uid, amount);
     };
   };
 
-  public func burnToken(uid: T.UID, tokenId: T.TokenId, amount: Nat): async T.TokenInfo {
+  public func burnToken(uid: T.UID, tokenId: T.TokenId, amount: Float): async() {
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
       case (?cid) await TokenCanister(cid).burnToken(uid, amount);
     };
+  };
+
+  public func getPortfolio(uid: T.UID, tokenIds: [T.TokenId]): async [T.TokenInfo] {
+    let tokens = Buffer.Buffer<T.TokenInfo>(100);
+
+    for(item in tokenIds.vals()) {
+      switch (tokenDirectory.get(item)) {
+        case (null) {};
+        case (?cid) {
+          let token: T.TokenInfo = await TokenCanister(cid).getUserMinted(uid);
+          tokens.add(token);
+        };
+      };
+    };
+
+    Buffer.toArray<T.TokenInfo>(tokens);
   };
 }

@@ -3,7 +3,7 @@ import { useAgentCanister as agent, getErrorMessage } from "@/services/icp-provi
 import avatar from '@/assets/sources/images/avatar-online.svg'
 import store from "@/store";
 import { UserProfileModel } from "@/models/user-profile-model";
-import { TokenModel, TokenStatus } from "@/models/token-model";
+import { AssetType, TokenModel, TokenStatus } from "@/models/token-model";
 
 export class UsersCanister {
   static async register(data: {
@@ -86,6 +86,7 @@ export class UsersCanister {
       const response = await agent().getPortfolio() as [TokenModel]
       for (const item of response) {
         item.status = Object.values(item.status)[0] as TokenStatus
+        item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
       }
       return response
     } catch (error) {

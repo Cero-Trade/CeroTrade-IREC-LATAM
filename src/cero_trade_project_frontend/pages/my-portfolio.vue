@@ -25,14 +25,18 @@
       <v-col lg="9" md="8" cols="12">
         <v-card class="card" style="min-height: 100%!important;">
           <h6>Renewable sources</h6>
-          <renewable-chart height="250" :series="series" />
+          <renewable-chart
+            height="250"
+            :series="series"
+            :categories="categories"
+          />
         </v-card>
       </v-col>
 
       <v-col xl="2" lg="2" md="4" cols="12" class="delete-mobile d-flex flex-column" style="gap: 20px;">
         <v-card class="card card-mwh d-flex flex-column-jcenter flex-grow-1">
           <h6>Total MWh</h6>
-          <h5 >10MWh</h5>
+          <h5 >{{ totalMwh }}MWh</h5>
         </v-card>
 
         <v-card class="card card-mwh d-flex flex-column-jcenter flex-grow-1">
@@ -116,16 +120,16 @@
             </v-checkbox>
           </template>
 
-          <!-- <template #[`item.asset_id`]="{ item }">
+          <template #[`item.asset_id`]="{ item }">
             <span class="acenter bold" style="color: #475467;">
               {{ item.asset_id }} 
             </span>
-          </template> -->
+          </template>
 
           <template #[`item.energy_source`]="{ item }">
             <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
               <img :src="energies[item.energy_source]" :alt="`${item.energy_source} icon`" style="width: 20px;">
-              {{ item.energy_source }}
+              {{ item.energy_source }} Energy
             </span>
           </template>
 
@@ -190,10 +194,10 @@
                 </span>
               </div>
 
-              <div class="jspace divrow mb-1">
+              <!-- <div class="jspace divrow mb-1">
                 <span>Assets ID</span>
                 <span style="color: #475467;">#{{ item.id }}</span>
-              </div>
+              </div> -->
 
               <div class="jspace divrow mb-1">
                 <span>MWh</span>
@@ -244,45 +248,13 @@ export default{
       checkboxBaseIcon,
       windowStep: undefined,
       tabsWindow: 1,
-      donutSeries: [44, 55, 81],
-      donutOptions: {
-        labels: ['Redeemed', 'Tokenized', 'Raw'], 
-        chart: {
-          type: 'donut',
-        },
-        plotOptions: {
-          pie: {
-            donut: {
-              size: '50%',
-            },
-          },
-        },
-        colors: ['#00393D', '#00555B', '#C6F221'],
-        dataLabels: {
-          enabled: false,
-        },
-        stroke: {
-          width: 0, 
-        },
-        responsive: [{
-          breakpoint: 480,
-          options: {
-            chart: {
-              width: 300
-            },
-            // legend: {
-            //   position: 'bottom'
-            // }
-          }
-        }]
-      },
       
       energies: {
-        'hydro energy': HydroEnergyIcon,
+        hydro: HydroEnergyIcon,
         ocean: OceanEnergyIcon,
         geothermal: GeothermalEnergyIcon,
         biome: BiomeEnergyIcon,
-        'wind energy': WindEnergyIcon,
+        wind: WindEnergyIcon,
         sun: SolarEnergyIcon,
       },
       countries: {
@@ -291,7 +263,7 @@ export default{
       statuses: {
         'not for sale': WalletIcon,
         'for sale': TokenizedIcon,
-        'sold': TokenizedIcon,
+        sold: TokenizedIcon,
         redeemed: RedeemedIcon
       },
 
@@ -300,121 +272,22 @@ export default{
         { title: 'Token ID', sortable: false, key: 'token_id', align: "center" },
         { title: 'Energy source', key: 'energy_source', sortable: false },
         { title: 'Country', key: 'country', sortable: false },
-        { title: 'Asset ID', key: 'asset_id', sortable: false },
+        // { title: 'Asset ID', key: 'asset_id', sortable: false },
         { title: 'MWh', key: 'mwh', sortable: false },
         { title: 'Status', key: 'status', sortable: false },
       ],
       dataMarketplace: [
-        { 
-          token_id: 1,
-          // asset_id: '1234567',
-          price: 125.00,
-          energy_source: 'hydro energy',
-          country: 'chile',
-          mwh: 32,
-          volume: 7654,
-          checkbox: false,
-          status: 'for sale',
-        },
-        {
-          token_id: 2,
-          // asset_id: '1234567',
-          price: 125.00,
-          energy_source: 'sun',
-          country: 'chile',
-          mwh: 32,
-          volume: 7654,
-          checkbox: false,
-          status: 'redeemed',
-        },
-        {
-          token_id: 3,
-          // asset_id: '1234567',
-          price: 125.00,
-          energy_source: 'wind energy',
-          country: 'chile',
-          mwh: 32,
-          volume: 7654,
-          checkbox: false,
-          status: 'not for sale',
-        },
-        {
-          token_id: 4,
-          // asset_id: '1234567',
-          price: 125.00,
-          energy_source: 'sun',
-          country: 'chile',
-          mwh: 32,
-          volume: 7654,
-          checkbox: false,
-          status: 'redeemed',
-        },
-        {
-          token_id: 5,
-          // asset_id: '1234567',
-          price: 125.00,
-          energy_source: 'wind energy',
-          country: 'chile',
-          mwh: 32,
-          volume: 7654,
-          checkbox: false,
-          status: 'sold',
-        },
-        {
-          token_id: 6,
-          // asset_id: '1234567',
-          price: 125.00,
-          energy_source: 'sun',
-          country: 'chile',
-          mwh: 32,
-          volume: 7654,
-          checkbox: false,
-          status: 'redeemed',
-        },
-        {
-          token_id: 7,
-          // asset_id: '1234567',
-          price: 125.00,
-          energy_source: 'wind energy',
-          country: 'chile',
-          mwh: 32,
-          volume: 7654,
-          checkbox: false,
-          status: 'for sale',
-        },
-        {
-          token_id: 8,
-          // asset_id: '1234567',
-          price: 125.00,
-          energy_source: 'sun',
-          country: 'chile',
-          mwh: 32,
-          volume: 7654,
-          checkbox: false,
-          status: 'redeemed',
-        },
-        {
-          token_id: 9,
-          // asset_id: '1234567',
-          price: 125.00,
-          energy_source: 'wind energy',
-          country: 'chile',
-          mwh: 32,
-          volume: 7654,
-          checkbox: false,
-          status: 'for sale',
-        },
-        {
-          token_id: 10,
-          // asset_id: '1234567',
-          price: 125.00,
-          energy_source: 'sun',
-          country: 'chile',
-          mwh: 32,
-          volume: 7654,
-          checkbox: false,
-          status: 'redeemed',
-        },
+        // { 
+        //   token_id: 1,
+        //   // asset_id: '1234567',
+        //   price: 125.00,
+        //   energy_source: 'hydro energy',
+        //   country: 'chile',
+        //   mwh: 32,
+        //   volume: 7654,
+        //   checkbox: false,
+        //   status: 'for sale',
+        // },
       ],
 
       allItems: 'All items',
@@ -423,10 +296,8 @@ export default{
       timeline: 'Timeline',
       toggle: 0,
 
-      series: [{
-        name: 'PRODUCT A',
-        data: [24, 55, 31, 67, 12, 43]
-      },],
+      series: undefined,
+      categories: undefined
     }
   },
   computed: {
@@ -436,6 +307,12 @@ export default{
       } else {
         return 2;
       }
+    },
+    totalMwh() {
+      if (!this.series) return 0
+      const data = this.series[0].data
+      console.log(data);
+      return data.reduce((acc, item) => acc + item, 0)
     }
   },
   watch: {
@@ -450,9 +327,37 @@ export default{
   methods:{
     async getData() {
       try {
-        const res = await UsersCanister.getPortfolio()
-        // TODO storage and use data below
-        console.log(res);
+        const res = await UsersCanister.getPortfolio(),
+        list = []
+
+        for (const item of res) {
+          list.push({
+            token_id: item.tokenId,
+            energy_source: item.assetInfo.assetType,
+            country: item.assetInfo.specifications.country,
+            mwh: item.totalAmount,
+            status: item.status,
+            checkbox: false,
+          })
+        }
+
+        this.dataMarketplace = list.sort((a, b) => a.token_id - b.token_id)
+
+        const grouped = list.reduce((acc, item) => {
+          let existenceElement = acc.find(elem => elem.energy_source === item.energy_source);
+          if (existenceElement) {
+            existenceElement.valor += item.mwh;
+          } else {
+            acc.push({ ...item });
+          }
+          return acc;
+        }, []);
+
+        this.series = [{
+          name: 'MWh',
+          data: grouped.map(e => e.mwh)
+        }]
+        if (grouped.length) this.categories = grouped.map(e => e.energy_source)
       } catch (error) {
         console.error(error);
       }

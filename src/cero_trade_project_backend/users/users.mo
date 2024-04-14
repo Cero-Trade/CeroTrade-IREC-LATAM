@@ -1,7 +1,6 @@
 import HM = "mo:base/HashMap";
 import Principal "mo:base/Principal";
 import Text "mo:base/Text";
-import Debug "mo:base/Debug";
 import Nat "mo:base/Nat";
 import Error "mo:base/Error";
 import Bool "mo:base/Bool";
@@ -12,6 +11,8 @@ import TM "mo:base/TrieMap";
 import Hash "mo:base/Hash";
 import Iter "mo:base/Iter";
 import AccountIdentifier "mo:account-identifier";
+import Debug "mo:base/Debug";
+
 
 // types
 import T "../types";
@@ -33,7 +34,7 @@ actor class Users() = this {
       principal = uid;
       ledger = AccountIdentifier.accountIdentifier(uid, AccountIdentifier.defaultSubaccount());
       companyLogo = null;
-      portfolio = HM.HashMap<T.TokenId, T.TokenInfo>(1, Text.equal, Text.hash);
+      portfolio = [];
       redemptions = TM.TrieMap<T.RedemId, T.RedemInfo>(Nat.equal, Hash.hash);
       transactions = TM.TrieMap<T.TransactionId, T.TransactionInfo>(Nat.equal, Hash.hash);
     };
@@ -50,7 +51,7 @@ actor class Users() = this {
 
   /// store user company logo to cero trade
   public func storeCompanyLogo(uid: T.UID, avatar: T.CompanyLogo): async() {
-    var userInfo = switch (users.get(uid)) {
+    let userInfo = switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
       case (?info) {
         { info with companyLogo = ?avatar }
@@ -63,21 +64,58 @@ actor class Users() = this {
 
   /// get user from usersAvatar collection
   public query func getCompanyLogo(uid: T.UID) : async T.CompanyLogo {
-    switch (users.get(uid)) {
+    let companyLogo = switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
-      case (?info) switch(info.companyLogo) {
-        case(null) throw Error.reject("Logo not found");
-        case(?value) value;
+      case (?info) info.companyLogo;
+    };
+
+    switch(companyLogo) {
+      case(null) throw Error.reject("Logo not found");
+      case(?value) value;
+    }
+  };
+
+
+  /// update user portfolio
+  public func updatePorfolio(uid: T.UID, tokenId: T.TokenId) : async() {
+    let userInfo = switch (users.get(uid)) {
+      case (null) throw Error.reject(userNotFound);
+      case (?info) info;
+    };
+
+    let portfolio = Buffer.fromArray<T.TokenId>(userInfo.portfolio);
+
+    switch(Buffer.indexOf<T.TokenId>(tokenId, portfolio, Text.equal)) {
+      case(null) {
+        portfolio.add(tokenId);
+
+        users.put(uid, { userInfo with portfolio = Buffer.toArray(portfolio) })
+      };
+      case(?index) {
+        portfolio.put(index, tokenId);
+
+        users.put(uid, { userInfo with portfolio = Buffer.toArray(portfolio) })
       };
     };
   };
 
 
-  /// update user portfolio
-  public func updatePorfolio(uid: T.UID, token: T.TokenInfo) : async() {
-    switch (users.get(uid)) {
+  /// delete user portfolio
+  public func deletePorfolio(uid: T.UID, tokenId: T.TokenId) : async() {
+    let userInfo = switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
-      case (?info) info.portfolio.put(token.tokenId, token);
+      case (?info) info;
+    };
+
+    let portfolio = Buffer.fromArray<T.TokenId>(userInfo.portfolio);
+
+    switch(Buffer.indexOf<T.TokenId>(tokenId, portfolio, Text.equal)) {
+      case(null) throw Error.reject("Token doesn't exists");
+      case(?index) {
+        let removedToken = portfolio.remove(index);
+
+        users.put(uid, { userInfo with portfolio = Buffer.toArray(portfolio) })
+      };
     };
   };
   
@@ -101,10 +139,10 @@ actor class Users() = this {
 
 
 
-  public query func getPortfolio(uid: T.UID) : async [T.TokenInfo] {
+  public query func getPortfolioTokenIds(uid: T.UID) : async [T.TokenId] {
     switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
-      case (?info) return Iter.toArray<T.TokenInfo>(info.portfolio.vals());
+      case (?info) return info.portfolio;
     };
   };
 

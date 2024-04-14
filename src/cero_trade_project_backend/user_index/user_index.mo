@@ -131,7 +131,7 @@ actor UserIndex {
   };
 
   /// update user portfolio
-  public func updatePorfolio(uid: T.UID, token: T.TokenInfo) : async() {
+  public func updatePorfolio(uid: T.UID, token: T.TokenId) : async() {
     if (usersDirectoy.get(uid) == null) throw Error.reject("User doesn't exists");
 
     // TODO evaluate how to search specific canister to call updatePorfolio func
@@ -156,11 +156,11 @@ actor UserIndex {
 
 
   /// get portfolio information
-  public func getPortfolio(uid: T.UID): async [T.TokenInfo] {
+  public func getPortfolioTokenIds(uid: T.UID): async [T.TokenId] {
     let exists: Bool = _checkPrincipal(uid);
     if (not exists) throw Error.reject(notExists);
 
-    // TODO evaluate how to search specific canister to call getPortfolio func
-    await Users.getPortfolio(uid);
+    // TODO evaluate how to search specific canister to call getPortfolioTokenIds func
+    await Users.getPortfolioTokenIds(uid);
   };
 }
