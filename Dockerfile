@@ -11,14 +11,23 @@ RUN apt-get update && apt-get install -y \
     cmake \
     && rm -rf /var/lib/apt/lists/*
 
-# Set environment variables for DFINITY Canister SDK version
-ENV DFX_VERSION=0.9.3
+# Set the environment variable to non-interactively agree to the installation prompts
+ENV DFXVM_INIT_YES=true
 
 # Install the DFINITY Canister SDK
-RUN sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)" "" --version $DFX_VERSION
+RUN curl -fsSL https://internetcomputer.org/install.sh | sh \
+    && echo "Install script exit code: $?"
 
-# Verify dfx installation
-RUN dfx --version
+# Define the DFX_PATH environment variable and add it to PATH
+ENV DFX_PATH="/root/.local/share/dfx/bin"
+ENV PATH="$DFX_PATH:$PATH"
+
+# Verify dfx installation and check if moc is installed correctly
+RUN curl -fsSL https://internetcomputer.org/install.sh | sh \
+    && echo "Install script exit code: $?"
+
+# Attempt to load the environment and check for `moc`
+RUN bash -lc "dfx --version && find / -name moc 2>/dev/null"
 
 # Install ic-mops globally
 RUN npm install -g ic-mops
@@ -30,19 +39,25 @@ WORKDIR /app
 COPY . .
 
 # Install project dependencies including Node.js packages
-# Note: This assumes your project has a package.json file at its root
 RUN npm install
 
 # Use ic-mops to install Motoko package dependencies
-# Note: This command assumes you have a mops.toml file in your project root
-# Adjust the command as necessary based on your project's setup
-RUN ic-mops install
+RUN mops install
 
 # Expose any ports your app needs (adjust as necessary)
-# EXPOSE 8000
+EXPOSE 8000
 
-# Command to run your app (adjust according to your project's needs)
-# For example, to start a development server:
-# CMD ["npm", "run", "start"]
-# Or, to keep the container running without an explicit task, use:
-CMD ["sleep", "infinity"]
+# Commands to run your app
+# Assuming dfx, generate, copy commands and deploy commands are needed
+RUN dfx start --background --clean \
+    && dfx generate \
+    && cp src/declarations/users/* .dfx/local/canisters/users/ \
+    && cp src/declarations/user_index/* .dfx/local/canisters/user_index/ \
+    && cp src/declarations/token/* .dfx/local/canisters/token/ \
+    && cp src/declarations/token_index/* .dfx/local/canisters/token_index/ \
+    && cp src/declarations/agent/* .dfx/local/canisters/agent/ \
+    && cp src/declarations/marketplace/* .dfx/local/canisters/marketplace/ \
+    && cp src/declarations/http_service/* .dfx/local/canisters/http_service/ \
+    && dfx deploy
+
+# CMD to keep the container running

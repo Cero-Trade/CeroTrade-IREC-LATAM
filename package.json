@@ -6,7 +6,8 @@
     "build": "vite build",
     "lint": "eslint . --fix --ignore-path .gitignore",
     "dev": "vite",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dfx:commands": "node dfxCommands.js"
   },
   "dependencies": {
     "@connect2ic/core": "^0.1.6",
