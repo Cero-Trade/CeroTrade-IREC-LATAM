@@ -39,15 +39,17 @@
           <h5 >{{ totalMwh }}MWh</h5>
         </v-card>
 
+        <!-- TODO where get this -->
         <v-card class="card card-mwh d-flex flex-column-jcenter flex-grow-1">
           <h6>Redeemed MWh</h6>
-          <h5 >10MWh</h5>
+          <h5 >0MWh</h5>
         </v-card>
       </v-col>
     </v-row>
 
     <v-row>
       <v-col xl="6" lg="6" cols="12">
+        <!-- TODO apply filters -->
         <v-tabs
           v-model="tabsWindow"
           bg-color="transparent"

@@ -9,6 +9,7 @@ import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
 import Nat64 "mo:base/Nat64";
 import Buffer "mo:base/Buffer";
+import Debug "mo:base/Debug";
 
 // canisters
 import HttpService "canister:http_service";
@@ -48,6 +49,8 @@ actor class TokenIndex() = this {
       case(?value) throw Error.reject("Token already exists");
       case(null) {
         // TODO debug Cycles.balance()
+        Debug.print(debug_show ("before registerToken: " # Nat.toText(Cycles.balance())));
+
         Cycles.add(300_000_000_000);
         let { canister_id } = await ic.create_canister({
           settings = ?{
@@ -58,6 +61,8 @@ actor class TokenIndex() = this {
           }
         });
 
+        Debug.print(debug_show ("later create_canister: " # Nat.toText(Cycles.balance())));
+
         try {
           let nums8 : [Nat8] = Array.map<Nat, Nat8>(Wasm.token_array, Nat8.fromNat);
 
@@ -67,6 +72,8 @@ actor class TokenIndex() = this {
             mode = #install;
             canister_id;
           });
+
+          Debug.print(debug_show ("later install_canister: " # Nat.toText(Cycles.balance())));
 
           // TODO perfome data fetch asset info using [tokenId] here
           let energy = switch(tokenId) {
@@ -213,6 +220,8 @@ actor class TokenIndex() = this {
   public func getPortfolio(uid: T.UID, tokenIds: [T.TokenId]): async [T.TokenInfo] {
     let tokens = Buffer.Buffer<T.TokenInfo>(100);
 
+    Debug.print(debug_show ("before getPortfolio: " # Nat.toText(Cycles.balance())));
+
     for(item in tokenIds.vals()) {
       switch (tokenDirectory.get(item)) {
         case (null) {};
@@ -222,6 +231,8 @@ actor class TokenIndex() = this {
         };
       };
     };
+
+    Debug.print(debug_show ("later getPortfolio: " # Nat.toText(Cycles.balance())));
 
     Buffer.toArray<T.TokenInfo>(tokens);
   };
