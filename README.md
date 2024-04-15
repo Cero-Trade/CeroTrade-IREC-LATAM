@@ -15,6 +15,11 @@ Install mops dependencies globally if havent
 Otherwise install mops proyect dependencies
 `mops install`
 
+If .did are not created correctly
+
+`dfx create --all`
+`dfx build`
+
 Generate declarations
 ```
 dfx generate
