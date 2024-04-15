@@ -116,7 +116,7 @@ actor UserIndex {
 
     await deleteUserWeb2(token);
 
-    let removedUser = usersDirectoy.remove(uid);
+    let _ = usersDirectoy.remove(uid);
 
     // TODO evaluate how to search specific canister to call deleteUser func
     await Users.deleteUser(uid);

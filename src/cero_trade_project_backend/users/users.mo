@@ -46,7 +46,7 @@ actor class Users() = this {
 
 
   /// delete user to cero trade
-  public func deleteUser(uid: T.UID): async() { let removedUser = users.remove(uid) };
+  public func deleteUser(uid: T.UID): async() { let _ = users.remove(uid) };
 
 
   /// store user company logo to cero trade
@@ -112,7 +112,7 @@ actor class Users() = this {
     switch(Buffer.indexOf<T.TokenId>(tokenId, portfolio, Text.equal)) {
       case(null) throw Error.reject("Token doesn't exists");
       case(?index) {
-        let removedToken = portfolio.remove(index);
+        let _ = portfolio.remove(index);
 
         users.put(uid, { userInfo with portfolio = Buffer.toArray(portfolio) })
       };

@@ -11,10 +11,7 @@ export const canisterImpl = { canisterId: process.env.CERO_TRADE_PROJECT_FRONTEN
 export const createActor = (canisterId, idlFactory, options) => {
   const isDevelopment = process.env.DFX_NETWORK !== "ic",
   identity = vueApp._context.provides.authClient.getIdentity(),
-  agent = new HttpAgent({
-    identity: isDevelopment ? process.env.VITE_ANONYMOUS_IDENTITY : identity,
-    ...options?.agentOptions
-  });
+  agent = new HttpAgent({ identity: isDevelopment ? null : identity, ...options?.agentOptions });
 
   // Fetch root key for certificate validation during development
   if (isDevelopment) {

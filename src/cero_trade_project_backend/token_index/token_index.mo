@@ -134,7 +134,7 @@ actor class TokenIndex() = this {
         Cycles.add(20_949_972_000);
         await ic.stop_canister({ canister_id });
         await ic.delete_canister({ canister_id });
-        let removedToken = tokenDirectory.remove(tokenId)
+        let _ = tokenDirectory.remove(tokenId)
       };
     }
   };

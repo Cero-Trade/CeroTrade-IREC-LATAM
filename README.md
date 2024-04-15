@@ -17,8 +17,10 @@ Otherwise install mops proyect dependencies
 
 If .did are not created correctly
 
-`dfx create --all`
-`dfx build`
+```
+dfx create --all
+dfx build
+```
 
 Generate declarations
 ```
