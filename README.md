@@ -1,19 +1,13 @@
 # Cero Trade
 
 ## Project setup
-Init ic background replica
 
-`dfx start`
+Build docker image
+`docker build -t cerotrade .`
 
-Install dependencies
+Excecute docker container
+`docker run -d -p 8000:8000 --name cerotrade-container cerotrade`
 
-`npm install`
-
-Install mops dependencies globally if havent
-`npm i -g ic-mops`
-
-Otherwise install mops proyect dependencies
-`mops install`
 
 If .did are not created correctly
 
