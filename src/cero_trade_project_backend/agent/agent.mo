@@ -39,6 +39,15 @@ actor Agent {
   /// delete user into cero trade
   public shared({ caller }) func deleteUser(): async() { await UserIndex.deleteUser(caller) };
 
+ /// register Token Wasm Module from client
+  public shared({ caller }) func registerTokenWasmModule(moduleName: T.WasmModuleName, array: [Nat]): async [Nat] {
+    switch(moduleName) {
+      case(#users("users")) [];
+      case(#token("token")) await TokenIndex.registerWasmArray(caller, array);
+      case _ throw Error.reject("Invalid input");
+    };
+  };
+
   /// performe mint with tokenId and amount requested
   public shared({ caller }) func mintToken(tokenId: T.TokenId, amount: Float): async() {
     let exists: Bool = await UserIndex.checkPrincipal(caller);
