@@ -6,6 +6,7 @@ import Blob "mo:base/Blob";
 import Array "mo:base/Array";
 import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
+import Iter "mo:base/Iter";
 import Error "mo:base/Error";
 import Serde "mo:serde";
 import Debug "mo:base/Debug";
@@ -29,10 +30,18 @@ actor class UserIndex() = this {
   stable let notExists = "User doesn't exists on cero trade";
 
 
-  let usersDirectory: HM.HashMap<T.UID, T.CanisterId> = HM.HashMap(16, Principal.equal, Principal.hash);
+  var usersDirectory: HM.HashMap<T.UID, T.CanisterId> = HM.HashMap(16, Principal.equal, Principal.hash);
+  stable var usersDirectoryEntries : [(T.UID, T.CanisterId)] = [];
 
   stable var currentCanisterid: ?T.CanisterId = null;
 
+
+  /// funcs to persistent collection state
+  system func preupgrade() { usersDirectoryEntries := Iter.toArray(usersDirectory.entries()) };
+  system func postupgrade() {
+    usersDirectory := HM.fromIter<T.UID, T.CanisterId>(usersDirectoryEntries.vals(), 16, Principal.equal, Principal.hash);
+    usersDirectoryEntries := [];
+  };
 
   /// get size of usersDirectory collection
   public query func length(): async Nat { usersDirectory.size() };

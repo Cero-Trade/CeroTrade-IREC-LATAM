@@ -37,8 +37,8 @@ module {
     principal: Principal;
     ledger: Blob;
     portfolio: [TokenId];
-    redemptions: TM.TrieMap<RedemId, RedemInfo>;
-    transactions: TM.TrieMap<TransactionId, TransactionInfo>;
+    redemptions: [RedemId];
+    transactions: [TransactionId];
   };
 
   public type UserProfile = {

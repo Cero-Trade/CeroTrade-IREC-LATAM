@@ -3,6 +3,7 @@ import Text "mo:base/Text";
 import Error "mo:base/Error";
 import Principal "mo:base/Principal";
 import Float "mo:base/Float";
+import Iter "mo:base/Iter";
 
 // types
 import ICRC "../ICRC";
@@ -26,9 +27,11 @@ actor class Token(_tokenId: ?T.TokenId) = this {
 
 
 
-  let userIrecs: HM.HashMap<T.UID, T.TokenInfo> = HM.HashMap(16, Principal.equal, Principal.hash);
+  var userIrecs: HM.HashMap<T.UID, T.TokenInfo> = HM.HashMap(16, Principal.equal, Principal.hash);
+  stable var userIrecsEntries : [(T.UID, T.TokenInfo)] = [];
 
 
+  /// initialization function
   public func init(assetMetadata: T.AssetInfo): async() {
     // if (init_msg.caller != caller) throw Error.reject("Unauthorized call");
     if (isInitialized) throw Error.reject("Canister has been initialized");
@@ -36,6 +39,13 @@ actor class Token(_tokenId: ?T.TokenId) = this {
     assetInfo := ?assetMetadata;
     leftToMint := assetMetadata.volumeProduced;
     isInitialized := true;
+  };
+
+  /// funcs to persistent collection state
+  system func preupgrade() { userIrecsEntries := Iter.toArray(userIrecs.entries()) };
+  system func postupgrade() {
+    userIrecs := HM.fromIter<T.UID, T.TokenInfo>(userIrecsEntries.vals(), 16, Principal.equal, Principal.hash);
+    userIrecsEntries := [];
   };
 
 
