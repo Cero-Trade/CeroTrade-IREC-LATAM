@@ -136,6 +136,11 @@ module {
 
   public type WasmModule = Blob;
 
+  public type WasmModuleName = {
+    #users: Text;
+    #token: Text;
+  };
+
   //3. Declaring the management canister which you use to make the Canister dictionary
   public type IC = actor {
     create_canister: shared {settings: ?CanisterSettings} -> async {canister_id: CanisterId};

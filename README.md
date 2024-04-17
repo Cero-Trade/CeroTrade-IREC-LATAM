@@ -51,7 +51,7 @@ To generate the wasm module like array run command below
 
 Note: must to add package.json field -> "type": "module",
 
-`npm run generate-buffer`
+`npm run generate-wasm`
 
 ### Deploying token canisters
 `dfx canister call token_index registerToken '("token_id")'`

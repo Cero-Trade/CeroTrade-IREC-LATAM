@@ -17,13 +17,12 @@ import HttpService "canister:http_service";
 // types
 import T "../types";
 import HT "../http_service/http_service_types";
-import Wasm "../token/token_wasm";
 
 actor class TokenIndex() = this {
   stable let ic : T.IC = actor ("aaaaa-aa");
   private func TokenCanister(cid: T.CanisterId): T.TokenInterface { actor (Principal.toText(cid)) };
   /// ! unused for now
-  // stable var wasm_array : [Nat] = [];
+  stable var wasm_array : [Nat] = [];
 
 
   let tokenDirectory: HM.HashMap<Text, T.CanisterId> = HM.HashMap(16, Text.equal, Text.hash);
@@ -36,10 +35,10 @@ actor class TokenIndex() = this {
   /// ! unused for now
   // TODO try to implements this function
   // TODO validate user authenticate to only admin
-  // public shared ({ caller }) func registerWasmArray(array: [Nat]): async [Nat] {
-  //   wasm_array := array;
-  //   wasm_array
-  // };
+  public func registerWasmArray(uid: T.UID, array: [Nat]): async [Nat] {
+    wasm_array := array;
+    wasm_array
+  };
 
   /// register [tokenDirectory] collection
   public shared({ caller }) func registerToken(tokenId: Text): async Principal {
@@ -48,7 +47,6 @@ actor class TokenIndex() = this {
     switch(tokenDirectory.get(tokenId)) {
       case(?value) throw Error.reject("Token already exists");
       case(null) {
-        // TODO debug Cycles.balance()
         Debug.print(debug_show ("before registerToken: " # Nat.toText(Cycles.balance())));
 
         Cycles.add(300_000_000_000);
@@ -64,7 +62,7 @@ actor class TokenIndex() = this {
         Debug.print(debug_show ("later create_canister: " # Nat.toText(Cycles.balance())));
 
         try {
-          let nums8 : [Nat8] = Array.map<Nat, Nat8>(Wasm.token_array, Nat8.fromNat);
+          let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
 
           await ic.install_code({
             arg = to_candid(tokenId);
