@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e # Exit immediately if a command exits with a non-zero status.
 
 # Start the local Internet Computer network
 echo "Starting the local Internet Computer network..."
@@ -8,6 +7,10 @@ dfx start --background --clean
 # Check dfx version
 echo "DFX version:"
 dfx --version
+
+# Build all did files
+dfx canister create --all
+dfx build
 
 # Generate necessary files
 echo "Generating necessary files..."

@@ -1,7 +1,17 @@
-# Start with the official Node.js base image to get the latest npm along with Node.js
-FROM node:latest
+# Use a specific version of the Node.js base image to ensure consistency
+FROM node:16-slim
+
+# Set work directory
+WORKDIR /app
+
+# Set environment variables that are unlikely to change frequently
+ENV DFXVM_INIT_YES=true \
+    DFX_VERSION="0.15.2" \
+    DFX_PATH="/root/.local/share/dfx/bin" \
+    PATH="$DFX_PATH:$PATH"
 
 # Install system dependencies required for the DFINITY Canister SDK and general development
+# Group commands to reduce layers and use clean-up in the same layer to reduce image size
 RUN apt-get update && apt-get install -y \
     curl \
     git \
@@ -9,49 +19,28 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     pkg-config \
     cmake \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set the environment variable to non-interactively agree to the installation prompts
-ENV DFXVM_INIT_YES=true
-ENV DFX_VERSION="0.15.2"
-
-# Install the DFINITY Canister SDK
-RUN curl -fsSL https://internetcomputer.org/install.sh | sh \
+    libunwind8 \
+    && curl -fsSL https://internetcomputer.org/install.sh | sh \
+    && dfx cache install \
+    && rm -rf /var/lib/apt/lists/* \
     && echo "Install script exit code: $?"
 
-# Define the DFX_PATH environment variable and add it to PATH
-ENV DFX_PATH="/root/.local/share/dfx/bin"
-ENV PATH="$DFX_PATH:$PATH"
-
-# Verify dfx installation and check if moc is installed correctly
-RUN dfx cache install
-
-# Attempt to load the environment and check for `moc`
-RUN bash -lc "dfx --version && find / -name moc 2>/dev/null"
-
-# Install ic-mops globally
+# Install global npm packages
 RUN npm install -g ic-mops
 
-# Set the working directory in the Docker container
-WORKDIR /app
+# Copy only the necessary dependency files
+COPY package*.json ./
 
-# Copy your project files into the working directory
-COPY . .
-
-# Install project dependencies including Node.js packages
+# Install Node.js dependencies
 RUN npm install
 
-# Use ic-mops to install Motoko package dependencies
-RUN mops install
-
-# Expose any ports your app needs (adjust as necessary)
-EXPOSE 8000
-
-# Copy the build script to the container
-COPY build_script.sh /app/build_script.sh
+# Copy the rest of your project files into the working directory
+COPY . .
 
 # Give execute permissions to the build script
-RUN chmod +x /app/build_script.sh
+RUN chmod +x build_script.sh
 
-WORKDIR /app
+# Expose any ports your app needs
+EXPOSE 8000
+
 CMD ["/app/build_script.sh"]
