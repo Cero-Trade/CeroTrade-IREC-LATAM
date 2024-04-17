@@ -1,38 +1,97 @@
 import HM = "mo:base/HashMap";
 import Principal "mo:base/Principal";
 import Text "mo:base/Text";
+import Cycles "mo:base/ExperimentalCycles";
+import Blob "mo:base/Blob";
+import Array "mo:base/Array";
+import Nat "mo:base/Nat";
+import Nat8 "mo:base/Nat8";
 import Error "mo:base/Error";
 import Serde "mo:serde";
 import Debug "mo:base/Debug";
 
 // canisters
 import HttpService "canister:http_service";
-import Users "canister:users";
 
 // types
 import T "../types";
 import HT "../http_service/http_service_types";
 
-actor UserIndex {
+actor class UserIndex() = this {
   stable let ic : T.IC = actor ("aaaaa-aa");
-  // private func UsersCanister(cid: T.CanisterId): T.UsersInterface { actor (Principal.toText(cid)) };
+  private func UsersCanister(cid: T.CanisterId): T.UsersInterface { actor (Principal.toText(cid)) };
+  stable var wasm_array : [Nat] = [];
+  stable let LOW_MEMORY_LIMIT: Nat = 50000;
+
+
+  // constants
   stable let alreadyExists = "User already exists on cero trade";
   stable let notExists = "User doesn't exists on cero trade";
 
 
   let usersDirectory: HM.HashMap<T.UID, T.CanisterId> = HM.HashMap(16, Principal.equal, Principal.hash);
 
+  stable var currentCanisterid: ?T.CanisterId = null;
+
 
   /// get size of usersDirectory collection
   public query func length(): async Nat { usersDirectory.size() };
 
 
-  /// validate user existence (privated)
-  private func _checkPrincipal(uid: T.UID) : Bool { usersDirectory.get(uid) != null };
+  // TODO validate user authenticate to only admin
+  public func registerWasmArray(uid: T.UID, array: [Nat]): async [Nat] {
+    wasm_array := array;
+    wasm_array
+  };
 
   /// validate user existence
   public query func checkPrincipal(uid: T.UID) : async Bool { usersDirectory.get(uid) != null };
 
+
+  /// returns true if canister have storage memory,
+  /// false if havent enough
+  public func checkMemoryStatus() : async Bool {
+    let status = switch(currentCanisterid) {
+      case(null) throw Error.reject("Cant find users canisters registered");
+      case(?cid) await ic.canister_status({ canister_id = cid });
+    };
+
+    status.memory_size > LOW_MEMORY_LIMIT
+  };
+
+  /// autonomous function, will be executed when current canister it is full
+  private func createCanister(): async ?T.CanisterId {
+    Debug.print(debug_show ("before registerToken: " # Nat.toText(Cycles.balance())));
+
+    Cycles.add(300_000_000_000);
+    let { canister_id } = await ic.create_canister({
+      settings = ?{
+        controllers = ?[Principal.fromActor(this)];
+        compute_allocation = null;
+        memory_allocation = null;
+        freezing_threshold = null;
+      }
+    });
+
+    Debug.print(debug_show ("later create_canister: " # Nat.toText(Cycles.balance())));
+
+    try {
+      let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
+
+      await ic.install_code({
+        arg = to_candid();
+        wasm_module = Blob.fromArray(nums8);
+        mode = #install;
+        canister_id;
+      });
+
+      Debug.print(debug_show ("later install_canister: " # Nat.toText(Cycles.balance())));
+
+      return ?canister_id
+    } catch (error) {
+      throw Error.reject(Error.message(error));
+    }
+  };
 
   private func deleteUserWeb2(token: Text): async() {
     let formData = { token };
@@ -53,8 +112,7 @@ actor UserIndex {
     // WARN just for debug
     Debug.print(Principal.toText(uid));
 
-    let exists: Bool = _checkPrincipal(uid);
-    if (exists) throw Error.reject(alreadyExists);
+    if (usersDirectory.get(uid) != null) throw Error.reject(alreadyExists);
 
     let formData = {
       principalId = Principal.toText(uid);
@@ -79,14 +137,38 @@ actor UserIndex {
       });
     let trimmedToken = Text.trimEnd(Text.trimStart(token, #char '\"'), #char '\"');
 
+    // WARN just for debug
+    Debug.print("token: " # trimmedToken);
 
     try {
-      // WARN just for debug
-      Debug.print("token: " # token);
+      let errorText = "Error generating canister";
 
-      // TODO evaluate how to search specific canister to call registerUser func
+      /// get canister id and generate if need it
+      let cid: T.CanisterId = switch(currentCanisterid) {
+        case(null) {
+          /// generate canister
+          currentCanisterid := await createCanister();
+          switch(currentCanisterid) {
+            case(null) throw Error.reject(errorText);
+            case(?cid) cid;
+          };
+        };
+        case(?cid) {
+          /// validate canister capability
+          let haveMemory = await checkMemoryStatus();
+          if (haveMemory) { cid } else {
+            /// generate canister
+            currentCanisterid := await createCanister();
+            switch(currentCanisterid) {
+              case(null) throw Error.reject(errorText);
+              case(?cid) cid;
+            };
+          }
+        };
+      };
+
       // register user
-      let cid = await Users.registerUser(uid, trimmedToken);
+      await UsersCanister(cid).registerUser(uid, trimmedToken);
 
       usersDirectory.put(uid, cid);
     } catch (error) {
@@ -98,58 +180,55 @@ actor UserIndex {
 
   /// store user avatar into users collection
   public func storeCompanyLogo(uid: T.UID, avatar: T.CompanyLogo): async() {
-    let exists: Bool = _checkPrincipal(uid);
-    if (not exists) throw Error.reject(notExists);
-
-    try {
-      // TODO evaluate how to search specific canister to call storeCompanyLogo func
-      await Users.storeCompanyLogo(uid, avatar);
-    } catch (error) {
-      throw Error.reject(Error.message(error));
+    switch(usersDirectory.get(uid)) {
+      case(null) throw Error.reject(notExists);
+      case(?cid) await UsersCanister(cid).storeCompanyLogo(uid, avatar);
     };
   };
 
   /// delete user to cero trade
   public func deleteUser(uid: T.UID): async() {
-    // TODO evaluate how to search specific canister to call getUserToken func
-    let token = await Users.getUserToken(uid);
+    let cid: T.CanisterId = switch(usersDirectory.get(uid)) {
+      case(null) throw Error.reject(notExists);
+      case(?cid) cid;
+    };
+
+    let token = await UsersCanister(cid).getUserToken(uid);
 
     await deleteUserWeb2(token);
 
-    let _ = usersDirectory.remove(uid);
+    await UsersCanister(cid).deleteUser(uid);
 
-    // TODO evaluate how to search specific canister to call deleteUser func
-    await Users.deleteUser(uid);
+    let _ = usersDirectory.remove(uid);
   };
 
   /// get canister id that allow current user
   public query func getUserCanister(uid: T.UID) : async T.CanisterId {
     switch (usersDirectory.get(uid)) {
-      case (null) { throw Error.reject("User not found"); };
-      case (?cid) { return cid; };
+      case (null) throw Error.reject(notExists);
+      case (?cid) cid;
     };
   };
 
   /// update user portfolio
   public func updatePorfolio(uid: T.UID, token: T.TokenId) : async() {
-    if (usersDirectory.get(uid) == null) throw Error.reject("User doesn't exists");
-
-    // TODO evaluate how to search specific canister to call updatePorfolio func
-    await Users.updatePorfolio(uid, token)
+    switch(usersDirectory.get(uid)) {
+      case (null) throw Error.reject(notExists);
+      case(?cid) await UsersCanister(cid).updatePorfolio(uid, token);
+    };
   };
 
 
   /// get profile information
   public func getProfile(uid: T.UID): async T.UserProfile {
-    let exists: Bool = _checkPrincipal(uid);
-    if (not exists) throw Error.reject(notExists);
+    let cid: T.CanisterId = switch(usersDirectory.get(uid)) {
+      case (null) throw Error.reject(notExists);
+      case(?cid) cid;
+    };
 
-    // TODO evaluate how to search specific canister to call getCompanyLogo func
-    let token = await Users.getUserToken(uid);
+    let token = await UsersCanister(cid).getUserToken(uid);
     let profile = await HttpService.get(HT.apiUrl # "users/retrieve/" # token, { headers = [] });
-
-    // TODO evaluate how to search specific canister to call getCompanyLogo func
-    let companyLogo = await Users.getCompanyLogo(uid);
+    let companyLogo = await UsersCanister(cid).getCompanyLogo(uid);
 
     { companyLogo; profile; }
   };
@@ -157,10 +236,9 @@ actor UserIndex {
 
   /// get portfolio information
   public func getPortfolioTokenIds(uid: T.UID): async [T.TokenId] {
-    let exists: Bool = _checkPrincipal(uid);
-    if (not exists) throw Error.reject(notExists);
-
-    // TODO evaluate how to search specific canister to call getPortfolioTokenIds func
-    await Users.getPortfolioTokenIds(uid);
+    switch(usersDirectory.get(uid)) {
+      case (null) throw Error.reject(notExists);
+      case(?cid) await UsersCanister(cid).getPortfolioTokenIds(uid);
+    };
   };
 }

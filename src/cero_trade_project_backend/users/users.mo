@@ -17,8 +17,10 @@ import Debug "mo:base/Debug";
 // types
 import T "../types";
 
-actor class Users() = this {
+actor Users {
+  // constants
   stable let userNotFound: Text = "User not found";
+
 
   let users: HM.HashMap<T.UID, T.UserInfo> = HM.HashMap(16, Principal.equal, Principal.hash);
 
@@ -28,7 +30,7 @@ actor class Users() = this {
 
 
   /// register user to cero trade
-  public func registerUser(uid: T.UID, token: Text): async T.CanisterId {
+  public func registerUser(uid: T.UID, token: Text): async() {
     let userInfo = {
       vaultToken = token;
       principal = uid;
@@ -40,8 +42,6 @@ actor class Users() = this {
     };
 
     users.put(uid, userInfo);
-
-    Principal.fromActor(this)
   };
 
 

@@ -20,7 +20,11 @@ actor class Token(_tokenId: ?T.TokenId) = this {
   stable var assetInfo: ?T.AssetInfo = null;
   stable var leftToMint: Float = 0;
 
+
+  // constants
   stable let userNotFound: Text = "User not found";
+
+
 
   let userIrecs: HM.HashMap<T.UID, T.TokenInfo> = HM.HashMap(16, Principal.equal, Principal.hash);
 

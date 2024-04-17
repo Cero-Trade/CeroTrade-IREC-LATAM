@@ -21,7 +21,6 @@ import HT "../http_service/http_service_types";
 actor class TokenIndex() = this {
   stable let ic : T.IC = actor ("aaaaa-aa");
   private func TokenCanister(cid: T.CanisterId): T.TokenInterface { actor (Principal.toText(cid)) };
-  /// ! unused for now
   stable var wasm_array : [Nat] = [];
 
 
@@ -32,8 +31,6 @@ actor class TokenIndex() = this {
   public query func length(): async Nat { tokenDirectory.size() };
 
 
-  /// ! unused for now
-  // TODO try to implements this function
   // TODO validate user authenticate to only admin
   public func registerWasmArray(uid: T.UID, array: [Nat]): async [Nat] {
     wasm_array := array;

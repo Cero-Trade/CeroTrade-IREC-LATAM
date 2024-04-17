@@ -171,7 +171,7 @@ module {
 
   public type UsersInterface = actor {
     length: query () -> async Nat;
-    registerUser: (uid: UID, token: Text) -> async CanisterId;
+    registerUser: (uid: UID, token: Text) -> async();
     deleteUser: (uid: UID) -> async();
     storeCompanyLogo: (uid: UID, avatar: CompanyLogo) -> async();
     getCompanyLogo: query (uid: UID) -> async CompanyLogo;

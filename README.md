@@ -42,10 +42,12 @@ To deploy only backend canisters run
 
 `dfx deploy agent`
 
-### Generate token wasm module
+### Generate wasm modules
 ```
 dfx canister create token
 dfx build token
+dfx canister create users
+dfx build users
 ```
 To generate the wasm module like array run command below
 
