@@ -46,3 +46,12 @@ RUN mops install
 
 # Expose any ports your app needs (adjust as necessary)
 EXPOSE 8000
+
+# Copy the build script to the container
+COPY build_script.sh /app/build_script.sh
+
+# Give execute permissions to the build script
+RUN chmod +x /app/build_script.sh
+
+WORKDIR /app
+CMD ["/app/build_script.sh"]
