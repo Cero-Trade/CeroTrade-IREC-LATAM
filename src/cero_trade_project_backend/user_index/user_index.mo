@@ -20,18 +20,18 @@ actor UserIndex {
   stable let notExists = "User doesn't exists on cero trade";
 
 
-  let usersDirectoy: HM.HashMap<T.UID, T.CanisterId> = HM.HashMap(16, Principal.equal, Principal.hash);
+  let usersDirectory: HM.HashMap<T.UID, T.CanisterId> = HM.HashMap(16, Principal.equal, Principal.hash);
 
 
-  /// get size of usersDirectoy collection
-  public query func length(): async Nat { usersDirectoy.size() };
+  /// get size of usersDirectory collection
+  public query func length(): async Nat { usersDirectory.size() };
 
 
   /// validate user existence (privated)
-  private func _checkPrincipal(uid: T.UID) : Bool { usersDirectoy.get(uid) != null };
+  private func _checkPrincipal(uid: T.UID) : Bool { usersDirectory.get(uid) != null };
 
   /// validate user existence
-  public query func checkPrincipal(uid: T.UID) : async Bool { usersDirectoy.get(uid) != null };
+  public query func checkPrincipal(uid: T.UID) : async Bool { usersDirectory.get(uid) != null };
 
 
   private func deleteUserWeb2(token: Text): async() {
@@ -48,7 +48,7 @@ actor UserIndex {
       });
   };
 
-  /// register [usersDirectoy] collection
+  /// register [usersDirectory] collection
   public func registerUser(uid: T.UID, form: T.RegisterForm) : async() {
     // WARN just for debug
     Debug.print(Principal.toText(uid));
@@ -88,7 +88,7 @@ actor UserIndex {
       // register user
       let cid = await Users.registerUser(uid, trimmedToken);
 
-      usersDirectoy.put(uid, cid);
+      usersDirectory.put(uid, cid);
     } catch (error) {
       await deleteUserWeb2(trimmedToken);
 
@@ -116,7 +116,7 @@ actor UserIndex {
 
     await deleteUserWeb2(token);
 
-    let removedUser = usersDirectoy.remove(uid);
+    let _ = usersDirectory.remove(uid);
 
     // TODO evaluate how to search specific canister to call deleteUser func
     await Users.deleteUser(uid);
@@ -124,15 +124,15 @@ actor UserIndex {
 
   /// get canister id that allow current user
   public query func getUserCanister(uid: T.UID) : async T.CanisterId {
-    switch (usersDirectoy.get(uid)) {
+    switch (usersDirectory.get(uid)) {
       case (null) { throw Error.reject("User not found"); };
       case (?cid) { return cid; };
     };
   };
 
   /// update user portfolio
-  public func updatePorfolio(uid: T.UID, token: T.TokenInfo) : async() {
-    if (usersDirectoy.get(uid) == null) throw Error.reject("User doesn't exists");
+  public func updatePorfolio(uid: T.UID, token: T.TokenId) : async() {
+    if (usersDirectory.get(uid) == null) throw Error.reject("User doesn't exists");
 
     // TODO evaluate how to search specific canister to call updatePorfolio func
     await Users.updatePorfolio(uid, token)
@@ -156,11 +156,11 @@ actor UserIndex {
 
 
   /// get portfolio information
-  public func getPortfolio(uid: T.UID): async [T.TokenInfo] {
+  public func getPortfolioTokenIds(uid: T.UID): async [T.TokenId] {
     let exists: Bool = _checkPrincipal(uid);
     if (not exists) throw Error.reject(notExists);
 
-    // TODO evaluate how to search specific canister to call getPortfolio func
-    await Users.getPortfolio(uid);
+    // TODO evaluate how to search specific canister to call getPortfolioTokenIds func
+    await Users.getPortfolioTokenIds(uid);
   };
 }

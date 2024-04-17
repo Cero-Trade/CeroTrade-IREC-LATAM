@@ -8,6 +8,8 @@ import Array "mo:base/Array";
 import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
 import Nat64 "mo:base/Nat64";
+import Buffer "mo:base/Buffer";
+import Debug "mo:base/Debug";
 
 // canisters
 import HttpService "canister:http_service";
@@ -15,13 +17,12 @@ import HttpService "canister:http_service";
 // types
 import T "../types";
 import HT "../http_service/http_service_types";
-import Wasm "../token/token_wasm";
 
 actor class TokenIndex() = this {
   stable let ic : T.IC = actor ("aaaaa-aa");
   private func TokenCanister(cid: T.CanisterId): T.TokenInterface { actor (Principal.toText(cid)) };
   /// ! unused for now
-  // stable var wasm_array : [Nat] = [];
+  stable var wasm_array : [Nat] = [];
 
 
   let tokenDirectory: HM.HashMap<Text, T.CanisterId> = HM.HashMap(16, Text.equal, Text.hash);
@@ -34,10 +35,10 @@ actor class TokenIndex() = this {
   /// ! unused for now
   // TODO try to implements this function
   // TODO validate user authenticate to only admin
-  // public shared ({ caller }) func registerWasmArray(array: [Nat]): async [Nat] {
-  //   wasm_array := array;
-  //   wasm_array
-  // };
+  public func registerWasmArray(uid: T.UID, array: [Nat]): async [Nat] {
+    wasm_array := array;
+    wasm_array
+  };
 
   /// register [tokenDirectory] collection
   public shared({ caller }) func registerToken(tokenId: Text): async Principal {
@@ -46,7 +47,8 @@ actor class TokenIndex() = this {
     switch(tokenDirectory.get(tokenId)) {
       case(?value) throw Error.reject("Token already exists");
       case(null) {
-        // TODO debug Cycles.balance()
+        Debug.print(debug_show ("before registerToken: " # Nat.toText(Cycles.balance())));
+
         Cycles.add(300_000_000_000);
         let { canister_id } = await ic.create_canister({
           settings = ?{
@@ -57,8 +59,10 @@ actor class TokenIndex() = this {
           }
         });
 
+        Debug.print(debug_show ("later create_canister: " # Nat.toText(Cycles.balance())));
+
         try {
-          let nums8 : [Nat8] = Array.map<Nat, Nat8>(Wasm.token_array, Nat8.fromNat);
+          let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
 
           await ic.install_code({
             arg = to_candid(tokenId);
@@ -67,14 +71,17 @@ actor class TokenIndex() = this {
             canister_id;
           });
 
+          Debug.print(debug_show ("later install_canister: " # Nat.toText(Cycles.balance())));
+
           // TODO perfome data fetch asset info using [tokenId] here
           let energy = switch(tokenId) {
-            case("1") "hydroenergy";
-            case("2") "solarenergy";
-            case("3") "eolicenergy";
-            case("4") "termoenergy";
-            case("5") "nuclearenergy";
-            case _ "unknow";
+            case("1") #hydro("hydro");
+            case("2") #ocean("ocean");
+            case("3") #geothermal("geothermal");
+            case("4") #biome("biome");
+            case("5") #wind("wind");
+            case("6") #sun("sun");
+            case _ #other("other");
           };
 
           let assetMetadata: T.AssetInfo = /* await HttpService.get("getToken" # tokenId, { headers = [] }) */
@@ -84,11 +91,11 @@ actor class TokenIndex() = this {
               endDate: Nat64 = 18446744073709551615;
               co2Emission: Float = 11.22;
               radioactivityEmnission: Float = 10.20;
-              volumeProduced: Nat = 1000;
+              volumeProduced: Float = 1000;
               deviceDetails = {
                 name = "machine";
                 deviceType = "type";
-                group = energy; // AssetType
+                group = energy;
                 description = "description";
               };
               specifications = {
@@ -98,8 +105,8 @@ actor class TokenIndex() = this {
                 latitude: Float = 0;
                 longitude: Float = 1;
                 address = "address anywhere";
-                stateProvince = "texas";
-                country = "texas";
+                stateProvince = "chile";
+                country = "chile";
               };
               dates: [Nat64] = [123321, 123123];
             };
@@ -125,7 +132,7 @@ actor class TokenIndex() = this {
         Cycles.add(20_949_972_000);
         await ic.stop_canister({ canister_id });
         await ic.delete_canister({ canister_id });
-        let removedToken = tokenDirectory.remove(tokenId)
+        let _ = tokenDirectory.remove(tokenId)
       };
     }
   };
@@ -178,19 +185,10 @@ actor class TokenIndex() = this {
     };
   };
 
-
-
-  public func getRemainingAmount(tokenId: T.TokenId): async Nat {
+  public func getRemainingAmount(tokenId: T.TokenId): async Float {
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
       case (?cid) return await TokenCanister(cid).getRemainingAmount();
-    };
-  };
-
-  public func getUserMinted(uid: T.UID, tokenId: T.TokenId): async Nat {
-    switch (tokenDirectory.get(tokenId)) {
-      case (null) throw Error.reject("Token not found");
-      case (?cid) return await TokenCanister(cid).getUserMinted(uid);
     };
   };
 
@@ -201,14 +199,14 @@ actor class TokenIndex() = this {
     };
   };
 
-  public func mintToken(uid: T.UID, tokenId: T.TokenId, amount: Nat): async T.TokenInfo {
+  public func mintToken(uid: T.UID, tokenId: T.TokenId, amount: Float): async() {
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
       case (?cid) await TokenCanister(cid).mintToken(uid, amount);
     };
   };
 
-  public func burnToken(uid: T.UID, tokenId: T.TokenId, amount: Nat): async T.TokenInfo {
+  public func burnToken(uid: T.UID, tokenId: T.TokenId, amount: Float): async() {
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
       case (?cid) await TokenCanister(cid).burnToken(uid, amount);
@@ -223,4 +221,23 @@ actor class TokenIndex() = this {
     };
   };
 
+  public func getPortfolio(uid: T.UID, tokenIds: [T.TokenId]): async [T.TokenInfo] {
+    let tokens = Buffer.Buffer<T.TokenInfo>(100);
+
+    Debug.print(debug_show ("before getPortfolio: " # Nat.toText(Cycles.balance())));
+
+    for(item in tokenIds.vals()) {
+      switch (tokenDirectory.get(item)) {
+        case (null) {};
+        case (?cid) {
+          let token: T.TokenInfo = await TokenCanister(cid).getUserMinted(uid);
+          tokens.add(token);
+        };
+      };
+    };
+
+    Debug.print(debug_show ("later getPortfolio: " # Nat.toText(Cycles.balance())));
+
+    Buffer.toArray<T.TokenInfo>(tokens);
+  };
 }

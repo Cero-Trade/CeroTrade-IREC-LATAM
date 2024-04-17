@@ -3,18 +3,25 @@
 </template>
 
 <script setup>
+import { computed } from "vue";
 import Apexchart from "vue3-apexcharts"
 
 const
   props = defineProps({
     height: String,
+    categories: {
+      type: Array,
+      default: ["", "", "", "", ""]
+    },
     series: {
       type: Array,
-      default: undefined
+      default: []
     }
   }),
+  series = computed(() => props.series),
+  categories = computed(() => props.categories),
 
-options = {
+options = computed(() => ({
   chart: {
     type: 'bar',
     height: 200,
@@ -55,7 +62,7 @@ options = {
   },
   xaxis: {
     type: 'category',
-    categories: ['Wind', 'Solar', 'Biomass', 'Geothermal', 'Hydro', 'Ocean'],
+    categories: categories.value,
       floating: true,
       position: 'bottom',
       labels: { 
@@ -78,10 +85,10 @@ options = {
   legend: {
     show: false,
   },
-}
+}))
 </script>
 
 <style lang="scss">
-.apexcharts-xaxis-label {
-}
+// .apexcharts-xaxis-label {
+// }
 </style>

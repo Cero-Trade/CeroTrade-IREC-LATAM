@@ -12,7 +12,7 @@ export const createActor = (canisterId, idlFactory, options) => {
   const isDevelopment = process.env.DFX_NETWORK !== "ic",
   identity = vueApp._context.provides.authClient.getIdentity(),
   agent = new HttpAgent({ identity: isDevelopment ? null : identity, ...options?.agentOptions });
-  
+
   // Fetch root key for certificate validation during development
   if (isDevelopment) {
     agent.fetchRootKey().catch(err=>{

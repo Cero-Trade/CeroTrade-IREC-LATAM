@@ -35,7 +35,7 @@ module {
     vaultToken: Text;
     principal: Principal;
     ledger: Blob;
-    portfolio: HM.HashMap<TokenId, TokenInfo>;
+    portfolio: [TokenId];
     redemptions: TM.TrieMap<RedemId, RedemInfo>;
     transactions: TM.TrieMap<TransactionId, TransactionInfo>;
   };
@@ -45,11 +45,19 @@ module {
     profile: Text;
   };
 
+  public type TokenStatus = {
+    #redeemed: Text;
+    #sold: Text;
+    #forSale: Text;
+    #notForSale: Text;
+  };
+
   public type TokenInfo = {
     tokenId: TokenId;
-    totalAmount: Nat;
-    inMarket: Nat;
-    assetInfo: AssetInfo
+    totalAmount: Float;
+    inMarket: Float;
+    assetInfo: AssetInfo;
+    status: TokenStatus
   };
   
   public type RedemInfo = {
@@ -76,16 +84,19 @@ module {
   // Token
   //
   public type AssetType = {
-    #hydroenergy: Text;
+    #hydro: Text;
+    #ocean: Text;
+    #geothermal: Text;
+    #biome: Text;
     #wind: Text;
-    #solar: Text;
+    #sun: Text;
     #other: Text;
   };
 
   public type DeviceDetails = {
     name: Text;
     deviceType: Text;
-    group: Text; // AssetType
+    group: AssetType;
     description: Text;
   };
 
@@ -101,12 +112,12 @@ module {
   };
 
   public type AssetInfo = {
-    assetType: Text; // AssetType
+    assetType: AssetType;
     startDate: Nat64;
     endDate: Nat64;
     co2Emission: Float;
     radioactivityEmnission: Float;
-    volumeProduced: Nat;
+    volumeProduced: Float;
     deviceDetails: DeviceDetails;
     specifications: Specifications;
     // TODO checkout usage of this date format
@@ -135,13 +146,18 @@ module {
 
   public type WasmModule = Blob;
 
+  public type WasmModuleName = {
+    #users: Text;
+    #token: Text;
+  };
+
   //3. Declaring the management canister which you use to make the Canister dictionary
   public type IC = actor {
     create_canister: shared {settings: ?CanisterSettings} -> async {canister_id: CanisterId};
     update_settings : shared {
       canister_id: Principal;
       settings: CanisterSettings;
-    } -> async ();
+    } -> async();
     canister_status: shared {canister_id: CanisterId} -> async {
       status: { #stopped; #stopping; #running };
       memory_size: Nat;
@@ -155,38 +171,39 @@ module {
       wasm_module: WasmModule;
       mode: { #reinstall; #upgrade; #install };
       canister_id: CanisterId;
-    } -> async ();
-    uninstall_code : shared {canister_id: CanisterId} -> async ();
-    deposit_cycles: shared {canister_id: CanisterId} -> async ();
-    start_canister: shared {canister_id: CanisterId} -> async ();
-    stop_canister: shared {canister_id: CanisterId} -> async ();
-    delete_canister: shared {canister_id: CanisterId} -> async ();
+    } -> async();
+    uninstall_code : shared {canister_id: CanisterId} -> async();
+    deposit_cycles: shared {canister_id: CanisterId} -> async();
+    start_canister: shared {canister_id: CanisterId} -> async();
+    stop_canister: shared {canister_id: CanisterId} -> async();
+    delete_canister: shared {canister_id: CanisterId} -> async();
   };
 
   public type UsersInterface = actor {
-    length: () -> async Nat;
+    length: query () -> async Nat;
     registerUser: (uid: UID, token: Text) -> async CanisterId;
-    deleteUser: (uid: UID) -> async ();
-    storeCompanyLogo: (uid: UID, avatar: Blob) -> async ();
-    getCompanyLogo: (uid: UID) -> async Blob;
-    updatePorfolio: (uid: UID, token: TokenInfo) -> async ();
-    updateRedemptions: (uid: UID, redem: RedemInfo) -> async ();
-    updateTransactions: (uid: UID, tx: TransactionInfo) -> async ();
-    getPortfolio: (uid: UID) -> async [TokenInfo];
-    getRedemptions: (uid: UID) -> async [RedemInfo];
-    getTransactions: (uid: UID) -> async [TransactionInfo];
-    getUserToken: (uid: UID) -> async Text;
-    validateToken: (uid: UID, token: Text) -> async Bool;
+    deleteUser: (uid: UID) -> async();
+    storeCompanyLogo: (uid: UID, avatar: CompanyLogo) -> async();
+    getCompanyLogo: query (uid: UID) -> async CompanyLogo;
+    updatePorfolio: (uid: UID, tokenId: TokenId) -> async();
+    deletePorfolio: (uid: UID, tokenId: TokenId) -> async();
+    updateRedemptions: (uid: UID, redem: RedemInfo) -> async();
+    updateTransactions: (uid: UID, tx: TransactionInfo) -> async();
+    getPortfolioTokenIds: query (uid: UID) -> async [TokenId];
+    getRedemptions: query (uid: UID) -> async [RedemInfo];
+    getTransactions: query (uid: UID) -> async [TransactionInfo];
+    getUserToken: query (uid: UID) -> async Text;
+    validateToken: query (uid: UID, token: Text) -> async Bool;
   };
 
   public type TokenInterface = actor {
-    init: (assetMetadata: AssetInfo) -> async ();
-    mintToken: (UID, Nat) -> async TokenInfo;
-    burnToken: (UID, Nat) -> async TokenInfo;
-    getUserMinted: query (UID) -> async Nat;
+    init: (assetMetadata: AssetInfo) -> async();
+    mintToken: (uid: UID, amount: Float) -> async ();
+    burnToken: (uid: UID, amount: Float) -> async ();
+    getUserMinted: query (uid: UID) -> async TokenInfo;
     getAssetInfo: query () -> async AssetInfo;
-    getRemainingAmount: query () -> async Nat;
+    getRemainingAmount: query () -> async Float;
     getTokenId: query () -> async TokenId;
-    getCanisterId: query () -> async Principal;
+    getCanisterId: query () -> async CanisterId;
   };
 }

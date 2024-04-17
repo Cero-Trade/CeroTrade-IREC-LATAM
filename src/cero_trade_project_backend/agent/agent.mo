@@ -40,23 +40,23 @@ actor Agent {
   public shared({ caller }) func deleteUser(): async() { await UserIndex.deleteUser(caller) };
 
   /// performe mint with tokenId and amount requested
-  public shared({ caller }) func mintToken(tokenId: T.TokenId, amount: Nat): async() {
+  public shared({ caller }) func mintToken(tokenId: T.TokenId, amount: Float): async() {
     let exists: Bool = await UserIndex.checkPrincipal(caller);
     if (not exists) throw Error.reject(notExists);
 
-    let tokenInfo = await TokenIndex.mintToken(caller, tokenId, amount);
+    await TokenIndex.mintToken(caller, tokenId, amount);
 
-    await UserIndex.updatePorfolio(caller, tokenInfo);
+    await UserIndex.updatePorfolio(caller, tokenId);
   };
 
   /// performe mint with tokenId and amount requested
-  public shared({ caller }) func burnToken(tokenId: T.TokenId, amount: Nat): async() {
+  public shared({ caller }) func burnToken(tokenId: T.TokenId, amount: Float): async() {
     let exists: Bool = await UserIndex.checkPrincipal(caller);
     if (not exists) throw Error.reject(notExists);
 
-    let tokenInfo = await TokenIndex.burnToken(caller, tokenId, amount);
+    await TokenIndex.burnToken(caller, tokenId, amount);
 
-    await UserIndex.updatePorfolio(caller, tokenInfo);
+    await UserIndex.updatePorfolio(caller, tokenId);
   };
 
   /// get profile information
