@@ -1,3 +1,5 @@
+<!-- TODO implements flow to sell, redeem and take off -->
+
 <template>
   <div id="my-portfolio">
     <span class="mb-4 acenter" style="color:#475467; font-size: 16px; font-weight: 700;">
@@ -14,7 +16,7 @@
       <div class="flex-center" style="gap: 20px;">
         <v-btn class="btn2" style="--bg: rgb(var(--v-theme-primary))" @click="$router.push('/my-transactions')">My Transactions</v-btn>
 
-        <v-btn class="btn2">
+        <v-btn class="btn2" @click="$router.push({ path: '/settings', query: { editProfile: true } })">
           <img src="@/assets/sources/icons/pencil.svg" alt="pencil icon">
           Edit profile information
         </v-btn>
@@ -56,25 +58,21 @@
           color="basil"
           class="mt-6"
         >
-          <v-tab :value="1" class="tab-btn" style="border: none!important; border-bottom: 2px solid rgba(0,0,0,0.25)!important; border-radius: 0px!important;">
-            All
-          </v-tab>
-          <v-tab :value="2" class="tab-btn" style="border: none!important; border-bottom: 2px solid rgba(0,0,0,0.25)!important; border-radius: 0px!important;">
-            For sale
-          </v-tab>
-          <v-tab :value="3" class="tab-btn" style="border: none!important; border-bottom: 2px solid rgba(0,0,0,0.25)!important; border-radius: 0px!important;">
-            Not for sale
-          </v-tab>
-          <v-tab :value="4" class="tab-btn" style="border: none!important; border-bottom: 2px solid rgba(0,0,0,0.25)!important; border-radius: 0px!important;">
-            Redeemed
+          <v-tab
+            v-for="(item, key, i) in statuses" :key="i"
+            :value="i"
+            class="tab-btn"
+            style="border: none!important; border-bottom: 2px solid rgba(0,0,0,0.25)!important; border-radius: 0px!important; text-transform: capitalize;"
+          >
+            {{ key }}
           </v-tab>
         </v-tabs>
       </v-col>
 
-      <v-col xl="6" lg="6" cols="12" class="divrow aend jend delete-mobile" style="gap: 10px;">
-        <v-btn class="btn2"><img src="@/assets/sources/icons/sell-btn.svg" alt="Sell">Sell</v-btn>
-        <v-btn class="btn2"><img src="@/assets/sources/icons/sell-btn.svg" alt="Sell">Take of market</v-btn>
-        <v-btn class="btn2"><img src="@/assets/sources/icons/redeem-btn.svg" alt="Sell">Redeem</v-btn>
+      <v-col v-if="windowStep == 1" xl="6" lg="6" cols="12" class="divrow aend jend delete-mobile" style="gap: 10px;">
+        <v-btn class="btn2" @click="onSelectAction('sell')"><img src="@/assets/sources/icons/sell-btn.svg" alt="Sell">Sell</v-btn>
+        <v-btn class="btn2" @click="onSelectAction('takeOff')"><img src="@/assets/sources/icons/sell-btn.svg" alt="Sell">Take off market</v-btn>
+        <v-btn class="btn2" @click="onSelectAction('redeem')"><img src="@/assets/sources/icons/redeem-btn.svg" alt="Sell">Redeem</v-btn>
       </v-col>
     </v-row>
 
@@ -99,24 +97,26 @@
         <v-data-table
         v-model:items-per-page="itemsPerPage"
         :headers="headers"
-        :items="dataMarketplace"
+        :items="dataMarketplaceFiltered"
         class="mt-6 my-data-table"
         density="compact"
         >
           <template #[`item.checkbox`]="{ item }">
             <v-checkbox
-            v-model="item.checkbox"
             hide-details
             density="compact"
             class="mx-auto"
             style="max-width: 22px!important; min-width: 22px!important;"
             >
-              <template #input="{ model }">
+              <template #input>
                 <img
-                  :src="model.value ? checkboxCheckedIcon : checkboxBaseIcon"
+                  :src="item.token_id === selectedToken ? checkboxCheckedIcon : checkboxBaseIcon"
                   alt="checkbox icon"
                   style="width: 22px"
-                  @click="model.value = !model.value"
+                  @click="() => {
+                    if (item.token_id === selectedToken) return selectedToken = null
+                    selectedToken = item.token_id
+                  }"
                 >
               </template>
             </v-checkbox>
@@ -160,7 +160,7 @@
 
       <v-window-item :value="2" class="pa-2">
         <v-row class="mt-6">
-          <v-col v-for="(item,index) in dataMarketplace" :key="index" xl="3" lg="3" md="4" sm="6" cols="12">
+          <v-col v-for="(item,index) in dataMarketplaceFiltered" :key="index" xl="3" lg="3" md="4" sm="6" cols="12">
             <v-card class="card cards-marketplace" @click="goDetails(item)">
               <div class="divrow jspace acenter mb-6">
                 <div class="divrow center" style="gap: 5px;">
@@ -174,9 +174,9 @@
                   </template>
 
                   <v-card class="divcol pt-2 pb-2 pl-1 pr-1 card-menu" style="gap: 25px;">
-                    <a @click="$router.push('/rec-single-portfolio')">Sell</a>
-                    <a @click="$router.push('/rec-single-portfolio')">Redeem</a>
-                    <a @click="$router.push('/rec-single-portfolio')">Take of market</a>
+                    <a @click="onSelectAction('sell', item)">Sell</a>
+                    <a @click="onSelectAction('redeem', item)">Redeem</a>
+                    <a @click="onSelectAction('takeOff', item)">Take of market</a>
                   </v-card>
                 </v-menu>
               </div>
@@ -222,7 +222,7 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import '@/assets/styles/pages/my-portfolio.scss'
 import checkboxCheckedIcon from '@/assets/sources/icons/checkbox-checked.svg'
 import checkboxBaseIcon from '@/assets/sources/icons/checkbox-base.svg'
@@ -238,136 +238,150 @@ import WalletIcon from '@/assets/sources/icons/wallet-light.svg'
 import TokenizedIcon from '@/assets/sources/icons/tokenized-table.svg'
 import RedeemedIcon from '@/assets/sources/icons/redeemed-table.svg'
 import { UsersCanister } from '@/repository/users-canister'
-import { TokensCanister } from '@/repository/tokens-canister'
+import { ref, computed, watch, onBeforeMount } from 'vue'
+import { useRouter } from 'vue-router'
+import { useToast } from 'vue-toastification'
 // import { closeLoader, showLoader } from '@/plugins/functions'
 
+const
+  router = useRouter(),
+  toast = useToast(),
 
-export default{
-  components: { RenewableChart },
-  data(){
-    return{
-      checkboxCheckedIcon,
-      checkboxBaseIcon,
-      windowStep: undefined,
-      tabsWindow: 1,
-      
-      energies: {
-        hydro: HydroEnergyIcon,
-        ocean: OceanEnergyIcon,
-        geothermal: GeothermalEnergyIcon,
-        biome: BiomeEnergyIcon,
-        wind: WindEnergyIcon,
-        sun: SolarEnergyIcon,
-      },
-      countries: {
-        chile: ChileIcon
-      },
-      statuses: {
-        'not for sale': WalletIcon,
-        'for sale': TokenizedIcon,
-        sold: TokenizedIcon,
-        redeemed: RedeemedIcon
-      },
+windowStep = ref(undefined),
+tabsWindow = ref(0),
+selectedToken = ref(null),
 
-      headers: [
-        { key: 'checkbox', sortable: false, align: 'center'},
-        { title: 'Token ID', sortable: false, key: 'token_id', align: "center" },
-        { title: 'Energy source', key: 'energy_source', sortable: false },
-        { title: 'Country', key: 'country', sortable: false },
-        // { title: 'Asset ID', key: 'asset_id', sortable: false },
-        { title: 'MWh', key: 'mwh', sortable: false },
-        { title: 'Status', key: 'status', sortable: false },
-      ],
-      dataMarketplace: [
-        // { 
-        //   token_id: 1,
-        //   // asset_id: '1234567',
-        //   price: 125.00,
-        //   energy_source: 'hydro energy',
-        //   country: 'chile',
-        //   mwh: 32,
-        //   volume: 7654,
-        //   checkbox: false,
-        //   status: 'for sale',
-        // },
-      ],
+energies = {
+  hydro: HydroEnergyIcon,
+  ocean: OceanEnergyIcon,
+  geothermal: GeothermalEnergyIcon,
+  biome: BiomeEnergyIcon,
+  wind: WindEnergyIcon,
+  sun: SolarEnergyIcon,
+},
+countries = {
+  chile: ChileIcon
+},
+statuses = {
+  'all': null,
+  'not for sale': WalletIcon,
+  'for sale': TokenizedIcon,
+  sold: TokenizedIcon,
+  redeemed: RedeemedIcon
+},
 
-      allItems: 'All items',
-      items: ['All items', 'Items'],
-      items_timeline: ['Timeline', 'Others'],
-      timeline: 'Timeline',
-      toggle: 0,
+headers = [
+  { key: 'checkbox', sortable: false, align: 'center'},
+  { title: 'Token ID', sortable: false, key: 'token_id', align: "center" },
+  { title: 'Energy source', key: 'energy_source', sortable: false },
+  { title: 'Country', key: 'country', sortable: false },
+  // { title: 'Asset ID', key: 'asset_id', sortable: false },
+  { title: 'MWh', key: 'mwh', sortable: false },
+  { title: 'Status', key: 'status', sortable: false },
+],
+dataMarketplace = ref([
+  // { 
+  //   token_id: 1,
+  //   // asset_id: '1234567',
+  //   price: 125.00,
+  //   energy_source: 'hydro energy',
+  //   country: 'chile',
+  //   mwh: 32,
+  //   volume: 7654,
+  //   checkbox: false,
+  //   status: 'for sale',
+  // },
+]),
 
-      series: undefined,
-      categories: undefined
+allItems = 'All items',
+items = ['All items', 'Items'],
+items_timeline = ['Timeline', 'Others'],
+timeline = 'Timeline',
+toggle = ref(0),
+
+series = ref(undefined),
+categories = ref(undefined),
+
+
+windowStepComputed = computed(() => {
+  if (window.innerWidth > 960) {
+    return 1;
+  } else {
+    return 2;
+  }
+}),
+totalMwh = computed(() => {
+  if (!series.value) return 0
+  const data = series.value[0].data
+  console.log(data);
+  return data.reduce((acc, item) => acc + item, 0)
+}),
+dataMarketplaceFiltered = computed(() => {
+  let marketplace = dataMarketplace.value;
+
+  const status = Object.keys(statuses)[tabsWindow.value];
+
+  if (tabsWindow.value != 0) marketplace = marketplace.filter(e => e.status == status)
+
+  return marketplace
+})
+
+
+watch(windowStepComputed, (newVal) => windowStep.value = newVal)
+
+
+onBeforeMount(() => {
+  windowStep.value = windowStepComputed.value;
+  getData()
+})
+
+
+async function getData() {
+  try {
+    const res = await UsersCanister.getPortfolio(),
+    list = []
+
+    for (const item of res) {
+      list.push({
+        token_id: item.tokenId,
+        energy_source: item.assetInfo.assetType,
+        country: item.assetInfo.specifications.country,
+        mwh: item.totalAmount,
+        status: item.status,
+      })
     }
-  },
-  computed: {
-    windowStepComputed() {
-      if (window.innerWidth > 960) {
-        return 1;
+
+    dataMarketplace.value = list.sort((a, b) => a.token_id - b.token_id)
+
+    const grouped = list.reduce((acc, item) => {
+      let existenceElement = acc.find(elem => elem.energy_source === item.energy_source);
+      if (existenceElement) {
+        existenceElement.valor += item.mwh;
       } else {
-        return 2;
+        acc.push({ ...item });
       }
-    },
-    totalMwh() {
-      if (!this.series) return 0
-      const data = this.series[0].data
-      console.log(data);
-      return data.reduce((acc, item) => acc + item, 0)
-    }
-  },
-  watch: {
-    windowStepComputed(newVal) {
-      this.windowStep = newVal;
-    }
-  },
-  created() {
-    this.windowStep = this.windowStepComputed;
-    this.getData()
-  },
-  methods:{
-    async getData() {
-      try {
-        const res = await UsersCanister.getPortfolio(),
-        list = []
+      return acc;
+    }, []);
 
-        for (const item of res) {
-          list.push({
-            token_id: item.tokenId,
-            energy_source: item.assetInfo.assetType,
-            country: item.assetInfo.specifications.country,
-            mwh: item.totalAmount,
-            status: item.status,
-            checkbox: false,
-          })
-        }
-
-        this.dataMarketplace = list.sort((a, b) => a.token_id - b.token_id)
-
-        const grouped = list.reduce((acc, item) => {
-          let existenceElement = acc.find(elem => elem.energy_source === item.energy_source);
-          if (existenceElement) {
-            existenceElement.valor += item.mwh;
-          } else {
-            acc.push({ ...item });
-          }
-          return acc;
-        }, []);
-
-        this.series = [{
-          name: 'MWh',
-          data: grouped.map(e => e.mwh)
-        }]
-        if (grouped.length) this.categories = grouped.map(e => e.energy_source)
-      } catch (error) {
-        console.error(error);
-      }
-    },
-    goDetails(){
-      this.$router.push('/rec-single-portfolio')
-    }
+    series.value = [{
+      name: 'MWh',
+      data: grouped.map(e => e.mwh)
+    }]
+    if (grouped.length) categories.value = grouped.map(e => e.energy_source)
+  } catch (error) {
+    console.error(error);
+    toast.error(error)
   }
 }
 
+function onSelectAction(input, item) {
+  if (windowStep.value == 1 && !selectedToken.value) return toast.warning('Must to select any token')
+  const tokenId = item?.token_id ?? this.selectedToken
+
+  router.push({ path: '/rec-single-portfolio', query: { tokenId, input } })
+}
+
+function goDetails() {
+  router.push({ path: '/rec-single-portfolio', query: { tokenId } })
+}
 </script>
