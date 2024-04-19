@@ -41,7 +41,7 @@ actor Agent {
   /// delete user into cero trade
   public shared({ caller }) func deleteUser(): async() { await UserIndex.deleteUser(caller) };
 
-   /// register Token Wasm Module from client
+  /// register Token Wasm Module from client
   public shared({ caller }) func registerTokenWasmModule(moduleName: T.WasmModuleName, array: [Nat]): async [Nat] {
     switch(moduleName) {
       case(#users("users")) await UserIndex.registerWasmArray(caller, array);
