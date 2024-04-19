@@ -8,6 +8,7 @@ import Array "mo:base/Array";
 import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
 import Nat64 "mo:base/Nat64";
+import Iter "mo:base/Iter";
 import Buffer "mo:base/Buffer";
 import Debug "mo:base/Debug";
 
@@ -21,19 +22,24 @@ import HT "../http_service/http_service_types";
 actor class TokenIndex() = this {
   stable let ic : T.IC = actor ("aaaaa-aa");
   private func TokenCanister(cid: T.CanisterId): T.TokenInterface { actor (Principal.toText(cid)) };
-  /// ! unused for now
   stable var wasm_array : [Nat] = [];
 
 
-  let tokenDirectory: HM.HashMap<Text, T.CanisterId> = HM.HashMap(16, Text.equal, Text.hash);
+  var tokenDirectory: HM.HashMap<Text, T.CanisterId> = HM.HashMap(16, Text.equal, Text.hash);
+  stable var tokenDirectoryEntries : [(Text, T.CanisterId)] = [];
 
+
+  /// funcs to persistent collection state
+  system func preupgrade() { tokenDirectoryEntries := Iter.toArray(tokenDirectory.entries()) };
+  system func postupgrade() {
+    tokenDirectory := HM.fromIter<Text, T.CanisterId>(tokenDirectoryEntries.vals(), 16, Text.equal, Text.hash);
+    tokenDirectoryEntries := [];
+  };
 
   /// get size of tokenDirectory collection
   public query func length(): async Nat { tokenDirectory.size() };
 
 
-  /// ! unused for now
-  // TODO try to implements this function
   // TODO validate user authenticate to only admin
   public func registerWasmArray(uid: T.UID, array: [Nat]): async [Nat] {
     wasm_array := array;

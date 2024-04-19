@@ -993,6 +993,12 @@ export default{
       payments,
     }
   },
+  mounted() {
+    if (this.$route.query.editProfile) {
+      this.$router.replace('/settings')
+      this.dialogCompany = true
+    }
+  },
 
   methods:{
     onConnectPayment(item) {

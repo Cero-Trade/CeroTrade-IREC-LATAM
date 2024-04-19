@@ -11,37 +11,44 @@ import TM "mo:base/TrieMap";
 import Hash "mo:base/Hash";
 import Iter "mo:base/Iter";
 import AccountIdentifier "mo:account-identifier";
-import Debug "mo:base/Debug";
 
 
 // types
 import T "../types";
 
-actor class Users() = this {
+actor Users {
+  // constants
   stable let userNotFound: Text = "User not found";
 
-  let users: HM.HashMap<T.UID, T.UserInfo> = HM.HashMap(16, Principal.equal, Principal.hash);
 
+  var users: HM.HashMap<T.UID, T.UserInfo> = HM.HashMap(16, Principal.equal, Principal.hash);
+  stable var usersEntries : [(T.UID, T.UserInfo)] = [];
+
+
+  /// funcs to persistent collection state
+  system func preupgrade() { usersEntries := Iter.toArray(users.entries()) };
+  system func postupgrade() {
+    users := HM.fromIter<T.UID, T.UserInfo>(usersEntries.vals(), 16, Principal.equal, Principal.hash);
+    usersEntries := [];
+  };
 
   /// get size of users collection
   public query func length(): async Nat { users.size() };
 
 
   /// register user to cero trade
-  public func registerUser(uid: T.UID, token: Text): async T.CanisterId {
+  public func registerUser(uid: T.UID, token: Text): async() {
     let userInfo = {
       vaultToken = token;
       principal = uid;
       ledger = AccountIdentifier.accountIdentifier(uid, AccountIdentifier.defaultSubaccount());
       companyLogo = null;
       portfolio = [];
-      redemptions = TM.TrieMap<T.RedemId, T.RedemInfo>(Nat.equal, Hash.hash);
-      transactions = TM.TrieMap<T.TransactionId, T.TransactionInfo>(Nat.equal, Hash.hash);
+      redemptions = [];
+      transactions = [];
     };
 
     users.put(uid, userInfo);
-
-    Principal.fromActor(this)
   };
 
 
@@ -118,25 +125,74 @@ actor class Users() = this {
       };
     };
   };
-  
+
 
   /// update user redemptions
-  public func updateRedemptions(uid: T.UID, redem: T.RedemInfo) : async() {
-    switch (users.get(uid)) {
+  public func updateRedemptions(uid: T.UID, redemId: T.RedemId) : async() {
+    let userInfo = switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
-      case (?info) info.redemptions.put(redem.redemId, redem);
+      case (?info) info;
+    };
+
+    let redemptions = Buffer.fromArray<T.RedemId>(userInfo.redemptions);
+
+    switch(Buffer.indexOf<T.RedemId>(redemId, redemptions, Nat.equal)) {
+      case(null) {
+        redemptions.add(redemId);
+
+        users.put(uid, { userInfo with redemptions = Buffer.toArray(redemptions) })
+      };
+      case(?index) {
+        redemptions.put(index, redemId);
+
+        users.put(uid, { userInfo with redemptions = Buffer.toArray(redemptions) })
+      };
+    };
+  };
+
+
+  /// delete user redemption
+  public func deleteRedemption(uid: T.UID, redemId: T.RedemId) : async() {
+    let userInfo = switch (users.get(uid)) {
+      case (null) throw Error.reject(userNotFound);
+      case (?info) info;
+    };
+
+    let redemptions = Buffer.fromArray<T.RedemId>(userInfo.redemptions);
+
+    switch(Buffer.indexOf<T.RedemId>(redemId, redemptions, Nat.equal)) {
+      case(null) throw Error.reject("Redemption doesn't exists");
+      case(?index) {
+        let _ = redemptions.remove(index);
+
+        users.put(uid, { userInfo with redemptions = Buffer.toArray(redemptions) })
+      };
     };
   };
 
 
   /// update user transactions
-  public func updateTransactions(uid: T.UID, tx: T.TransactionInfo) : async() {
-    switch (users.get(uid)) {
+  public func updateTransactions(uid: T.UID, txId: T.TransactionId) : async() {
+    let userInfo = switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
-      case (?info) info.transactions.put(tx.transactionId, tx);
+      case (?info) info;
+    };
+
+    let transactions = Buffer.fromArray<T.TransactionId>(userInfo.transactions);
+
+    switch(Buffer.indexOf<T.TransactionId>(txId, transactions, Nat.equal)) {
+      case(null) {
+        transactions.add(txId);
+
+        users.put(uid, { userInfo with transactions = Buffer.toArray(transactions) })
+      };
+      case(?index) {
+        transactions.put(index, txId);
+
+        users.put(uid, { userInfo with transactions = Buffer.toArray(transactions) })
+      };
     };
   };
-
 
 
   public query func getPortfolioTokenIds(uid: T.UID) : async [T.TokenId] {
@@ -146,17 +202,17 @@ actor class Users() = this {
     };
   };
 
-  public query func getRedemptions(uid: T.UID) : async [T.RedemInfo] {
+  public query func getRedemptions(uid: T.UID) : async [T.RedemId] {
     switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
-      case (?info) return Iter.toArray<T.RedemInfo>(info.redemptions.vals());
+      case (?info) return info.redemptions;
     };
   };
 
-  public query func getTransactions(uid: T.UID) : async [T.TransactionInfo] {
+  public query func getTransactions(uid: T.UID) : async [T.TransactionId] {
     switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
-      case (?info) return Iter.toArray<T.TransactionInfo>(info.transactions.vals());
+      case (?info) return info.transactions;
     };
   };
 

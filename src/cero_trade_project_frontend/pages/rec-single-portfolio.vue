@@ -1090,6 +1090,7 @@ import WindEnergyColorIcon from '@/assets/sources/energies/wind-color.svg'
 import SolarEnergyColorIcon from '@/assets/sources/energies/solar-color.svg'
 
 import ChileIcon from '@/assets/sources/icons/CL.svg'
+import { getDatabase } from 'firebase/database'
 
 
 export default {
@@ -1586,9 +1587,31 @@ export default {
       },
     }
   },
+  created() {
+    this.getDatabase()
+
+    const input = this.$route.query.input
+    if (input) {
+      this.$router.replace('/rec-single-portfolio')
+
+      switch (input) {
+        case 'sell': this.dialogStaticPrice = true
+          break;
+
+        case 'redeem': this.dialogRedeemSure = true
+          break;
+
+        case 'takeOff': this.dialogTakeOffMarket = true
+          break;
+      }
+    }
+  },
 
 
   methods:{
+    async getDatabase() {
+      console.log("getDatabase");
+    },
     value1(){
       this.radioSell = 1;
     },

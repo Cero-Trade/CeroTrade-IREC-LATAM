@@ -7,10 +7,7 @@
     "user_index": {
       "main": "src/cero_trade_project_backend/user_index/user_index.mo",
       "type": "motoko",
-      "dependencies": [
-        "http_service",
-        "users"
-      ]
+      "dependencies": [ "http_service" ]
     },
     "token": {
       "main": "src/cero_trade_project_backend/token/token.mo",

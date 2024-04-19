@@ -15,6 +15,7 @@ import T "../types";
 import HT "../http_service/http_service_types";
 
 actor Agent {
+  // constants
   stable let alreadyExists = "User already exists on cero trade";
   stable let notExists = "User doesn't exists on cero trade";
 
@@ -44,7 +45,7 @@ actor Agent {
   /// register Token Wasm Module from client
   public shared({ caller }) func registerTokenWasmModule(moduleName: T.WasmModuleName, array: [Nat]): async [Nat] {
     switch(moduleName) {
-      case(#users("users")) [];
+      case(#users("users")) await UserIndex.registerWasmArray(caller, array);
       case(#token("token")) await TokenIndex.registerWasmArray(caller, array);
       case _ throw Error.reject("Invalid input");
     };
