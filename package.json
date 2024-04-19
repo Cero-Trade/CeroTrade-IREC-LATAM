@@ -51,6 +51,8 @@
     "eslint": "^8.22.0",
     "eslint-plugin-vue": "^9.3.0",
     "font-awesome": "^4.7.0",
+    "prettier": "^3.2.5",
+    "prettier-plugin-motoko": "^0.8.4",
     "sass": "^1.64.2",
     "sass-loader": "^13.3.2",
     "vite": "^5.0.2",

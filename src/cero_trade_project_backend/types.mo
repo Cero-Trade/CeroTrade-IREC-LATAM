@@ -15,7 +15,6 @@ module {
   public type RedemId = Nat;
   public type CompanyLogo = [Nat8];
 
-
   //
   // UsersAgent
   //
@@ -125,6 +124,17 @@ module {
     dates: [Nat64];
   };
 
+  //
+  // Market types
+  //
+
+  public type TokenIdQuantity = Nat;
+
+
+  public type TokenMarketInfo = {
+    totalQuantity: Nat;
+    usersxToken: HM.HashMap<UID, Nat>;
+  };
 
 
   public type CanisterSettings = {

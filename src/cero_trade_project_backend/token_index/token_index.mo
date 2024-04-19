@@ -191,8 +191,6 @@ actor class TokenIndex() = this {
     };
   };
 
-
-
   public func getRemainingAmount(tokenId: T.TokenId): async Float {
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
@@ -218,6 +216,14 @@ actor class TokenIndex() = this {
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
       case (?cid) await TokenCanister(cid).burnToken(uid, amount);
+    };
+  };
+
+  // get token portfolio for a specific user
+  public func getTokenPortfolio(uid: T.UID, tokenId: T.TokenId): async T.TokenInfo {
+    switch (tokenDirectory.get(tokenId)) {
+      case (null) throw Error.reject("Token not found on Portfolio");
+      case (?cid) return await TokenCanister(cid).getUserMinted(uid);
     };
   };
 
