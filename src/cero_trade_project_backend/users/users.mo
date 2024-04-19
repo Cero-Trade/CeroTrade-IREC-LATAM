@@ -44,7 +44,6 @@ actor Users {
       ledger = AccountIdentifier.accountIdentifier(uid, AccountIdentifier.defaultSubaccount());
       companyLogo = null;
       portfolio = [];
-      redemptions = [];
       transactions = [];
     };
 
@@ -127,50 +126,6 @@ actor Users {
   };
 
 
-  /// update user redemptions
-  public func updateRedemptions(uid: T.UID, redemId: T.RedemId) : async() {
-    let userInfo = switch (users.get(uid)) {
-      case (null) throw Error.reject(userNotFound);
-      case (?info) info;
-    };
-
-    let redemptions = Buffer.fromArray<T.RedemId>(userInfo.redemptions);
-
-    switch(Buffer.indexOf<T.RedemId>(redemId, redemptions, Nat.equal)) {
-      case(null) {
-        redemptions.add(redemId);
-
-        users.put(uid, { userInfo with redemptions = Buffer.toArray(redemptions) })
-      };
-      case(?index) {
-        redemptions.put(index, redemId);
-
-        users.put(uid, { userInfo with redemptions = Buffer.toArray(redemptions) })
-      };
-    };
-  };
-
-
-  /// delete user redemption
-  public func deleteRedemption(uid: T.UID, redemId: T.RedemId) : async() {
-    let userInfo = switch (users.get(uid)) {
-      case (null) throw Error.reject(userNotFound);
-      case (?info) info;
-    };
-
-    let redemptions = Buffer.fromArray<T.RedemId>(userInfo.redemptions);
-
-    switch(Buffer.indexOf<T.RedemId>(redemId, redemptions, Nat.equal)) {
-      case(null) throw Error.reject("Redemption doesn't exists");
-      case(?index) {
-        let _ = redemptions.remove(index);
-
-        users.put(uid, { userInfo with redemptions = Buffer.toArray(redemptions) })
-      };
-    };
-  };
-
-
   /// update user transactions
   public func updateTransactions(uid: T.UID, txId: T.TransactionId) : async() {
     let userInfo = switch (users.get(uid)) {
@@ -180,7 +135,7 @@ actor Users {
 
     let transactions = Buffer.fromArray<T.TransactionId>(userInfo.transactions);
 
-    switch(Buffer.indexOf<T.TransactionId>(txId, transactions, Nat.equal)) {
+    switch(Buffer.indexOf<T.TransactionId>(txId, transactions, Text.equal)) {
       case(null) {
         transactions.add(txId);
 
@@ -199,13 +154,6 @@ actor Users {
     switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
       case (?info) return info.portfolio;
-    };
-  };
-
-  public query func getRedemptions(uid: T.UID) : async [T.RedemId] {
-    switch (users.get(uid)) {
-      case (null) throw Error.reject(userNotFound);
-      case (?info) return info.redemptions;
     };
   };
 

@@ -11,6 +11,7 @@ import Float "mo:base/Float";
 import HttpService "canister:http_service";
 import UserIndex "canister:user_index";
 import TokenIndex "canister:token_index";
+import TransactionIndex "canister:token_index";
 import Marketplace "canister:marketplace";
 
 // types
@@ -40,11 +41,12 @@ actor Agent {
   /// delete user into cero trade
   public shared({ caller }) func deleteUser(): async() { await UserIndex.deleteUser(caller) };
 
- /// register Token Wasm Module from client
+   /// register Token Wasm Module from client
   public shared({ caller }) func registerTokenWasmModule(moduleName: T.WasmModuleName, array: [Nat]): async [Nat] {
     switch(moduleName) {
       case(#users("users")) await UserIndex.registerWasmArray(caller, array);
       case(#token("token")) await TokenIndex.registerWasmArray(caller, array);
+      case(#transactions("transactions")) await TransactionIndex.registerWasmArray(caller, array);
       case _ throw Error.reject("Invalid input");
     };
   };

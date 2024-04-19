@@ -11,6 +11,8 @@ export class CeroSystemApi {
   //     switch (input) {
   //       case "users": module = await fetch('../../../.dfx/local/canisters/users');
   //         break;
+  //       case "transactions": module = await fetch('../../../.dfx/local/canisters/transactions');
+  //         break;
   //       case "token": module = await fetch('../../../.dfx/local/canisters/token');
   //         break;
   //     }

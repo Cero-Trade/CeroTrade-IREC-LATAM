@@ -3,6 +3,7 @@
     <p>Must to provide a valid wasm module like [number] format copied to clipboard</p>
 
     <v-btn class="mb-4" @click="generateWasmModule('users')">Generate USERS Wasm Module</v-btn>
+    <v-btn @click="generateWasmModule('transactions')">Generate TRANSACTIONS Wasm Module</v-btn>
     <v-btn @click="generateWasmModule('token')">Generate TOKEN Wasm Module</v-btn>
   </div>
 </template>

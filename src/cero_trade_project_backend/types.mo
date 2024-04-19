@@ -11,8 +11,8 @@ module {
   public type UID = Principal;
   public type CanisterId = Principal;
   public type TokenId = Text;
-  public type TransactionId = Nat;
-  public type RedemId = Nat;
+  public type TransactionId = Text;
+  public type RedemId = Text;
   public type CompanyLogo = [Nat8];
 
   //
@@ -36,7 +36,6 @@ module {
     principal: Principal;
     ledger: Blob;
     portfolio: [TokenId];
-    redemptions: [RedemId];
     transactions: [TransactionId];
   };
 
@@ -148,6 +147,7 @@ module {
 
   public type WasmModuleName = {
     #users: Text;
+    #transactions: Text;
     #token: Text;
   };
 
@@ -205,5 +205,10 @@ module {
     getRemainingAmount: query () -> async Float;
     getTokenId: query () -> async TokenId;
     getCanisterId: query () -> async CanisterId;
+  };
+
+  public type TransactionsInterface = actor {
+    length: query () -> async Nat;
+    registerTransaction: (txId: TransactionId, tx: TransactionInfo) -> async();
   };
 }

@@ -84,22 +84,18 @@ actor class UserIndex() = this {
 
     Debug.print(debug_show ("later create_canister: " # Nat.toText(Cycles.balance())));
 
-    try {
-      let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
+    let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
 
-      await ic.install_code({
-        arg = to_candid();
-        wasm_module = Blob.fromArray(nums8);
-        mode = #install;
-        canister_id;
-      });
+    await ic.install_code({
+      arg = to_candid();
+      wasm_module = Blob.fromArray(nums8);
+      mode = #install;
+      canister_id;
+    });
 
-      Debug.print(debug_show ("later install_canister: " # Nat.toText(Cycles.balance())));
+    Debug.print(debug_show ("later install_canister: " # Nat.toText(Cycles.balance())));
 
-      return ?canister_id
-    } catch (error) {
-      throw Error.reject(Error.message(error));
-    }
+    return ?canister_id
   };
 
   private func deleteUserWeb2(token: Text): async() {

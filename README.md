@@ -46,6 +46,8 @@ dfx canister create token
 dfx build token
 dfx canister create users
 dfx build users
+dfx canister create transactions
+dfx build transactions
 ```
 To generate the wasm module like array run command below
 

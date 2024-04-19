@@ -18,6 +18,14 @@
       "type": "motoko",
       "dependencies": [ "http_service" ]
     },
+    "transactions": {
+      "main": "src/cero_trade_project_backend/transactions/transactions.mo",
+      "type": "motoko"
+    },
+    "transaction_index": {
+      "main": "src/cero_trade_project_backend/transaction_index/transaction_index.mo",
+      "type": "motoko"
+    },
     "marketplace": {
       "main": "src/cero_trade_project_backend/marketplace/marketplace.mo",
       "type": "motoko"
@@ -34,6 +42,7 @@
         "users",
         "user_index",
         "token_index",
+        "transaction_index",
         "marketplace"
       ]
     },
