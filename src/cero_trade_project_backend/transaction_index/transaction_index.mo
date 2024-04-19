@@ -18,7 +18,6 @@ actor class TransactionIndex() = this {
   stable let ic : T.IC = actor ("aaaaa-aa");
   private func TransactionsCanister(cid: T.CanisterId): T.TransactionsInterface { actor (Principal.toText(cid)) };
   stable var wasm_array : [Nat] = [];
-  stable let LOW_MEMORY_LIMIT: Nat = 50000;
 
 
   stable let alreadyExists = "Transaction already exists on cero trade";
@@ -57,7 +56,7 @@ actor class TransactionIndex() = this {
       case(?cid) await ic.canister_status({ canister_id = cid });
     };
 
-    status.memory_size > LOW_MEMORY_LIMIT
+    status.memory_size > T.LOW_MEMORY_LIMIT
   };
 
   /// autonomous function, will be executed when current canister it is full

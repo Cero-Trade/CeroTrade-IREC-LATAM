@@ -151,6 +151,8 @@ module {
     #token: Text;
   };
 
+  public let LOW_MEMORY_LIMIT: Nat = 50000;
+
   //3. Declaring the management canister which you use to make the Canister dictionary
   public type IC = actor {
     create_canister: shared {settings: ?CanisterSettings} -> async {canister_id: CanisterId};

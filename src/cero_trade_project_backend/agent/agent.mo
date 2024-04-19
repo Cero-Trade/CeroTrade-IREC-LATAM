@@ -45,8 +45,8 @@ actor Agent {
   public shared({ caller }) func registerTokenWasmModule(moduleName: T.WasmModuleName, array: [Nat]): async [Nat] {
     switch(moduleName) {
       case(#users("users")) await UserIndex.registerWasmArray(caller, array);
-      case(#token("token")) await TokenIndex.registerWasmArray(caller, array);
       case(#transactions("transactions")) await TransactionIndex.registerWasmArray(caller, array);
+      case(#token("token")) await TokenIndex.registerWasmArray(caller, array);
       case _ throw Error.reject("Invalid input");
     };
   };
