@@ -2,13 +2,13 @@ version: '3.8'
 services:
   cerotrade-app:
     build: .
-    image: cerotrade
+    image: cerotrade:latest
     ports:
       - "8000:8000"
     volumes:
       - .:/app
       - node_modules:/app/node_modules
-    command: /app/build_script.sh
+    command: ["bash", "/app/build_script.sh"]
 
 volumes:
   node_modules:
