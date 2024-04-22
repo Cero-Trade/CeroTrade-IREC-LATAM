@@ -1,5 +1,5 @@
 # Use a specific version of the Node.js base image to ensure consistency
-FROM node:16
+FROM node:16-bullseye
 
 # Install system dependencies required for the DFINITY Canister SDK and general development
 # Install system dependencies required for the DFINITY Canister SDK and general development
@@ -18,8 +18,7 @@ ENV DFXVM_INIT_YES=true
 ENV DFX_VERSION="0.15.2"
 
 # Install the DFINITY Canister SDK
-RUN curl -fsSL https://internetcomputer.org/install.sh | sh \
-    && echo "Install script exit code: $?"
+RUN sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
 
 # Define the DFX_PATH environment variable and add it to PATH
 ENV DFX_PATH="/root/.local/share/dfx/bin"
