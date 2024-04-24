@@ -38,10 +38,17 @@ actor Marketplace {
     };
 
     // new token in market
-    public func newTokensInMarket(tokenId : T.TokenId, user : T.UID, quantity : T.TokenIdQuantity) : async () {
+    public func newTokensInMarket(tokenId : T.TokenId, user : T.UID, quantity : T.TokenIdQuantity, price: T.price, currency: T.currency) : async () {
         // user is selling a new token
-        let usersxToken = HM.HashMap<T.UID, Nat>(4, Principal.equal, Principal.hash);
-        usersxToken.put(user, quantity);
+        let usersxToken = HM.HashMap<T.UID, T.userTokenInfo>(4, Principal.equal, Principal.hash);
+
+        let userxTokenInfo = {
+            quantity = quantity;
+            price = price;
+            currency = currency;
+        };
+
+        usersxToken.put(user, userxTokenInfo);
 
         // update the market info for the token
         let tokenMarketInfo = {
@@ -54,42 +61,51 @@ actor Marketplace {
     };
 
     // update token information
-    public func updatetokenMarketInfo(user : T.UID, tokenId : T.TokenId, quantity : Nat) : async () {
+    public func updatetokenMarketInfo(user : T.UID, tokenId : T.TokenId, quantity : Nat, price: T.price, currency: T.currency) : async () {
         switch (tokensInMarket.get(tokenId)) {
             case (null) {
                 throw Error.reject("Token not found in the market");
             };
             case (?info) {
                 // Update the existing sale
-                let previousQuantity = info.usersxToken.get(user);
-                // add the new quantity to the existing one
-                let newQuantity = switch(previousQuantity) {
-                    case(null) { quantity };
-                    case(?q) { q + quantity };
-                };
+                switch (info.usersxToken.get(user)) {
+                    case (null) {
+                        throw Error.reject("User is not selling this token");
+                    };
+                    case (?usersxTokenInfo) {
+                        // update the quantity
+                        let newQuantity = usersxTokenInfo.quantity + quantity;
 
-                info.usersxToken.put(user, newQuantity);
-                // update tokens in market quantity
-                let updatedQuantity = info.totalQuantity + quantity;
-                let updatedInfo = {
-                    totalQuantity = updatedQuantity;
-                    usersxToken = info.usersxToken;
+                        let updatedUserxToken = {
+                            quantity = newQuantity;
+                            price = price;
+                            currency = currency;
+                        };
+
+                        info.usersxToken.put(user, updatedUserxToken);
+                        // update tokens in market quantity
+                        let updatedQuantity = info.totalQuantity + quantity;
+                        let updatedInfo = {
+                            totalQuantity = updatedQuantity;
+                            usersxToken = info.usersxToken;
+                        };
+                        tokensInMarket.put(tokenId, updatedInfo);
+                    };
                 };
-                tokensInMarket.put(tokenId, updatedInfo);
             };
         };
     };
 
     // handles new token information on market
-    public func putOnSale(tokenId : T.TokenId, quantity : T.TokenIdQuantity, user : T.UID) : async () {
+    public func putOnSale(tokenId : T.TokenId, quantity : T.TokenIdQuantity, user : T.UID, price: T.price, currency: T.currency) : async () {
         // Check if the user is already selling the token
         let isSelling = await isSellingToken(user, tokenId);
         if (isSelling != false) {
             // update the existing sale
-            await updatetokenMarketInfo(user, tokenId, quantity);
+            await updatetokenMarketInfo(user, tokenId, quantity, price, currency);
         } else {
             // add the new sale
-            await newTokensInMarket(tokenId, user, quantity);
+            await newTokensInMarket(tokenId, user, quantity, price, currency);
         };
     };
 
@@ -116,8 +132,27 @@ actor Marketplace {
                     case (null) {
                         return 0;
                     };
-                    case (?quantity) {
-                        return quantity;
+                    case (?usersxTokenInfo) {
+                        return usersxTokenInfo.quantity;
+                    };
+                };
+            };
+        };
+    };
+
+    // check price of a token on the market of a user
+    public func getTokenPrice(tokenId : T.TokenId, user : T.UID) : async {price : T.price; currency : T.currency;} {
+        switch (tokensInMarket.get(tokenId)) {
+            case (null) {
+                throw Error.reject("Token not found in the market");
+            };
+            case (?info) {
+                switch (info.usersxToken.get(user)) {
+                    case (null) {
+                        throw Error.reject("User is not selling this token");
+                    };
+                    case (?usersxTokenInfo) {
+                        return {price = usersxTokenInfo.price; currency = usersxTokenInfo.currency;};
                     };
                 };
             };

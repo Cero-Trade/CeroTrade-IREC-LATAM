@@ -81,7 +81,7 @@ actor Agent {
   };
 
   /// ask market to put on sale token
-  public shared({ caller }) func sellToken(tokenId: T.TokenId, quantity: T.TokenIdQuantity): async() {
+  public shared({ caller }) func sellToken(tokenId: T.TokenId, quantity: T.TokenIdQuantity, price: T.price, currency: T.currency): async() {
     // check if user exists
     let exists: Bool = await UserIndex.checkPrincipal(caller);
     if (not exists) throw Error.reject(notExists);
@@ -98,7 +98,7 @@ actor Agent {
     // check if user has enough tokens
     if (availableTokens < Float.fromInt(quantity)) throw Error.reject("Not enough tokens");
 
-    await Marketplace.putOnSale(tokenId, quantity, caller);
+    await Marketplace.putOnSale(tokenId, quantity, caller, price, currency);
 
     return ();
   };
