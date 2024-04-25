@@ -80,6 +80,7 @@ actor Agent {
     await TokenIndex.getPortfolio(caller, tokenIds);
   };
 
+  // TODO add here reddemption response
   /// get portfolio information
   public shared({ caller }) func getSinglePortfolio(tokenId: T.TokenId): async T.TokenInfo {
     // check if user exists
@@ -96,6 +97,7 @@ actor Agent {
     await TokenIndex.getRemainingAmount(tokenId);
   };
 
+
   /// performe token purchase
   public shared({ caller }) func purchaseToken(tokenId: T.TokenId, recipent: T.UID, amount: Float): async Nat64 {
     // check if user exists
@@ -106,8 +108,17 @@ actor Agent {
     // performe ICP transfer and update token canister
     await TokenIndex.purchaseToken(caller, { uid = recipent; ledger = recipentLedger }, tokenId, amount);
 
-    // TODO checkpout about update marketplace canister here
+    // TODO checkpout about update marketplace canister here ---> call takeOffMarket()
   };
+
+
+  // peforme redeemption about token
+  public shared({ caller }) func redeemToken(tokenId: T.TokenId, amount: Float, beneficiary: T.UID): async() {
+    // TODO call token_index to burn token --> validate selected amount (checkout amount out market, need to rest amount in market with out market to know if can redeem)
+
+    // TODO save transaction
+  };
+
 
   /// ask market to put on sale token
   public shared({ caller }) func sellToken(tokenId: T.TokenId, quantity: T.TokenIdQuantity): async() {

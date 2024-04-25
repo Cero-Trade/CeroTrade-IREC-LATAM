@@ -104,7 +104,6 @@ actor class TokenIndex() = this {
               deviceDetails = {
                 name = "machine";
                 deviceType = "type";
-                // TODO ask about delete this field
                 group = energy;
                 description = "description";
               };
@@ -118,8 +117,7 @@ actor class TokenIndex() = this {
                 stateProvince = "chile";
                 country = "chile";
               };
-              // TODO ask about delete this field
-              dates: [Nat64] = [123321, 123123];
+              dates: [Nat64] = [123321, 123123, 123123];
             };
 
           await TokenCanister(canister_id).init(assetMetadata);
