@@ -15,7 +15,6 @@ import Debug "mo:base/Debug";
 
 // canisters
 import HttpService "canister:http_service";
-import IcpLedger "canister:icp_ledger";
 
 // types
 import T "../types";
@@ -252,54 +251,54 @@ actor class TokenIndex() = this {
 
 
   // TODO implements this transfer function to icp tokens
-  private func transfer(args: {
-    amount: ICRC.Tokens;
-    recipentLedger: ICRC.AccountIdentifier;
-  }) : async Result.Result<IcpLedger.BlockIndex, Text> {
-    Debug.print(
-      "Transferring "
-      # debug_show (args.amount)
-      # " tokens to ledger "
-      # debug_show (args.recipentLedger)
-    );
+  // private func transfer(args: {
+  //   amount: ICRC.Tokens;
+  //   recipentLedger: ICRC.AccountIdentifier;
+  // }) : async Result.Result<IcpLedger.BlockIndex, Text> {
+  //   Debug.print(
+  //     "Transferring "
+  //     # debug_show (args.amount)
+  //     # " tokens to ledger "
+  //     # debug_show (args.recipentLedger)
+  //   );
 
-    let transferArgs : IcpLedger.TransferArgs = {
-      // can be used to distinguish between transactions
-      memo = 0;
-      // the amount we want to transfer
-      amount = args.amount;
-      // the ICP ledger charges 10_000 e8s for a transfer
-      fee = { e8s = 10_000 };
-      // we are transferring from the canisters default subaccount, therefore we don't need to specify it
-      from_subaccount = null;
-      // we take the principal and subaccount from the arguments and convert them into an account identifier
-      to = Blob.toArray(args.recipentLedger);
-      // a timestamp indicating when the transaction was created by the caller; if it is not specified by the caller then this is set to the current ICP time
-      created_at_time = null;
-    };
+  //   let transferArgs : IcpLedger.TransferArgs = {
+  //     // can be used to distinguish between transactions
+  //     memo = 0;
+  //     // the amount we want to transfer
+  //     amount = args.amount;
+  //     // the ICP ledger charges 10_000 e8s for a transfer
+  //     fee = { e8s = 10_000 };
+  //     // we are transferring from the canisters default subaccount, therefore we don't need to specify it
+  //     from_subaccount = null;
+  //     // we take the principal and subaccount from the arguments and convert them into an account identifier
+  //     to = Blob.toArray(args.recipentLedger);
+  //     // a timestamp indicating when the transaction was created by the caller; if it is not specified by the caller then this is set to the current ICP time
+  //     created_at_time = null;
+  //   };
 
-    try {
-      // initiate the transfer
-      let transferResult = await IcpLedger.transfer(transferArgs);
+  //   try {
+  //     // initiate the transfer
+  //     let transferResult = await IcpLedger.transfer(transferArgs);
 
-      // check if the transfer was successfull
-      switch (transferResult) {
-        case (#Err(transferError)) {
-          return #err("Couldn't transfer funds:\n" # debug_show (transferError));
-        };
-        case (#Ok(blockIndex)) { return #ok blockIndex };
-      };
-    } catch (error : Error) {
-      // catch any errors that might occur during the transfer
-      return #err("Reject message: " # Error.message(error));
-    };
-  };
+  //     // check if the transfer was successfull
+  //     switch (transferResult) {
+  //       case (#Err(transferError)) {
+  //         return #err("Couldn't transfer funds:\n" # debug_show (transferError));
+  //       };
+  //       case (#Ok(blockIndex)) { return #ok blockIndex };
+  //     };
+  //   } catch (error : Error) {
+  //     // catch any errors that might occur during the transfer
+  //     return #err("Reject message: " # Error.message(error));
+  //   };
+  // };
 
 
-  public func purchaseToken(uid: T.UID, recipent: { uid: T.UID; ledger: ICRC.AccountIdentifier }, tokenId: T.TokenId, amount: Float): async IcpLedger.BlockIndex {
+  public func purchaseToken(uid: T.UID, recipent: { uid: T.UID; ledger: ICRC.AccountIdentifier }, tokenId: T.TokenId, amount: Float): async Nat64 {
     Debug.print("recipent ledger " # debug_show (recipent.ledger));
 
-    let blockIndex: IcpLedger.BlockIndex = 12345678901234567890 /* transfer({ amount = { e8s = amount }; recipentLedger }) */;
+    let blockIndex: Nat64 = 12345678901234567890 /* transfer({ amount = { e8s = amount }; recipentLedger }) */;
 
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");

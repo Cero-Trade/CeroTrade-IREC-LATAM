@@ -16,10 +16,7 @@
     "token_index": {
       "main": "src/cero_trade_project_backend/token_index/token_index.mo",
       "type": "motoko",
-      "dependencies": [
-        "http_service",
-        "icp_ledger"
-      ]
+      "dependencies": [ "http_service" ]
     },
     "transactions": {
       "main": "src/cero_trade_project_backend/transactions/transactions.mo",
@@ -36,16 +33,6 @@
     "http_service": {
       "main": "src/cero_trade_project_backend/http_service/http_service.mo",
       "type": "motoko"
-    },
-    "icp_ledger": {
-      "type": "custom",
-      "candid": "https://raw.githubusercontent.com/dfinity/ic/63acf4f88b20ec0c6384f4e18f0f6f69fc5d9b9f/rs/rosetta-api/icp_ledger/ledger.did",
-      "wasm": "https://download.dfinity.systems/ic/63acf4f88b20ec0c6384f4e18f0f6f69fc5d9b9f/canisters/ledger-canister.wasm.gz",
-      "remote": {
-        "id": {
-          "ic": "ryjl3-tyaaa-aaaaa-aaaba-cai"
-        }
-      }
     },
     "agent": {
       "main": "src/cero_trade_project_backend/agent/agent.mo",
