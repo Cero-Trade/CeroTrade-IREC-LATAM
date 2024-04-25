@@ -126,7 +126,7 @@ actor Agent {
     // get last transaction id
 
     let lastTransactionId = await TransactionIndex.length();
-    transactionId = Nat.toText(lastTransactionId + 1);
+    transactionId := Nat.toText(lastTransactionId + 1);
 
     let transactionType = #redemption("redeem");
     let transactionInfo = {
