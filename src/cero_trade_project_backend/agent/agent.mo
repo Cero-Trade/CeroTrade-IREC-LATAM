@@ -125,9 +125,8 @@ actor Agent {
     
     // get last transaction id
 
-    // TODO: implement getLastTransaction
-    // let transactionId = await TransactionIndex.getLastTransaction();
-    // transactionId = Nat.toText(transactionId + 1);
+    let lastTransactionId = await TransactionIndex.length();
+    transactionId = Nat.toText(lastTransactionId + 1);
 
     let transactionType = #redemption("redeem");
     let transactionInfo = {
@@ -137,11 +136,9 @@ actor Agent {
       txType: transactionType
     }
     // add transaction
-
-    // TODO: Call functions when getLastTransaction is implemented
-    // await TransactionIndex.registerTransaction(transactionId, transactionInfo);
+    await TransactionIndex.registerTransaction(transactionId, transactionInfo);
     // add user transaction
-    // await UserIndex.updateTransactions(caller, transactionId);
+    await UserIndex.updateTransactions(caller, transactionId);
 
     return ();
   };
