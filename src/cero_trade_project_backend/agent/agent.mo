@@ -130,10 +130,10 @@ actor Agent {
 
     let transactionType = #redemption("redeem");
     let transactionInfo = {
-      tokenId: tokenId,
-      recipient: beneficiary,
-      quantity: quantity,
-      txType: transactionType
+      tokenId: tokenId;
+      recipient: beneficiary;
+      quantity: quantity;
+      txType: transactionType;
     }
     // add transaction
     await TransactionIndex.registerTransaction(transactionId, transactionInfo);
