@@ -4,6 +4,7 @@ import ModalConfirm from '@/components/modals/modal-confirm.vue'
 import VImgLoad from '@/components/helpers/v-img-load.vue'
 import VImgInput from '@/components/helpers/v-img-input.vue'
 import VAvatarUpload from '@/components/helpers/v-avatar-upload.vue'
+import CompanyLogo from '@/components/company-logo.vue'
 
 // ? imported from external
 import VueApexCharts from "vue3-apexcharts"
@@ -17,4 +18,5 @@ export default {
   VImgLoad,
   VImgInput,
   VAvatarUpload,
+  CompanyLogo,
 }

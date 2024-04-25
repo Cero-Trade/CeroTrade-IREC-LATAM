@@ -97,6 +97,46 @@ actor class Token(_tokenId: ?T.TokenId) = this {
   };
 
 
+  public func purchaseToken(uid: T.UID, recipent: T.UID, amount: Float): async() {
+    // burn tokens to recipent
+    let burnedAmount: Float = switch(userIrecs.get(recipent)) {
+      case(null) throw Error.reject("Recipent user not found");
+      case(?token) {
+        let currentAmount = token.totalAmount;
+        if (currentAmount < amount) throw Error.reject("Limit tokens to burn is" # Float.toText(currentAmount));
+
+        currentAmount - amount
+      };
+    };
+
+    userIrecs.put(uid, {
+      tokenId;
+      assetInfo = await getAssetInfo();
+      totalAmount = burnedAmount;
+      inMarket = leftToMint; // TODO evaluate what value use
+      status = #forSale("for sale")
+    });
+
+
+    // mint tokens to buyer
+    let mintedAmount: Float = switch(userIrecs.get(uid)) {
+      case(null) amount;
+      case(?token) {
+        let currentAmount = token.totalAmount;
+        currentAmount + amount
+      };
+    };
+
+    userIrecs.put(uid, {
+      tokenId;
+      assetInfo = await getAssetInfo();
+      totalAmount = mintedAmount;
+      inMarket = leftToMint; // TODO evaluate what value use
+      status = #forSale("for sale")
+    });
+  };
+
+
   public query func getUserMinted(uid: T.UID): async T.TokenInfo {
     switch(userIrecs.get(uid)) {
       case(null) throw Error.reject(userNotFound);

@@ -245,4 +245,13 @@ actor class UserIndex() = this {
       case(?cid) await UsersCanister(cid).getPortfolioTokenIds(uid);
     };
   };
+
+
+  /// get user account ledger
+  public func getUserLedger(uid: T.UID): async Blob {
+    switch(usersDirectory.get(uid)) {
+      case (null) throw Error.reject(notExists);
+      case(?cid) await UsersCanister(cid).getLedger(uid);
+    };
+  };
 }

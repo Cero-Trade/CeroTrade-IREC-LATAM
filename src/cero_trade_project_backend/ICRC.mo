@@ -1,11 +1,17 @@
+import Blob "mo:base/Blob";
+
 module ICRC {
   public type BlockIndex = Nat;
   public type Subaccount = Blob;
   // Number of nanoseconds since the UNIX epoch in UTC timezone.
   public type Timestamp = Nat64;
   // Number of nanoseconds between two [Timestamp]s.
-  public type Tokens = Nat;
+  public type Tokens = {
+    e8s : Nat64;
+  };
   public type TxIndex = Nat;
+
+  public type AccountIdentifier = Blob.Blob;
 
   public type Account = {
     owner : Principal;

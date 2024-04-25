@@ -91,7 +91,7 @@
                   </template>
 
                   <v-card class="acenter jstart pt-2 pb-2 pl-1 pr-1 card-menu" style="gap: 25px;">
-                    <a @click="$router.push('/rec-single-marketplace')">Buy</a>
+                    <a @click="goDetails(item, 'buy')">Buy</a>
                   </v-card>
                 </v-menu>
               </div>
@@ -181,7 +181,7 @@ export default{
       dataMarketplace: [
         {
           asset_id: '#1234567',
-          id: '1234567',
+          token_id: '1',
           icon_arrow: 'mdi-arrow-down',
           percent: '20',
           price: "125.00 - 223.00",
@@ -193,7 +193,7 @@ export default{
         },
         {
           asset_id: '#1234567',
-          id: '1234567',
+          token_id: '1',
           icon_arrow: 'mdi-arrow-down',
           percent: '20',
           price: "125.00 - 223.00",
@@ -205,7 +205,7 @@ export default{
         },
         {
           asset_id: '#1234567',
-          id: '1234567',
+          token_id: '1',
           icon_arrow: 'mdi-arrow-down',
           percent: '20',
           price: "125.00 - 223.00",
@@ -217,7 +217,7 @@ export default{
         },
         {
           asset_id: '#1234567',
-          id: '1234567',
+          token_id: '1',
           icon_arrow: 'mdi-arrow-down',
           percent: '20',
           price: "125.00 - 223.00",
@@ -229,7 +229,7 @@ export default{
         },
         {
           asset_id: '#1234567',
-          id: '1234567',
+          token_id: '1',
           icon_arrow: 'mdi-arrow-down',
           percent: '20',
           price: "125.00 - 223.00",
@@ -241,7 +241,7 @@ export default{
         },
         {
           asset_id: '#1234567',
-          id: '1234567',
+          token_id: '1',
           icon_arrow: 'mdi-arrow-down',
           percent: '20',
           price: "125.00 - 223.00",
@@ -253,7 +253,7 @@ export default{
         },
         {
           asset_id: '#1234567',
-          id: '1234567',
+          token_id: '1',
           icon_arrow: 'mdi-arrow-down',
           percent: '20',
           price: "125.00 - 223.00",
@@ -265,7 +265,7 @@ export default{
         },
         {
           asset_id: '#1234567',
-          id: '1234567',
+          token_id: '1',
           icon_arrow: 'mdi-arrow-down',
           percent: '20',
           price: "125.00 - 223.00",
@@ -277,7 +277,7 @@ export default{
         },
         {
           asset_id: '#1234567',
-          id: '1234567',
+          token_id: '1',
           icon_arrow: 'mdi-arrow-down',
           percent: '20',
           price: "125.00 - 223.00",
@@ -289,7 +289,7 @@ export default{
         },
         {
           asset_id: '#1234567',
-          id: '1234567',
+          token_id: '1',
           icon_arrow: 'mdi-arrow-down',
           percent: '20',
           price: "125.00 - 223.00",
@@ -301,7 +301,7 @@ export default{
         },
         {
           asset_id: '#1234567',
-          id: '1234567',
+          token_id: '1',
           icon_arrow: 'mdi-arrow-down',
           percent: '20',
           price: "125.00 - 223.00",
@@ -313,7 +313,7 @@ export default{
         },
         {
           asset_id: '#1234567',
-          id: '1234567',
+          token_id: '1',
           icon_arrow: 'mdi-arrow-down',
           percent: '20',
           price: "125.00 - 223.00",
@@ -338,8 +338,11 @@ export default{
   },
 
   methods:{
-    goDetails(){
-      this.$router.push('/rec-single-marketplace')
+    goDetails({ token_id: tokenId }, input) {
+      const query = { tokenId }
+      if (input) query.input = input
+
+      this.$router.push({ path: '/token-details', query })
     },
   },
   watch: {

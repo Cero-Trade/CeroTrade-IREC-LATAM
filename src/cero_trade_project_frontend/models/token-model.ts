@@ -8,7 +8,7 @@ export interface TokenModel {
   status: TokenStatus;
 }
 
-export type AssetType = "hydroenergy"|"solarenergy"|"eolicenergy"|"termoenergy"|"nuclearenergy"|"other";
+export type AssetType = "hydro"|"ocean"|"geothermal"|"biome"|"wind"|"sun"|"other";
 
 export interface AssetInfoModel {
   assetType: AssetType;
