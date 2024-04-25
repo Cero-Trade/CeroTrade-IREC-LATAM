@@ -222,6 +222,14 @@ actor class UserIndex() = this {
     };
   };
 
+  // update user transactions
+  public func updateTransactions(uid: T.UID, txId: T.TransactionId) : async() {
+    switch(usersDirectory.get(uid)) {
+      case (null) throw Error.reject(notExists);
+      case(?cid) await UsersCanister(cid).updateTransactions(uid, txId);
+    };
+  };
+
 
   /// get profile information
   public func getProfile(uid: T.UID): async T.UserProfile {

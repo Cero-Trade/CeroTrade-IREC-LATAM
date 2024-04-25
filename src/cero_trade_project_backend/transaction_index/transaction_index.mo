@@ -10,6 +10,7 @@ import Iter "mo:base/Iter";
 import Error "mo:base/Error";
 import Serde "mo:serde";
 import Debug "mo:base/Debug";
+import List "mo:base/List";
 
 // types
 import T "../types";
@@ -45,8 +46,6 @@ actor class TransactionIndex() = this {
     wasm_array := array;
     wasm_array
   };
-
-
 
   /// returns true if canister have storage memory,
   /// false if havent enough

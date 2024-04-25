@@ -69,14 +69,16 @@ module {
   };
 
   public type TransactionInfo = {
-    transactionId: TransactionId;
     tokenId: TokenId;
-    txType: Text;
-    source: Text;
-    country: Text;
-    mwh: Text;
-    assetId: Text;
-    date: Nat64;
+    txType: txType;
+    recipient: Text;
+    quantity: TokenIdQuantity;
+  };
+
+  public type txType = {
+    #purchase: Text;
+    #sale: Text;
+    #redemption: Text;
   };
 
   //
@@ -190,10 +192,10 @@ module {
     updatePorfolio: (uid: UID, tokenId: TokenId) -> async();
     deletePorfolio: (uid: UID, tokenId: TokenId) -> async();
     updateRedemptions: (uid: UID, redem: RedemInfo) -> async();
-    updateTransactions: (uid: UID, tx: TransactionInfo) -> async();
+    updateTransactions: (uid: UID, tx: TransactionId) -> async();
     getPortfolioTokenIds: query (uid: UID) -> async [TokenId];
     getRedemptions: query (uid: UID) -> async [RedemInfo];
-    getTransactions: query (uid: UID) -> async [TransactionInfo];
+    getTransactions: query (uid: UID) -> async [TransactionId];
     getUserToken: query (uid: UID) -> async Text;
     validateToken: query (uid: UID, token: Text) -> async Bool;
   };

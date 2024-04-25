@@ -103,4 +103,62 @@ actor Agent {
     return ();
   };
 
+  // redeem certificate by burning user tokens
+  public shared({ caller }) func redeem(tokenId: T.TokenId, beneficiary: T.CompanyName, quantity: T.TokenIdQuantity): async() {
+    // check if user exists
+    let exists: Bool = await UserIndex.checkPrincipal(caller);
+    if (not exists) throw Error.reject(notExists);
+
+    // check if token exists
+    let tokenPortofolio = await TokenIndex.getTokenPortfolio(caller, tokenId);
+
+    // check if user has enough tokens
+    let tokensInSale = await Marketplace.getUserTokensOnSale(caller, tokenId);
+    let availableTokens =  tokenPortofolio.totalAmount - Float.fromInt(tokensInSale);
+
+    if (availableTokens < Float.fromInt(quantity)) throw Error.reject("Not enough tokens");
+
+    // ask token to burn the tokens
+    await TokenIndex.burnToken(caller, tokenId, Float.fromInt(quantity));
+
+    // add transaction
+    
+    // get last transaction id
+
+    // TODO: implement getLastTransaction
+    // let transactionId = await TransactionIndex.getLastTransaction();
+    // transactionId = Nat.toText(transactionId + 1);
+
+    let transactionType = #redemption("redeem");
+    let transactionInfo = {
+      tokenId: tokenId,
+      recipient: beneficiary,
+      quantity: quantity,
+      txType: transactionType
+    }
+    // add transaction
+
+    // TODO: Call functions when getLastTransaction is implemented
+    // await TransactionIndex.registerTransaction(transactionId, transactionInfo);
+    // add user transaction
+    // await UserIndex.updateTransactions(caller, transactionId);
+
+    return ();
+  };
+
+  // convert Text to Nat
+  public func textToNat( txt : Text) : async Nat {
+    assert(txt.size() > 0);
+    let chars = txt.chars();
+
+    var num : Nat = 0;
+    for (v in chars){
+      let charToNum = Nat32.toNat(Char.toNat32(v)-48);
+      assert(charToNum >= 0 and charToNum <= 9);
+      num := num * 10 +  charToNum;          
+    };
+
+    num;
+  };
+
 }
