@@ -237,7 +237,7 @@ import ChileIcon from '@/assets/sources/icons/CL.svg'
 import WalletIcon from '@/assets/sources/icons/wallet-light.svg'
 import TokenizedIcon from '@/assets/sources/icons/tokenized-table.svg'
 import RedeemedIcon from '@/assets/sources/icons/redeemed-table.svg'
-import { UsersCanister } from '@/repository/users-canister'
+import { AgentCanister } from '@/repository/agent-canister'
 import { ref, computed, watch, onBeforeMount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
@@ -338,7 +338,7 @@ onBeforeMount(() => {
 
 async function getData() {
   try {
-    const res = await UsersCanister.getPortfolio(),
+    const res = await AgentCanister.getPortfolio(),
     list = []
 
     for (const item of res) {

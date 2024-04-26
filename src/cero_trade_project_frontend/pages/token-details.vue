@@ -57,7 +57,7 @@
             <v-card class="card relative" style="min-height: 100%!important;">
               <span>Amount owned/produced</span>
               <div id="chart">
-                <apexchart type="radialBar" :options="chartOptions" :series="series"></apexchart>
+                <apexchart type="radialBar" :options="chartOptions" :series="seriesOwnedVsProduced"></apexchart>
               </div>
             </v-card>
           </v-col>
@@ -70,7 +70,7 @@
 
             <v-card class="card divcol jspace absolute-card-portfolio">
               <span>Amount for sale</span>
-              <h5 class="bold" style="position: absolute; bottom: 0; left: 20px;">{{ remainingToken }} MWh</h5>
+              <h5 class="bold" style="position: absolute; bottom: 0; left: 20px;">{{ tokenDetail?.inMarket }} MWh</h5>
             </v-card>
           </v-col>
           <v-col cols="12">
@@ -963,7 +963,7 @@ import WindEnergyColorIcon from '@/assets/sources/energies/wind-color.svg'
 import SolarEnergyColorIcon from '@/assets/sources/energies/solar-color.svg'
 
 import ChileIcon from '@/assets/sources/icons/CL.svg'
-import { UsersCanister } from '@/repository/users-canister'
+import { AgentCanister } from '@/repository/agent-canister'
 import { UserProfileModel } from '@/models/user-profile-model'
 
 
@@ -1008,7 +1008,6 @@ export default {
         chile: ChileIcon
       },
       tokenDetail: undefined,
-      remainingToken: undefined,
       headers: [
         { title: 'Company name', sortable: false, key: 'company'},
         { title: 'Country', key: 'country', sortable: false },
@@ -1075,21 +1074,8 @@ export default {
       ],
 
       time_selection: 'Year',
-      dataCardEnergy: [
-        {
-          icon_source: 'mdi-waves',
-          energy_source: 'hydro energy',
-          region: 'Valparaiso, Chile',
-          country: 'chile',
-          date: '24/12/2023',
-          date_start: '12/03/2023',
-          co2: '0,12%',
-          radioactivity: '0,005%',
-          // certification: 'Certification type',
-        },
-      ],
 
-      series: [43],
+      seriesOwnedVsProduced: [],
       chartOptions: {
         colors: ['#C6F221'],
         chart: {
@@ -1241,14 +1227,15 @@ export default {
   methods:{
     async getData() {
       try {
-        const [token, remainingToken] = await Promise.allSettled([
-          UsersCanister.getSinglePortfolio(this.tokenId),
-          UsersCanister.getRemainingToken(this.tokenId)
+        const [token] = await Promise.allSettled([
+          AgentCanister.getSinglePortfolio(this.tokenId),
         ])
 
         this.tokenDetail = token.value
-        this.remainingToken = remainingToken.value
-        console.log("token", token, "remaining", remainingToken);
+        this.seriesOwnedVsProduced = [token.value.totalAmount / token.value.assetInfo.volumeProduced]
+
+        console.log(token.value.totalAmount, "/", token.value.assetInfo.volumeProduced, "=", token.value.totalAmount / token.value.assetInfo.volumeProduced);
+        console.log("token", token, "seriesOwnedVsProduced", seriesOwnedVsProduced);
 
         this.dataMarketplace.push({
           company: 'Sphere',

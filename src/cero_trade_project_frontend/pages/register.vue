@@ -178,7 +178,7 @@
 import '@/assets/styles/pages/home.scss'
 import countries from '@/assets/sources/json/countries-all.json'
 import { ref, onBeforeMount } from 'vue'
-import { UsersCanister } from '@/repository/users-canister';
+import { AgentCanister } from '@/repository/users-canister';
 import { useRouter } from 'vue-router';
 import variables from '@/mixins/variables';
 import { useToast } from 'vue-toastification';
@@ -235,7 +235,7 @@ async function register() {
   loadingBtn.value = true
 
   try {
-    await UsersCanister.register(companyForm.value)
+    await AgentCanister.register(companyForm.value)
 
     router.push('/')
     toast.success("You have registered successfuly")

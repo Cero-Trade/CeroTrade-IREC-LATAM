@@ -118,7 +118,7 @@ import marketplace_green from '@/assets/sources/icons/marketplace-green.svg'
 import config_green from '@/assets/sources/icons/config-green.svg'
 import support_green from '@/assets/sources/icons/support-green.svg'
 import market_trends from '@/assets/sources/icons/market-trends.svg'
-import { UsersCanister } from '@/repository/users-canister'
+import { AgentCanister } from '@/repository/users-canister'
 import { useToast } from 'vue-toastification';
 import { useRouter } from 'vue-router'
 import { closeLoader, showLoader } from '@/plugins/functions'

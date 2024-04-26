@@ -5,7 +5,7 @@ import store from "@/store";
 import { UserProfileModel } from "@/models/user-profile-model";
 import { AssetType, TokenModel, TokenStatus } from "@/models/token-model";
 
-export class UsersCanister {
+export class AgentCanister {
   static async register(data: {
     companyId: string,
     companyName: string,
@@ -29,7 +29,7 @@ export class UsersCanister {
       // store user company logo
       const fileCompressed = await fileCompression(data.companyLogo[0]),
       arrayBuffer = await getImageArrayBuffer(fileCompressed)
-      await UsersCanister.storeCompanyLogo(arrayBuffer)
+      await AgentCanister.storeCompanyLogo(arrayBuffer)
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)
@@ -109,9 +109,37 @@ export class UsersCanister {
     }
   }
 
-  static async getRemainingToken(tokenId: string): Promise<number> {
+  static async putOnSale(tokenId: string, quantity: number): Promise<void> {
     try {
-      return await agent().getRemainingToken(tokenId) as number
+      const res = await agent().sellToken(tokenId, quantity)
+      console.log(res);
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+  static async purchaseToken(tokenId: string, recipent: string, amount: number): Promise<void> {
+    try {
+      await agent().purchaseToken(tokenId, recipent, amount)
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+  static async takeTokenOffMarket(tokenId: string): Promise<void> {
+    try {
+      await agent().getRemainingToken(tokenId)
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+  static async redeemToken(tokenId: string, beneficiary: string, amount: number): Promise<void> {
+    try {
+      await agent().redeemToken(tokenId, beneficiary, amount)
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)
