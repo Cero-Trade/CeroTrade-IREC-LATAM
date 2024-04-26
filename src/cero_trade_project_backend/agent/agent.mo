@@ -143,4 +143,26 @@ actor Agent {
     return ();
   };
 
+  // ask market to take off market
+  public shared ({ caller }) func takeTokenOffMarket(tokenId: T.TokenId, quantity: T.TokenIdQuantity): async() {
+    // check if user exists
+    let exists: Bool = await UserIndex.checkPrincipal(caller);
+    if (not exists) throw Error.reject(notExists);
+
+    // check if token exists
+    let tokenPortofolio = await TokenIndex.getTokenPortfolio(caller, tokenId);
+
+    // check if user is already selling
+    let isSelling = await Marketplace.isSellingToken(caller, tokenId);
+    if (isSelling == false) throw Error.reject("User is not selling this token");
+
+    // check if user has enough tokens
+    let tokenInSale = await Marketplace.getUserTokensOnSale(caller, tokenId);
+    if (Float.fromInt(tokenInSale) < Float.fromInt(quantity)) throw Error.reject("Not enough tokens");
+
+    await Marketplace.takeOffSale(tokenId, quantity, caller);
+
+    return ();
+  };
+
 }

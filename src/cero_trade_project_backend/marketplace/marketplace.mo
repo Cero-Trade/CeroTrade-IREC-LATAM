@@ -4,6 +4,8 @@ import MarketplaceTypes = "./marketplace_types";
 import HM = "mo:base/HashMap";
 import Principal "mo:base/Principal";
 import Text "mo:base/Text";
+import Float "mo:base/Float";
+import Int "mo:base/Int";
 
 // types
 import T "../types";
@@ -122,6 +124,119 @@ actor Marketplace {
                 };
             };
         };
+    };
+
+    // handles reducing token offer from the market
+    public func takeOffSale(tokenId: T.TokenId, quantity: T.TokenIdQuantity, user: T.UID): async () {
+
+        switch (tokensInMarket.get(tokenId)) {
+            case (null) {
+                throw Error.reject("Token not found in the market");
+            };
+            case(?tokenMarket) {
+                switch (tokenMarket.usersxToken.get(user)) {
+                    case (null){
+                        throw Error.reject("User's token not found in the market");
+                    };
+                    case (?userQuantity) {
+                        let newQuantity = Float.fromInt(userQuantity) - Float.fromInt(quantity);
+                        // if the new quantity is 0, remove the user from tokensxuser
+                        if (newQuantity == 0) {
+                            await deleteUserTokenfromMarket(tokenId, user);
+                            let newTotalQuantity = Float.fromInt(tokenMarket.totalQuantity) - Float.fromInt(quantity);
+                            // if the new total quantity is 0, remove the token from the market
+                            if (newTotalQuantity == 0) {
+                                await deleteTokensInMarket(tokenId);
+                            } else if (newTotalQuantity > 0) {
+                                // Update the total quantity in the market info
+                                await reduceTotalQuantity(tokenId, quantity);
+                            } else {
+                                throw Error.reject("Token quantity cannot be less than 0");
+                            };
+                        } else if (newQuantity > 0) {
+                            // Update the user's token quantity and market info
+                            await reduceOffer(tokenId, quantity, user);
+                            await reduceTotalQuantity(tokenId, quantity);
+                        } else {
+                            throw Error.reject("User's token quantity cannot be less than 0");
+                        };
+                    };
+                };
+            };
+        };
+    };
+
+    // Function to delete a user's token from the market
+    public func deleteUserTokenfromMarket(tokenId: T.TokenId, user: T.UID): async () {
+        switch (tokensInMarket.get(tokenId)) {
+            case (null){
+                throw Error.reject("Token not found in the market");
+            };
+            case (?info) {
+                switch (info.usersxToken.get(user)) {
+                    case (null) {
+                        throw Error.reject("User not found in the market for this token")
+                    };
+                    case (?_) {
+                        info.usersxToken.delete(user);
+                    };
+                };
+            };
+        };
+    };
+
+    // Function to reduce the total quantity of a token in the market
+    public func reduceTotalQuantity(tokenId: T.TokenId, quantity: T.TokenIdQuantity): async () {
+        switch (tokensInMarket.get(tokenId)) {
+            case (null) {
+                throw Error.reject("Token not found in the market");
+            };
+            case (?info) {
+                let newTotalQuantity = info.totalQuantity - quantity;
+                if (newTotalQuantity > 0) {
+                    let updatedInfo = {
+                        totalQuantity = Int.abs(newTotalQuantity);
+                        usersxToken = info.usersxToken;
+                    };
+                    tokensInMarket.put(tokenId, updatedInfo);
+                } else if (newTotalQuantity == 0) {
+                    await deleteTokensInMarket(tokenId);
+                } else {
+                    throw Error.reject("Token quantity cannot be less than 0");
+                };
+            };
+        };
+    };
+
+    // Function to reduce the offer of a token in the market
+    public func reduceOffer(tokenId: T.TokenId, quantity: T.TokenIdQuantity, user: T.UID): async () {
+        switch (tokensInMarket.get(tokenId)) {
+            case (null) {
+                throw Error.reject("Token not found in the market");
+            };
+            case (?info) {
+                switch (info.usersxToken.get(user)) {
+                    case (null) {
+                        throw Error.reject("User not found in the market for this token");
+                    };
+                    case (?userQuantity) {
+                        let newUserQuantity = userQuantity - quantity;
+                        if (newUserQuantity > 0) {
+                            info.usersxToken.put(user, Int.abs(newUserQuantity));
+                        } else if (newUserQuantity == 0) {
+                            await deleteUserTokenfromMarket(tokenId, user);
+                        } else {
+                            throw Error.reject("User's token quantity cannot be less than 0");
+                        };
+                    };
+                };
+            };
+        };
+    };
+
+    // Function to delete a token from the market
+    public func deleteTokensInMarket(tokenId: T.TokenId): async () {
+        tokensInMarket.delete(tokenId);
     };
 
 };
