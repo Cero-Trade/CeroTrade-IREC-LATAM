@@ -34,7 +34,7 @@ actor Transactions {
   public query func length(): async Nat { transactions.size() };
 
 
-  /// register user to cero trade
+  /// register transaction to cero trade
   public func registerTransaction(txId: T.TransactionId, tx: T.TransactionInfo): async() {
     transactions.put(txId, tx);
   };
