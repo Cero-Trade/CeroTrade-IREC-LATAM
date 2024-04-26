@@ -81,26 +81,26 @@ actor Agent {
   };
 
   /// ask market to put on sale token
-  public shared({ caller }) func sellToken(tokenId: T.TokenId, quantity: T.TokenIdQuantity): async() {
-    // check if user exists
-    let exists: Bool = await UserIndex.checkPrincipal(caller);
-    if (not exists) throw Error.reject(notExists);
+  // public shared({ caller }) func sellToken(tokenId: T.TokenId, quantity: T.TokenIdQuantity): async() {
+  //   // check if user exists
+  //   let exists: Bool = await UserIndex.checkPrincipal(caller);
+  //   if (not exists) throw Error.reject(notExists);
 
-    // check if token exists
-    let tokenPortofolio = await TokenIndex.getTokenPortfolio(caller, tokenId);
+  //   // check if token exists
+  //   let tokenPortofolio = await TokenIndex.getTokenPortfolio(caller, tokenId);
 
 
-    // check if user is already selling
-    let tokensInSale = await Marketplace.getUserTokensOnSale(caller, tokenId);
+  //   // check if user is already selling
+  //   let tokensInSale = await Marketplace.getUserTokensOnSale(caller, tokenId);
 
-    let availableTokens = tokenPortofolio.totalAmount - Float.fromInt(tokensInSale);
+  //   let availableTokens = tokenPortofolio.totalAmount - Float.fromInt(tokensInSale);
 
-    // check if user has enough tokens
-    if (availableTokens < Float.fromInt(quantity)) throw Error.reject("Not enough tokens");
+  //   // check if user has enough tokens
+  //   if (availableTokens < Float.fromInt(quantity)) throw Error.reject("Not enough tokens");
 
-    await Marketplace.putOnSale(tokenId, quantity, caller);
+  //   await Marketplace.putOnSale(tokenId, quantity, caller);
 
-    return ();
-  };
+  //   return ();
+  // };
 
 }
