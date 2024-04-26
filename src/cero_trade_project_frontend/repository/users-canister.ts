@@ -83,12 +83,35 @@ export class UsersCanister {
 
   static async getPortfolio(): Promise<[TokenModel]> {
     try {
+      // TODO format to date values
       const response = await agent().getPortfolio() as [TokenModel]
       for (const item of response) {
         item.status = Object.values(item.status)[0] as TokenStatus
         item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
       }
       return response
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+  static async getSinglePortfolio(tokenId: string): Promise<TokenModel> {
+    try {
+      // TODO format to date values
+      const token = await agent().getSinglePortfolio(tokenId) as TokenModel
+      token.status = Object.values(token.status)[0] as TokenStatus
+      token.assetInfo.assetType = Object.values(token.assetInfo.assetType)[0] as AssetType
+      return token
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+  static async getRemainingToken(tokenId: string): Promise<number> {
+    try {
+      return await agent().getRemainingToken(tokenId) as number
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)

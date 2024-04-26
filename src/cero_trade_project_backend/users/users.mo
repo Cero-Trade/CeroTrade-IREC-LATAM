@@ -179,4 +179,12 @@ actor Users {
       case (?info) { return info.vaultToken == token; };
     };
   };
+
+  /// obtain user ledger
+  public query func getLedger(uid: T.UID): async Blob {
+    switch (users.get(uid)) {
+      case (null) { throw Error.reject(userNotFound); };
+      case (?info) { return info.ledger };
+    };
+  };
 }

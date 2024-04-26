@@ -11,6 +11,7 @@ import ModalConfirm from '@/components/modals/modal-confirm.vue'
 import VImgLoad from '@/components/helpers/v-img-load.vue'
 import VImgInput from '@/components/helpers/v-img-input.vue'
 import VAvatarUpload from '@/components/helpers/v-avatar-upload.vue'
+import CompanyLogo from '@/components/company-logo.vue'
 
 declare module '@vue/runtime-core' {
   export interface GlobalComponents {
@@ -19,5 +20,6 @@ declare module '@vue/runtime-core' {
     VImgLoad: typeof VImgLoad,
     VImgInput: typeof VImgInput,
     VAvatarUpload: typeof VAvatarUpload,
+    CompanyLogo: typeof CompanyLogo,
   }
 }

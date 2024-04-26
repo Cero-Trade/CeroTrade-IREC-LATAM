@@ -53,7 +53,12 @@ To generate the wasm module like array run command below
 
 Note: must to add package.json field -> "type": "module",
 
-`npm run generate-wasm`
+Provide respective MODULE_NAME in argument
+`npm run generate-wasm -- module={MODULE_NAME}`
+
+To register wasm module into backend canisters must to access here:
+
+`http://localhost:{PORT}/cero-system?canisterId={CANISTER_ID}`
 
 ### Deploying token canisters
 `dfx canister call token_index registerToken '("token_id")'`

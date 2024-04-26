@@ -53,8 +53,8 @@ actor Agent {
 
   /// performe mint with tokenId and amount requested
   public shared({ caller }) func mintToken(tokenId: T.TokenId, amount: Float): async() {
-    let exists: Bool = await UserIndex.checkPrincipal(caller);
-    if (not exists) throw Error.reject(notExists);
+    // check if user exists
+    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
     await TokenIndex.mintToken(caller, tokenId, amount);
 
@@ -63,8 +63,8 @@ actor Agent {
 
   /// performe mint with tokenId and amount requested
   public shared({ caller }) func burnToken(tokenId: T.TokenId, amount: Float): async() {
-    let exists: Bool = await UserIndex.checkPrincipal(caller);
-    if (not exists) throw Error.reject(notExists);
+    // check if user exists
+    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
     await TokenIndex.burnToken(caller, tokenId, amount);
 
@@ -79,6 +79,46 @@ actor Agent {
     let tokenIds = await UserIndex.getPortfolioTokenIds(caller);
     await TokenIndex.getPortfolio(caller, tokenIds);
   };
+
+  // TODO add here reddemption response
+  /// get portfolio information
+  public shared({ caller }) func getSinglePortfolio(tokenId: T.TokenId): async T.TokenInfo {
+    // check if user exists
+    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
+
+    await TokenIndex.getTokenPortfolio(caller, tokenId);
+  };
+
+  /// get left to mint about token
+  public shared({ caller }) func getRemainingToken(tokenId: T.TokenId): async Float {
+    // check if user exists
+    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
+
+    await TokenIndex.getRemainingAmount(tokenId);
+  };
+
+
+  /// performe token purchase
+  public shared({ caller }) func purchaseToken(tokenId: T.TokenId, recipent: T.UID, amount: Float): async Nat64 {
+    // check if user exists
+    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
+
+    let recipentLedger = await UserIndex.getUserLedger(recipent);
+
+    // performe ICP transfer and update token canister
+    await TokenIndex.purchaseToken(caller, { uid = recipent; ledger = recipentLedger }, tokenId, amount);
+
+    // TODO checkpout about update marketplace canister here ---> call takeOffMarket()
+  };
+
+
+  // peforme redeemption about token
+  public shared({ caller }) func redeemToken(tokenId: T.TokenId, amount: Float, beneficiary: T.UID): async() {
+    // TODO call token_index to burn token --> validate selected amount (checkout amount out market, need to rest amount in market with out market to know if can redeem)
+
+    // TODO save transaction
+  };
+
 
   /// ask market to put on sale token
   public shared({ caller }) func sellToken(tokenId: T.TokenId, quantity: T.TokenIdQuantity): async() {

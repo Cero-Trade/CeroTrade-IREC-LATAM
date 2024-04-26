@@ -376,12 +376,12 @@ async function getData() {
 
 function onSelectAction(input, item) {
   if (windowStep.value == 1 && !selectedToken.value) return toast.warning('Must to select any token')
-  const tokenId = item?.token_id ?? this.selectedToken
+  const tokenId = item?.token_id ?? selectedToken.value
 
-  router.push({ path: '/rec-single-portfolio', query: { tokenId, input } })
+  router.push({ path: '/token-details', query: { tokenId, input } })
 }
 
-function goDetails() {
-  router.push({ path: '/rec-single-portfolio', query: { tokenId } })
+function goDetails({ token_id: tokenId }) {
+  router.push({ path: '/token-details', query: { tokenId } })
 }
 </script>

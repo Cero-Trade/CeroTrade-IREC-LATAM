@@ -7,6 +7,9 @@ import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import Error "mo:base/Error";
 
+// Types
+import ICRC "./ICRC";
+
 module {
   public type UID = Principal;
   public type CanisterId = Principal;
@@ -34,7 +37,7 @@ module {
     companyLogo: ?CompanyLogo;
     vaultToken: Text;
     principal: Principal;
-    ledger: Blob;
+    ledger: ICRC.AccountIdentifier;
     portfolio: [TokenId];
     transactions: [TransactionId];
   };
@@ -196,6 +199,7 @@ module {
     getTransactions: query (uid: UID) -> async [TransactionInfo];
     getUserToken: query (uid: UID) -> async Text;
     validateToken: query (uid: UID, token: Text) -> async Bool;
+    getLedger: query (uid: UID) -> async Blob;
   };
 
   public type TokenInterface = actor {
@@ -207,6 +211,7 @@ module {
     getRemainingAmount: query () -> async Float;
     getTokenId: query () -> async TokenId;
     getCanisterId: query () -> async CanisterId;
+    purchaseToken: (uid: UID, recipent: UID, amount: Float) -> async();
   };
 
   public type TransactionsInterface = actor {

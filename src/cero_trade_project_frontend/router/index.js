@@ -9,8 +9,7 @@ import { AuthClientApi } from '@/repository/auth-client-api';
 import DefaultLayout from '@/layouts/default-layout.vue'
 import Dashboard from '@/pages/dashboard.vue'
 import Marketplace from '@/pages/marketplace.vue'
-import RecSinglePortfolio from '@/pages/rec-single-portfolio.vue'
-import RecSingleMarketplace from '@/pages/rec-single-marketplace.vue'
+import TokenDetails from '@/pages/token-details.vue'
 import Settings from '@/pages/settings.vue'
 import Support from '@/pages/support.vue'
 import MyPortfolio from '@/pages/my-portfolio.vue'
@@ -45,16 +44,10 @@ const routes = [
         meta: { head: `Marketplace - ${DEFAULT_TITLE}` }
       },
       {
-        path: '/rec-single-portfolio',
-        name: 'RecSinglePortfolio',
-        component: RecSinglePortfolio,
-        meta: { head: `Rec Single Portfolio - ${DEFAULT_TITLE}` }
-      },
-      {
-        path: 'rec-single-marketplace',
-        name: 'RecSingleMarketplace',
-        component: RecSingleMarketplace,
-        meta: { head: `Rec Single - ${DEFAULT_TITLE}` }
+        path: '/token-details',
+        name: 'TokenDetails',
+        component: TokenDetails,
+        meta: { head: `Token details - ${DEFAULT_TITLE}` }
       },
       {
         path: 'settings',

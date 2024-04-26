@@ -1,6 +1,6 @@
 <template>
     <div id="dashboard">
-      <h4>Hi Valentina 👋</h4>
+      <h4>Hi {{ profile.companyName }} 👋</h4>
       <span class="mbb16" style="color:#475467; margin-bottom: 64px;">Welcome to Cero Trade platform. Your gateway to a greener and more sustainable future. Manage your energy assets, track your usage, and contribute to a healthier planet.</span>
   
       <v-row>
@@ -64,13 +64,17 @@
               <v-card class="card divcol mb-4" style="background-color: #F9FAFB!important; min-height: 200px!important;">
                 <h5 class="acenter"><img src="@/assets/sources/icons/account-multiple.svg" alt="Account" class="mr-4" style="width: 20px;">Profile</h5>
                 <p class="p12">Access and edit your profile information.</p>
-                <v-btn class="btn btn-max-content">Edit profile <img src="@/assets/sources/icons/check-verified.svg" alt="check-verified icon"></v-btn>
+                <v-btn class="btn btn-max-content" @click="$router.push({ path: '/settings', query: { editProfile: true } })">
+                  Edit profile <img src="@/assets/sources/icons/check-verified.svg" alt="check-verified icon">
+                </v-btn>
               </v-card>
   
               <v-card class="card divcol mb-4" style="background-color: #F9FAFB!important; min-height: 200px!important;">
                 <h5 class="acenter"><img src="@/assets/sources/icons/marketplace-black.svg" alt="Marketplace" class="mr-4" style="width: 20px;">Marketplace</h5>
                 <p class="p12">Discover new opportunities in the renewable energy marketplace. Buy, sell, and trade with ease.</p>
-                <v-btn class="btn btn-max-content">Go to marketplace <img src="@/assets/sources/icons/coins.svg" alt="coins icon"></v-btn>
+                <v-btn class="btn btn-max-content"
+                @click="$router.push({ path: '/marketplace' })"
+                >Go to marketplace <img src="@/assets/sources/icons/coins.svg" alt="coins icon"></v-btn>
               </v-card>
             </v-col>
           </v-row>
@@ -376,6 +380,7 @@
   import RenewableChart from '@/components/renewable-chart.vue'
   import MwhChart from '@/components/mwh-chart.vue'
   import IrecChart from '@/components/irec-chart.vue'
+  import { UserProfileModel } from '@/models/user-profile-model'
   
   export default {
     components: {
@@ -386,6 +391,7 @@
     },
     data(){
       return{
+        profile: UserProfileModel.get(),
         walletStatus: false,
         status2fa: false,
         verifyStatus: false,
