@@ -5,13 +5,15 @@ import Blob "mo:base/Blob";
 import Text "mo:base/Text";
 import Array "mo:base/Array";
 import Nat "mo:base/Nat";
+import Nat32 "mo:base/Nat32";
+import Char "mo:base/Char";
 import Float "mo:base/Float";
 
 // canisters
 import HttpService "canister:http_service";
 import UserIndex "canister:user_index";
 import TokenIndex "canister:token_index";
-import TransactionIndex "canister:token_index";
+import TransactionIndex "canister:transaction_index";
 import Marketplace "canister:marketplace";
 
 // types
@@ -104,14 +106,6 @@ actor Agent {
   };
 
 
-  // peforme redeemption about token
-  public shared({ caller }) func redeemToken(tokenId: T.TokenId, beneficiary: T.UID, amount: Float): async() {
-    // TODO call token_index to burn token --> validate selected amount (checkout amount out market, need to rest amount in market with out market to know if can redeem)
-
-    // TODO save transaction
-  };
-
-
   /// ask market to put on sale token
   public shared({ caller }) func sellToken(tokenId: T.TokenId, quantity: T.TokenIdQuantity, price: T.price, currency: T.currency): async() {
     // check if user exists
@@ -158,7 +152,13 @@ actor Agent {
   };
 
   // redeem certificate by burning user tokens
-  public shared({ caller }) func redeem(tokenId: T.TokenId, beneficiary: T.CompanyName, quantity: T.TokenIdQuantity): async() {
+  public shared({ caller }) func redeemToken(tokenId: T.TokenId, beneficiary: Text, quantity: T.TokenIdQuantity): async() {
+    // TODO call token_index to burn token --> validate selected amount (checkout amount out market, need to rest amount in market with out market to know if can redeem)
+
+    // TODO save transaction
+
+
+
     // check if user exists
     let exists: Bool = await UserIndex.checkPrincipal(caller);
     if (not exists) throw Error.reject(notExists);
@@ -176,25 +176,25 @@ actor Agent {
     await TokenIndex.burnToken(caller, tokenId, Float.fromInt(quantity));
 
     // add transaction
-    
+
     // get last transaction id
 
     let lastTransactionId = await TransactionIndex.length();
-    transactionId := Nat.toText(lastTransactionId + 1);
+    let transactionId = Nat.toText(lastTransactionId + 1);
 
     let transactionType = #redemption("redeem");
     let transactionInfo = {
-      tokenId: tokenId;
-      recipient: beneficiary;
-      quantity: quantity;
-      txType: transactionType;
-    }
+      tokenId;
+      recipient = beneficiary;
+      quantity;
+      txType = transactionType;
+    };
+
     // add transaction
     await TransactionIndex.registerTransaction(transactionId, transactionInfo);
+
     // add user transaction
     await UserIndex.updateTransactions(caller, transactionId);
-
-    return ();
   };
 
   // convert Text to Nat
