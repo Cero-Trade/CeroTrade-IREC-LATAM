@@ -137,10 +137,10 @@ module {
 
   public type TokenMarketInfo = {
     totalQuantity: Nat;
-    usersxToken: HM.HashMap<UID, userTokenInfo>;
+    usersxToken: HM.HashMap<UID, UserTokenInfo>;
   };
 
-  public type userTokenInfo = {
+  public type UserTokenInfo = {
     quantity: Nat;
     price: Nat;
     currency: Text

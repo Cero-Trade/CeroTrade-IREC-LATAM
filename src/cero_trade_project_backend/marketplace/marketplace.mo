@@ -42,7 +42,7 @@ actor Marketplace {
     // new token in market
     public func newTokensInMarket(tokenId : T.TokenId, user : T.UID, quantity : T.TokenIdQuantity, price: T.price, currency: T.currency) : async () {
         // user is selling a new token
-        let usersxToken = HM.HashMap<T.UID, T.userTokenInfo>(4, Principal.equal, Principal.hash);
+        let usersxToken = HM.HashMap<T.UID, T.UserTokenInfo>(4, Principal.equal, Principal.hash);
 
         let userxTokenInfo = {
             quantity = quantity;
@@ -173,8 +173,8 @@ actor Marketplace {
                     case (null){
                         throw Error.reject("User's token not found in the market");
                     };
-                    case (?userQuantity) {
-                        let newQuantity = Float.fromInt(userQuantity) - Float.fromInt(quantity);
+                    case (?userTokenInfo) {
+                        let newQuantity = Float.fromInt(userTokenInfo.quantity) - Float.fromInt(quantity);
                         // if the new quantity is 0, remove the user from tokensxuser
                         if (newQuantity == 0) {
                             await deleteUserTokenfromMarket(tokenId, user);
@@ -227,7 +227,7 @@ actor Marketplace {
                 throw Error.reject("Token not found in the market");
             };
             case (?info) {
-                let newTotalQuantity = info.totalQuantity - quantity;
+                let newTotalQuantity: Nat = info.totalQuantity - quantity;
                 if (newTotalQuantity > 0) {
                     let updatedInfo = {
                         totalQuantity = Int.abs(newTotalQuantity);
@@ -254,10 +254,12 @@ actor Marketplace {
                     case (null) {
                         throw Error.reject("User not found in the market for this token");
                     };
-                    case (?userQuantity) {
-                        let newUserQuantity = userQuantity - quantity;
+                    case (?userTokenInfo) {
+                        let newUserQuantity: Nat = userTokenInfo.quantity - quantity;
+
                         if (newUserQuantity > 0) {
-                            info.usersxToken.put(user, Int.abs(newUserQuantity));
+                            let newUserTokenInfo = { userTokenInfo with quantity = Int.abs(newUserQuantity) };
+                            info.usersxToken.put(user, newUserTokenInfo);
                         } else if (newUserQuantity == 0) {
                             await deleteUserTokenfromMarket(tokenId, user);
                         } else {
