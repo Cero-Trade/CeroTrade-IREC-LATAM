@@ -17,7 +17,9 @@ module {
   public type TransactionId = Text;
   public type RedemId = Text;
   public type CompanyLogo = [Nat8];
-
+  public type price = Nat;
+  public type currency = Text;
+  
   //
   // UsersAgent
   //
@@ -135,7 +137,13 @@ module {
 
   public type TokenMarketInfo = {
     totalQuantity: Nat;
-    usersxToken: HM.HashMap<UID, Nat>;
+    usersxToken: HM.HashMap<UID, userTokenInfo>;
+  };
+
+  public type userTokenInfo = {
+    quantity: Nat;
+    price: Nat;
+    currency: Text
   };
 
 
