@@ -89,14 +89,6 @@ actor Agent {
     await TokenIndex.getTokenPortfolio(caller, tokenId);
   };
 
-  /// get left to mint about token
-  public shared({ caller }) func getRemainingToken(tokenId: T.TokenId): async Float {
-    // check if user exists
-    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
-
-    await TokenIndex.getRemainingAmount(tokenId);
-  };
-
 
   /// performe token purchase
   public shared({ caller }) func purchaseToken(tokenId: T.TokenId, recipent: T.UID, amount: Float): async Nat64 {
@@ -113,7 +105,7 @@ actor Agent {
 
 
   // peforme redeemption about token
-  public shared({ caller }) func redeemToken(tokenId: T.TokenId, amount: Float, beneficiary: T.UID): async() {
+  public shared({ caller }) func redeemToken(tokenId: T.TokenId, beneficiary: T.UID, amount: Float): async() {
     // TODO call token_index to burn token --> validate selected amount (checkout amount out market, need to rest amount in market with out market to know if can redeem)
 
     // TODO save transaction
