@@ -44,7 +44,7 @@
         <!-- TODO where get this -->
         <v-card class="card card-mwh d-flex flex-column-jcenter flex-grow-1">
           <h6>Redeemed MWh</h6>
-          <h5 >0MWh</h5>
+          <h5>{{ totalRedeemed }}MWh</h5>
         </v-card>
       </v-col>
     </v-row>
@@ -292,6 +292,7 @@ dataMarketplace = ref([
   //   status: 'for sale',
   // },
 ]),
+totalRedeemed = ref(0),
 
 allItems = 'All items',
 items = ['All items', 'Items'],
@@ -313,7 +314,6 @@ windowStepComputed = computed(() => {
 totalMwh = computed(() => {
   if (!series.value) return 0
   const data = series.value[0].data
-  console.log(data);
   return data.reduce((acc, item) => acc + item, 0)
 }),
 dataMarketplaceFiltered = computed(() => {
@@ -338,10 +338,12 @@ onBeforeMount(() => {
 
 async function getData() {
   try {
-    const res = await AgentCanister.getPortfolio(),
+    const { tokensInfo, tokensRedemption } = await AgentCanister.getPortfolio(),
     list = []
 
-    for (const item of res) {
+    console.log(tokensInfo, tokensRedemption);
+
+    for (const item of tokensInfo) {
       list.push({
         token_id: item.tokenId,
         energy_source: item.assetInfo.assetType,
@@ -353,21 +355,42 @@ async function getData() {
 
     dataMarketplace.value = list.sort((a, b) => a.token_id - b.token_id)
 
-    const grouped = list.reduce((acc, item) => {
+    const groupedTokens = list.reduce((acc, item) => {
       let existenceElement = acc.find(elem => elem.energy_source === item.energy_source);
+
       if (existenceElement) {
-        existenceElement.valor += item.mwh;
+        existenceElement.mwh += item.mwh;
       } else {
         acc.push({ ...item });
       }
       return acc;
     }, []);
 
-    series.value = [{
-      name: 'MWh',
-      data: grouped.map(e => e.mwh)
-    }]
-    if (grouped.length) categories.value = grouped.map(e => e.energy_source)
+    const groupedRedemptions = tokensRedemption.reduce((acc, item) => {
+      let existenceElement = acc.find(elem => elem.tokenId === item.tokenId);
+
+      if (existenceElement) {
+        existenceElement.tokenAmount += item.tokenAmount;
+      } else {
+        acc.push({ ...item });
+      }
+      return acc;
+    }, []);
+
+
+    series.value = [
+      {
+        name: 'MWh',
+        data: groupedTokens.map(e => e.mwh || 0)
+      },
+      {
+        name: 'Redeemed',
+        data: groupedRedemptions.map(e => e.tokenAmount || 0)
+      }
+    ]
+    if (groupedTokens.length) categories.value = groupedTokens.map(e => e.energy_source)
+
+    totalRedeemed.value = groupedRedemptions.reduce((acc, item) => acc + item.tokenAmount, 0) || 0
   } catch (error) {
     console.error(error);
     toast.error(error)

@@ -40,7 +40,7 @@ actor Marketplace {
     };
 
     // new token in market
-    public func newTokensInMarket(tokenId : T.TokenId, user : T.UID, quantity : T.TokenIdQuantity, price: T.price, currency: T.currency) : async () {
+    public func newTokensInMarket(tokenId : T.TokenId, user : T.UID, quantity : T.TokenIdQuantity, price: T.Price, currency: T.Currency) : async () {
         // user is selling a new token
         let usersxToken = HM.HashMap<T.UID, T.UserTokenInfo>(4, Principal.equal, Principal.hash);
 
@@ -63,7 +63,7 @@ actor Marketplace {
     };
 
     // update token information
-    public func updatetokenMarketInfo(user : T.UID, tokenId : T.TokenId, quantity : Nat, price: T.price, currency: T.currency) : async () {
+    public func updatetokenMarketInfo(user : T.UID, tokenId : T.TokenId, quantity : Nat, price: T.Price, currency: T.Currency) : async () {
         switch (tokensInMarket.get(tokenId)) {
             case (null) {
                 throw Error.reject("Token not found in the market");
@@ -99,7 +99,7 @@ actor Marketplace {
     };
 
     // handles new token information on market
-    public func putOnSale(tokenId : T.TokenId, quantity : T.TokenIdQuantity, user : T.UID, price: T.price, currency: T.currency) : async () {
+    public func putOnSale(tokenId : T.TokenId, quantity : T.TokenIdQuantity, user : T.UID, price: T.Price, currency: T.Currency) : async () {
         // Check if the user is already selling the token
         let isSelling = await isSellingToken(user, tokenId);
         if (isSelling != false) {
@@ -143,7 +143,7 @@ actor Marketplace {
     };
 
     // check price of a token on the market of a user
-    public func getTokenPrice(tokenId : T.TokenId, user : T.UID) : async {price : T.price; currency : T.currency;} {
+    public func getTokenPrice(tokenId : T.TokenId, user : T.UID) : async {price : T.Price; currency : T.Currency;} {
         switch (tokensInMarket.get(tokenId)) {
             case (null) {
                 throw Error.reject("Token not found in the market");

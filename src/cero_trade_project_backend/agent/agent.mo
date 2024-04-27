@@ -6,8 +6,10 @@ import Text "mo:base/Text";
 import Array "mo:base/Array";
 import Nat "mo:base/Nat";
 import Nat32 "mo:base/Nat32";
+import Nat64 "mo:base/Nat64";
 import Char "mo:base/Char";
 import Float "mo:base/Float";
+import Int "mo:base/Int";
 
 // canisters
 import HttpService "canister:http_service";
@@ -19,11 +21,13 @@ import Marketplace "canister:marketplace";
 // types
 import T "../types";
 import HT "../http_service/http_service_types";
+import ICRC "../ICRC";
 
 actor Agent {
   // constants
   stable let alreadyExists = "User already exists on cero trade";
   stable let notExists = "User doesn't exists on cero trade";
+
 
   /// login user into cero trade
   public shared({ caller }) func login(): async() {
@@ -34,11 +38,14 @@ actor Agent {
     if (not exists) throw Error.reject(notExists);
   };
 
+
   /// register user into cero trade
   public shared({ caller }) func register(form: T.RegisterForm): async() { await UserIndex.registerUser(caller, form) };
 
+
   /// store user avatar into users collection
   public shared({ caller }) func storeCompanyLogo(avatar: T.CompanyLogo): async() { await UserIndex.storeCompanyLogo(caller, avatar) };
+
 
   /// delete user into cero trade
   public shared({ caller }) func deleteUser(): async() { await UserIndex.deleteUser(caller) };
@@ -53,36 +60,55 @@ actor Agent {
     };
   };
 
+
   /// performe mint with tokenId and amount requested
   public shared({ caller }) func mintToken(tokenId: T.TokenId, amount: Float): async() {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
-    await TokenIndex.mintToken(caller, tokenId, amount);
+    // mint token to user token collection
+    let tokensInMarket = await Marketplace.getUserTokensOnSale(caller, tokenId);
+    await TokenIndex.mintToken(caller, tokenId, amount, Float.fromInt(tokensInMarket));
 
+    // update user portfolio
+    await UserIndex.updatePorfolio(caller, tokenId);
+  };
+
+
+  /// helper function to performe burn method
+  private func _burnToken(caller: T.UID, tokenId: T.TokenId, amount: Float): async() {
+    // check if user exists
+    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
+
+    // burn token to user token collection
+    let tokensInMarket = await Marketplace.getUserTokensOnSale(caller, tokenId);
+    await TokenIndex.burnToken(caller, tokenId, amount, Float.fromInt(tokensInMarket));
+
+    // update user portfolio
     await UserIndex.updatePorfolio(caller, tokenId);
   };
 
   /// performe mint with tokenId and amount requested
-  public shared({ caller }) func burnToken(tokenId: T.TokenId, amount: Float): async() {
-    // check if user exists
-    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
+  public shared({ caller }) func burnToken(tokenId: T.TokenId, amount: Float): async() { await _burnToken(caller, tokenId, amount) };
 
-    await TokenIndex.burnToken(caller, tokenId, amount);
-
-    await UserIndex.updatePorfolio(caller, tokenId);
-  };
 
   /// get profile information
   public shared({ caller }) func getProfile(): async T.UserProfile { await UserIndex.getProfile(caller) };
 
-  /// get portfolio information
-  public shared({ caller }) func getPortfolio(): async [T.TokenInfo] {
-    let tokenIds = await UserIndex.getPortfolioTokenIds(caller);
-    await TokenIndex.getPortfolio(caller, tokenIds);
-  };
 
   // TODO add here reddemption response
+  /// get portfolio information
+  public shared({ caller }) func getPortfolio(): async { tokensInfo: [T.TokenInfo]; tokensRedemption: [T.TransactionInfo] } {
+    let tokenIds = await UserIndex.getPortfolioTokenIds(caller);
+    let tokensInfo: [T.TokenInfo] = await TokenIndex.getPortfolio(caller, tokenIds);
+
+    let txIds = await UserIndex.getTransactionIds(caller);
+    let tokensRedemption: [T.TransactionInfo] = await TransactionIndex.getRedemptions(txIds);
+
+    { tokensInfo; tokensRedemption };
+  };
+
+
   /// get portfolio information
   public shared({ caller }) func getSinglePortfolio(tokenId: T.TokenId): async T.TokenInfo {
     // check if user exists
@@ -93,24 +119,47 @@ actor Agent {
 
 
   /// performe token purchase
-  public shared({ caller }) func purchaseToken(tokenId: T.TokenId, recipent: T.UID, amount: Float): async Nat64 {
+  public shared({ caller }) func purchaseToken(tokenId: T.TokenId, recipent: T.Beneficiary, tokenAmount: Float, price: T.Price): async T.TransactionInfo {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
-    let recipentLedger = await UserIndex.getUserLedger(recipent);
+    let testingRecipent = caller /* recipent <- replace in future for recipent */;
+
+    let recipentLedger = await UserIndex.getUserLedger(testingRecipent);
 
     // performe ICP transfer and update token canister
-    await TokenIndex.purchaseToken(caller, { uid = recipent; ledger = recipentLedger }, tokenId, amount);
+    let tokensInMarket = await Marketplace.getUserTokensOnSale(caller, tokenId);
+    let blockHash: T.BlockHash = await TokenIndex.purchaseToken(caller, { uid = testingRecipent; ledger = recipentLedger }, tokenId, tokenAmount, Float.fromInt(tokensInMarket));
 
-    // TODO checkpout about update marketplace canister here ---> call takeOffMarket()
+    // build transaction
+    let priceICP: ICRC.Tokens = { e8s = Nat64.fromNat(price) };
+
+    let txInfo: T.TransactionInfo = {
+      transactionId = "0";
+      blockHash;
+      from = caller;
+      to = #transferRecipent(testingRecipent);
+      tokenId;
+      txType = #transfer("transfer");
+      tokenAmount;
+      priceICP;
+    };
+
+    // register transaction
+    let txId = await TransactionIndex.registerTransaction(txInfo);
+    await UserIndex.updateTransactions(caller, txId);
+
+    // take token off marketplace
+    await Marketplace.takeOffSale(tokenId, Int.abs(Float.toInt(tokenAmount)), caller);
+
+    txInfo
   };
 
 
   /// ask market to put on sale token
-  public shared({ caller }) func sellToken(tokenId: T.TokenId, quantity: T.TokenIdQuantity, price: T.price, currency: T.currency): async() {
+  public shared({ caller }) func sellToken(tokenId: T.TokenId, quantity: T.TokenIdQuantity, price: T.Price, currency: T.Currency): async() {
     // check if user exists
-    let exists: Bool = await UserIndex.checkPrincipal(caller);
-    if (not exists) throw Error.reject(notExists);
+    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
     // check if token exists
     let tokenPortofolio = await TokenIndex.getTokenPortfolio(caller, tokenId);
@@ -125,15 +174,13 @@ actor Agent {
     if (availableTokens < Float.fromInt(quantity)) throw Error.reject("Not enough tokens");
 
     await Marketplace.putOnSale(tokenId, quantity, caller, price, currency);
-
-    return ();
   };
+
 
   // ask market to take off market
   public shared ({ caller }) func takeTokenOffMarket(tokenId: T.TokenId, quantity: T.TokenIdQuantity): async() {
     // check if user exists
-    let exists: Bool = await UserIndex.checkPrincipal(caller);
-    if (not exists) throw Error.reject(notExists);
+    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
     // check if token exists
     let tokenPortofolio = await TokenIndex.getTokenPortfolio(caller, tokenId);
@@ -151,51 +198,45 @@ actor Agent {
     return ();
   };
 
+
   // redeem certificate by burning user tokens
-  public shared({ caller }) func redeemToken(tokenId: T.TokenId, beneficiary: Text, quantity: T.TokenIdQuantity): async() {
-    // TODO call token_index to burn token --> validate selected amount (checkout amount out market, need to rest amount in market with out market to know if can redeem)
-
-    // TODO save transaction
-
-
-
+  public shared({ caller }) func redeemToken(tokenId: T.TokenId, beneficiary: T.Beneficiary, quantity: T.TokenIdQuantity): async T.TransactionInfo {
     // check if user exists
-    let exists: Bool = await UserIndex.checkPrincipal(caller);
-    if (not exists) throw Error.reject(notExists);
+    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
     // check if token exists
     let tokenPortofolio = await TokenIndex.getTokenPortfolio(caller, tokenId);
 
     // check if user has enough tokens
     let tokensInSale = await Marketplace.getUserTokensOnSale(caller, tokenId);
-    let availableTokens =  tokenPortofolio.totalAmount - Float.fromInt(tokensInSale);
+    let availableTokens = tokenPortofolio.totalAmount - Float.fromInt(tokensInSale);
 
     if (availableTokens < Float.fromInt(quantity)) throw Error.reject("Not enough tokens");
 
     // ask token to burn the tokens
-    await TokenIndex.burnToken(caller, tokenId, Float.fromInt(quantity));
+    await _burnToken(caller, tokenId, Float.fromInt(quantity));
 
-    // add transaction
+    // build transaction
+    let priceICP: ICRC.Tokens = { e8s = 10_000 };
 
-    // get last transaction id
-
-    let lastTransactionId = await TransactionIndex.length();
-    let transactionId = Nat.toText(lastTransactionId + 1);
-
-    let transactionType = #redemption("redeem");
-    let transactionInfo = {
+    let txInfo: T.TransactionInfo = {
+      transactionId = "0";
+      blockHash = 12345678901234567890;
+      from = caller;
+      to = #redemptionRecipent(beneficiary);
       tokenId;
-      recipient = beneficiary;
-      quantity;
-      txType = transactionType;
+      txType = #redemption("redemption");
+      tokenAmount = Float.fromInt(quantity);
+      priceICP;
     };
 
-    // add transaction
-    await TransactionIndex.registerTransaction(transactionId, transactionInfo);
+    // register transaction
+    let txId = await TransactionIndex.registerTransaction(txInfo);
+    await UserIndex.updateTransactions(caller, txId);
 
-    // add user transaction
-    await UserIndex.updateTransactions(caller, transactionId);
+    txInfo
   };
+
 
   // convert Text to Nat
   public func textToNat( txt : Text) : async Nat {

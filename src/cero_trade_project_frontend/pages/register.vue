@@ -178,7 +178,7 @@
 import '@/assets/styles/pages/home.scss'
 import countries from '@/assets/sources/json/countries-all.json'
 import { ref, onBeforeMount } from 'vue'
-import { AgentCanister } from '@/repository/users-canister';
+import { AgentCanister } from '@/repository/agent-canister';
 import { useRouter } from 'vue-router';
 import variables from '@/mixins/variables';
 import { useToast } from 'vue-toastification';

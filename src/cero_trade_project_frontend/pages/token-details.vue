@@ -560,7 +560,7 @@
 
         <div class="divrow center mt-6" style="gap: 10px;">
           <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogRedeem = false">Cancel</v-btn>
-          <v-btn class="btn" @click="dialogRedeem = false" style="border: none!important;">Redeem</v-btn>
+          <v-btn class="btn" @click="dialogRedeem = false; redeemToken()" style="border: none!important;">Redeem</v-btn>
         </div>
       </v-card>
     </v-dialog>
@@ -829,7 +829,7 @@
 
         <div class="divrow center mt-6" style="gap: 10px;">
           <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogPurchaseReview = false">Cancel</v-btn>
-          <v-btn class="btn" @click="dialogPurchaseReview = false; dialogPaymentConfirm = true" style="border: none!important;">Proceed with payment</v-btn>
+          <v-btn class="btn" @click="purchaseToken()" style="border: none!important;">Proceed with payment</v-btn>
         </div>
       </v-card>
     </v-dialog>
@@ -927,18 +927,16 @@
 
         <div class="divrow center mt-6" style="gap: 10px;">
           <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogRedeemCertificates = false">Not Now</v-btn>
-          <v-btn class="btn" @click="dialogRedeemCertificates = false;" style="border: none!important;">Yes, redeem</v-btn>
+          <v-btn class="btn" @click="dialogRedeemCertificates = false; redeemToken()" style="border: none!important;">Yes, redeem</v-btn>
         </div>
       </v-card>
     </v-dialog>
   </div>
 </template>
 
-<script>
+<script setup>
 import '@/assets/styles/pages/token-details.scss'
-import checkboxCheckedIcon from '@/assets/sources/icons/checkbox-checked.svg'
-import checkboxBaseIcon from '@/assets/sources/icons/checkbox-base.svg'
-import VueApexCharts from "vue3-apexcharts"
+import Apexchart from "vue3-apexcharts"
 import SphereIcon from '@/assets/sources/companies/sphere.svg'
 import KapidagIcon from '@/assets/sources/companies/kapidag.svg'
 import SisyphusIcon from '@/assets/sources/companies/sisyphus.svg'
@@ -964,307 +962,282 @@ import SolarEnergyColorIcon from '@/assets/sources/energies/solar-color.svg'
 
 import ChileIcon from '@/assets/sources/icons/CL.svg'
 import { AgentCanister } from '@/repository/agent-canister'
-import { UserProfileModel } from '@/models/user-profile-model'
+import { computed, onBeforeMount, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useToast } from 'vue-toastification'
 
+const
+  route = useRoute(),
+  router = useRouter(),
+  toast = useToast(),
 
-export default {
-  components:{
-    apexchart: VueApexCharts,
+companies = ref({
+  'Sphere': SphereIcon,
+  'KAPIDAĞ RES': KapidagIcon,
+  'Sisyphus': SisyphusIcon,
+  'Focal Point': FocalPointIcon,
+  'SIlverstone': SilverStoneIcon,
+  'General Electric': GeneralElectricIcon,
+  'BlueSky': BlueSkyIcon,
+  'Zenith': ZenithIcon,
+  'Liberty': LibertyIcon,
+  'Sunshine': SunshineIcon,
+  'Prime': PrimeIcon,
+}),
+energiesColored = {
+  hydro: HydroEnergyColorIcon,
+  ocean: OceanEnergyIcon,
+  geothermal: GeothermalEnergyIcon,
+  biome: BiomeEnergyIcon,
+  wind: WindEnergyColorIcon,
+  sun: SolarEnergyColorIcon,
+},
+energies = {
+  hydro: HydroEnergyIcon,
+  ocean: OceanEnergyIcon,
+  geothermal: GeothermalEnergyIcon,
+  biome: BiomeEnergyIcon,
+  wind: WindEnergyIcon,
+  sun: SolarEnergyIcon,
+},
+countries = {
+  chile: ChileIcon
+},
+tokenDetail = ref(undefined),
+headers = [
+  { title: 'Company name', sortable: false, key: 'company'},
+  { title: 'Country', key: 'country', sortable: false },
+  { title: 'Price', key: 'price', sortable: false },
+  { title: 'MWh', key: 'mwh', sortable: false },
+  { title: 'Actions', key: 'actions', sortable: false, align: 'center'},
+],
+dataMarketplace = ref([]),
+
+itemsPerPage = 100,
+dialogTakeOffMarket = ref(false),
+dialogPaymentConfirm = ref(false),
+dialogChooseSeller = ref(false),
+dialogPurchaseReview = ref(false),
+dialogRedeemCertificates = ref(false),
+dialogParticipantBenefits = ref(false),
+dialogSellingDetailsReview = ref(false),
+dialogDynamicPrice = ref(false),
+itemsCurrency = ref(['USD', 'VES']),
+selectedCurrency = ref('USD'),
+dialogStaticPrice = ref(false),
+radioSell = ref(null),
+dialogSellOptions = ref(false),
+dialogRedeem = ref(false),
+dialogRedeemSure = ref(false),
+dialogDetokenize = ref(false),
+tabsSpecifications = ref(null),
+dataPdfRedeem = [
+  {
+    name: 'Certificate',
+    weight: '200 KB'
+  }
+],
+dataPdfCofirm = [
+  {
+    name: 'Download receipt',
+    weight: '200 KB'
+  }
+],
+dataPdf =[
+  {
+    name: 'Receipt',
+    weight: '148 KB',
   },
-  data(){
-    return{
-      checkboxCheckedIcon,
-      checkboxBaseIcon,
-      companies: {
-        'Sphere': SphereIcon,
-        'KAPIDAĞ RES': KapidagIcon,
-        'Sisyphus': SisyphusIcon,
-        'Focal Point': FocalPointIcon,
-        'SIlverstone': SilverStoneIcon,
-        'General Electric': GeneralElectricIcon,
-        'BlueSky': BlueSkyIcon,
-        'Zenith': ZenithIcon,
-        'Liberty': LibertyIcon,
-        'Sunshine': SunshineIcon,
-        'Prime': PrimeIcon,
-      },
-      energiesColored: {
-        hydro: HydroEnergyColorIcon,
-        ocean: OceanEnergyIcon,
-        geothermal: GeothermalEnergyIcon,
-        biome: BiomeEnergyIcon,
-        wind: WindEnergyColorIcon,
-        sun: SolarEnergyColorIcon,
-      },
-      energies: {
-        hydro: HydroEnergyIcon,
-        ocean: OceanEnergyIcon,
-        geothermal: GeothermalEnergyIcon,
-        biome: BiomeEnergyIcon,
-        wind: WindEnergyIcon,
-        sun: SolarEnergyIcon,
-      },
-      countries: {
-        chile: ChileIcon
-      },
-      tokenDetail: undefined,
-      headers: [
-        { title: 'Company name', sortable: false, key: 'company'},
-        { title: 'Country', key: 'country', sortable: false },
-        { title: 'Price', key: 'price', sortable: false },
-        { title: 'MWh', key: 'mwh', sortable: false },
-        { title: 'Actions', key: 'actions', sortable: false, align: 'center'},
-      ],
-      dataMarketplace: [],
+],
+date = '24/04/23',
+dialogAreYouSure = ref(false),
+tokenBenefits = [
+  {
+    name:"Lorem, ipsum dolor sit amet consectetur",
+  },
+  {
+    name:"Lorem, ipsum dolor sit amet consectetur",
+  },
+  {
+    name:"Lorem, ipsum dolor sit amet consectetur",
+  },
+  {
+    name:"Lorem, ipsum dolor sit amet consectetur",
+  },
+  {
+    name:"Lorem, ipsum dolor sit amet consectetur",
+  },
+],
 
-      itemsPerPage: 100,
-      dialogTakeOffMarket: false,
-      dialogPaymentConfirm: false,
-      dialogChooseSeller: false,
-      dialogPurchaseReview: false,
-      dialogRedeemCertificates: false,
-      dialogParticipantBenefits: false,
-      dialogSellingDetailsReview: false,
-      dialogDynamicPrice: false,
-      itemsCurrency:['USD', 'VES'],
-      selectedCurrency: 'USD',
-      dialogStaticPrice: false,
-      radioSell: null,
-      dialogSellOptions: false,
-      dialogRedeem: false,
-      dialogRedeemSure: false,
-      dialogDetokenize: false,
-      tabsSpecifications: null,
-      dataPdfRedeem:[
-        {
-          name: 'Certificate',
-          weight: '200 KB'
-        }
-      ],
-      dataPdfCofirm:[
-        {
-          name: 'Download receipt',
-          weight: '200 KB'
-        }
-      ],
-      dataPdf:[
-        {
-          name: 'Receipt',
-          weight: '148 KB',
-        },
-      ],
-      date: '24/04/23',
-      dialogAreYouSure: false,
-      tokenBenefits: [
-        {
-          name:"Lorem, ipsum dolor sit amet consectetur",
-        },
-        {
-          name:"Lorem, ipsum dolor sit amet consectetur",
-        },
-        {
-          name:"Lorem, ipsum dolor sit amet consectetur",
-        },
-        {
-          name:"Lorem, ipsum dolor sit amet consectetur",
-        },
-        {
-          name:"Lorem, ipsum dolor sit amet consectetur",
-        },
-      ],
+time_selection = 'Year',
 
-      time_selection: 'Year',
-
-      seriesOwnedVsProduced: [],
-      chartOptions: {
-        colors: ['#C6F221'],
-        chart: {
-          type: 'radialBar',
-          offsetY: -20,
-          sparkline: {
-            enabled: true
-          }
-        },
-        plotOptions: {
-          radialBar: {
-            startAngle: -90,
-            endAngle: 90,
-            track: {
-              background: "#F2F4F7",
-              rounded: true,
-              opacity: 1.0,
-              strokeWidth: '97%',
-              margin: 5,
-              dropShadow: {
-                enabled: true,
-                top: 2,
-                left: 0,
-                color: '#fff',
-                opacity: 1,
-                blur: 2
-              },
-              strokeLinecap: 'round',
-            },
-            dataLabels: {
-              name: {
-                show: true,
-                color: '#475467',
-                position: 'bottom',
-                fontSize: '14px',
-                offsetY: -35
-              },
-              value: {
-                fontSize: '28px',
-                color: 'black',
-                fontWeight: '700',
-                position: 'top',
-                offsetY: -20
-              }
-            }
-          }
-        },
-        grid: {
-          padding: {
-            top: 0,
-            bottom: 30,
-          }
-        },
-        fill: {
-          type: 'solid',
-        },
-        labels: ['Available'],
-      },
-      seriesBar: [
-        {
-        name: 'PRODUCT A',
-        data: [11424, 33355, 32431, 21167, 9212, 44543, 11664, 45155, 12841, 45637, 12122, 19443]
-        }, 
-      ],
-      chartOptionsBar: {
-        chart: {
-          type: 'bar',
-          height: 150,
-          stacked: true,
-          toolbar: {
-            show: false
-          },
-          zoom: {
-            enabled: true
-          }
-        },
-        colors: ['#00393D'],
-        responsive: [{
-          breakpoint: 480,
-          options: {
-            legend: {
-              position: 'bottom',
-              offsetX: -10,
-              offsetY: 0
-            }
-          }
-        }],
-        plotOptions: {
-          bar: {
-            horizontal: false,
-            borderRadius: 10,
-            dataLabels: {
-              enabled: false,
-            }
-          },
-        },
-        xaxis: {
-          type: 'category',
-          categories: ['Jan','Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-        },
-        legend: {
-          show: false,
-        },
-        dataLabels: {
-          enabled: false
-        },
-        fill: {
-          opacity: 1
-        }
-      },
-      sellerSelected: undefined,
-      tokenPrice: 0,
-      tokenAmount: undefined,
-      redeemBeneficiary: undefined,
-      tokenDetailPrice: 0
+seriesOwnedVsProduced = ref([]),
+chartOptions = {
+  colors: ['#C6F221'],
+  chart: {
+    type: 'radialBar',
+    offsetY: -20,
+    sparkline: {
+      enabled: true
     }
   },
-  computed: {
-    tokenId() {
-      return this.$route.query.tokenId
-    },
-    prevRoutePatch () {
-      const fullPath = this.$router.options.history.state.back,
-      path = fullPath.split('?')[0]
-
-      return path.substring(1, path.length).split('-').join(' ')
-    }
-  },
-  created() {
-    this.getData()
-
-    const input = this.$route.query.input
-    if (input) {
-      this.$router.replace({ path: '/token-details', query: { tokenId: this.tokenId } })
-
-      switch (input) {
-        case 'sell': this.dialogStaticPrice = true
-          break;
-
-        case 'redeem': this.dialogRedeemSure = true
-          break;
-
-        case 'takeOff': this.dialogTakeOffMarket = true
-          break;
+  plotOptions: {
+    radialBar: {
+      startAngle: -90,
+      endAngle: 90,
+      track: {
+        background: "#F2F4F7",
+        rounded: true,
+        opacity: 1.0,
+        strokeWidth: '97%',
+        margin: 5,
+        dropShadow: {
+          enabled: true,
+          top: 2,
+          left: 0,
+          color: '#fff',
+          opacity: 1,
+          blur: 2
+        },
+        strokeLinecap: 'round',
+      },
+      dataLabels: {
+        name: {
+          show: true,
+          color: '#475467',
+          position: 'bottom',
+          fontSize: '14px',
+          offsetY: -35
+        },
+        value: {
+          fontSize: '28px',
+          color: 'black',
+          fontWeight: '700',
+          position: 'top',
+          offsetY: -20
+        }
       }
     }
   },
+  grid: {
+    padding: {
+      top: 0,
+      bottom: 30,
+    }
+  },
+  fill: {
+    type: 'solid',
+  },
+  labels: ['Available'],
+},
+sellerSelected = ref(undefined),
+tokenPrice = ref(0),
+tokenAmount = ref(undefined),
+redeemBeneficiary = ref(undefined),
+tokenDetailPrice = ref(0),
 
-  methods:{
-    async getData() {
-      try {
-        const [token] = await Promise.allSettled([
-          AgentCanister.getSinglePortfolio(this.tokenId),
-        ])
 
-        this.tokenDetail = token.value
-        this.seriesOwnedVsProduced = [token.value.totalAmount / token.value.assetInfo.volumeProduced]
+tokenId = computed(() => route.query.tokenId),
+prevRoutePatch  = computed(() => {
+  const fullPath = router.options.history.state.back,
+  path = fullPath.split('?')[0]
 
-        console.log(token.value.totalAmount, "/", token.value.assetInfo.volumeProduced, "=", token.value.totalAmount / token.value.assetInfo.volumeProduced);
-        console.log("token", token, "seriesOwnedVsProduced", seriesOwnedVsProduced);
+  return path.substring(1, path.length).split('-').join(' ')
+})
 
-        this.dataMarketplace.push({
-          company: 'Sphere',
-          price: "125.00",
-          currency: '$',
-          country: 'chile',
-          mwh: 32,
-        })
-      } catch (error) {
-        console.error(error);
-      }
-    },
 
-    async putOnSale() {
-      try {
-        console.log("put on sale");
-      } catch (error) {
-        console.error(error);
-      }
-    },
+onBeforeMount(() => {
+  getData()
 
-    async takeOffMarket() {
-      try {
-        console.log("take off market");
-      } catch (error) {
-        console.error(error);
-      }
-    },
+  const input = route.query.input
+  if (input) {
+    router.replace({ path: '/token-details', query: { tokenId: tokenId.value } })
+
+    switch (input) {
+      case 'sell': dialogStaticPrice.value = true
+        break;
+
+      case 'redeem': dialogRedeemSure.value = true
+        break;
+
+      case 'takeOff': dialogTakeOffMarket.value = true
+        break;
+    }
+  }
+})
+
+
+async function getData() {
+  try {
+    const [token] = await Promise.allSettled([
+      AgentCanister.getSinglePortfolio(tokenId.value),
+      // TODO get other sellers list here
+    ])
+
+    tokenDetail.value = token.value
+    seriesOwnedVsProduced.value = [token.value.totalAmount / token.value.assetInfo.volumeProduced || 0]
+
+    dataMarketplace.value.push({
+      company: 'Sphere',
+      price: "125.00",
+      currency: '$',
+      country: 'chile',
+      mwh: 32,
+    })
+  } catch (error) {
+    console.error(error);
+    toast.error(error)
   }
 }
 
+async function purchaseToken() {
+  try {
+    const tx = await AgentCanister.purchaseToken(tokenId.value, sellerSelected.value, Number(tokenAmount.value), Number(tokenPrice.value))
+
+    dialogPurchaseReview.value = false;
+    dialogPaymentConfirm.value = true
+
+    console.log("purchase token", tx);
+    toast.success("purchase token")
+  } catch (error) {
+    console.error(error);
+    toast.error(error)
+  }
+}
+
+async function putOnSale() {
+  try {
+    await AgentCanister.putOnSale(tokenId.value, Number(tokenAmount.value), Number(tokenPrice.value), "USD")
+
+    console.log("put on sale");
+    toast.success("put on sale")
+  } catch (error) {
+    console.error(error);
+    toast.error(error)
+  }
+}
+
+async function takeOffMarket() {
+  try {
+    await AgentCanister.takeTokenOffMarket(tokenId.value, Number(tokenAmount.value))
+
+    console.log("take off market");
+    toast.success("take off market")
+  } catch (error) {
+    console.error(error);
+    toast.error(error)
+  }
+}
+
+async function redeemToken() {
+  try {
+    const tx = await AgentCanister.redeemToken(tokenId.value, "Sphere", Number(tokenAmount.value))
+
+    console.log("redeem token", tx);
+    toast.success("token redeemed")
+  } catch (error) {
+    console.error(error);
+    toast.error(error)
+  }
+}
 </script>

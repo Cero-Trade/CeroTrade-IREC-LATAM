@@ -77,7 +77,7 @@
 
 <script setup>
 import '@/assets/styles/pages/login.scss'
-import { AgentCanister } from '@/repository/users-canister';
+import { AgentCanister } from '@/repository/agent-canister';
 import { AuthClientApi } from '@/repository/auth-client-api'
 import { onBeforeMount } from 'vue';
 import { ref } from 'vue'

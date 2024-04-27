@@ -17,8 +17,10 @@ module {
   public type TransactionId = Text;
   public type RedemId = Text;
   public type CompanyLogo = [Nat8];
-  public type price = Nat;
-  public type currency = Text;
+  public type Beneficiary = Text;
+  public type Price = Nat;
+  public type Currency = Text;
+  public type BlockHash = Nat64;
   
   //
   // UsersAgent
@@ -42,6 +44,7 @@ module {
     ledger: ICRC.AccountIdentifier;
     portfolio: [TokenId];
     transactions: [TransactionId];
+    beneficiaries: [Beneficiary];
   };
 
   public type UserProfile = {
@@ -64,25 +67,33 @@ module {
     status: TokenStatus
   };
   
-  public type RedemInfo = {
-    redemId: RedemId;
-    tokenId: TokenId;
-    redAmount: Nat;
-    tokenInfo: TokenInfo;
-    redemStatement: ?Blob;
-    date: Nat64;
+  // public type RedemInfo = {
+  //   redemId: RedemId;
+  //   tokenId: TokenId;
+  //   redAmount: Nat;
+  //   tokenInfo: TokenInfo;
+  //   redemStatement: ?Blob;
+  //   date: Nat64;
+  // };
+
+  public type TransactionRecipent = {
+    #redemptionRecipent: Beneficiary;
+    #transferRecipent: UID;
   };
 
   public type TransactionInfo = {
+    transactionId: TransactionId;
+    blockHash: BlockHash;
+    from: UID;
+    to: TransactionRecipent;
     tokenId: TokenId;
-    txType: txType;
-    recipient: Text;
-    quantity: TokenIdQuantity;
+    txType: TxType;
+    tokenAmount: Float;
+    priceICP: ICRC.Tokens;
   };
 
-  public type txType = {
-    #purchase: Text;
-    #sale: Text;
+  public type TxType = {
+    #transfer: Text;
     #redemption: Text;
   };
 
@@ -202,11 +213,10 @@ module {
     getCompanyLogo: query (uid: UID) -> async CompanyLogo;
     updatePorfolio: (uid: UID, tokenId: TokenId) -> async();
     deletePorfolio: (uid: UID, tokenId: TokenId) -> async();
-    updateRedemptions: (uid: UID, redem: RedemInfo) -> async();
     updateTransactions: (uid: UID, tx: TransactionId) -> async();
     getPortfolioTokenIds: query (uid: UID) -> async [TokenId];
-    getRedemptions: query (uid: UID) -> async [RedemInfo];
-    getTransactions: query (uid: UID) -> async [TransactionId];
+    getTransactionIds: query (uid: UID) -> async [TransactionId];
+    getBeneficiaries: query (uid: UID) -> async [Beneficiary];
     getUserToken: query (uid: UID) -> async Text;
     validateToken: query (uid: UID, token: Text) -> async Bool;
     getLedger: query (uid: UID) -> async Blob;
@@ -214,18 +224,19 @@ module {
 
   public type TokenInterface = actor {
     init: (assetMetadata: AssetInfo) -> async();
-    mintToken: (uid: UID, amount: Float) -> async ();
-    burnToken: (uid: UID, amount: Float) -> async ();
+    mintToken: (uid: UID, amount: Float, inMarket: Float) -> async ();
+    burnToken: (uid: UID, amount: Float, inMarket: Float) -> async ();
     getUserMinted: query (uid: UID) -> async TokenInfo;
     getAssetInfo: query () -> async AssetInfo;
     getRemainingAmount: query () -> async Float;
     getTokenId: query () -> async TokenId;
     getCanisterId: query () -> async CanisterId;
-    purchaseToken: (uid: UID, recipent: UID, amount: Float) -> async();
+    purchaseToken: (uid: UID, recipent: UID, amount: Float, inMarket: Float) -> async();
   };
 
   public type TransactionsInterface = actor {
     length: query () -> async Nat;
-    registerTransaction: (txId: TransactionId, tx: TransactionInfo) -> async();
+    registerTransaction: (tx: TransactionInfo) -> async TransactionId;
+    getRedemptions: query (txIds: [TransactionId]) -> async [TransactionInfo];
   };
 }

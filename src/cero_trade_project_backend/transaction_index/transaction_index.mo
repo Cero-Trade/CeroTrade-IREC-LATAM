@@ -11,6 +11,7 @@ import Error "mo:base/Error";
 import Serde "mo:serde";
 import Debug "mo:base/Debug";
 import List "mo:base/List";
+import Buffer "mo:base/Buffer";
 
 // types
 import T "../types";
@@ -20,7 +21,7 @@ actor class TransactionIndex() = this {
   private func TransactionsCanister(cid: T.CanisterId): T.TransactionsInterface { actor (Principal.toText(cid)) };
   stable var wasm_array : [Nat] = [];
 
-
+  stable let notExists = "Transaciton doesn't exists";
   stable let alreadyExists = "Transaction already exists on cero trade";
 
 
@@ -93,12 +94,7 @@ actor class TransactionIndex() = this {
   };
 
   /// register [transactionsDirectory] collection
-  public func registerTransaction(txId: T.TransactionId, tx: T.TransactionInfo) : async() {
-    // WARN just for debug
-    Debug.print(txId);
-
-    if (transactionsDirectory.get(txId) != null) throw Error.reject(alreadyExists);
-
+  public func registerTransaction(txInfo: T.TransactionInfo) : async T.TransactionId {
     try {
       let errorText = "Error generating canister";
 
@@ -127,11 +123,33 @@ actor class TransactionIndex() = this {
       };
 
       // register transaction
-      await TransactionsCanister(cid).registerTransaction(txId, tx);
+      let txId: T.TransactionId = await TransactionsCanister(cid).registerTransaction(txInfo);
 
       transactionsDirectory.put(txId, cid);
+      txId
     } catch (error) {
       throw Error.reject(Error.message(error));
     };
+  };
+
+
+  public func getRedemptions(txIds: [T.TransactionId]) : async [T.TransactionInfo] {
+    let txs = Buffer.Buffer<T.TransactionInfo>(100);
+
+    Debug.print(debug_show ("before getRedemptions: " # Nat.toText(Cycles.balance())));
+
+    for(txId in txIds.vals()) {
+      switch(transactionsDirectory.get(txId)) {
+        case (null) {};
+        case(?cid) {
+          let redemptions: [T.TransactionInfo] = await TransactionsCanister(cid).getRedemptions(txIds);
+          txs.append(Buffer.fromArray<T.TransactionInfo>(redemptions));
+        };
+      };
+    };
+
+    Debug.print(debug_show ("later getRedemptions: " # Nat.toText(Cycles.balance())));
+
+    Buffer.toArray<T.TransactionInfo>(txs);
   };
 }

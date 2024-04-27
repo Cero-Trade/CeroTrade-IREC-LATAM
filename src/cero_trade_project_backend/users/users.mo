@@ -45,6 +45,7 @@ actor Users {
       companyLogo = null;
       portfolio = [];
       transactions = [];
+      beneficiaries = [];
     };
 
     users.put(uid, userInfo);
@@ -135,18 +136,21 @@ actor Users {
 
     let transactions = Buffer.fromArray<T.TransactionId>(userInfo.transactions);
 
-    switch(Buffer.indexOf<T.TransactionId>(txId, transactions, Text.equal)) {
-      case(null) {
-        transactions.add(txId);
+    transactions.add(txId);
+    users.put(uid, { userInfo with transactions = Buffer.toArray(transactions) });
 
-        users.put(uid, { userInfo with transactions = Buffer.toArray(transactions) })
-      };
-      case(?index) {
-        transactions.put(index, txId);
+    // switch(Buffer.indexOf<T.TransactionId>(txId, transactions, Text.equal)) {
+    //   case(null) {
+    //     transactions.add(txId);
 
-        users.put(uid, { userInfo with transactions = Buffer.toArray(transactions) })
-      };
-    };
+    //     users.put(uid, { userInfo with transactions = Buffer.toArray(transactions) })
+    //   };
+    //   case(?index) {
+    //     transactions.put(index, txId);
+
+    //     users.put(uid, { userInfo with transactions = Buffer.toArray(transactions) })
+    //   };
+    // };
   };
 
 
@@ -157,10 +161,17 @@ actor Users {
     };
   };
 
-  public query func getTransactions(uid: T.UID) : async [T.TransactionId] {
+  public query func getTransactionIds(uid: T.UID) : async [T.TransactionId] {
     switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
       case (?info) return info.transactions;
+    };
+  };
+
+  public query func getBeneficiaries(uid: T.UID) : async [T.Beneficiary] {
+    switch (users.get(uid)) {
+      case (null) throw Error.reject(userNotFound);
+      case (?info) return info.beneficiaries;
     };
   };
 

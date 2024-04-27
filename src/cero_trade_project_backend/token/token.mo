@@ -51,7 +51,7 @@ actor class Token(_tokenId: ?T.TokenId) = this {
 
 
   /// add token to collection
-  public func mintToken(uid: T.UID, amount: Float) : async () {
+  public func mintToken(uid: T.UID, amount: Float, inMarket: Float) : async () {
     if (leftToMint < amount) throw Error.reject("Limit tokens to mint is" # Float.toText(leftToMint));
 
     /// update leftToMint amount info
@@ -70,13 +70,13 @@ actor class Token(_tokenId: ?T.TokenId) = this {
       tokenId;
       assetInfo = await getAssetInfo();
       totalAmount = mintedAmount;
-      inMarket = leftToMint; // TODO evaluate what value use
+      inMarket;
       status = #forSale("for sale")
     });
   };
 
 
-  public func burnToken(uid: T.UID, amount: Float): async() {
+  public func burnToken(uid: T.UID, amount: Float, inMarket: Float): async() {
     let burnedAmount: Float = switch(userIrecs.get(uid)) {
       case(null) throw Error.reject(userNotFound);
       case(?token) {
@@ -91,13 +91,13 @@ actor class Token(_tokenId: ?T.TokenId) = this {
       tokenId;
       assetInfo = await getAssetInfo();
       totalAmount = burnedAmount;
-      inMarket = leftToMint; // TODO evaluate what value use
+      inMarket;
       status = #forSale("for sale")
     });
   };
 
 
-  public func purchaseToken(uid: T.UID, recipent: T.UID, amount: Float): async() {
+  public func purchaseToken(uid: T.UID, recipent: T.UID, amount: Float, inMarket: Float): async() {
     // burn tokens to recipent
     let burnedAmount: Float = switch(userIrecs.get(recipent)) {
       case(null) throw Error.reject("Recipent user not found");
@@ -113,7 +113,7 @@ actor class Token(_tokenId: ?T.TokenId) = this {
       tokenId;
       assetInfo = await getAssetInfo();
       totalAmount = burnedAmount;
-      inMarket = leftToMint; // TODO evaluate what value use
+      inMarket;
       status = #forSale("for sale")
     });
 
@@ -131,7 +131,7 @@ actor class Token(_tokenId: ?T.TokenId) = this {
       tokenId;
       assetInfo = await getAssetInfo();
       totalAmount = mintedAmount;
-      inMarket = leftToMint; // TODO evaluate what value use
+      inMarket;
       status = #forSale("for sale")
     });
   };

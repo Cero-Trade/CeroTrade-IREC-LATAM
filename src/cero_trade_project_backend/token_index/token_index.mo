@@ -207,17 +207,17 @@ actor class TokenIndex() = this {
     };
   };
 
-  public func mintToken(uid: T.UID, tokenId: T.TokenId, amount: Float): async() {
+  public func mintToken(uid: T.UID, tokenId: T.TokenId, amount: Float, inMarket: Float): async() {
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
-      case (?cid) await TokenCanister(cid).mintToken(uid, amount);
+      case (?cid) await TokenCanister(cid).mintToken(uid, amount, inMarket);
     };
   };
 
-  public func burnToken(uid: T.UID, tokenId: T.TokenId, amount: Float): async() {
+  public func burnToken(uid: T.UID, tokenId: T.TokenId, amount: Float, inMarket: Float): async() {
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
-      case (?cid) await TokenCanister(cid).burnToken(uid, amount);
+      case (?cid) await TokenCanister(cid).burnToken(uid, amount, inMarket);
     };
   };
 
@@ -295,14 +295,14 @@ actor class TokenIndex() = this {
   // };
 
 
-  public func purchaseToken(uid: T.UID, recipent: { uid: T.UID; ledger: ICRC.AccountIdentifier }, tokenId: T.TokenId, amount: Float): async Nat64 {
+  public func purchaseToken(uid: T.UID, recipent: { uid: T.UID; ledger: ICRC.AccountIdentifier }, tokenId: T.TokenId, amount: Float, inMarket: Float): async T.BlockHash {
     Debug.print("recipent ledger " # debug_show (recipent.ledger));
 
     let blockIndex: Nat64 = 12345678901234567890 /* transfer({ amount = { e8s = amount }; recipentLedger }) */;
 
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
-      case (?cid) await TokenCanister(cid).purchaseToken(uid, recipent.uid, amount);
+      case (?cid) await TokenCanister(cid).purchaseToken(uid, recipent.uid, amount, inMarket);
     };
 
     blockIndex

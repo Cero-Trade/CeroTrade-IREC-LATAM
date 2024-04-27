@@ -35,7 +35,24 @@ actor Transactions {
 
 
   /// register transaction to cero trade
-  public func registerTransaction(txId: T.TransactionId, tx: T.TransactionInfo): async() {
+  public func registerTransaction(txInfo: T.TransactionInfo): async T.TransactionId {
+    let txId = Nat.toText(transactions.size() + 1);
+    let tx = { txInfo with transactionId = txId };
+
     transactions.put(txId, tx);
+    txId
+  };
+
+  public query func getRedemptions(txIds: [T.TransactionId]): async [T.TransactionInfo] {
+    let txs = Buffer.Buffer<T.TransactionInfo>(100);
+
+    for(tx in txIds.vals()) {
+      switch(transactions.get(tx)) {
+        case(null) {};
+        case(?txInfo) txs.add(txInfo);
+      };
+    };
+
+    Buffer.toArray<T.TransactionInfo>(txs);
   };
 }

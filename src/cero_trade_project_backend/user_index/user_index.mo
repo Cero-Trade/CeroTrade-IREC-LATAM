@@ -255,6 +255,15 @@ actor class UserIndex() = this {
   };
 
 
+  /// get transaction user ids
+  public func getTransactionIds(uid: T.UID): async [T.TransactionId] {
+    switch(usersDirectory.get(uid)) {
+      case (null) throw Error.reject(notExists);
+      case(?cid) await UsersCanister(cid).getTransactionIds(uid);
+    };
+  };
+
+
   /// get user account ledger
   public func getUserLedger(uid: T.UID): async Blob {
     switch(usersDirectory.get(uid)) {
