@@ -95,8 +95,8 @@ actor class TokenIndex() = this {
           let assetMetadata: T.AssetInfo = /* await HttpService.get("getToken" # tokenId, { headers = [] }) */
             {
               assetType = energy;
-              startDate: Nat64 = 12345678901234567890;
-              endDate: Nat64 = 18446744073709551615;
+              startDate: Nat64 = 1714419814052;
+              endDate: Nat64 = 1717012111263;
               co2Emission: Float = 11.22;
               radioactivityEmnission: Float = 10.20;
               volumeProduced: Float = 1000;
@@ -116,7 +116,7 @@ actor class TokenIndex() = this {
                 stateProvince = "chile";
                 country = "chile";
               };
-              dates: [Nat64] = [123321, 123123, 123123];
+              dates: [Nat64] = [1714419814052, 1717012111263, 1717012111263];
             };
 
           await TokenCanister(canister_id).init(assetMetadata);

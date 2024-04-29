@@ -27,6 +27,8 @@ cp src/declarations/users/* .dfx/local/canisters/users/
 cp src/declarations/user_index/* .dfx/local/canisters/user_index/
 cp src/declarations/token/* .dfx/local/canisters/token/
 cp src/declarations/token_index/* .dfx/local/canisters/token_index/
+cp src/declarations/transactions/* .dfx/local/canisters/transactions/
+cp src/declarations/transaction_index/* .dfx/local/canisters/transaction_index/
 cp src/declarations/agent/* .dfx/local/canisters/agent/
 cp src/declarations/marketplace/* .dfx/local/canisters/marketplace/
 cp src/declarations/http_service/* .dfx/local/canisters/http_service/

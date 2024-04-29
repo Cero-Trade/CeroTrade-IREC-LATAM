@@ -68,12 +68,6 @@
           </v-tab>
         </v-tabs>
       </v-col>
-
-      <v-col v-if="windowStep == 1" xl="6" lg="6" cols="12" class="divrow aend jend delete-mobile" style="gap: 10px;">
-        <v-btn class="btn2" @click="onSelectAction('sell')"><img src="@/assets/sources/icons/sell-btn.svg" alt="Sell">Sell</v-btn>
-        <v-btn class="btn2" @click="onSelectAction('takeOff')"><img src="@/assets/sources/icons/sell-btn.svg" alt="Sell">Take off market</v-btn>
-        <v-btn class="btn2" @click="onSelectAction('redeem')"><img src="@/assets/sources/icons/redeem-btn.svg" alt="Sell">Redeem</v-btn>
-      </v-col>
     </v-row>
 
     <div class="divrow jspace mt-4">
@@ -101,25 +95,10 @@
         class="mt-6 my-data-table"
         density="compact"
         >
-          <template #[`item.checkbox`]="{ item }">
-            <v-checkbox
-            hide-details
-            density="compact"
-            class="mx-auto"
-            style="max-width: 22px!important; min-width: 22px!important;"
-            >
-              <template #input>
-                <img
-                  :src="item.token_id === selectedToken ? checkboxCheckedIcon : checkboxBaseIcon"
-                  alt="checkbox icon"
-                  style="width: 22px"
-                  @click="() => {
-                    if (item.token_id === selectedToken) return selectedToken = null
-                    selectedToken = item.token_id
-                  }"
-                >
-              </template>
-            </v-checkbox>
+          <template #[`item.actions`]="{ item }">
+            <v-chip @click="goDetails(item)" color="white" class="chip-table" style="border-radius: 10px!important;">
+              <img src="@/assets/sources/icons/wallet.svg" alt="wallet">
+            </v-chip>
           </template>
 
           <template #[`item.asset_id`]="{ item }">
@@ -161,24 +140,15 @@
       <v-window-item :value="2" class="pa-2">
         <v-row class="mt-6">
           <v-col v-for="(item,index) in dataMarketplaceFiltered" :key="index" xl="3" lg="3" md="4" sm="6" cols="12">
-            <v-card class="card cards-marketplace" @click="goDetails(item)">
+            <v-card class="card cards-marketplace">
               <div class="divrow jspace acenter mb-6">
                 <div class="divrow center" style="gap: 5px;">
-                  <h6 class="mb-0 font700">IREC #{{ item.token_id }}</h6>
+                  <h6 class="mb-0 font700">Asset # {{ item.token_id }}</h6>
                 </div>
-                <v-menu location="start">
-                  <template v-slot:activator="{ props }">
-                    <v-btn class="btn btn-dots" v-bind="props">
-                      <img src="@/assets/sources/icons/dots-vertical.svg" alt="dots-vertical icon">
-                    </v-btn>
-                  </template>
 
-                  <v-card class="divcol pt-2 pb-2 pl-1 pr-1 card-menu" style="gap: 25px;">
-                    <a @click="onSelectAction('sell', item)">Sell</a>
-                    <a @click="onSelectAction('redeem', item)">Redeem</a>
-                    <a @click="onSelectAction('takeOff', item)">Take of market</a>
-                  </v-card>
-                </v-menu>
+                <v-chip @click="goDetails(item)" color="white" class="chip-table" style="border-radius: 10px!important;">
+                  <img src="@/assets/sources/icons/wallet.svg" alt="wallet">
+                </v-chip>
               </div>
 
               <div class="jspace divrow mb-1">
@@ -249,7 +219,6 @@ const
 
 windowStep = ref(undefined),
 tabsWindow = ref(0),
-selectedToken = ref(null),
 
 energies = {
   hydro: HydroEnergyIcon,
@@ -271,13 +240,13 @@ statuses = {
 },
 
 headers = [
-  { key: 'checkbox', sortable: false, align: 'center'},
-  { title: 'Token ID', sortable: false, key: 'token_id', align: "center" },
+  { title: 'Token ID', key: 'token_id', sortable: false, align: "center" },
   { title: 'Energy source', key: 'energy_source', sortable: false },
   { title: 'Country', key: 'country', sortable: false },
   // { title: 'Asset ID', key: 'asset_id', sortable: false },
   { title: 'MWh', key: 'mwh', sortable: false },
   { title: 'Status', key: 'status', sortable: false },
+  { title: 'Details', key: 'actions', sortable: false, align: 'center'},
 ],
 dataMarketplace = ref([
   // { 
@@ -395,13 +364,6 @@ async function getData() {
     console.error(error);
     toast.error(error)
   }
-}
-
-function onSelectAction(input, item) {
-  if (windowStep.value == 1 && !selectedToken.value) return toast.warning('Must to select any token')
-  const tokenId = item?.token_id ?? selectedToken.value
-
-  router.push({ path: '/token-details', query: { tokenId, input } })
 }
 
 function goDetails({ token_id: tokenId }) {

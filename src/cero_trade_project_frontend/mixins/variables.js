@@ -8,6 +8,10 @@ export default {
   // ? custom defines
   globalRules: {
     required: (v) => !!v || "Field required",
+    requiredNumber: (v) => {
+      if (!v || v <= 0) return 'Field required'
+      return true
+    },
     listRequired: (v) => !!v?.length || "Field required",
     email: (v) => {
       const pattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/

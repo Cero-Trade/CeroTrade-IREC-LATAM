@@ -1,6 +1,6 @@
 <template>
   <v-badge
-    :model-value="!!countrySrc"
+    :model-value="!!energySrc"
     color="#fff"
     location="bottom right"
     class="company-logo"
@@ -8,18 +8,19 @@
     :offset-y="badgeOffset"
   >
     <v-img-load
-      :src="energySrc"
-      :sizes="energySizes"
+      :src="countrySrc"
+      :sizes="countrySizes"
       rounded="50%"
-      border="2px solid #000"
       cover
       class="flex-grow-0"
     ></v-img-load>
 
     <template #badge>
       <v-img-load
-        :src="countrySrc"
-        :sizes="countrySizes"
+        :src="energySrc"
+        :sizes="energySizes"
+        bg-color="#fff"
+        border="2px solid #dedede"
         rounded="50%"
         cover
         class="flex-grow-0"
@@ -33,12 +34,12 @@ defineProps({
   energySrc: String,
   energySizes: {
     type: String,
-    default: "40px"
+    default: "20px"
   },
   countrySrc: String,
   countrySizes: {
     type: String,
-    default: "20px"
+    default: "40px"
   },
   badgeOffset: {
     type: [Number, String],
@@ -50,7 +51,7 @@ defineProps({
 <style lang="scss">
 .company-logo {
   .v-badge__wrapper > .v-img-load .v-img__img {
-    padding: 5px;
+    padding: 0px;
   }
 
   .v-badge__badge {
@@ -61,8 +62,7 @@ defineProps({
     max-height: var(--energy-badge-sizes) !important;
     height: var(--energy-badge-sizes) !important;
     border-radius: 50% !important;
-    border: 2px solid #dedede !important;
-    padding: 0px !important
+    padding: 5px !important
   }
 }
 </style>

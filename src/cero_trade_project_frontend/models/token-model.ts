@@ -12,14 +12,14 @@ export type AssetType = "hydro"|"ocean"|"geothermal"|"biome"|"wind"|"sun"|"other
 
 export interface AssetInfoModel {
   assetType: AssetType;
-  startDate: number;
-  endDate: number;
+  startDate: Date;
+  endDate: Date;
   co2Emission: number;
   radioactivityEmnission: number;
   volumeProduced: number;
   deviceDetails: DeviceDetailsModel;
   specifications: SpecificationsModel;
-  dates: [number];
+  dates: Date[];
 };
 
 export interface DeviceDetailsModel {

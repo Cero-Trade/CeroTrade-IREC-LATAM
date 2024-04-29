@@ -84,12 +84,16 @@ export class AgentCanister {
 
   static async getPortfolio(): Promise<{tokensInfo: [TokenModel], tokensRedemption: [TransactionInfo]}> {
     try {
-      // TODO format to date values
       const response = await agent().getPortfolio() as {tokensInfo: [TokenModel], tokensRedemption: [TransactionInfo]}
 
       for (const item of response.tokensInfo) {
         item.status = Object.values(item.status)[0] as TokenStatus
+        // format record value
         item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
+        // format dates
+        item.assetInfo.startDate = new Date(Number(item.assetInfo.startDate))
+        item.assetInfo.endDate = new Date(Number(item.assetInfo.endDate))
+        item.assetInfo.dates.forEach(e => { e = new Date(Number(e)) })
       }
 
       for (const item of response.tokensRedemption) {
@@ -106,10 +110,18 @@ export class AgentCanister {
 
   static async getSinglePortfolio(tokenId: string): Promise<TokenModel> {
     try {
-      // TODO format to date values
       const token = await agent().getSinglePortfolio(tokenId) as TokenModel
+      // format record value
       token.status = Object.values(token.status)[0] as TokenStatus
+      // format dates
       token.assetInfo.assetType = Object.values(token.assetInfo.assetType)[0] as AssetType
+      token.assetInfo.startDate = new Date(Number(token.assetInfo.startDate))
+      token.assetInfo.endDate = new Date(Number(token.assetInfo.endDate))
+
+      const dates: Date[] = [];
+      for (const date of token.assetInfo.dates) dates.push(new Date(Number(date)))
+      token.assetInfo.dates = dates
+
       return token
     } catch (error) {
       console.error(error);
