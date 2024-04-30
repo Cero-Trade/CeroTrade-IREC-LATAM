@@ -207,10 +207,22 @@
             class="my-data-table deletemobile"
             density="compact"
             >
-              <template #[`item.company`]="{ item }">
-                <span class="flex-acenter" style="gap: 5px; text-wrap: nowrap">
-                  <img :src="companies[item.company]" :alt="`${item.company} icon`" style="width: 20px;">
-                  {{ item.company }}
+              <template #[`item.token_id`]="{ item }">
+                <span class="acenter bold" style="color: #475467;">
+                  {{ item.token_id }} 
+                </span>
+              </template>
+
+              <template #[`item.energy_source`]="{ item }">
+                <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
+                  <img :src="energies[item.energy_source]" :alt="`${item.energy_source} icon`" style="width: 20px;">
+                  {{ item.energy_source }}
+                </span>
+              </template>
+
+              <template #[`item.price`]="{ item }">
+                <span class="divrow jspace acenter">
+                  {{ item.price }} <v-sheet class="chip-currency bold">{{ item.currency }}</v-sheet>
                 </span>
               </template>
 
@@ -221,60 +233,65 @@
                 </span>
               </template>
 
-              <template #[`item.price`]="{ item }">
-                <span class="divrow jspace acenter">
-                  {{ item.price }} <v-sheet class="chip-currency bold">{{ item.currency }}</v-sheet>
-                </span>
-              </template>
-
               <template #[`item.mwh`]="{ item }">
-                <span class="flex-acenter">
-                  <img src="@/assets/sources/icons/lightbulb.svg" alt="lightbulb icon" class="mr-1" style="width: 15px">
+                <span class="divrow acenter">
+                  <img src="@/assets/sources/icons/lightbulb.svg" alt="lightbulb icon">
                   {{ item.mwh }}
                 </span>
               </template>
 
               <template #[`item.actions`]="{ item }">
-                <div class="center">
-                  <img src="@/assets/sources/icons/wallet.svg" alt="wallet" style="width: 16px; height: 16px;"> <span class="bold ml-2">Buy</span>
-                </div>
+                <v-chip @click="goDetails(item)" color="white" class="chip-table mr-1" style="border-radius: 10px!important;">
+                  <img src="@/assets/sources/icons/wallet.svg" alt="wallet">
+                </v-chip>
               </template>
             </v-data-table>
           </v-col>
 
           <v-col v-for="(item,index) in dataMarketplace" :key="index" xl="3" lg="3" md="4" sm="6" cols="12" class="showmobile">
-            <v-card class="card cards-marketplace" @click="goDetails(item)">
+            <v-card class="card cards-marketplace">
+              <div class="divrow jspace acenter mb-6">
+                <div class="divcol astart" style="gap: 5px;">
+                  <span style="color: #475467;">Asset id</span>
+                  <h6 class="mb-0 font700">{{ item.token_id }}</h6>
+                </div>
+
+                <v-btn class="btn" @click="goDetails(item)">
+                  <img src="@/assets/sources/icons/wallet.svg" alt="wallet">
+                </v-btn>
+              </div>
+
               <div class="jspace divrow mb-1">
-                <span>Facility name</span>
-                <span style="color: #475467;" class="acenter">
-                  <img :src="companies[item.company]" alt="icon" class="mr-1" style="width: 20px;"> {{ item.company }}
+                <span>Price</span>
+                <span style="color: #475467;">{{ item.currency }} {{ item.price }}</span>
+              </div>
+
+              <div class="jspace divrow mb-1">
+                <span>Energy source</span>
+                <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap; color: #475467;">
+                  <img :src="energies[item.energy_source]" :alt="`${item.energy_source} icon`" style="width: 20px;">
+                  {{ item.energy_source }}
                 </span>
               </div>
 
               <div class="jspace divrow mb-1">
                 <span>Country</span>
-                <span style="color: #475467;" class="acenter">
+                <span style="color: #475467;" class="acenter text-capitalize">
                   <img :src="countries[item.country]" alt="icon" class="mr-1" style="width: 20px;"> {{ item.country }}
                 </span>
               </div>
 
               <div class="jspace divrow mb-1">
-                <span>Price</span>
-                <span style="color: #475467;">{{ item.price }}</span>
+                <span>MWh</span>
+                <span class="d-flex flex-acenter mr-1" style="color: #475467;">
+                  <img src="@/assets/sources/icons/lightbulb.svg" alt="lightbulb icon" style="width: 20px">
+                {{ item.mwh }}</span>
               </div>
 
               <div class="jspace divrow mb-1">
-                <span>MWh</span>
-                <span style="color: #475467;">
-                  <img src="@/assets/sources/icons/lightbulb.svg" alt="lightbulb icon" style="width: 12px">
-                  {{ item.mwh }}
-                </span>
+                <span>Volume</span>
+                <span style="color: #475467;">{{ item.volume }}</span>
               </div>
-
-              <v-btn class="btn2 w-100 mt-2" style="max-height: 40px !important">
-                <img src="@/assets/sources/icons/wallet-closed.svg" alt="credit-card icon">
-                Buy
-              </v-btn>
             </v-card>
           </v-col>
         </v-row>
@@ -302,19 +319,15 @@
                     >+</v-btn>
                   </div>
                 </div>
-                <div class="divcol" style="gap: 10px;">
-                  <label>Price</label>
-                  <h6>{{ tokenDetailPrice }} ICP</h6>
-                </div>
               </div>
             </v-card>
 
             <div class="divrow mb-4" style="gap: 10px; flex-wrap: wrap;">
-              <v-btn class="btn btn2" @click="showDialog('sell')" style="flex: 1 1 calc(50% - 10px)">
+              <v-btn v-if="haveToken" class="btn btn2" @click="showDialog('sell')" style="flex: 1 1 calc(50% - 10px)">
                 Sell
               </v-btn>
 
-              <v-btn class="btn btn2" @click="showDialog('takeOff')" style="flex: 1 1 calc(50% - 10px)">
+              <v-btn v-if="haveToken" class="btn btn2" @click="showDialog('takeOff')" style="flex: 1 1 calc(50% - 10px)">
                 Take off market
               </v-btn>
 
@@ -322,7 +335,7 @@
                 Buy
               </v-btn>
 
-              <v-btn class="btn" @click="showDialog('redeem')" style="flex: 1 1 calc(50% - 10px)">
+              <v-btn v-if="haveToken" class="btn" @click="showDialog('redeem')" style="flex: 1 1 calc(50% - 10px)">
                 Redeem Token
               </v-btn>
             </div>
@@ -399,12 +412,6 @@
               ></company-logo>
               #{{ tokenId }}
             </h5>
-            <div class="divrow mb-0 astart acenter">
-              <h5 class="mb-0 mr-2 h5-mobile">
-                {{ tokenDetailPrice }} ICP
-              </h5>
-              <span style="color:#475467">per MWh</span>
-            </div>          
           </div>
           
           <div class="jspace divrow mb-1">
@@ -498,12 +505,6 @@
                 ></company-logo>
                 #{{ tokenId }}
               </h5>
-              <div class="divrow astart acenter">
-                <h5 class="mr-2 h5-mobile">
-                  {{ tokenDetailPrice }} ICP
-                </h5>
-                <span style="color:#475467">per MWh</span>
-              </div>
             </div>
 
             <div class="jspace divrow mb-1">
@@ -1036,10 +1037,12 @@ countries = {
 },
 tokenDetail = ref(undefined),
 headers = [
-  { title: 'Company name', sortable: false, key: 'company'},
+  { title: 'Asset ID', key: 'token_id', sortable: false },
+  { title: 'Energy source', key: 'energy_source', sortable: false },
   { title: 'Country', key: 'country', sortable: false },
   { title: 'Price', key: 'price', sortable: false },
   { title: 'MWh', key: 'mwh', sortable: false },
+  { title: 'Volume Produced', key: 'volume', sortable: false },
   { title: 'Actions', key: 'actions', sortable: false, align: 'center'},
 ],
 dataMarketplace = ref([]),
@@ -1164,12 +1167,12 @@ chartOptions = {
   },
   labels: ['Available'],
 },
+haveToken = ref(false),
 amountSelected = ref(),
 sellerSelected = ref(undefined),
 tokenPrice = ref(null),
 tokenAmount = ref(undefined),
 redeemBeneficiary = ref(undefined),
-tokenDetailPrice = ref(0),
 
 
 tokenId = computed(() => route.query.tokenId),
@@ -1243,21 +1246,29 @@ onBeforeMount(() => {
 
 async function getData() {
   try {
-    const [token] = await Promise.allSettled([
-      AgentCanister.getSinglePortfolio(tokenId.value),
-      // TODO get other sellers list here
+    const [checkToken, token, marketplace] = await Promise.allSettled([
+      AgentCanister.checkUserToken(tokenId.value),
+      AgentCanister.getTokenDetails(tokenId.value),
+      AgentCanister.getMarketplace(),
     ])
 
+    haveToken.value = checkToken
     tokenDetail.value = token.value
     seriesOwnedVsProduced.value = [token.value.totalAmount / token.value.assetInfo.volumeProduced || 0]
 
-    dataMarketplace.value.push({
-      company: 'Sphere',
-      price: "125.00",
-      currency: '$',
-      country: 'chile',
-      mwh: 32,
-    })
+    const list = []
+    for (const item of marketplace.value) {
+      list.push({
+        token_id: item.tokenId,
+        energy_source: item.assetInfo.assetType,
+        country: item.assetInfo.specifications.country,
+        price: item.lowerPriceICP === item.higherPriceICP ? item.higherPriceICP : `${item.lowerPriceICP} - ${item.higherPriceICP}`,
+        mwh: item.mwh,
+        volume: item.assetInfo.volumeProduced,
+      })
+    }
+
+    dataMarketplace.value = list.sort((a, b) => a.token_id - b.token_id)
   } catch (error) {
     console.error(error);
     toast.error(error)
@@ -1283,12 +1294,11 @@ async function purchaseToken() {
   try {
     showLoader()
     const tx = await AgentCanister.purchaseToken(tokenId.value, sellerSelected.value, Number(tokenAmount.value), Number(tokenPrice.value))
-    closeLoader()
+    await getData()
 
+    closeLoader()
     dialogPaymentConfirm.value = true
     dialogPurchaseReview.value = false;
-
-    await getData()
 
     console.log("purchase token", tx);
     toast.success("Your purchase has been completed successfully")
@@ -1302,12 +1312,11 @@ async function purchaseToken() {
 async function putOnSale() {
   try {
     showLoader()
-    await AgentCanister.putOnSale(tokenId.value, Number(tokenAmount.value), Number(tokenPrice.value), "USD")
-    closeLoader()
-
-    dialogSellingDetailsReview.value = false;
-
+    await AgentCanister.putOnSale(tokenId.value, Number(tokenAmount.value), Number(tokenPrice.value))
     await getData()
+
+    closeLoader()
+    dialogSellingDetailsReview.value = false;
 
     console.log("put on sale");
     toast.success(`You have put ${tokenAmount.value} tokens up for sale`)
@@ -1319,9 +1328,11 @@ async function putOnSale() {
 
 async function takeOffMarket() {
   try {
+    showLoader()
     await AgentCanister.takeTokenOffMarket(tokenId.value, Number(tokenAmount.value))
-
     await getData()
+
+    closeLoader()
 
     console.log("take off market");
     toast.success(`You have taken ${tokenAmount.value} from the market`)
@@ -1335,11 +1346,10 @@ async function redeemToken() {
   try {
     showLoader()
     const tx = await AgentCanister.redeemToken(tokenId.value, redeemBeneficiary.value, Number(tokenAmount.value))
-    closeLoader()
-
-    dialogRedeemCertificates.value = false;
-
     await getData()
+
+    closeLoader()
+    dialogRedeemCertificates.value = false;
 
     console.log("redeem token", tx);
     toast.success(`you have redeemed ${tokenAmount.value} tokens`)
@@ -1347,5 +1357,12 @@ async function redeemToken() {
     console.error(error);
     toast.error(error)
   }
+}
+
+function goDetails({ token_id: tokenId }, input) {
+  const query = { tokenId }
+  if (input) query.input = input
+
+  router.push({ path: '/token-details', query })
 }
 </script>

@@ -91,7 +91,7 @@
         <v-data-table
         v-model:items-per-page="itemsPerPage"
         :headers="headers"
-        :items="dataMarketplaceFiltered"
+        :items="dataPortfolioFiltered"
         class="mt-6 my-data-table"
         density="compact"
         >
@@ -139,7 +139,7 @@
 
       <v-window-item :value="2" class="pa-2">
         <v-row class="mt-6">
-          <v-col v-for="(item,index) in dataMarketplaceFiltered" :key="index" xl="3" lg="3" md="4" sm="6" cols="12">
+          <v-col v-for="(item,index) in dataPortfolioFiltered" :key="index" xl="3" lg="3" md="4" sm="6" cols="12">
             <v-card class="card cards-marketplace">
               <div class="divrow jspace acenter mb-6">
                 <div class="divrow center" style="gap: 5px;">
@@ -248,7 +248,7 @@ headers = [
   { title: 'Status', key: 'status', sortable: false },
   { title: 'Details', key: 'actions', sortable: false, align: 'center'},
 ],
-dataMarketplace = ref([
+dataPortfolio = ref([
   // { 
   //   token_id: 1,
   //   // asset_id: '1234567',
@@ -285,8 +285,8 @@ totalMwh = computed(() => {
   const data = series.value[0].data
   return data.reduce((acc, item) => acc + item, 0)
 }),
-dataMarketplaceFiltered = computed(() => {
-  let marketplace = dataMarketplace.value;
+dataPortfolioFiltered = computed(() => {
+  let marketplace = dataPortfolio.value;
 
   const status = Object.keys(statuses)[tabsWindow.value];
 
@@ -310,8 +310,6 @@ async function getData() {
     const { tokensInfo, tokensRedemption } = await AgentCanister.getPortfolio(),
     list = []
 
-    console.log(tokensInfo, tokensRedemption);
-
     for (const item of tokensInfo) {
       list.push({
         token_id: item.tokenId,
@@ -322,7 +320,7 @@ async function getData() {
       })
     }
 
-    dataMarketplace.value = list.sort((a, b) => a.token_id - b.token_id)
+    dataPortfolio.value = list.sort((a, b) => a.token_id - b.token_id)
 
     const groupedTokens = list.reduce((acc, item) => {
       let existenceElement = acc.find(elem => elem.energy_source === item.energy_source);

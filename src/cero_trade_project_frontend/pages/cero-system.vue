@@ -22,7 +22,7 @@ async function generateWasmModule(input) {
     const wasmModule = await navigator.clipboard.readText()
 
     await CeroSystemApi.generateWasmModule(moduleName, JSON.parse(wasmModule))
-    toast.success("Module updated")
+    toast.success(`Module ${input} updated`)
   } catch (error) {
     toast.error(error)
   }

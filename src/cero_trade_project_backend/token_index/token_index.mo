@@ -94,12 +94,13 @@ actor class TokenIndex() = this {
 
           let assetMetadata: T.AssetInfo = /* await HttpService.get("getToken" # tokenId, { headers = [] }) */
             {
+              tokenId;
               assetType = energy;
               startDate: Nat64 = 1714419814052;
               endDate: Nat64 = 1717012111263;
               co2Emission: Float = 11.22;
               radioactivityEmnission: Float = 10.20;
-              volumeProduced: Float = 1000;
+              volumeProduced: T.TokenAmount = 1000;
               deviceDetails = {
                 name = "machine";
                 deviceType = "type";
@@ -108,7 +109,7 @@ actor class TokenIndex() = this {
               };
               specifications = {
                 deviceCode = "200";
-                capacity: Float = 1000;
+                capacity: T.TokenAmount = 1000;
                 location = "location";
                 latitude: Float = 0;
                 longitude: Float = 1;
@@ -193,7 +194,7 @@ actor class TokenIndex() = this {
     };
   };
 
-  public func getRemainingAmount(tokenId: T.TokenId): async Float {
+  public func getRemainingAmount(tokenId: T.TokenId): async T.TokenAmount {
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
       case (?cid) return await TokenCanister(cid).getRemainingAmount();
@@ -207,14 +208,14 @@ actor class TokenIndex() = this {
     };
   };
 
-  public func mintToken(uid: T.UID, tokenId: T.TokenId, amount: Float, inMarket: Float): async() {
+  public func mintToken(uid: T.UID, tokenId: T.TokenId, amount: T.TokenAmount, inMarket: T.TokenAmount): async() {
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
       case (?cid) await TokenCanister(cid).mintToken(uid, amount, inMarket);
     };
   };
 
-  public func burnToken(uid: T.UID, tokenId: T.TokenId, amount: Float, inMarket: Float): async() {
+  public func burnToken(uid: T.UID, tokenId: T.TokenId, amount: T.TokenAmount, inMarket: T.TokenAmount): async() {
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
       case (?cid) await TokenCanister(cid).burnToken(uid, amount, inMarket);
@@ -250,9 +251,51 @@ actor class TokenIndex() = this {
   };
 
 
+  public func getSingleTokenInfo(tokenId: T.TokenId): async T.AssetInfo {
+    switch (tokenDirectory.get(tokenId)) {
+      case (null) throw Error.reject("Token not found on cero trade");
+      case (?cid) return await TokenCanister(cid).getAssetInfo();
+    };
+  };
+
+  public func getTokensInfo(tokenIds: [T.TokenId]): async [T.AssetInfo] {
+    let tokens = Buffer.Buffer<T.AssetInfo>(100);
+
+    Debug.print(debug_show ("before getTokensInfo: " # Nat.toText(Cycles.balance())));
+
+    for(item in tokenIds.vals()) {
+      switch (tokenDirectory.get(item)) {
+        case (null) {};
+        case (?cid) {
+          let token: T.AssetInfo = await TokenCanister(cid).getAssetInfo();
+          tokens.add(token);
+        };
+      };
+    };
+
+    Debug.print(debug_show ("later getTokensInfo: " # Nat.toText(Cycles.balance())));
+
+    Buffer.toArray<T.AssetInfo>(tokens);
+  };
+
+  public func checkUserToken(uid: T.UID, tokenId: T.TokenId): async Bool {
+    try {
+      switch (tokenDirectory.get(tokenId)) {
+        case (null) return false;
+        case (?cid) {
+          let token = await TokenCanister(cid).getUserMinted(uid);
+          return true;
+        }
+      };
+    } catch (error) {
+      return false;
+    }
+  };
+
+
   // TODO implements this transfer function to icp tokens
   // private func transfer(args: {
-  //   amount: ICRC.Tokens;
+  //   amount: T.Price;
   //   recipentLedger: ICRC.AccountIdentifier;
   // }) : async Result.Result<IcpLedger.BlockIndex, Text> {
   //   Debug.print(
@@ -295,7 +338,7 @@ actor class TokenIndex() = this {
   // };
 
 
-  public func purchaseToken(uid: T.UID, recipent: { uid: T.UID; ledger: ICRC.AccountIdentifier }, tokenId: T.TokenId, amount: Float, inMarket: Float): async T.BlockHash {
+  public func purchaseToken(uid: T.UID, recipent: { uid: T.UID; ledger: ICRC.AccountIdentifier }, tokenId: T.TokenId, amount: T.TokenAmount, inMarket: T.TokenAmount): async T.BlockHash {
     Debug.print("recipent ledger " # debug_show (recipent.ledger));
 
     let blockIndex: Nat64 = 12345678901234567890 /* transfer({ amount = { e8s = amount }; recipentLedger }) */;

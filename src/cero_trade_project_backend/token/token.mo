@@ -2,8 +2,8 @@ import HM = "mo:base/HashMap";
 import Text "mo:base/Text";
 import Error "mo:base/Error";
 import Principal "mo:base/Principal";
-import Float "mo:base/Float";
 import Iter "mo:base/Iter";
+import Nat "mo:base/Nat";
 
 // types
 import ICRC "../ICRC";
@@ -19,7 +19,7 @@ actor class Token(_tokenId: ?T.TokenId) = this {
 
   /// asset metadata
   stable var assetInfo: ?T.AssetInfo = null;
-  stable var leftToMint: Float = 0;
+  stable var leftToMint: T.TokenAmount = 0;
 
 
   // constants
@@ -51,14 +51,14 @@ actor class Token(_tokenId: ?T.TokenId) = this {
 
 
   /// add token to collection
-  public func mintToken(uid: T.UID, amount: Float, inMarket: Float) : async () {
-    if (leftToMint < amount) throw Error.reject("Limit tokens to mint is" # Float.toText(leftToMint));
+  public func mintToken(uid: T.UID, amount: T.TokenAmount, inMarket: T.TokenAmount) : async () {
+    if (leftToMint < amount) throw Error.reject("Limit tokens to mint is" # Nat.toText(leftToMint));
 
     /// update leftToMint amount info
     leftToMint := leftToMint - amount;
 
     // update user into userIrecs
-    let mintedAmount: Float = switch(userIrecs.get(uid)) {
+    let mintedAmount: T.TokenAmount = switch(userIrecs.get(uid)) {
       case(null) amount;
       case(?token) {
         let currentAmount = token.totalAmount;
@@ -76,12 +76,12 @@ actor class Token(_tokenId: ?T.TokenId) = this {
   };
 
 
-  public func burnToken(uid: T.UID, amount: Float, inMarket: Float): async() {
-    let burnedAmount: Float = switch(userIrecs.get(uid)) {
+  public func burnToken(uid: T.UID, amount: T.TokenAmount, inMarket: T.TokenAmount): async() {
+    let burnedAmount: T.TokenAmount = switch(userIrecs.get(uid)) {
       case(null) throw Error.reject(userNotFound);
       case(?token) {
         let currentAmount = token.totalAmount;
-        if (currentAmount < amount) throw Error.reject("Limit tokens to burn is" # Float.toText(currentAmount));
+        if (currentAmount < amount) throw Error.reject("Limit tokens to burn is" # Nat.toText(currentAmount));
 
         currentAmount - amount
       };
@@ -97,13 +97,13 @@ actor class Token(_tokenId: ?T.TokenId) = this {
   };
 
 
-  public func purchaseToken(uid: T.UID, recipent: T.UID, amount: Float, inMarket: Float): async() {
+  public func purchaseToken(uid: T.UID, recipent: T.UID, amount: T.TokenAmount, inMarket: T.TokenAmount): async() {
     // burn tokens to recipent
-    let burnedAmount: Float = switch(userIrecs.get(recipent)) {
+    let burnedAmount: T.TokenAmount = switch(userIrecs.get(recipent)) {
       case(null) throw Error.reject("Recipent user not found");
       case(?token) {
         let currentAmount = token.totalAmount;
-        if (currentAmount < amount) throw Error.reject("Limit tokens to burn is" # Float.toText(currentAmount));
+        if (currentAmount < amount) throw Error.reject("Limit tokens to burn is" # Nat.toText(currentAmount));
 
         currentAmount - amount
       };
@@ -119,7 +119,7 @@ actor class Token(_tokenId: ?T.TokenId) = this {
 
 
     // mint tokens to buyer
-    let mintedAmount: Float = switch(userIrecs.get(uid)) {
+    let mintedAmount: T.TokenAmount = switch(userIrecs.get(uid)) {
       case(null) amount;
       case(?token) {
         let currentAmount = token.totalAmount;
@@ -153,7 +153,7 @@ actor class Token(_tokenId: ?T.TokenId) = this {
     };
   };
 
-  public query func getRemainingAmount(): async Float { leftToMint };
+  public query func getRemainingAmount(): async T.TokenAmount { leftToMint };
   
   public query func getTokenId(): async T.TokenId { tokenId };
 

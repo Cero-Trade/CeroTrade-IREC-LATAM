@@ -34,9 +34,9 @@
         class="mt-6 my-data-table"
         density="compact"
         >
-          <template #[`item.asset_id`]="{ item }">
+          <template #[`item.token_id`]="{ item }">
             <span class="acenter bold" style="color: #475467;">
-              {{ item.asset_id }} 
+              {{ item.token_id }} 
             </span>
           </template>
 
@@ -77,23 +77,16 @@
       <v-window-item :value="2" class="pa-2">
         <v-row class="mt-6">
           <v-col v-for="(item,index) in dataMarketplace" :key="index" xl="3" lg="3" md="4" sm="6" cols="12">
-            <v-card class="card cards-marketplace" @click="goDetails(item)">
+            <v-card class="card cards-marketplace">
               <div class="divrow jspace acenter mb-6">
                 <div class="divcol astart" style="gap: 5px;">
-                  <span style="color: #475467;">Asset</span>
-                  <h6 class="mb-0 font700">{{ item.asset_id }}</h6>
+                  <span style="color: #475467;">Asset id</span>
+                  <h6 class="mb-0 font700">{{ item.token_id }}</h6>
                 </div>
-                <v-menu location="start">
-                  <template v-slot:activator="{ props }">
-                    <v-btn class="btn btn-dots" v-bind="props">
-                      <img src="@/assets/sources/icons/dots-vertical.svg" alt="dots-vertical icon">
-                    </v-btn>
-                  </template>
 
-                  <v-card class="acenter jstart pt-2 pb-2 pl-1 pr-1 card-menu" style="gap: 25px;">
-                    <a @click="goDetails(item, 'buy')">Buy</a>
-                  </v-card>
-                </v-menu>
+                <v-btn class="btn" @click="goDetails(item)">
+                  <img src="@/assets/sources/icons/wallet.svg" alt="wallet">
+                </v-btn>
               </div>
 
               <div class="jspace divrow mb-1">
@@ -135,7 +128,7 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import '@/assets/styles/pages/marketplace.scss'
 import HydroEnergyIcon from '@/assets/sources/energies/hydro-color.svg'
 import OceanEnergyIcon from '@/assets/sources/energies/ocean.svg'
@@ -144,214 +137,92 @@ import BiomeEnergyIcon from '@/assets/sources/energies/biome.svg'
 import WindEnergyIcon from '@/assets/sources/energies/wind-color.svg'
 import SolarEnergyIcon from '@/assets/sources/energies/solar-color.svg'
 import ChileIcon from '@/assets/sources/icons/CL.svg'
+import { useRouter } from 'vue-router'
+import { computed, onBeforeMount, watch, ref } from 'vue'
+import { useToast } from 'vue-toastification'
+import { AgentCanister } from '@/repository/agent-canister'
 
-export default{
-  data() {
-    return{
-      tabsMobile: 1,
-      itemsPerPage: 100,
-      windowStep: undefined,
-      allItems: 'All items',
-      items: ['All items', 'Items'],
-      items_timeline: ['Timeline', 'Others'],
-      timeline: 'Timeline',
-      toggle: 0,
-      
-      energies: {
-        'hydro energy': HydroEnergyIcon,
-        ocean: OceanEnergyIcon,
-        geothermal: GeothermalEnergyIcon,
-        biome: BiomeEnergyIcon,
-        'wind energy': WindEnergyIcon,
-        sun: SolarEnergyIcon,
-      },
-      countries: {
-        chile: ChileIcon
-      },
+const
+  router = useRouter(),
+  toast = useToast(),
 
-       headers: [
-        { title: 'Asset ID', key: 'asset_id', sortable: false },
-        { title: 'Energy source', key: 'energy_source', sortable: false },
-        { title: 'Country', key: 'country', sortable: false },
-        { title: 'Price', key: 'price', sortable: false },
-        { title: 'MWh', key: 'mwh', sortable: false },
-        { title: 'Volume Produced', key: 'volume', sortable: false },
-        { title: 'Actions', key: 'actions', sortable: false, align: 'center'},
-      ],
-      dataMarketplace: [
-        {
-          asset_id: '#1234567',
-          token_id: '1',
-          icon_arrow: 'mdi-arrow-down',
-          percent: '20',
-          price: "125.00 - 223.00",
-          currency: '$',
-          energy_source: 'hydro energy',
-          country: 'chile',
-          mwh: 32,
-          volume: 7654,
-        },
-        {
-          asset_id: '#1234567',
-          token_id: '1',
-          icon_arrow: 'mdi-arrow-down',
-          percent: '20',
-          price: "125.00 - 223.00",
-          currency: '$',
-          energy_source: 'wind energy',
-          country: 'chile',
-          mwh: 32,
-          volume: 7654,
-        },
-        {
-          asset_id: '#1234567',
-          token_id: '1',
-          icon_arrow: 'mdi-arrow-down',
-          percent: '20',
-          price: "125.00 - 223.00",
-          currency: '$',
-          energy_source: 'hydro energy',
-          country: 'chile',
-          mwh: 32,
-          volume: 7654,
-        },
-        {
-          asset_id: '#1234567',
-          token_id: '1',
-          icon_arrow: 'mdi-arrow-down',
-          percent: '20',
-          price: "125.00 - 223.00",
-          currency: '$',
-          energy_source: 'sun',
-          country: 'chile',
-          mwh: 32,
-          volume: 7654,
-        },
-        {
-          asset_id: '#1234567',
-          token_id: '1',
-          icon_arrow: 'mdi-arrow-down',
-          percent: '20',
-          price: "125.00 - 223.00",
-          currency: '$',
-          energy_source: 'hydro energy',
-          country: 'chile',
-          mwh: 32,
-          volume: 7654,
-        },
-        {
-          asset_id: '#1234567',
-          token_id: '1',
-          icon_arrow: 'mdi-arrow-down',
-          percent: '20',
-          price: "125.00 - 223.00",
-          currency: '$',
-          energy_source: 'wind energy',
-          country: 'chile',
-          mwh: 32,
-          volume: 7654,
-        },
-        {
-          asset_id: '#1234567',
-          token_id: '1',
-          icon_arrow: 'mdi-arrow-down',
-          percent: '20',
-          price: "125.00 - 223.00",
-          currency: '$',
-          energy_source: 'hydro energy',
-          country: 'chile',
-          mwh: 32,
-          volume: 7654,
-        },
-        {
-          asset_id: '#1234567',
-          token_id: '1',
-          icon_arrow: 'mdi-arrow-down',
-          percent: '20',
-          price: "125.00 - 223.00",
-          currency: '$',
-          energy_source: 'sun',
-          country: 'chile',
-          mwh: 32,
-          volume: 7654,
-        },
-        {
-          asset_id: '#1234567',
-          token_id: '1',
-          icon_arrow: 'mdi-arrow-down',
-          percent: '20',
-          price: "125.00 - 223.00",
-          currency: '$',
-          energy_source: 'hydro energy',
-          country: 'chile',
-          mwh: 32,
-          volume: 7654,
-        },
-        {
-          asset_id: '#1234567',
-          token_id: '1',
-          icon_arrow: 'mdi-arrow-down',
-          percent: '20',
-          price: "125.00 - 223.00",
-          currency: '$',
-          energy_source: 'wind energy',
-          country: 'chile',
-          mwh: 32,
-          volume: 7654,
-        },
-        {
-          asset_id: '#1234567',
-          token_id: '1',
-          icon_arrow: 'mdi-arrow-down',
-          percent: '20',
-          price: "125.00 - 223.00",
-          currency: '$',
-          energy_source: 'hydro energy',
-          country: 'chile',
-          mwh: 32,
-          volume: 7654,
-        },
-        {
-          asset_id: '#1234567',
-          token_id: '1',
-          icon_arrow: 'mdi-arrow-down',
-          percent: '20',
-          price: "125.00 - 223.00",
-          currency: '$',
-          energy_source: 'sun',
-          country: 'chile',
-          mwh: 32,
-          volume: 7654,
-        },
-      ],
-    }
-  },
+tabsMobile = ref(1),
+itemsPerPage = ref(100),
+windowStep = ref(undefined),
+allItems = ref('All items'),
+items = ref(['All items', 'Items']),
+items_timeline = ref(['Timeline', 'Others']),
+timeline = ref('Timeline'),
+toggle = ref(0),
 
-  computed: {
-    windowStepComputed() {
-      if (window.innerWidth > 960) {
-        return 1;
-      } else {
-        return 2;
-      }
-    }
-  },
+energies = {
+  hydro: HydroEnergyIcon,
+  ocean: OceanEnergyIcon,
+  geothermal: GeothermalEnergyIcon,
+  biome: BiomeEnergyIcon,
+  wind: WindEnergyIcon,
+  sun: SolarEnergyIcon,
+},
+countries = {
+  chile: ChileIcon
+},
 
-  methods:{
-    goDetails({ token_id: tokenId }, input) {
-      const query = { tokenId }
-      if (input) query.input = input
+headers = [
+  { title: 'Asset ID', key: 'token_id', sortable: false },
+  { title: 'Energy source', key: 'energy_source', sortable: false },
+  { title: 'Country', key: 'country', sortable: false },
+  { title: 'Price', key: 'price', sortable: false },
+  { title: 'MWh', key: 'mwh', sortable: false },
+  { title: 'Volume Produced', key: 'volume', sortable: false },
+  { title: 'Actions', key: 'actions', sortable: false, align: 'center'},
+],
+dataMarketplace = ref([]),
 
-      this.$router.push({ path: '/token-details', query })
-    },
-  },
-  watch: {
-    windowStepComputed(newVal) {
-      this.windowStep = newVal;
-    }
-  },
-  created() {
-    this.windowStep = this.windowStepComputed;
+
+windowStepComputed = computed(() => {
+  if (window.innerWidth > 960) {
+    return 1;
+  } else {
+    return 2;
   }
+})
+
+
+watch(windowStepComputed, (value) => windowStep.value = value)
+
+
+onBeforeMount(() => {
+  windowStep.value = windowStepComputed.value;
+  getData()
+})
+
+
+async function getData() {
+  try {
+    const marketplace = await AgentCanister.getMarketplace(),
+    list = []
+
+    for (const item of marketplace) {
+      list.push({
+        token_id: item.tokenId,
+        energy_source: item.assetInfo.assetType,
+        country: item.assetInfo.specifications.country,
+        price: item.lowerPriceICP === item.higherPriceICP ? item.higherPriceICP : `${item.lowerPriceICP} - ${item.higherPriceICP}`,
+        mwh: item.mwh,
+        volume: item.assetInfo.volumeProduced,
+      })
+    }
+
+    dataMarketplace.value = list.sort((a, b) => a.token_id - b.token_id)
+  } catch (error) {
+    toast.error(error)
+  }
+}
+
+function goDetails({ token_id: tokenId }, input) {
+  const query = { tokenId }
+  if (input) query.input = input
+
+  router.push({ path: '/token-details', query })
 }
 </script>

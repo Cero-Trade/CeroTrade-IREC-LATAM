@@ -5,12 +5,14 @@ import store from "@/store";
 import { UserProfileModel } from "@/models/user-profile-model";
 import { AssetType, TokenModel, TokenStatus } from "@/models/token-model";
 import { TransactionInfo, TxType } from "@/models/transaction-model";
+import { MarketplaceInfo } from "@/models/marketplace-model";
+import { IDL } from "@dfinity/candid";
 
 export class AgentCanister {
   static async register(data: {
     companyId: string,
     companyName: string,
-    companyLogo: [File],
+    companyLogo: File[],
     country: string,
     city: string,
     address: string,
@@ -36,7 +38,8 @@ export class AgentCanister {
       throw getErrorMessage(error)
     }
   }
-  
+
+
   static async storeCompanyLogo(companyLogo: Blob): Promise<void> {
     try {
       await agent().storeCompanyLogo(companyLogo)
@@ -46,6 +49,7 @@ export class AgentCanister {
     }
   }
 
+
   static async login(): Promise<void> {
     try {
       await agent().login()
@@ -54,6 +58,7 @@ export class AgentCanister {
       throw getErrorMessage(error)
     }
   }
+
 
   static async deleteUser(): Promise<void> {
     try {
@@ -67,7 +72,7 @@ export class AgentCanister {
 
   static async getProfile(): Promise<UserProfileModel> {
     try {
-      const { companyLogo, profile } = await agent().getProfile() as { companyLogo: [number], profile: string },
+      const { companyLogo, profile } = await agent().getProfile() as { companyLogo: number[], profile: string },
       profileData = JSON.parse(profile),
       userProfile = {
         companyLogo: getUrlFromArrayBuffer(companyLogo) || avatar,
@@ -82,14 +87,28 @@ export class AgentCanister {
     }
   }
 
-  static async getPortfolio(): Promise<{tokensInfo: [TokenModel], tokensRedemption: [TransactionInfo]}> {
+
+  static async checkUserToken(tokenId: string): Promise<boolean> {
     try {
-      const response = await agent().getPortfolio() as {tokensInfo: [TokenModel], tokensRedemption: [TransactionInfo]}
+      return await agent().checkUserToken(tokenId) as boolean
+    } catch (_) {
+      return false
+    }
+  }
+
+
+  static async getPortfolio(): Promise<{tokensInfo: TokenModel[], tokensRedemption: TransactionInfo[]}> {
+    try {
+      const response = await agent().getPortfolio() as {tokensInfo: TokenModel[], tokensRedemption: TransactionInfo[]}
 
       for (const item of response.tokensInfo) {
         item.status = Object.values(item.status)[0] as TokenStatus
         // format record value
         item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
+        item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
+        item.totalAmount = Number(item.totalAmount)
+        item.inMarket = Number(item.inMarket)
+        item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
         // format dates
         item.assetInfo.startDate = new Date(Number(item.assetInfo.startDate))
         item.assetInfo.endDate = new Date(Number(item.assetInfo.endDate))
@@ -111,8 +130,13 @@ export class AgentCanister {
   static async getSinglePortfolio(tokenId: string): Promise<TokenModel> {
     try {
       const token = await agent().getSinglePortfolio(tokenId) as TokenModel
+
       // format record value
       token.status = Object.values(token.status)[0] as TokenStatus
+      token.assetInfo.volumeProduced = Number(token.assetInfo.volumeProduced)
+      token.totalAmount = Number(token.totalAmount)
+      token.inMarket = Number(token.inMarket)
+      token.assetInfo.specifications.capacity = Number(token.assetInfo.specifications.capacity)
       // format dates
       token.assetInfo.assetType = Object.values(token.assetInfo.assetType)[0] as AssetType
       token.assetInfo.startDate = new Date(Number(token.assetInfo.startDate))
@@ -128,7 +152,56 @@ export class AgentCanister {
       throw getErrorMessage(error)
     }
   }
-  
+
+
+  static async getTokenDetails(tokenId: string): Promise<TokenModel> {
+    try {
+      const token = await agent().getTokenDetails(tokenId) as TokenModel
+
+      // format record value
+      token.status = Object.values(token.status)[0] as TokenStatus
+      token.assetInfo.volumeProduced = Number(token.assetInfo.volumeProduced)
+      token.totalAmount = Number(token.totalAmount)
+      token.inMarket = Number(token.inMarket)
+      token.assetInfo.specifications.capacity = Number(token.assetInfo.specifications.capacity)
+      // format dates
+      token.assetInfo.assetType = Object.values(token.assetInfo.assetType)[0] as AssetType
+      token.assetInfo.startDate = new Date(Number(token.assetInfo.startDate))
+      token.assetInfo.endDate = new Date(Number(token.assetInfo.endDate))
+
+      const dates: Date[] = [];
+      for (const date of token.assetInfo.dates) dates.push(new Date(Number(date)))
+      token.assetInfo.dates = dates
+
+      return token
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+
+  static async getMarketplace(): Promise<MarketplaceInfo[]> {
+    try {
+      const response = await agent().getMarketplace() as MarketplaceInfo[]
+
+      for (const item of response) {
+        // format record value
+        item.lowerPriceICP = Number(item.lowerPriceICP['e8s'])
+        item.higherPriceICP = Number(item.higherPriceICP['e8s'])
+        item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
+        item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
+        item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
+      }
+
+      return response
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+
   static async purchaseToken(tokenId: string, recipent: string, amount: number, price: number): Promise<TransactionInfo> {
     try {
       const tx = await agent().purchaseToken(tokenId, recipent, amount, price) as TransactionInfo
@@ -142,15 +215,17 @@ export class AgentCanister {
     }
   }
 
-  static async putOnSale(tokenId: string, quantity: number, price: number, currency: string): Promise<void> {
+
+  static async putOnSale(tokenId: string, quantity: number, price: number): Promise<void> {
     try {
-      const res = await agent().sellToken(tokenId, quantity, price, currency)
+      const res = await agent().sellToken(tokenId, quantity, price)
       console.log(res);
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)
     }
   }
+
 
   static async takeTokenOffMarket(tokenId: string, quantity: number): Promise<void> {
     try {
@@ -160,6 +235,7 @@ export class AgentCanister {
       throw getErrorMessage(error)
     }
   }
+
 
   static async redeemToken(tokenId: string, beneficiary: string, amount: number): Promise<TransactionInfo> {
     try {

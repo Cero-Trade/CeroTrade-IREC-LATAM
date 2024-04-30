@@ -18,9 +18,9 @@ module {
   public type RedemId = Text;
   public type CompanyLogo = [Nat8];
   public type Beneficiary = Text;
-  public type Price = Nat;
-  public type Currency = Text;
   public type BlockHash = Nat64;
+  public type TokenAmount = Nat;
+  public type Price = ICRC.Tokens;
   
   //
   // UsersAgent
@@ -61,8 +61,8 @@ module {
 
   public type TokenInfo = {
     tokenId: TokenId;
-    totalAmount: Float;
-    inMarket: Float;
+    totalAmount: TokenAmount;
+    inMarket: TokenAmount;
     assetInfo: AssetInfo;
     status: TokenStatus
   };
@@ -88,8 +88,8 @@ module {
     to: TransactionRecipent;
     tokenId: TokenId;
     txType: TxType;
-    tokenAmount: Float;
-    priceICP: ICRC.Tokens;
+    tokenAmount: TokenAmount;
+    priceICP: Price;
   };
 
   public type TxType = {
@@ -119,7 +119,7 @@ module {
 
   public type Specifications = {
     deviceCode: Text;
-    capacity: Float;
+    capacity: TokenAmount;
     location: Text;
     latitude: Float;
     longitude: Float;
@@ -129,15 +129,15 @@ module {
   };
 
   public type AssetInfo = {
+    tokenId: TokenId;
     assetType: AssetType;
     startDate: Nat64;
     endDate: Nat64;
     co2Emission: Float;
     radioactivityEmnission: Float;
-    volumeProduced: Float;
+    volumeProduced: TokenAmount;
     deviceDetails: DeviceDetails;
     specifications: Specifications;
-    // TODO checkout usage of this date format
     dates: [Nat64];
   };
 
@@ -145,18 +145,22 @@ module {
   // Market types
   //
 
-  public type TokenIdQuantity = Nat;
-
+  public type MarketplaceInfo = {
+    tokenId: Text;
+    lowerPriceICP: Price;
+    higherPriceICP: Price;
+    assetInfo: AssetInfo;
+    mwh: TokenAmount;
+  };
 
   public type TokenMarketInfo = {
-    totalQuantity: Nat;
+    totalQuantity: TokenAmount;
     usersxToken: HM.HashMap<UID, UserTokenInfo>;
   };
 
   public type UserTokenInfo = {
-    quantity: Nat;
-    price: Nat;
-    currency: Text
+    quantity: TokenAmount;
+    priceICP: Price;
   };
 
 
@@ -224,14 +228,14 @@ module {
 
   public type TokenInterface = actor {
     init: (assetMetadata: AssetInfo) -> async();
-    mintToken: (uid: UID, amount: Float, inMarket: Float) -> async ();
-    burnToken: (uid: UID, amount: Float, inMarket: Float) -> async ();
+    mintToken: (uid: UID, amount: TokenAmount, inMarket: TokenAmount) -> async ();
+    burnToken: (uid: UID, amount: TokenAmount, inMarket: TokenAmount) -> async ();
     getUserMinted: query (uid: UID) -> async TokenInfo;
     getAssetInfo: query () -> async AssetInfo;
-    getRemainingAmount: query () -> async Float;
+    getRemainingAmount: query () -> async TokenAmount;
     getTokenId: query () -> async TokenId;
     getCanisterId: query () -> async CanisterId;
-    purchaseToken: (uid: UID, recipent: UID, amount: Float, inMarket: Float) -> async();
+    purchaseToken: (uid: UID, recipent: UID, amount: TokenAmount, inMarket: TokenAmount) -> async();
   };
 
   public type TransactionsInterface = actor {
