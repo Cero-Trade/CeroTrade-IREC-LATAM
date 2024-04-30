@@ -120,17 +120,29 @@ actor Agent {
   };
 
 
-  // TODO implements this function
 
   /// get token information
   public shared({ caller }) func getTokenDetails(tokenId: T.TokenId): async T.TokenInfo {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
-    let tokenInfo: T.TokenInfo = await TokenIndex.getTokenPortfolio(caller, tokenId);
-    let inMarket = await Marketplace.getAvailableTokens(tokenId);
+    try {
+      let tokenInfo: T.TokenInfo = await TokenIndex.getTokenPortfolio(caller, tokenId);
+      let inMarket = await Marketplace.getAvailableTokens(tokenId);
 
-    { tokenInfo with inMarket }
+      { tokenInfo with inMarket }
+    } catch (error) {
+      let assetInfo: T.AssetInfo = await TokenIndex.getSingleTokenInfo(tokenId);
+      let inMarket = await Marketplace.getAvailableTokens(tokenId);
+
+      {
+        tokenId;
+        totalAmount = 0;
+        inMarket;
+        assetInfo;
+        status = #forSale("for sale");
+      }
+    }
   };
 
 
