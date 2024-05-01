@@ -1,0 +1,25 @@
+{
+    "assetType": "wind",
+    "startDate": 1678009200000, 
+    "endDate": 1720617200000,
+    "co2Emission": 0.0,
+    "radioactivityEmnission": 0.0,
+    "volumeProduced": 1000.0,
+    "deviceDetails": {
+      "name": "Wind Farm 1",
+      "description": "A large wind farm with 100 turbines",
+      "group": "wind",
+      "deviceType": "Turbine"
+    },
+    "specifications": {
+      "deviceCode": "WF1-TURBINE-001",
+      "capacity": 2.5,
+      "location": "Chicago, IL",
+      "latitude": 41.881832,
+      "longitude": -87.623177,
+      "address": "5800 S Ellis Ave, Chicago, IL 60637",
+      "stateProvince": "IL",
+      "country": "USA"
+    }
+  }
+  
