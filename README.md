@@ -50,6 +50,9 @@ dfx canister create users
 dfx build users
 dfx canister create transactions
 dfx build transactions
+cp .dfx/local/canisters/token/token.wasm wasm_modules/token.wasm
+cp .dfx/local/canisters/users/users.wasm wasm_modules/users.wasm
+cp .dfx/local/canisters/transactions/transactions.wasm wasm_modules/transactions.wasm
 ```
 To generate the wasm module like array run command below
 
