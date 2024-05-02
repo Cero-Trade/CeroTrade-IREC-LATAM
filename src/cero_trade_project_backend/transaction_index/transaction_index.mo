@@ -19,7 +19,7 @@ import HttpService "canister:http_service";
 // types
 import T "../types";
 
-shared(init_msg) actor class TransactionIndex() = this {
+shared(init_msg) actor class TransactionIndex(ENVIRONMENT_BRANCH: Text) = this {
   stable let ic : T.IC = actor ("aaaaa-aa");
   private func TransactionsCanister(cid: T.CanisterId): T.TransactionsInterface { actor (Principal.toText(cid)) };
   stable var wasm_array : [Nat] = [];
@@ -48,7 +48,7 @@ shared(init_msg) actor class TransactionIndex() = this {
   public shared({ caller }) func registerWasmArray(): async() {
     assert init_msg.caller == caller;
 
-    let wasmModule = await HttpService.get("https://raw.githubusercontent.com/Cero-Trade/mvp1.0/develop/wasm_modules/transactions.json", { headers = [] });
+    let wasmModule = await HttpService.get("https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # ENVIRONMENT_BRANCH # "/wasm_modules/transactions.json", { headers = [] });
 
     let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
     wasm_array := Array.map<Text, Nat>(Iter.toArray(parts), func(part) {

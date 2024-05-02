@@ -22,7 +22,7 @@ import T "../types";
 import HT "../http_service/http_service_types";
 import ICRC "../ICRC";
 
-shared(init_msg) actor class TokenIndex() = this {
+shared(init_msg) actor class TokenIndex(ENVIRONMENT_BRANCH: Text) = this {
   stable let ic : T.IC = actor ("aaaaa-aa");
   private func TokenCanister(cid: T.CanisterId): T.TokenInterface { actor (Principal.toText(cid)) };
   stable var wasm_array : [Nat] = [];
@@ -46,7 +46,9 @@ shared(init_msg) actor class TokenIndex() = this {
   public shared({ caller }) func registerWasmArray(): async() {
     assert init_msg.caller == caller;
 
-    let wasmModule = await HttpService.get("https://raw.githubusercontent.com/Cero-Trade/mvp1.0/develop/wasm_modules/token.json", { headers = [] });
+    let wasmModule = await HttpService.get("https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # ENVIRONMENT_BRANCH # "/wasm_modules/token.json",
+      { headers = []
+    });
 
     let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
     wasm_array := Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
@@ -59,6 +61,8 @@ shared(init_msg) actor class TokenIndex() = this {
 
   /// register [tokenDirectory] collection
   public shared({ caller }) func registerToken(tokenId: Text): async Principal {
+    assert init_msg.caller == caller;
+
     if (tokenId == "") throw Error.reject("Must to provide a tokenId");
 
     switch(tokenDirectory.get(tokenId)) {
