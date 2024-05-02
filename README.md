@@ -42,7 +42,7 @@ To deploy only backend canisters run
 
 `dfx deploy agent`
 
-### Generate wasm modules
+### Generate wasm modules (Note: only cero-devs)
 ```
 dfx canister create token
 dfx build token
@@ -61,9 +61,16 @@ Note: must to add package.json field -> "type": "module",
 Provide respective MODULE_NAME in argument
 `npm run generate-wasm -- module={MODULE_NAME}`
 
-To register wasm module into backend canisters must to access here:
+Later push the current ./wasm_modules commit folder to github
 
-`http://localhost:{PORT}/cero-system?canisterId={CANISTER_ID}`
+
+To register wasm module into backend canisters must to run:
+
+`
+dfx canister call token_index registerWasmArray
+dfx canister call user_index registerWasmArray
+dfx canister call transaction_index registerWasmArray
+`
 
 ### Deploying token canisters
 `dfx canister call token_index registerToken '("token_id")'`

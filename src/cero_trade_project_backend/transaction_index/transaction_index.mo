@@ -13,10 +13,13 @@ import Debug "mo:base/Debug";
 import List "mo:base/List";
 import Buffer "mo:base/Buffer";
 
+// canisters
+import HttpService "canister:http_service";
+
 // types
 import T "../types";
 
-actor class TransactionIndex() = this {
+shared(init_msg) actor class TransactionIndex() = this {
   stable let ic : T.IC = actor ("aaaaa-aa");
   private func TransactionsCanister(cid: T.CanisterId): T.TransactionsInterface { actor (Principal.toText(cid)) };
   stable var wasm_array : [Nat] = [];
@@ -41,11 +44,19 @@ actor class TransactionIndex() = this {
   /// get size of transactionsDirectory collection
   public query func length(): async Nat { transactionsDirectory.size() };
 
+  /// register wasm module to dynamic transactions canister, only admin can run it
+  public shared({ caller }) func registerWasmArray(): async() {
+    assert init_msg.caller == caller;
 
-  // TODO validate user authenticate to only admin
-  public func registerWasmArray(uid: T.UID, array: [Nat]): async [Nat] {
-    wasm_array := array;
-    wasm_array
+    let wasmModule = await HttpService.get("https://raw.githubusercontent.com/Cero-Trade/mvp1.0/develop/wasm_modules/transactions.json", { headers = [] });
+
+    let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
+    wasm_array := Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
+      switch (Nat.fromText(part)) {
+        case null 0;
+        case (?n) n;
+      }
+    });
   };
 
   /// returns true if canister have storage memory,

@@ -11,6 +11,7 @@ import Nat64 "mo:base/Nat64";
 import Iter "mo:base/Iter";
 import Buffer "mo:base/Buffer";
 import Result "mo:base/Result";
+import Serde "mo:serde";
 import Debug "mo:base/Debug";
 
 // canisters
@@ -21,7 +22,7 @@ import T "../types";
 import HT "../http_service/http_service_types";
 import ICRC "../ICRC";
 
-actor class TokenIndex() = this {
+shared(init_msg) actor class TokenIndex() = this {
   stable let ic : T.IC = actor ("aaaaa-aa");
   private func TokenCanister(cid: T.CanisterId): T.TokenInterface { actor (Principal.toText(cid)) };
   stable var wasm_array : [Nat] = [];
@@ -41,11 +42,19 @@ actor class TokenIndex() = this {
   /// get size of tokenDirectory collection
   public query func length(): async Nat { tokenDirectory.size() };
 
+  /// register wasm module to dynamic token canister, only admin can run it
+  public shared({ caller }) func registerWasmArray(): async() {
+    assert init_msg.caller == caller;
 
-  // TODO validate user authenticate to only admin
-  public func registerWasmArray(uid: T.UID, array: [Nat]): async [Nat] {
-    wasm_array := array;
-    wasm_array
+    let wasmModule = await HttpService.get("https://raw.githubusercontent.com/Cero-Trade/mvp1.0/develop/wasm_modules/token.json", { headers = [] });
+
+    let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
+    wasm_array := Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
+      switch (Nat.fromText(part)) {
+        case null 0;
+        case (?n) n;
+      }
+    });
   };
 
   /// register [tokenDirectory] collection

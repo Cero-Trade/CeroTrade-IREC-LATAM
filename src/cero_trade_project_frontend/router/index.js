@@ -20,7 +20,6 @@ import Auth from '@/layouts/empty-layout.vue'
 import Register from '@/pages/register.vue'
 import Login from '@/pages/login.vue'
 import PasswordReset from '@/pages/password-reset.vue'
-import CeroSystem from '@/pages/cero-system.vue'
 
 const DEFAULT_TITLE = APP_NAMES.capitalize;
 
@@ -108,14 +107,6 @@ const routes = [
       },
     ],
   },
-
-
-  // ? Authenticated routes
-  {
-    path: '/cero-system',
-    component: CeroSystem,
-    meta: { system: true }
-  }
 ]
 
 const router = createRouter({

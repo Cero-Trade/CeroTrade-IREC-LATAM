@@ -24,7 +24,8 @@
     },
     "transaction_index": {
       "main": "src/cero_trade_project_backend/transaction_index/transaction_index.mo",
-      "type": "motoko"
+      "type": "motoko",
+      "dependencies": [ "http_service" ]
     },
     "marketplace": {
       "main": "src/cero_trade_project_backend/marketplace/marketplace.mo",
