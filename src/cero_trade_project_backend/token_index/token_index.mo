@@ -44,10 +44,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
   private func adminValidation(caller: Principal) { assert adminCaller == caller };
 
   /// get size of tokenDirectory collection
-  public shared({ caller }) func length(): async Nat {
-    adminValidation(caller);
-    tokenDirectory.size()
-  };
+  public query func length(): async Nat { tokenDirectory.size() };
 
   /// register wasm module to dynamic token canister, only admin can run it
   public shared({ caller }) func registerWasmArray(): async() {
