@@ -203,7 +203,6 @@ headers = [
   { title: 'Country', key: 'country', sortable: false },
   // { title: 'Asset ID', key: 'asset_id', sortable: false },
   { title: 'MWh', key: 'mwh', sortable: false },
-  { title: 'Status', key: 'status', sortable: false },
   { title: 'Details', key: 'actions', sortable: false, align: 'center'},
 ],
 dataPortfolio = ref([
@@ -216,7 +215,6 @@ dataPortfolio = ref([
   //   mwh: 32,
   //   volume: 7654,
   //   checkbox: false,
-  //   status: 'for sale',
   // },
 ]),
 totalRedeemed = ref(0),
@@ -265,7 +263,6 @@ async function getData() {
         energy_source: item.assetInfo.assetType,
         country: item.assetInfo.specifications.country,
         mwh: item.totalAmount,
-        status: item.status,
       })
     }
 
