@@ -1,6 +1,7 @@
 {
   "name": "cero_trade",
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
     "serve": "vite preview",
     "build": "vite build",

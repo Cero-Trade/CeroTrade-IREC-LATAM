@@ -15,6 +15,7 @@ import AccountIdentifier "mo:account-identifier";
 
 // types
 import T "../types";
+import ENV "../env";
 
 actor Users {
   // constants
@@ -32,12 +33,16 @@ actor Users {
     usersEntries := [];
   };
 
+  private func callValidation(caller: Principal) { assert Principal.fromText(ENV.USER_INDEX_CANISTER_ID) == caller };
+
   /// get size of users collection
   public query func length(): async Nat { users.size() };
 
 
   /// register user to cero trade
-  public func registerUser(uid: T.UID, token: Text): async() {
+  public shared({ caller }) func registerUser(uid: T.UID, token: Text): async() {
+    callValidation(caller);
+
     let userInfo = {
       vaultToken = token;
       principal = uid;
@@ -53,11 +58,16 @@ actor Users {
 
 
   /// delete user to cero trade
-  public func deleteUser(uid: T.UID): async() { let _ = users.remove(uid) };
+  public shared({ caller }) func deleteUser(uid: T.UID): async() {
+    callValidation(caller);
+    let _ = users.remove(uid)
+  };
 
 
   /// store user company logo to cero trade
-  public func storeCompanyLogo(uid: T.UID, avatar: T.CompanyLogo): async() {
+  public shared({ caller }) func storeCompanyLogo(uid: T.UID, avatar: T.CompanyLogo): async() {
+    callValidation(caller);
+
     let userInfo = switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
       case (?info) {
@@ -70,7 +80,9 @@ actor Users {
 
 
   /// get user from usersAvatar collection
-  public query func getCompanyLogo(uid: T.UID) : async T.CompanyLogo {
+  public shared({ caller }) func getCompanyLogo(uid: T.UID) : async T.CompanyLogo {
+    callValidation(caller);
+
     let companyLogo = switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
       case (?info) info.companyLogo;
@@ -84,7 +96,9 @@ actor Users {
 
 
   /// update user portfolio
-  public func updatePorfolio(uid: T.UID, tokenId: T.TokenId) : async() {
+  public shared({ caller }) func updatePorfolio(uid: T.UID, tokenId: T.TokenId) : async() {
+    callValidation(caller);
+
     let userInfo = switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
       case (?info) info;
@@ -108,7 +122,9 @@ actor Users {
 
 
   /// delete user portfolio
-  public func deletePorfolio(uid: T.UID, tokenId: T.TokenId) : async() {
+  public shared({ caller }) func deletePorfolio(uid: T.UID, tokenId: T.TokenId) : async() {
+    callValidation(caller);
+
     let userInfo = switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
       case (?info) info;
@@ -128,7 +144,9 @@ actor Users {
 
 
   /// update user transactions
-  public func updateTransactions(uid: T.UID, txId: T.TransactionId) : async() {
+  public shared({ caller }) func updateTransactions(uid: T.UID, txId: T.TransactionId) : async() {
+    callValidation(caller);
+
     let userInfo = switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
       case (?info) info;
@@ -154,21 +172,27 @@ actor Users {
   };
 
 
-  public query func getPortfolioTokenIds(uid: T.UID) : async [T.TokenId] {
+  public shared({ caller }) func getPortfolioTokenIds(uid: T.UID) : async [T.TokenId] {
+    callValidation(caller);
+
     switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
       case (?info) return info.portfolio;
     };
   };
 
-  public query func getTransactionIds(uid: T.UID) : async [T.TransactionId] {
+  public shared({ caller }) func getTransactionIds(uid: T.UID) : async [T.TransactionId] {
+    callValidation(caller);
+
     switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
       case (?info) return info.transactions;
     };
   };
 
-  public query func getBeneficiaries(uid: T.UID) : async [T.Beneficiary] {
+  public shared({ caller }) func getBeneficiaries(uid: T.UID) : async [T.Beneficiary] {
+    callValidation(caller);
+
     switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
       case (?info) return info.beneficiaries;
@@ -176,7 +200,9 @@ actor Users {
   };
 
   /// get vaultToken from user
-  public query func getUserToken(uid: T.UID) : async Text {
+  public shared({ caller }) func getUserToken(uid: T.UID) : async Text {
+    callValidation(caller);
+
     switch (users.get(uid)) {
       case (null) { throw Error.reject(userNotFound); };
       case (?info) { return info.vaultToken; };
@@ -184,7 +210,9 @@ actor Users {
   };
 
   /// validate current token
-  public query func validateToken(uid: T.UID, token: Text): async Bool {
+  public shared({ caller }) func validateToken(uid: T.UID, token: Text): async Bool {
+    callValidation(caller);
+
     switch (users.get(uid)) {
       case (null) { throw Error.reject(userNotFound); };
       case (?info) { return info.vaultToken == token; };
@@ -192,7 +220,9 @@ actor Users {
   };
 
   /// obtain user ledger
-  public query func getLedger(uid: T.UID): async Blob {
+  public shared({ caller }) func getLedger(uid: T.UID): async Blob {
+    callValidation(caller);
+
     switch (users.get(uid)) {
       case (null) { throw Error.reject(userNotFound); };
       case (?info) { return info.ledger };

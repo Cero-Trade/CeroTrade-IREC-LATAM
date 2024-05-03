@@ -13,6 +13,7 @@ import Iter "mo:base/Iter";
 
 // types
 import T "../types";
+import ENV "../env";
 
 actor Transactions {
   // constants
@@ -30,12 +31,16 @@ actor Transactions {
     transactionsEntries := [];
   };
 
+  private func callValidation(caller: Principal) { assert Principal.fromText(ENV.TRANSACTION_INDEX_CANISTER_ID) == caller };
+
   /// get size of transactions collection
   public query func length(): async Nat { transactions.size() };
 
 
   /// register transaction to cero trade
-  public func registerTransaction(txInfo: T.TransactionInfo): async T.TransactionId {
+  public shared({ caller }) func registerTransaction(txInfo: T.TransactionInfo): async T.TransactionId {
+    callValidation(caller);
+
     let txId = Nat.toText(transactions.size() + 1);
     let tx = { txInfo with transactionId = txId };
 
@@ -43,7 +48,9 @@ actor Transactions {
     txId
   };
 
-  public query func getRedemptions(txIds: [T.TransactionId]): async [T.TransactionInfo] {
+  public shared({ caller }) func getRedemptions(txIds: [T.TransactionId]): async [T.TransactionInfo] {
+    callValidation(caller);
+
     let txs = Buffer.Buffer<T.TransactionInfo>(100);
 
     for(tx in txIds.vals()) {

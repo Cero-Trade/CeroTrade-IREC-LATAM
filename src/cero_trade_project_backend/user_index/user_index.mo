@@ -17,8 +17,9 @@ import HttpService "canister:http_service";
 // types
 import T "../types";
 import HT "../http_service/http_service_types";
+import ENV "../env";
 
-shared(init_msg) actor class UserIndex(ENVIRONMENT_BRANCH: Text) = this {
+shared({ caller = adminCaller }) actor class UserIndex() = this {
   stable let ic : T.IC = actor ("aaaaa-aa");
   private func UsersCanister(cid: T.CanisterId): T.UsersInterface { actor (Principal.toText(cid)) };
   stable var wasm_array : [Nat] = [];
@@ -42,14 +43,22 @@ shared(init_msg) actor class UserIndex(ENVIRONMENT_BRANCH: Text) = this {
     usersDirectoryEntries := [];
   };
 
+  private func callValidation(caller: Principal) { assert Principal.fromText(ENV.AGENT_CANISTER_ID) == caller };
+  private func adminValidation(caller: Principal) { assert adminCaller == caller };
+
   /// get size of usersDirectory collection
   public query func length(): async Nat { usersDirectory.size() };
 
   /// register wasm module to dynamic users canister, only admin can run it
   public shared({ caller }) func registerWasmArray(): async() {
-    assert init_msg.caller == caller;
+    adminValidation(caller);
 
-    let wasmModule = await HttpService.get("https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # ENVIRONMENT_BRANCH # "/wasm_modules/users.json", { headers = [] });
+    let branch = switch(ENV.DFX_NETWORK) {
+      case("ic") "main";
+      case("local") "develop";
+      case _ throw Error.reject("No DFX_NETWORK provided");
+    };
+    let wasmModule = await HttpService.get("https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # branch # "/wasm_modules/users.json", { headers = [] });
 
     let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
     wasm_array := Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
@@ -66,7 +75,9 @@ shared(init_msg) actor class UserIndex(ENVIRONMENT_BRANCH: Text) = this {
 
   /// returns true if canister have storage memory,
   /// false if havent enough
-  public func checkMemoryStatus() : async Bool {
+  public shared({ caller }) func checkMemoryStatus() : async Bool {
+    adminValidation(caller);
+
     let status = switch(currentCanisterid) {
       case(null) throw Error.reject("Cant find users canisters registered");
       case(?cid) await ic.canister_status({ canister_id = cid });
@@ -120,7 +131,9 @@ shared(init_msg) actor class UserIndex(ENVIRONMENT_BRANCH: Text) = this {
   };
 
   /// register [usersDirectory] collection
-  public func registerUser(uid: T.UID, form: T.RegisterForm) : async() {
+  public shared({ caller }) func registerUser(uid: T.UID, form: T.RegisterForm) : async() {
+    callValidation(caller);
+
     // WARN just for debug
     Debug.print(Principal.toText(uid));
 
@@ -191,7 +204,9 @@ shared(init_msg) actor class UserIndex(ENVIRONMENT_BRANCH: Text) = this {
   };
 
   /// store user avatar into users collection
-  public func storeCompanyLogo(uid: T.UID, avatar: T.CompanyLogo): async() {
+  public shared({ caller }) func storeCompanyLogo(uid: T.UID, avatar: T.CompanyLogo): async() {
+    callValidation(caller);
+
     switch(usersDirectory.get(uid)) {
       case(null) throw Error.reject(notExists);
       case(?cid) await UsersCanister(cid).storeCompanyLogo(uid, avatar);
@@ -199,7 +214,9 @@ shared(init_msg) actor class UserIndex(ENVIRONMENT_BRANCH: Text) = this {
   };
 
   /// delete user to cero trade
-  public func deleteUser(uid: T.UID): async() {
+  public shared({ caller }) func deleteUser(uid: T.UID): async() {
+    callValidation(caller);
+
     let cid: T.CanisterId = switch(usersDirectory.get(uid)) {
       case(null) throw Error.reject(notExists);
       case(?cid) cid;
@@ -215,7 +232,9 @@ shared(init_msg) actor class UserIndex(ENVIRONMENT_BRANCH: Text) = this {
   };
 
   /// get canister id that allow current user
-  public query func getUserCanister(uid: T.UID) : async T.CanisterId {
+  public shared({ caller }) func getUserCanister(uid: T.UID) : async T.CanisterId {
+    callValidation(caller);
+
     switch (usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
       case (?cid) cid;
@@ -223,7 +242,9 @@ shared(init_msg) actor class UserIndex(ENVIRONMENT_BRANCH: Text) = this {
   };
 
   /// update user portfolio
-  public func updatePorfolio(uid: T.UID, token: T.TokenId) : async() {
+  public shared({ caller }) func updatePorfolio(uid: T.UID, token: T.TokenId) : async() {
+    callValidation(caller);
+
     switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
       case(?cid) await UsersCanister(cid).updatePorfolio(uid, token);
@@ -231,7 +252,9 @@ shared(init_msg) actor class UserIndex(ENVIRONMENT_BRANCH: Text) = this {
   };
 
   // update user transactions
-  public func updateTransactions(uid: T.UID, txId: T.TransactionId) : async() {
+  public shared({ caller }) func updateTransactions(uid: T.UID, txId: T.TransactionId) : async() {
+    callValidation(caller);
+
     switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
       case(?cid) await UsersCanister(cid).updateTransactions(uid, txId);
@@ -240,7 +263,9 @@ shared(init_msg) actor class UserIndex(ENVIRONMENT_BRANCH: Text) = this {
 
 
   /// get profile information
-  public func getProfile(uid: T.UID): async T.UserProfile {
+  public shared({ caller }) func getProfile(uid: T.UID): async T.UserProfile {
+    callValidation(caller);
+
     let cid: T.CanisterId = switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
       case(?cid) cid;
@@ -255,7 +280,9 @@ shared(init_msg) actor class UserIndex(ENVIRONMENT_BRANCH: Text) = this {
 
 
   /// get portfolio information
-  public func getPortfolioTokenIds(uid: T.UID): async [T.TokenId] {
+  public shared({ caller }) func getPortfolioTokenIds(uid: T.UID): async [T.TokenId] {
+    callValidation(caller);
+
     switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
       case(?cid) await UsersCanister(cid).getPortfolioTokenIds(uid);
@@ -264,7 +291,9 @@ shared(init_msg) actor class UserIndex(ENVIRONMENT_BRANCH: Text) = this {
 
 
   /// get transaction user ids
-  public func getTransactionIds(uid: T.UID): async [T.TransactionId] {
+  public shared({ caller }) func getTransactionIds(uid: T.UID): async [T.TransactionId] {
+    callValidation(caller);
+
     switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
       case(?cid) await UsersCanister(cid).getTransactionIds(uid);
@@ -273,7 +302,9 @@ shared(init_msg) actor class UserIndex(ENVIRONMENT_BRANCH: Text) = this {
 
 
   /// get user account ledger
-  public func getUserLedger(uid: T.UID): async Blob {
+  public shared({ caller }) func getUserLedger(uid: T.UID): async Blob {
+    callValidation(caller);
+
     switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
       case(?cid) await UsersCanister(cid).getLedger(uid);

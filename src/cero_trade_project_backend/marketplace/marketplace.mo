@@ -9,8 +9,9 @@ import Buffer "mo:base/Buffer";
 
 // types
 import T "../types";
+import ENV "../env";
 
-actor Marketplace {
+actor class Marketplace() = this {
 
   var tokensInMarket : HM.HashMap<T.TokenId, T.TokenMarketInfo> = HM.HashMap(100, Text.equal, Text.hash);
   stable var tokensInMarketEntries : [(T.TokenId, T.TokenAmount, [(T.UID, T.UserTokenInfo)])] = [];
@@ -44,10 +45,16 @@ actor Marketplace {
     };
   };
 
+  private func callValidation(caller: Principal) {
+    assert Principal.fromText(ENV.AGENT_CANISTER_ID) == caller or Principal.fromActor(this) == caller
+  };
+
 
 
   // check if token is already on the market
-  public func isOnMarket(tokenId : T.TokenId) : async Bool {
+  public shared({ caller }) func isOnMarket(tokenId : T.TokenId) : async Bool {
+    callValidation(caller);
+
     switch (tokensInMarket.get(tokenId)) {
       case (null) { return false };
       case (?_) { return true };
@@ -55,7 +62,9 @@ actor Marketplace {
   };
 
   // check if user is already selling a token
-  public func isSellingToken(user : T.UID, tokenId : T.TokenId) : async Bool {
+  public shared({ caller }) func isSellingToken(user : T.UID, tokenId : T.TokenId): async Bool {
+    callValidation(caller);
+
       switch (tokensInMarket.get(tokenId)) {
           case (null) { return false };
           case (?info) {
@@ -72,7 +81,7 @@ actor Marketplace {
   };
 
   // new token in market
-  public func newTokensInMarket(tokenId : T.TokenId, user : T.UID, quantity : T.TokenAmount, priceICP: T.Price) : async () {
+  private func newTokensInMarket(tokenId : T.TokenId, user : T.UID, quantity : T.TokenAmount, priceICP: T.Price): async () {
       // user is selling a new token
       let usersxToken = HM.HashMap<T.UID, T.UserTokenInfo>(4, Principal.equal, Principal.hash);
 
@@ -94,7 +103,7 @@ actor Marketplace {
   };
 
   // update token information
-  public func updatetokenMarketInfo(user : T.UID, tokenId : T.TokenId, quantity : T.TokenAmount, priceICP: T.Price) : async () {
+  private func updatetokenMarketInfo(user : T.UID, tokenId : T.TokenId, quantity : T.TokenAmount, priceICP: T.Price): async () {
       switch (tokensInMarket.get(tokenId)) {
           case (null) {
               throw Error.reject("Token not found in the market");
@@ -129,7 +138,9 @@ actor Marketplace {
   };
 
   // handles new token information on market
-  public func putOnSale(tokenId : T.TokenId, quantity : T.TokenAmount, user : T.UID, priceICP: T.Price) : async () {
+  public shared({ caller }) func putOnSale(tokenId : T.TokenId, quantity : T.TokenAmount, user : T.UID, priceICP: T.Price) : async () {
+    callValidation(caller);
+
       // Check if the user is already selling the token
       let isSelling = await isSellingToken(user, tokenId);
       if (isSelling != false) {
@@ -142,7 +153,9 @@ actor Marketplace {
   };
 
   // check how many token id is available for sale
-  public func getAvailableTokens(tokenId : T.TokenId) : async T.TokenAmount {
+  public shared({ caller }) func getAvailableTokens(tokenId : T.TokenId) : async T.TokenAmount {
+    callValidation(caller);
+
       switch (tokensInMarket.get(tokenId)) {
           case (null) {
               return 0;
@@ -154,7 +167,9 @@ actor Marketplace {
   };
 
   // check how many token id is being sold by a user
-  public func getUserTokensOnSale(user : T.UID, tokenId : T.TokenId) : async T.TokenAmount {
+  public shared({ caller }) func getUserTokensOnSale(user : T.UID, tokenId : T.TokenId) : async T.TokenAmount {
+    callValidation(caller);
+
       switch (tokensInMarket.get(tokenId)) {
           case (null) {
               return 0;
@@ -173,7 +188,9 @@ actor Marketplace {
   };
 
   // check price of a token on the market of a user
-  public func getTokenPrice(tokenId : T.TokenId, user : T.UID) : async T.Price {
+  public shared({ caller }) func getTokenPrice(tokenId : T.TokenId, user : T.UID) : async T.Price {
+    callValidation(caller);
+
       switch (tokensInMarket.get(tokenId)) {
           case (null) {
               throw Error.reject("Token not found in the market");
@@ -192,7 +209,8 @@ actor Marketplace {
   };
 
   // handles reducing token offer from the market
-  public func takeOffSale(tokenId: T.TokenId, quantity: T.TokenAmount, user: T.UID): async () {
+  public shared({ caller }) func takeOffSale(tokenId: T.TokenId, quantity: T.TokenAmount, user: T.UID): async () {
+    callValidation(caller);
 
       switch (tokensInMarket.get(tokenId)) {
           case (null) {
@@ -232,7 +250,7 @@ actor Marketplace {
   };
 
   // Function to delete a user's token from the market
-  public func deleteUserTokenfromMarket(tokenId: T.TokenId, user: T.UID): async () {
+  private func deleteUserTokenfromMarket(tokenId: T.TokenId, user: T.UID): async () {
       switch (tokensInMarket.get(tokenId)) {
           case (null){
               throw Error.reject("Token not found in the market");
@@ -251,7 +269,7 @@ actor Marketplace {
   };
 
   // Function to reduce the total quantity of a token in the market
-  public func reduceTotalQuantity(tokenId: T.TokenId, quantity: T.TokenAmount): async () {
+  private func reduceTotalQuantity(tokenId: T.TokenId, quantity: T.TokenAmount): async () {
       switch (tokensInMarket.get(tokenId)) {
           case (null) {
               throw Error.reject("Token not found in the market");
@@ -274,7 +292,7 @@ actor Marketplace {
   };
 
   // Function to reduce the offer of a token in the market
-  public func reduceOffer(tokenId: T.TokenId, quantity: T.TokenAmount, user: T.UID): async () {
+  private func reduceOffer(tokenId: T.TokenId, quantity: T.TokenAmount, user: T.UID): async () {
       switch (tokensInMarket.get(tokenId)) {
           case (null) {
               throw Error.reject("Token not found in the market");
@@ -368,7 +386,7 @@ actor Marketplace {
   };
 
   // Function to delete a token from the market
-  public func deleteTokensInMarket(tokenId: T.TokenId): async () {
+  private func deleteTokensInMarket(tokenId: T.TokenId): async () {
       tokensInMarket.delete(tokenId);
   };
 };

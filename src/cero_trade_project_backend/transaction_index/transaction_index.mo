@@ -18,8 +18,9 @@ import HttpService "canister:http_service";
 
 // types
 import T "../types";
+import ENV "../env";
 
-shared(init_msg) actor class TransactionIndex(ENVIRONMENT_BRANCH: Text) = this {
+shared({ caller = adminCaller }) actor class TransactionIndex() = this {
   stable let ic : T.IC = actor ("aaaaa-aa");
   private func TransactionsCanister(cid: T.CanisterId): T.TransactionsInterface { actor (Principal.toText(cid)) };
   stable var wasm_array : [Nat] = [];
@@ -41,14 +42,22 @@ shared(init_msg) actor class TransactionIndex(ENVIRONMENT_BRANCH: Text) = this {
     transactionsDirectoryEntries := [];
   };
 
+  private func callValidation(caller: Principal) { assert Principal.fromText(ENV.AGENT_CANISTER_ID) == caller };
+  private func adminValidation(caller: Principal) { assert adminCaller == caller };
+
   /// get size of transactionsDirectory collection
   public query func length(): async Nat { transactionsDirectory.size() };
 
   /// register wasm module to dynamic transactions canister, only admin can run it
   public shared({ caller }) func registerWasmArray(): async() {
-    assert init_msg.caller == caller;
+    adminValidation(caller);
 
-    let wasmModule = await HttpService.get("https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # ENVIRONMENT_BRANCH # "/wasm_modules/transactions.json", { headers = [] });
+    let branch = switch(ENV.DFX_NETWORK) {
+      case("ic") "main";
+      case("local") "develop";
+      case _ throw Error.reject("No DFX_NETWORK provided");
+    };
+    let wasmModule = await HttpService.get("https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # branch # "/wasm_modules/transactions.json", { headers = [] });
 
     let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
     wasm_array := Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
@@ -61,7 +70,9 @@ shared(init_msg) actor class TransactionIndex(ENVIRONMENT_BRANCH: Text) = this {
 
   /// returns true if canister have storage memory,
   /// false if havent enough
-  public func checkMemoryStatus() : async Bool {
+  public shared({ caller }) func checkMemoryStatus() : async Bool {
+    adminValidation(caller);
+
     let status = switch(currentCanisterid) {
       case(null) throw Error.reject("Cant find transactions canisters registered");
       case(?cid) await ic.canister_status({ canister_id = cid });
@@ -105,7 +116,9 @@ shared(init_msg) actor class TransactionIndex(ENVIRONMENT_BRANCH: Text) = this {
   };
 
   /// register [transactionsDirectory] collection
-  public func registerTransaction(txInfo: T.TransactionInfo) : async T.TransactionId {
+  public shared({ caller }) func registerTransaction(txInfo: T.TransactionInfo) : async T.TransactionId {
+    callValidation(caller);
+
     try {
       let errorText = "Error generating canister";
 
@@ -144,7 +157,9 @@ shared(init_msg) actor class TransactionIndex(ENVIRONMENT_BRANCH: Text) = this {
   };
 
 
-  public func getRedemptions(txIds: [T.TransactionId]) : async [T.TransactionInfo] {
+  public shared({ caller }) func getRedemptions(txIds: [T.TransactionId]) : async [T.TransactionInfo] {
+    callValidation(caller);
+
     let txs = Buffer.Buffer<T.TransactionInfo>(100);
 
     Debug.print(debug_show ("before getRedemptions: " # Nat.toText(Cycles.balance())));

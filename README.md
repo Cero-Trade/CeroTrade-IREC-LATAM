@@ -36,21 +36,11 @@ cp src/declarations/http_service/* .dfx/local/canisters/http_service/
 
 Deploy canisters
 
-`
-dfx deploy token_index --argument develop
-dfx deploy user_index --argument develop
-dfx deploy transaction_index --argument develop
-dfx deploy
-`
+`dfx deploy`
 
 To deploy only backend canisters run
 
-`
-dfx deploy token_index --argument develop
-dfx deploy user_index --argument develop
-dfx deploy transaction_index --argument develop
-dfx deploy agent
-`
+`dfx deploy agent`
 
 ### Generate wasm modules (Note: only cero-devs)
 ```
@@ -61,28 +51,29 @@ dfx build users
 dfx canister create transactions
 dfx build transactions
 ```
-To generate the wasm module like array run command below
+
+Generate the wasm module like array run command below
 
 Note: must to add package.json field -> "type": "module",
+```
+npm run generate-wasm -- module=token
+npm run generate-wasm -- module=users
+npm run generate-wasm -- module=transactions
+```
 
-Provide respective MODULE_NAME in argument
-`npm run generate-wasm -- module={MODULE_NAME}`
-
-Later push the current ./wasm_modules commit folder to github
-`
+Push the current ./wasm_modules commit folder to github
+```
 git add ./wasm_modules
 git commit -am "config/new-wasm-modules"
 git push
-`
+```
 
-
-To register wasm module into backend canisters must to run:
-
-`
+Register wasm module into backend canisters by run:
+```
 dfx canister call token_index registerWasmArray
 dfx canister call user_index registerWasmArray
 dfx canister call transaction_index registerWasmArray
-`
+```
 
 ### Deploying token canisters
 `dfx canister call token_index registerToken '("token_id")'`

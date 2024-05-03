@@ -41,6 +41,21 @@ export default defineConfig((userConfig) => {
     }), {},
   )
 
+
+  // Generate motoko env file
+  const uniqueEnv = {};
+  for (let key in env) {
+    let upperKey = key.toUpperCase();
+    if (upperKey.includes('DFX') || upperKey.includes('CANISTER') || upperKey.includes('VITE'))
+      uniqueEnv[upperKey] = env[key];
+  }
+
+  let declarations = 'module {\n';
+  for (let key in uniqueEnv) declarations += `  public let ${key}: Text = "${uniqueEnv[key]}";\n`;
+  declarations += '}';
+  fs.writeFile('src/cero_trade_project_backend/env.mo', declarations, () => {});
+
+
   return {
     base: env.VITE_BASE_URL,
     plugins: [
