@@ -64,7 +64,7 @@ npm run generate-wasm -- module=transactions
 Push the current ./wasm_modules commit folder to github
 ```
 git add ./wasm_modules
-git commit -am "config/new-wasm-modules"
+git commit -m "config/new-wasm-modules"
 git push
 ```
 
