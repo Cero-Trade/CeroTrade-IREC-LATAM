@@ -5,7 +5,6 @@ export interface TokenModel {
   totalAmount: number;
   inMarket: number;
   assetInfo: AssetInfoModel;
-  status: TokenStatus;
 }
 
 export type AssetType = "hydro"|"ocean"|"geothermal"|"biome"|"wind"|"sun"|"other";

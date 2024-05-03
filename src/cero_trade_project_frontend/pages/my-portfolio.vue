@@ -49,27 +49,6 @@
       </v-col>
     </v-row>
 
-    <v-row>
-      <v-col xl="6" lg="6" cols="12">
-        <!-- TODO apply filters -->
-        <v-tabs
-          v-model="tabsWindow"
-          bg-color="transparent"
-          color="basil"
-          class="mt-6"
-        >
-          <v-tab
-            v-for="(item, key, i) in statuses" :key="i"
-            :value="i"
-            class="tab-btn"
-            style="border: none!important; border-bottom: 2px solid rgba(0,0,0,0.25)!important; border-radius: 0px!important; text-transform: capitalize;"
-          >
-            {{ key }}
-          </v-tab>
-        </v-tabs>
-      </v-col>
-    </v-row>
-
     <div class="divrow jspace mt-4">
       <div class="divrow" style="gap: 15px;">
         <v-btn class="btn">
@@ -91,7 +70,7 @@
         <v-data-table
         v-model:items-per-page="itemsPerPage"
         :headers="headers"
-        :items="dataPortfolioFiltered"
+        :items="dataPortfolio"
         class="mt-6 my-data-table"
         density="compact"
         >
@@ -127,19 +106,12 @@
               {{ item.country }}
             </span>
           </template>
-
-          <template #[`item.status`]="{ item }">
-            <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-              <img :src="statuses[item.status]" :alt="`${item.status} icon`" style="width: 20px;">
-              {{ item.status }}
-            </span>
-          </template>
         </v-data-table>
       </v-window-item>
 
       <v-window-item :value="2" class="pa-2">
         <v-row class="mt-6">
-          <v-col v-for="(item,index) in dataPortfolioFiltered" :key="index" xl="3" lg="3" md="4" sm="6" cols="12">
+          <v-col v-for="(item,index) in dataPortfolio" :key="index" xl="3" lg="3" md="4" sm="6" cols="12">
             <v-card class="card cards-marketplace">
               <div class="divrow jspace acenter mb-6">
                 <div class="divrow center" style="gap: 5px;">
@@ -176,13 +148,6 @@
                 <span class="d-flex flex-acenter mr-1" style="color: #475467;">
                   <img src="@/assets/sources/icons/lightbulb.svg" alt="lightbulb icon" style="width: 20px">
                 {{ item.mwh }}</span>
-              </div>
-
-              <div class="jspace divrow mb-1">
-                <span>Status</span>
-                <span style="color: #475467;" class="acenter text-capitalize">
-                  <img :src="statuses[item.status]" alt="icon" class="mr-1" style="width: 20px;"> {{ item.status }}
-                </span>
               </div>
             </v-card>
           </v-col>
@@ -231,13 +196,6 @@ energies = {
 countries = {
   chile: ChileIcon
 },
-statuses = {
-  'all': null,
-  'not for sale': WalletIcon,
-  'for sale': TokenizedIcon,
-  sold: TokenizedIcon,
-  redeemed: RedeemedIcon
-},
 
 headers = [
   { title: 'Token ID', key: 'token_id', sortable: false, align: "center" },
@@ -284,15 +242,6 @@ totalMwh = computed(() => {
   if (!series.value) return 0
   const data = series.value[0].data
   return data.reduce((acc, item) => acc + item, 0)
-}),
-dataPortfolioFiltered = computed(() => {
-  let marketplace = dataPortfolio.value;
-
-  const status = Object.keys(statuses)[tabsWindow.value];
-
-  if (tabsWindow.value != 0) marketplace = marketplace.filter(e => e.status == status)
-
-  return marketplace
 })
 
 

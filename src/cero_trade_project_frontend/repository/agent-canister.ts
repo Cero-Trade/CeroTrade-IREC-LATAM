@@ -3,10 +3,9 @@ import { useAgentCanister as agent, getErrorMessage } from "@/services/icp-provi
 import avatar from '@/assets/sources/images/avatar-online.svg'
 import store from "@/store";
 import { UserProfileModel } from "@/models/user-profile-model";
-import { AssetType, TokenModel, TokenStatus } from "@/models/token-model";
+import { AssetType, TokenModel } from "@/models/token-model";
 import { TransactionInfo, TxType } from "@/models/transaction-model";
 import { MarketplaceInfo } from "@/models/marketplace-model";
-import { IDL } from "@dfinity/candid";
 
 export class AgentCanister {
   static async register(data: {
@@ -102,7 +101,6 @@ export class AgentCanister {
       const response = await agent().getPortfolio() as {tokensInfo: TokenModel[], tokensRedemption: TransactionInfo[]}
 
       for (const item of response.tokensInfo) {
-        item.status = Object.values(item.status)[0] as TokenStatus
         // format record value
         item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
         item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
@@ -132,7 +130,6 @@ export class AgentCanister {
       const token = await agent().getSinglePortfolio(tokenId) as TokenModel
 
       // format record value
-      token.status = Object.values(token.status)[0] as TokenStatus
       token.assetInfo.volumeProduced = Number(token.assetInfo.volumeProduced)
       token.totalAmount = Number(token.totalAmount)
       token.inMarket = Number(token.inMarket)
@@ -159,7 +156,6 @@ export class AgentCanister {
       const token = await agent().getTokenDetails(tokenId) as TokenModel
 
       // format record value
-      token.status = Object.values(token.status)[0] as TokenStatus
       token.assetInfo.volumeProduced = Number(token.assetInfo.volumeProduced)
       token.totalAmount = Number(token.totalAmount)
       token.inMarket = Number(token.inMarket)

@@ -75,7 +75,6 @@ actor class Token(_tokenId: ?T.TokenId) = this {
       assetInfo = await getAssetInfo();
       totalAmount = mintedAmount;
       inMarket;
-      status = #forSale("for sale")
     });
   };
 
@@ -98,7 +97,6 @@ actor class Token(_tokenId: ?T.TokenId) = this {
       assetInfo = await getAssetInfo();
       totalAmount = burnedAmount;
       inMarket;
-      status = #forSale("for sale")
     });
   };
 
@@ -122,7 +120,6 @@ actor class Token(_tokenId: ?T.TokenId) = this {
       assetInfo = await getAssetInfo();
       totalAmount = burnedAmount;
       inMarket;
-      status = #forSale("for sale")
     });
 
 
@@ -140,7 +137,6 @@ actor class Token(_tokenId: ?T.TokenId) = this {
       assetInfo = await getAssetInfo();
       totalAmount = mintedAmount;
       inMarket;
-      status = #forSale("for sale")
     });
   };
 

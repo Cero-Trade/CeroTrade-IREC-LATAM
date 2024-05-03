@@ -130,7 +130,6 @@ actor Agent {
         totalAmount = 0;
         inMarket;
         assetInfo;
-        status = #forSale("for sale");
       }
     }
   };

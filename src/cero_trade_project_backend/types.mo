@@ -52,19 +52,11 @@ module {
     profile: Text;
   };
 
-  public type TokenStatus = {
-    #redeemed: Text;
-    #sold: Text;
-    #forSale: Text;
-    #notForSale: Text;
-  };
-
   public type TokenInfo = {
     tokenId: TokenId;
     totalAmount: TokenAmount;
     inMarket: TokenAmount;
     assetInfo: AssetInfo;
-    status: TokenStatus
   };
   
   // public type RedemInfo = {
