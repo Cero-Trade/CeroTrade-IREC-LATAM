@@ -68,6 +68,8 @@ git commit -m "config/new-wasm-modules"
 git push
 ```
 
+### Register wasm modules
+
 Register wasm module into backend canisters by run:
 ```
 dfx canister call token_index registerWasmArray
