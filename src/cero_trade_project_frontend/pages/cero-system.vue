@@ -61,7 +61,7 @@ mintForm = ref({
 
 onBeforeMount(() => {
   if (AuthClientApi.getPrincipal().toString() !== process.env.CERO_ADMIN)
-    return toast.error("you are not admin user")
+    return toast.error("You are not admin user")
     // return router.back()
 })
 
