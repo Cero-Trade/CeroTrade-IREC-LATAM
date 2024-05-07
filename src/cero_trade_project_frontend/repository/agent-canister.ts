@@ -5,7 +5,7 @@ import store from "@/store";
 import { UserProfileModel } from "@/models/user-profile-model";
 import { AssetType, TokenModel } from "@/models/token-model";
 import { TransactionInfo, TxType } from "@/models/transaction-model";
-import { MarketplaceInfo } from "@/models/marketplace-model";
+import { MarketplaceInfo, MarketplaceSellersInfo } from "@/models/marketplace-model";
 
 export class AgentCanister {
   static async register(data: {
@@ -71,12 +71,8 @@ export class AgentCanister {
 
   static async getProfile(): Promise<UserProfileModel> {
     try {
-      const { companyLogo, profile } = await agent().getProfile() as { companyLogo: number[], profile: string },
-      profileData = JSON.parse(profile),
-      userProfile = {
-        companyLogo: getUrlFromArrayBuffer(companyLogo) || avatar,
-        ...profileData
-      }
+      const userProfile = await agent().getProfile() as UserProfileModel
+      userProfile.companyLogo = getUrlFromArrayBuffer(userProfile.companyLogo) || avatar
 
       store.commit('setProfile', userProfile)
       return userProfile
@@ -116,6 +112,7 @@ export class AgentCanister {
       for (const item of response.tokensRedemption) {
         item.txType = Object.values(item.txType)[0] as TxType
         item.to = Object.values(item.to)[0] as string
+        item.tokenAmount = Number(item.tokenAmount)
       }
 
       return response
@@ -177,18 +174,76 @@ export class AgentCanister {
   }
 
 
-  static async getMarketplace(): Promise<MarketplaceInfo[]> {
-    try {
-      const response = await agent().getMarketplace() as MarketplaceInfo[]
+  static async getMarketplace({ page, length, assetTypes, country, priceRange }: {
+    page?: number,
+    length?: number,
+    assetTypes?: string[],
+    country?: string,
+    priceRange?: number[],
+  }): Promise<{ data: MarketplaceInfo[], totalPages: number }> {
+    assetTypes ??= []
+    priceRange ??= []
 
-      for (const item of response) {
+    try {
+      const response = await agent().getMarketplace(
+        page ? [page] : [],
+        length ? [length] : [],
+        assetTypes.length ? [assetTypes.map(energy => ({ [energy]: energy }))] : [],
+        country ? [country] : [],
+        priceRange.length ? [priceRange.map(price => ({ e8s: price }))] : [],
+      ) as { data: MarketplaceInfo[], totalPages: number }
+
+      for (const item of response.data) {
         // format record value
-        item.lowerPriceICP = Number(item.lowerPriceICP['e8s'])
-        item.higherPriceICP = Number(item.higherPriceICP['e8s'])
         item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
         item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
         item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
+        item.mwh = Number(item.mwh)
       }
+
+      response.totalPages = Number(response.totalPages)
+
+      return response
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+
+  static async getMarketplaceSellers({ page, length, tokenId, country, companyName, priceRange, excludeCaller }: {
+    page?: number,
+    length?: number,
+    tokenId?: string,
+    country?: string,
+    companyName?: string,
+    priceRange?: number[],
+    excludeCaller: boolean,
+  }): Promise<{ data: MarketplaceSellersInfo[], totalPages: number }> {
+    priceRange ??= []
+    excludeCaller ??= false
+
+    try {
+      const response = await agent().getMarketplaceSellers(
+        page ? [page] : [],
+        length ? [length] : [],
+        tokenId ? [tokenId] : [],
+        country ? [country] : [],
+        companyName ? [companyName] : [],
+        priceRange.length ? [priceRange.map(price => ({ e8s: price }))] : [],
+        excludeCaller,
+      ) as { data: MarketplaceSellersInfo[], totalPages: number }
+
+      for (const item of response.data) {
+        // format record value
+        item.mwh = Number(item.mwh)
+        item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
+        item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
+        item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
+        item.userProfile.companyLogo = getUrlFromArrayBuffer(item.userProfile.companyLogo) || avatar
+      }
+
+      response.totalPages = Number(response.totalPages)
 
       return response
     } catch (error) {

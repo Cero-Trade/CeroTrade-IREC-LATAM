@@ -11,7 +11,6 @@ import Nat64 "mo:base/Nat64";
 import Iter "mo:base/Iter";
 import Buffer "mo:base/Buffer";
 import Result "mo:base/Result";
-import Serde "mo:serde";
 import Debug "mo:base/Debug";
 
 // canisters

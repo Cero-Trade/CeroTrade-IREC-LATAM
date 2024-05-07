@@ -11,7 +11,7 @@
     <div class="divrow jspace">
       <div class="divrow" style="gap: 15px;">
 
-        <v-btn class="btn">
+        <v-btn class="btn" @click="dialogFilters = true">
           <img src="@/assets/sources/icons/filter-lines.svg" alt="filter-lines icon">
           Add filter
         </v-btn>
@@ -29,10 +29,18 @@
       <v-window-item :value="1">
         <v-data-table
         v-model:items-per-page="itemsPerPage"
+        :items-per-page-options="[
+          {value: 10, title: '10'},
+          {value: 25, title: '25'},
+          {value: 50, title: '50'},
+        ]"
         :headers="headers"
         :items="dataMarketplace"
+        :items-length="totalPages"
+        :loading="loading"
         class="mt-6 my-data-table"
         density="compact"
+        @update:options="getData"
         >
           <template #[`item.token_id`]="{ item }">
             <span class="acenter bold" style="color: #475467;">
@@ -55,7 +63,7 @@
 
           <template #[`item.country`]="{ item }">
             <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-              <img :src="countries[item.country]" :alt="`${item.country} Icon`" style="width: 20px;">
+              <img :src="countriesImg[item.country]" :alt="`${item.country} Icon`" style="width: 20px;">
               {{ item.country }}
             </span>
           </template>
@@ -74,9 +82,21 @@
           </template>
         </v-data-table>
       </v-window-item>
+
+
       <v-window-item :value="2" class="pa-2">
         <v-row class="mt-6">
-          <v-col v-for="(item,index) in dataMarketplace" :key="index" xl="3" lg="3" md="4" sm="6" cols="12">
+          <v-progress-circular
+            v-if="loading"
+            indeterminate
+            size="60"
+            color="rgb(var(--v-theme-primary))"
+            class="mx-auto my-16"
+          ></v-progress-circular>
+
+          <span v-else-if="!dataMarketplace.length" class="text-center mx-auto my-16">No data available</span>
+
+          <v-col v-else v-for="(item,index) in dataMarketplace" :key="index" xl="3" lg="3" md="4" sm="6" cols="12">
             <v-card class="card cards-marketplace">
               <div class="divrow jspace acenter mb-6">
                 <div class="divcol astart" style="gap: 5px;">
@@ -105,7 +125,7 @@
               <div class="jspace divrow mb-1">
                 <span>Country</span>
                 <span style="color: #475467;" class="acenter text-capitalize">
-                  <img :src="countries[item.country]" alt="icon" class="mr-1" style="width: 20px;"> {{ item.country }}
+                  <img :src="countriesImg[item.country]" alt="icon" class="mr-1" style="width: 20px;"> {{ item.country }}
                 </span>
               </div>
 
@@ -125,11 +145,92 @@
         </v-row>
       </v-window-item>
     </v-window>
+
+
+    <v-pagination
+      v-model="currentPage"
+      :length="totalPages"
+      :disabled="loading"
+      class="mt-4"
+      @update:model-value="getData()"
+    ></v-pagination>
+
+
+
+    <!-- Dialog Filters -->
+    <v-dialog v-model="dialogFilters" persistent width="100%" min-width="290" max-width="500">
+      <v-card class="card dialog-card-detokenize d-flex flex-column" style="min-width: 100% !important">
+        <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="dialogFilters = false">
+
+        <div class="d-flex mb-2 align-center" style="gap: 10px">
+          <v-sheet class="double-sheet">
+            <v-sheet>
+              <img src="@/assets/sources/icons/filter-lines.svg" alt="filter-lines icon" style="width: 22px">
+            </v-sheet>
+          </v-sheet>
+
+          <h6 class="mb-0">Filters</h6>
+        </div>
+
+
+        <v-btn
+          class="btn mb-4 ml-auto"
+          style="background-color: #fff !important; width: max-content !important"
+          @click="Object.keys(filters).forEach(e => filters[e] = null)"
+        >clear all</v-btn>
+
+        <v-autocomplete
+          v-model="filters.country"
+          :items="countries"
+          variant="outlined"
+          flat elevation="0"
+          item-title="name"
+          item-value="name"
+          label="country"
+          class="select mb-4"
+        ></v-autocomplete>
+
+        <v-range-slider
+          id="price-range"
+          v-model="filters.priceRange"
+          :min="0"
+          :max="1000"
+          :step="1"
+          variant="solo"
+          elevation="0"
+          label="Price range"
+          :thumb-label="filters.priceRange ? 'always' : false"
+          class="align-center mt-3"
+        ></v-range-slider>
+
+        <label>Asset types</label>
+        <v-chip-group
+          v-model="filters.assetTypes"
+          column
+          multiple
+        >
+          <v-chip
+            v-for="(value, key, i) in energies" :key="i"
+            variant="outlined"
+            rounded="50"
+            filter
+          >
+            <img :src="value" :alt="`${key} energy`" class="mr-2"> {{ key }}
+          </v-chip>
+        </v-chip-group>
+
+        <div class="divrow center mt-6" style="gap: 10px;">
+          <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogFilters = false">Cancel</v-btn>
+          <v-btn class="btn" @click="dialogFilters = false; getData()" style="border: none!important;">Apply</v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script setup>
 import '@/assets/styles/pages/marketplace.scss'
+import countries from '@/assets/sources/json/countries-all.json'
 import HydroEnergyIcon from '@/assets/sources/energies/hydro-color.svg'
 import OceanEnergyIcon from '@/assets/sources/energies/ocean.svg'
 import GeothermalEnergyIcon from '@/assets/sources/energies/geothermal.svg'
@@ -147,7 +248,6 @@ const
   toast = useToast(),
 
 tabsMobile = ref(1),
-itemsPerPage = ref(100),
 windowStep = ref(undefined),
 allItems = ref('All items'),
 items = ref(['All items', 'Items']),
@@ -163,9 +263,16 @@ energies = {
   wind: WindEnergyIcon,
   sun: SolarEnergyIcon,
 },
-countries = {
+countriesImg = {
   chile: ChileIcon
 },
+
+dialogFilters = ref(false),
+filters = ref({
+  country: null,
+  assetTypes: null,
+  priceRange: null,
+}),
 
 headers = [
   { title: 'Asset ID', key: 'token_id', sortable: false },
@@ -177,6 +284,10 @@ headers = [
   { title: 'Actions', key: 'actions', sortable: false, align: 'center'},
 ],
 dataMarketplace = ref([]),
+loading = ref(true),
+currentPage = ref(1),
+itemsPerPage = ref(50),
+totalPages = ref(1),
 
 
 windowStepComputed = computed(() => {
@@ -198,25 +309,42 @@ onBeforeMount(() => {
 
 
 async function getData() {
+  loading.value = true
+
+  // map asset types
+  const assetTypes = []
+  for (const index of filters.value.assetTypes ?? []) assetTypes.push(Object.keys(energies)[index])
+
   try {
-    const marketplace = await AgentCanister.getMarketplace(),
+    // get getMarketplace
+    const { data: marketplace, totalPages: pages } = await AgentCanister.getMarketplace({
+      page: currentPage.value,
+      length: itemsPerPage.value,
+      country: filters.value.country?.toLowerCase(),
+      assetTypes,
+      priceRange: filters.value.priceRange,
+    }),
     list = []
 
+    // build dataMarketplace
     for (const item of marketplace) {
       list.push({
         token_id: item.tokenId,
         energy_source: item.assetInfo.assetType,
         country: item.assetInfo.specifications.country,
-        price: item.lowerPriceICP === item.higherPriceICP ? item.higherPriceICP : `${item.lowerPriceICP} - ${item.higherPriceICP}`,
+        price: item.lowerPriceICP.e8s === item.higherPriceICP.e8s ? item.higherPriceICP.e8s : `${item.lowerPriceICP.e8s} - ${item.higherPriceICP.e8s}`,
         mwh: item.mwh,
         volume: item.assetInfo.volumeProduced,
       })
     }
 
     dataMarketplace.value = list.sort((a, b) => a.token_id - b.token_id)
+    totalPages.value = pages > 5 ? 5 : pages
   } catch (error) {
     toast.error(error)
   }
+
+  loading.value = false
 }
 
 function goDetails({ token_id: tokenId }, input) {

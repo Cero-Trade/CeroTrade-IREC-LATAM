@@ -1,6 +1,7 @@
 import Principal "mo:base/Principal";
 import Error "mo:base/Error";
 import Debug "mo:base/Debug";
+import Cycles "mo:base/ExperimentalCycles";
 import Blob "mo:base/Blob";
 import Text "mo:base/Text";
 import Array "mo:base/Array";
@@ -8,6 +9,7 @@ import Nat "mo:base/Nat";
 import Nat64 "mo:base/Nat64";
 import Float "mo:base/Float";
 import Int64 "mo:base/Int64";
+import Buffer "mo:base/Buffer";
 
 // canisters
 import HttpService "canister:http_service";
@@ -136,16 +138,24 @@ actor Agent {
 
 
   /// get marketplace information
-  public shared({ caller }) func getMarketplace(): async [T.MarketplaceInfo] {
+  public shared({ caller }) func getMarketplace(page: ?Nat, length: ?Nat, assetTypes: ?[T.AssetType], country: ?Text, priceRange: ?[T.Price]): async {
+    data: [T.MarketplaceInfo];
+    totalPages: Nat;
+  } {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
-    let marketInfo: [{
-      tokenId: T.TokenId;
-      mwh: T.TokenAmount;
-      lowerPriceICP: T.Price;
-      higherPriceICP: T.Price;
-    }] = await Marketplace.getMarketplace();
+    Debug.print(debug_show ("before getMarketplace: " # Nat.toText(Cycles.balance())));
+
+    let {
+      data: [{
+        tokenId: T.TokenId;
+        mwh: T.TokenAmount;
+        lowerPriceICP: T.Price;
+        higherPriceICP: T.Price;
+      }] = marketInfo;
+      totalPages: Nat;
+    } = await Marketplace.getMarketplace(page, length, priceRange);
 
     let tokensInfo: [T.AssetInfo] = await TokenIndex.getTokensInfo(Array.map<{
       tokenId: T.TokenId;
@@ -154,9 +164,13 @@ actor Agent {
       higherPriceICP: T.Price;
     }, Text>(marketInfo, func x = x.tokenId));
 
-
     // map market and asset values to marketplace info
-    let marketplace: [T.MarketplaceInfo] = Array.map<{ tokenId: T.TokenId; mwh: T.TokenAmount; lowerPriceICP: T.Price; higherPriceICP: T.Price; }, T.MarketplaceInfo>(marketInfo, func (item) {
+    let marketplace: [T.MarketplaceInfo] = Array.map<{
+      tokenId: T.TokenId;
+      mwh: T.TokenAmount;
+      lowerPriceICP: T.Price;
+      higherPriceICP: T.Price;
+    }, T.MarketplaceInfo>(marketInfo, func (item) {
       let assetInfo = Array.find<T.AssetInfo>(tokensInfo, func (info) { info.tokenId == item.tokenId });
 
       switch (assetInfo) {
@@ -209,7 +223,166 @@ actor Agent {
       };
     });
 
-    marketplace
+    Debug.print(debug_show ("after getMarketplace: " # Nat.toText(Cycles.balance())));
+
+
+    // Apply filters
+    let filteredMarketplace: [T.MarketplaceInfo] = Array.filter<T.MarketplaceInfo>(marketplace, func (item) {
+      // by assetTypes
+      let assetTypeMatches = switch (assetTypes) {
+        case(null) true;
+        case(?assets) {
+          let assetType = Array.find<T.AssetType>(assets, func (assetType) { assetType == item.assetInfo.assetType });
+          assetType != null
+        };
+      };
+
+      // by country
+      let countryMatches = switch (country) {
+        case(null) true;
+        case(?value) item.assetInfo.specifications.country == value;
+      };
+
+      assetTypeMatches and countryMatches;
+    });
+
+    { data = filteredMarketplace; totalPages }
+  };
+
+
+  /// get marketplace sellers information
+  public shared({ caller }) func getMarketplaceSellers(page: ?Nat, length: ?Nat, tokenId: ?T.TokenId, country: ?Text, companyName: ?Text, priceRange: ?[T.Price], excludeCaller: Bool): async {
+    data: [T.MarketplaceSellersInfo];
+    totalPages: Nat;
+  } {
+    // check if user exists
+    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
+
+    Debug.print(debug_show ("before getMarketplaceSellers: " # Nat.toText(Cycles.balance())));
+
+    let excludedCaller: ?T.UID = switch(excludeCaller) {
+      case(false) null;
+      case(true) ?caller;
+    };
+
+    // get market info
+    let {
+      data: [{
+        tokenId: T.TokenId;
+        userId: T.UID;
+        mwh: T.TokenAmount;
+        priceICP: T.Price;
+      }] = marketInfo;
+      totalPages: Nat;
+    } = await Marketplace.getMarketplaceSellers(page, length, tokenId, priceRange, excludedCaller);
+
+    // get users info
+    let usersInfo = Buffer.Buffer<T.UserProfile>(100);
+    for(item in marketInfo.vals()) {
+      usersInfo.add(await UserIndex.getProfile(item.userId));
+    };
+
+    // get tokens info
+    let tokensInfo: [T.AssetInfo] = await TokenIndex.getTokensInfo(Array.map<{
+      tokenId: T.TokenId;
+      userId: T.UID;
+      mwh: T.TokenAmount;
+      priceICP: T.Price;
+    }, Text>(marketInfo, func x = x.tokenId));
+
+
+    // map market and asset values to marketplace info
+    let marketplace: [T.MarketplaceSellersInfo] = Array.map<{
+      tokenId: T.TokenId;
+      userId: T.UID;
+      mwh: T.TokenAmount;
+      priceICP: T.Price;
+    }, T.MarketplaceSellersInfo>(marketInfo, func (item) {
+
+      let assetInfo: T.AssetInfo = switch(Array.find<T.AssetInfo>(tokensInfo, func (info) { info.tokenId == item.tokenId })) {
+        case(null) {
+          /// this case will not occur, just here to can compile
+          {
+            tokenId = item.tokenId;
+            assetType = #hydro("hydro");
+            startDate: Nat64 = 1714419814052;
+            endDate: Nat64 = 1717012111263;
+            co2Emission: Float = 11.22;
+            radioactivityEmnission: Float = 10.20;
+            volumeProduced: T.TokenAmount = 1000;
+            deviceDetails = {
+              name = "machine";
+              deviceType = "type";
+              group = #hydro("hydro");
+              description = "description";
+            };
+            specifications = {
+              deviceCode = "200";
+              capacity: T.TokenAmount = 1000;
+              location = "location";
+              latitude: Float = 0;
+              longitude: Float = 1;
+              address = "address anywhere";
+              stateProvince = "chile";
+              country = "chile";
+            };
+            dates: [Nat64] = [1714419814052, 1717012111263, 1717012111263];
+          }
+        };
+        case(?value) value;
+      };
+
+      let userProfile: T.UserProfile = switch(Array.find<T.UserProfile>(Buffer.toArray(usersInfo), func (user) { Principal.fromText(user.principalId) == item.userId })) {
+        case(null) {
+          /// this case will not occur, just here to can compile
+          {
+            companyLogo: [Nat8] = [];
+            principalId = "";
+            companyId = "";
+            companyName = "";
+            city = "";
+            country = "";
+            address = "";
+            email = "";
+            createdAt = "";
+            updatedAt = "";
+          }
+        };
+        case(?value) value;
+      };
+
+
+      // build MarketplaceSellersInfo object
+      {
+        userProfile;
+        tokenId = item.tokenId;
+        mwh = item.mwh;
+        priceICP = item.priceICP;
+        assetInfo;
+      }
+    });
+
+    Debug.print(debug_show ("after getMarketplaceSellers: " # Nat.toText(Cycles.balance())));
+
+
+    // Apply filters
+    let filteredMarketplace: [T.MarketplaceSellersInfo] = Array.filter<T.MarketplaceSellersInfo>(marketplace, func (item) {
+      // by country
+      let countryMatches = switch (country) {
+        case(null) true;
+        case(?value) item.assetInfo.specifications.country == value;
+      };
+
+      // by company name
+      let compantNameMatches = switch (companyName) {
+        case(null) true;
+        case(?value) Text.contains(item.userProfile.companyName, #text value);
+      };
+
+      compantNameMatches and countryMatches;
+    });
+
+    { data = filteredMarketplace; totalPages }
   };
 
 

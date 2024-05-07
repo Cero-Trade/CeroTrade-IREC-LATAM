@@ -8,7 +8,6 @@ import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
 import Iter "mo:base/Iter";
 import Error "mo:base/Error";
-import Serde "mo:serde";
 import Debug "mo:base/Debug";
 import List "mo:base/List";
 import Buffer "mo:base/Buffer";

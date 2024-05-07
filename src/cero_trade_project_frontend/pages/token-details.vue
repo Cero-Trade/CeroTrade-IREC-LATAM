@@ -1,5 +1,3 @@
-<!-- TODO performe validations -->
-
 <template>
   <div id="token-details">
     <span class="mb-10 acenter" style="color: #475467; font-size: 16px; font-weight: 700;">
@@ -12,7 +10,7 @@
     <h3 class="acenter mb-4">
       <company-logo
         :energy-src="energies[tokenDetail?.assetInfo.assetType]"
-        :country-src="countries[tokenDetail?.assetInfo.specifications.country]"
+        :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
         class="mr-4"
       ></company-logo>
       Asset # {{ tokenId }}
@@ -197,26 +195,41 @@
           </v-col>
 
           <v-col cols="12">
-            <h5 class="bold">Other sellers</h5>
+            <div class="flex-space-center mb-4" style="gap: 10px">
+              <h5 class="bold mb-0">Sellers</h5>
+
+              <v-btn class="btn" @click="dialogFilters = true">
+                <img src="@/assets/sources/icons/filter-lines.svg" alt="filter-lines icon">
+                Add filter
+              </v-btn>
+            </div>
 
             <v-data-table
             v-model:items-per-page="itemsPerPage"
+            :items-per-page-options="[
+              {value: 10, title: '10'},
+              {value: 25, title: '25'},
+              {value: 50, title: '50'},
+            ]"
             :headers="headers"
             :items="dataMarketplace"
-            items-per-page="-1"
+            :items-length="totalPages"
+            :loading="loadingMarketplace"
             class="my-data-table deletemobile"
             density="compact"
+            @update:options="getMarketPlace()"
             >
-              <template #[`item.token_id`]="{ item }">
-                <span class="acenter bold" style="color: #475467;">
-                  {{ item.token_id }} 
-                </span>
-              </template>
-
-              <template #[`item.energy_source`]="{ item }">
+              <template #[`item.company`]="{ item }">
                 <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-                  <img :src="energies[item.energy_source]" :alt="`${item.energy_source} icon`" style="width: 20px;">
-                  {{ item.energy_source }}
+                  <v-img-load
+                    :src="item.userProfile.companyLogo"
+                    :alt="`${item.userProfile.companyName} logo`"
+                    rounded="50%"
+                    sizes="20px"
+                    class="flex-grow-0"
+                    cover
+                  />
+                  {{ item.userProfile.companyName }}
                 </span>
               </template>
 
@@ -228,7 +241,7 @@
 
               <template #[`item.country`]="{ item }">
                 <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-                  <img :src="countries[item.country]" :alt="`${item.country} Icon`" style="width: 20px;">
+                  <img :src="countriesImg[item.country]" :alt="`${item.country} Icon`" style="width: 20px;">
                   {{ item.country }}
                 </span>
               </template>
@@ -241,58 +254,71 @@
               </template>
 
               <template #[`item.actions`]="{ item }">
-                <v-chip @click="goDetails(item)" color="white" class="chip-table mr-1" style="border-radius: 10px!important;">
-                  <img src="@/assets/sources/icons/wallet.svg" alt="wallet">
+                <v-chip @click="selectSeller(item)" color="white" class="chip-table mr-1" style="border-radius: 10px!important;">
+                  <span style="color: #000 !important; font-size: 12px !important">Buy</span>
                 </v-chip>
               </template>
             </v-data-table>
-          </v-col>
 
-          <v-col v-for="(item,index) in dataMarketplace" :key="index" xl="3" lg="3" md="4" sm="6" cols="12" class="showmobile">
-            <v-card class="card cards-marketplace">
-              <div class="divrow jspace acenter mb-6">
-                <div class="divcol astart" style="gap: 5px;">
-                  <span style="color: #475467;">Asset id</span>
-                  <h6 class="mb-0 font700">{{ item.token_id }}</h6>
+
+            <v-progress-circular
+              v-if="loadingMarketplace"
+              indeterminate
+              size="60"
+              color="rgb(var(--v-theme-primary))"
+              class="showmobile mx-auto my-16"
+            ></v-progress-circular>
+
+            <span v-else-if="!dataMarketplace.length" class="text-center my-16 showmobile">No data available</span>
+
+            <v-col v-else v-for="(item,index) in dataMarketplace" :key="index" xl="3" lg="3" md="4" sm="6" cols="12" class="showmobile">
+              <v-card class="card cards-marketplace">
+                <div class="divrow jspace acenter mb-6">
+                  <span class="text-capitalize flex-acenter" style="gap: 5px; font-size: 15px !important; text-wrap: nowrap">
+                    <v-img-load
+                      :src="item.userProfile.companyLogo"
+                      :alt="`${item.userProfile.companyName} logo`"
+                      rounded="50%"
+                      sizes="30px"
+                      class="flex-grow-0"
+                      cover
+                    />
+                    {{ item.userProfile.companyName }}
+                  </span>
+
+                  <v-btn class="btn" @click="selectSeller(item)">
+                    Buy
+                  </v-btn>
                 </div>
 
-                <v-btn class="btn" @click="goDetails(item)">
-                  <img src="@/assets/sources/icons/wallet.svg" alt="wallet">
-                </v-btn>
-              </div>
+                <div class="jspace divrow mb-1">
+                  <span>Price</span>
+                  <span style="color: #475467;">{{ item.currency }} {{ item.price }}</span>
+                </div>
 
-              <div class="jspace divrow mb-1">
-                <span>Price</span>
-                <span style="color: #475467;">{{ item.currency }} {{ item.price }}</span>
-              </div>
+                <div class="jspace divrow mb-1">
+                  <span>Country</span>
+                  <span style="color: #475467;" class="acenter text-capitalize">
+                    <img :src="countriesImg[item.country]" alt="icon" class="mr-1" style="width: 20px;"> {{ item.country }}
+                  </span>
+                </div>
 
-              <div class="jspace divrow mb-1">
-                <span>Energy source</span>
-                <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap; color: #475467;">
-                  <img :src="energies[item.energy_source]" :alt="`${item.energy_source} icon`" style="width: 20px;">
-                  {{ item.energy_source }}
-                </span>
-              </div>
+                <div class="jspace divrow mb-1">
+                  <span>MWh</span>
+                  <span class="d-flex flex-acenter mr-1" style="color: #475467;">
+                    <img src="@/assets/sources/icons/lightbulb.svg" alt="lightbulb icon" style="width: 20px">
+                  {{ item.mwh }}</span>
+                </div>
+              </v-card>
+            </v-col>
 
-              <div class="jspace divrow mb-1">
-                <span>Country</span>
-                <span style="color: #475467;" class="acenter text-capitalize">
-                  <img :src="countries[item.country]" alt="icon" class="mr-1" style="width: 20px;"> {{ item.country }}
-                </span>
-              </div>
-
-              <div class="jspace divrow mb-1">
-                <span>MWh</span>
-                <span class="d-flex flex-acenter mr-1" style="color: #475467;">
-                  <img src="@/assets/sources/icons/lightbulb.svg" alt="lightbulb icon" style="width: 20px">
-                {{ item.mwh }}</span>
-              </div>
-
-              <div class="jspace divrow mb-1">
-                <span>Volume</span>
-                <span style="color: #475467;">{{ item.volume }}</span>
-              </div>
-            </v-card>
+            <v-pagination
+              v-model="currentPage"
+              :length="totalPages"
+              :disabled="loadingMarketplace"
+              class="mt-4"
+              @update:model-value="getMarketPlace()"
+            ></v-pagination>
           </v-col>
         </v-row>
       </v-col>
@@ -407,7 +433,7 @@
             <h5 class="acenter mb-0 bold h5-mobile">
               <company-logo
                 :energy-src="energies[tokenDetail?.assetInfo.assetType]"
-                :country-src="countries[tokenDetail?.assetInfo.specifications.country]"
+                :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
                 class="mr-4"
               ></company-logo>
               #{{ tokenId }}
@@ -425,7 +451,7 @@
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Country</span>
             <span class="flex-center" style="gap: 5px">
-              <img :src="countries[tokenDetail?.assetInfo.specifications.country]" :alt="`${tokenDetail?.assetInfo.specifications.country} flag`">
+              <img :src="countriesImg[tokenDetail?.assetInfo.specifications.country]" :alt="`${tokenDetail?.assetInfo.specifications.country} flag`">
               {{ tokenDetail?.assetInfo.specifications.country }}
             </span>
           </div>
@@ -500,7 +526,7 @@
               <h5 class="acenter h5-mobile">
                 <company-logo
                   :energy-src="energies[tokenDetail?.assetInfo.assetType]"
-                  :country-src="countries[tokenDetail?.assetInfo.specifications.country]"
+                  :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
                   class="mr-4"
                 ></company-logo>
                 #{{ tokenId }}
@@ -518,7 +544,7 @@
             <div class="jspace divrow mb-1">
               <span style="color: #475467;">Country</span>
               <span class="flex-center" style="gap: 5px">
-                <img :src="countries[tokenDetail?.assetInfo.specifications.country]" :alt="`${tokenDetail?.assetInfo.specifications.country} flag`">
+                <img :src="countriesImg[tokenDetail?.assetInfo.specifications.country]" :alt="`${tokenDetail?.assetInfo.specifications.country} flag`">
                 {{ tokenDetail?.assetInfo.country }}
               </span>
             </div>
@@ -671,7 +697,7 @@
             <h5 class="acenter mb-0 bold h5-mobile">
               <company-logo
                 :energy-src="energies[tokenDetail?.assetInfo.assetType]"
-                :country-src="countries[tokenDetail?.assetInfo.specifications.country]"
+                :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
                 class="mr-4"
               ></company-logo>
               #{{ tokenId }}
@@ -696,7 +722,7 @@
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Country</span>
             <span class="flex-center" style="gap: 5px">
-              <img :src="countries[tokenDetail?.assetInfo.specifications.country]" :alt="`${tokenDetail?.assetInfo.country} flag`">
+              <img :src="countriesImg[tokenDetail?.assetInfo.specifications.country]" :alt="`${tokenDetail?.assetInfo.country} flag`">
               {{ tokenDetail?.assetInfo.country }}
             </span>
           </div>
@@ -727,45 +753,74 @@
           <h6>Choose seller</h6>
           <span class="tertiary">This is a list of all sellers of this tokenized asset.</span>
 
-          <div class="d-flex" style="gap: 20px">
-            <v-select
-              v-model="sellerSelected"
-              :items="['Sphere']"
-              variant="outline"
-              flat
-              menu-icon=""
-              class="select mb-4"
-              bg-color="#ffffff"
-              density="compact"
-              :rules="[globalRules.required]"
-              @update:model-value="(value) => {
-                tokenPrice = 10
-              }"
-            >
-              <template #append-inner="{ isFocused }">
-                <img
-                  src="@/assets/sources/icons/chevron-down.svg"
-                  alt="chevron-down icon"
-                  :style="`transform: ${isFocused.value ? 'rotate(180deg)' : 'none'};`"
-                >
-              </template>
-            </v-select>
-            
-            <div class="divcol" style="gap: 10px;">
-              <label class="text-end">Price</label>
-              <h6>{{ tokenPrice ?? 0 }} ICP</h6>
-            </div>
-          </div>
+          <v-btn class="btn ml-auto my-3" style="max-width: max-content !important" @click="dialogFilters = true">
+            <img src="@/assets/sources/icons/filter-lines.svg" alt="filter-lines icon">
+            Add filter
+          </v-btn>
 
-          <div class="divrow center mt-6" style="gap: 10px;">
-            <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogChooseSeller = false">Cancel</v-btn>
-            <v-btn class="btn" @click="async () => {
-              if (!(await formChooseSeller.validate()).valid) return
+          <v-data-table
+          v-model:items-per-page="itemsPerPage"
+          :items-per-page-options="[
+            {value: 10, title: '10'},
+            {value: 25, title: '25'},
+            {value: 50, title: '50'},
+          ]"
+          :headers="headers"
+          :items="dataMarketplace"
+          :items-length="totalPages"
+          :loading="loadingMarketplace"
+          class="my-data-table deletemobile"
+          density="compact"
+          @update:options="getMarketPlace"
+          >
+            <template #[`item.company`]="{ item }">
+              <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
+                <v-img-load
+                  :src="item.userProfile.companyLogo"
+                  :alt="`${item.userProfile.companyName} logo`"
+                  rounded="50%"
+                  sizes="20px"
+                  class="flex-grow-0"
+                  cover
+                />
+                {{ item.userProfile.companyName }}
+              </span>
+            </template>
 
-              dialogPurchaseReview = true
-              dialogChooseSeller = false;
-            }" style="border: none!important;">Proceed with payment</v-btn>
-          </div>
+            <template #[`item.price`]="{ item }">
+              <span class="divrow jspace acenter">
+                {{ item.price }} <v-sheet class="chip-currency bold">{{ item.currency }}</v-sheet>
+              </span>
+            </template>
+
+            <template #[`item.country`]="{ item }">
+              <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
+                <img :src="countriesImg[item.country]" :alt="`${item.country} Icon`" style="width: 20px;">
+                {{ item.country }}
+              </span>
+            </template>
+
+            <template #[`item.mwh`]="{ item }">
+              <span class="divrow acenter">
+                <img src="@/assets/sources/icons/lightbulb.svg" alt="lightbulb icon">
+                {{ item.mwh }}
+              </span>
+            </template>
+
+            <template #[`item.actions`]="{ item }">
+              <v-chip @click="selectSeller(item)" color="white" class="chip-table mr-1" style="border-radius: 10px!important;">
+                <span style="color: #000 !important; font-size: 12px !important">Buy</span>
+              </v-chip>
+            </template>
+          </v-data-table>
+
+          <v-pagination
+            v-model="currentPage"
+            :length="totalPages"
+            :disabled="loadingMarketplace"
+            class="mt-4"
+            @update:model-value="getMarketPlace()"
+          ></v-pagination>
         </v-card>
       </v-form>
     </v-dialog>
@@ -791,7 +846,7 @@
             <h5 class="acenter h5-mobile">
               <company-logo
                 :energy-src="energies[tokenDetail?.assetInfo.assetType]"
-                :country-src="countries[tokenDetail?.assetInfo.specifications.country]"
+                :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
                 class="mr-4"
               ></company-logo>
               #{{ tokenId }}
@@ -880,7 +935,7 @@
             <h5 class="acenter h5-mobile">
               <company-logo
                 :energy-src="energies[tokenDetail?.assetInfo.assetType]"
-                :country-src="countries[tokenDetail?.assetInfo.specifications.country]"
+                :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
                 class="mr-4"
               ></company-logo>
               #{{ tokenId }}
@@ -960,11 +1015,76 @@
         </div>
       </v-card>
     </v-dialog>
+
+
+    <!-- Dialog Filters -->
+    <v-dialog v-model="dialogFilters" persistent width="100%" min-width="290" max-width="500">
+      <v-card class="card dialog-card-detokenize d-flex flex-column" style="min-width: 100% !important">
+        <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="dialogFilters = false">
+
+        <div class="d-flex mb-2 align-center" style="gap: 10px">
+          <v-sheet class="double-sheet">
+            <v-sheet>
+              <img src="@/assets/sources/icons/filter-lines.svg" alt="filter-lines icon" style="width: 22px">
+            </v-sheet>
+          </v-sheet>
+
+          <h6 class="mb-0">Filters</h6>
+        </div>
+
+
+        <v-btn
+          class="btn mb-4 ml-auto"
+          style="background-color: #fff !important; width: max-content !important"
+          @click="Object.keys(filters).forEach(e => filters[e] = null)"
+        >clear all</v-btn>
+
+        <v-autocomplete
+          v-model="filters.country"
+          :items="countries"
+          variant="outlined"
+          flat elevation="0"
+          item-title="name"
+          item-value="name"
+          label="country"
+          class="select mb-4"
+        ></v-autocomplete>
+
+        <v-text-field
+          v-model="filters.companyName"
+          variant="outlined"
+          flat elevation="0"
+          label="company name"
+          class="select"
+        ></v-text-field>
+
+        <v-range-slider
+          id="price-range"
+          v-model="filters.priceRange"
+          :min="0"
+          :max="1000"
+          :step="1"
+          variant="solo"
+          elevation="0"
+          label="Price range"
+          :thumb-label="filters.priceRange ? 'always' : false"
+          class="align-center mt-3"
+          hide-details
+        ></v-range-slider>
+
+
+        <div class="divrow center mt-6" style="gap: 10px;">
+          <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogFilters = false">Cancel</v-btn>
+          <v-btn class="btn" @click="dialogFilters = false; getMarketPlace()" style="border: none!important;">Apply</v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script setup>
 import '@/assets/styles/pages/token-details.scss'
+import countries from '@/assets/sources/json/countries-all.json'
 import Apexchart from "vue3-apexcharts"
 import SphereIcon from '@/assets/sources/companies/sphere.svg'
 import KapidagIcon from '@/assets/sources/companies/kapidag.svg'
@@ -1032,22 +1152,23 @@ energies = {
   wind: WindEnergyIcon,
   sun: SolarEnergyIcon,
 },
-countries = {
+countriesImg = {
   chile: ChileIcon
 },
 tokenDetail = ref(undefined),
 headers = [
-  { title: 'Asset ID', key: 'token_id', sortable: false },
-  { title: 'Energy source', key: 'energy_source', sortable: false },
+  { title: 'Company', key: 'company', sortable: false },
   { title: 'Country', key: 'country', sortable: false },
   { title: 'Price', key: 'price', sortable: false },
   { title: 'MWh', key: 'mwh', sortable: false },
-  { title: 'Volume Produced', key: 'volume', sortable: false },
   { title: 'Actions', key: 'actions', sortable: false, align: 'center'},
 ],
 dataMarketplace = ref([]),
 
-itemsPerPage = 100,
+loadingMarketplace = ref(true),
+currentPage = ref(1),
+itemsPerPage = ref(50),
+totalPages = ref(1),
 dialogTakeOffMarket = ref(false),
 dialogPaymentConfirm = ref(false),
 dialogChooseSeller = ref(false),
@@ -1057,6 +1178,7 @@ dialogRedeemCertificates = ref(false),
 dialogParticipantBenefits = ref(false),
 dialogSellingDetailsReview = ref(false),
 dialogDynamicPrice = ref(false),
+dialogFilters = ref(false),
 itemsCurrency = ref(['USD', 'VES']),
 selectedCurrency = ref('USD'),
 dialogStaticPrice = ref(false),
@@ -1174,13 +1296,23 @@ tokenPrice = ref(null),
 tokenAmount = ref(undefined),
 redeemBeneficiary = ref(undefined),
 
+filters = ref({
+  country: null,
+  companyName: null,
+  priceRange: null,
+}),
+
 
 tokenId = computed(() => route.query.tokenId),
 prevRoutePatch  = computed(() => {
-  const fullPath = router.options.history.state.back,
-  path = fullPath.split('?')[0]
+  try {
+    const fullPath = router.options.history.state.back,
+    path = fullPath.split('?')[0]
 
-  return path.substring(1, path.length).split('-').join(' ')
+    return path.substring(1, path.length).split('-').join(' ')
+  } catch (error) {
+    router.replace('/')
+  }
 })
 
 
@@ -1246,33 +1378,65 @@ onBeforeMount(() => {
 
 async function getData() {
   try {
-    const [checkToken, token, marketplace] = await Promise.allSettled([
+    const [checkToken, token, _] = await Promise.allSettled([
       AgentCanister.checkUserToken(tokenId.value),
       AgentCanister.getTokenDetails(tokenId.value),
-      AgentCanister.getMarketplace(),
+      getMarketPlace()
     ])
 
     haveToken.value = checkToken
     tokenDetail.value = token.value
     seriesOwnedVsProduced.value = [token.value.totalAmount / token.value.assetInfo.volumeProduced || 0]
-
-    const list = []
-    for (const item of marketplace.value) {
-      list.push({
-        token_id: item.tokenId,
-        energy_source: item.assetInfo.assetType,
-        country: item.assetInfo.specifications.country,
-        price: item.lowerPriceICP === item.higherPriceICP ? item.higherPriceICP : `${item.lowerPriceICP} - ${item.higherPriceICP}`,
-        mwh: item.mwh,
-        volume: item.assetInfo.volumeProduced,
-      })
-    }
-
-    dataMarketplace.value = list.sort((a, b) => a.token_id - b.token_id)
   } catch (error) {
     console.error(error);
     toast.error(error)
   }
+}
+
+async function getMarketPlace() {
+  loadingMarketplace.value = true
+
+  try {
+    // get getMarketplaceSellers
+    const marketplace = await AgentCanister.getMarketplaceSellers({
+      tokenId: tokenId.value,
+      length: itemsPerPage.value,
+      country: filters.value.country?.toLowerCase(),
+      companyName: filters.value.companyName,
+      priceRange: filters.value.priceRange,
+      page: currentPage.value,
+      excludeCaller: true,
+    }),
+    list = []
+
+    // build dataMarketplace
+    for (const item of marketplace.data) {
+      list.push({
+        userProfile: item.userProfile,
+        country: item.assetInfo.specifications.country,
+        price: item.priceICP.e8s,
+        mwh: item.mwh,
+      })
+    }
+
+    dataMarketplace.value = list.sort((a, b) => a.token_id - b.token_id)
+    totalPages.value = marketplace.totalPages
+  } catch (error) {
+    console.error(error);
+    toast.error(error)
+  }
+
+  loadingMarketplace.value = false
+}
+
+function selectSeller(item) {
+  if (!amountSelected.value) return toast.warning('Must to choose a quanitty')
+
+  dialogPurchaseReview.value = true
+  dialogChooseSeller.value = false;
+
+  sellerSelected.value = item.userProfile.principalId;
+  tokenPrice.value = item.price;
 }
 
 function showDialog(input) {
@@ -1293,7 +1457,7 @@ function showDialog(input) {
 async function purchaseToken() {
   try {
     showLoader()
-    const tx = await AgentCanister.purchaseToken(tokenId.value, sellerSelected.value, Number(tokenAmount.value), Number(tokenPrice.value))
+    const tx = await AgentCanister.purchaseToken(tokenId.value, sellerSelected.value.toString(), Number(tokenAmount.value), Number(tokenPrice.value))
     await getData()
 
     closeLoader()

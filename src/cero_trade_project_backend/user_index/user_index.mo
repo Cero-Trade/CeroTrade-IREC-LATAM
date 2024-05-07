@@ -272,10 +272,42 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
     };
 
     let token = await UsersCanister(cid).getUserToken(uid);
-    let profile = await HttpService.get(HT.apiUrl # "users/retrieve/" # token, { headers = [] });
+    let profileJson = await HttpService.get(HT.apiUrl # "users/retrieve/" # token, { headers = [] });
     let companyLogo = await UsersCanister(cid).getCompanyLogo(uid);
 
-    { companyLogo; profile; }
+    switch(Serde.JSON.fromText(profileJson, null)) {
+      case(#err(_)) throw Error.reject("cannot serialize profile data");
+
+      case(#ok(blob)) {
+        let profilePart: ?{
+          principalId: Text;
+          companyId: Text;
+          companyName: Text;
+          city: Text;
+          country: Text;
+          address: Text;
+          email: Text;
+          createdAt: Text;
+          updatedAt: Text;
+        } = from_candid(blob);
+
+        switch(profilePart) {
+          case(null) throw Error.reject("cannot serialize profile data");
+          case(?profile) return {
+            companyLogo;
+            principalId = profile.principalId;
+            companyId = profile.companyId;
+            companyName = profile.companyName;
+            city = profile.city;
+            country = profile.country;
+            address = profile.address;
+            email = profile.email;
+            createdAt = profile.createdAt;
+            updatedAt = profile.updatedAt;
+          };
+        };
+      };
+    };
   };
 
 

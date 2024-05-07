@@ -11,3 +11,11 @@
 
 //===================================== global ======================================//
 
+ .hide-footer .v-data-table-footer {
+  display: none !important;
+ }
+
+.v-data-table-footer__info,
+.v-data-table-footer__pagination {
+  display: none !important;
+}

@@ -1,5 +1,3 @@
-<!-- TODO implements flow to sell, redeem and take off -->
-
 <template>
   <div id="my-portfolio">
     <span class="mb-4 acenter" style="color:#475467; font-size: 16px; font-weight: 700;">
@@ -41,7 +39,6 @@
           <h5 >{{ totalMwh }}MWh</h5>
         </v-card>
 
-        <!-- TODO where get this -->
         <v-card class="card card-mwh d-flex flex-column-jcenter flex-grow-1">
           <h6>Redeemed MWh</h6>
           <h5>{{ totalRedeemed }}MWh</h5>
@@ -50,14 +47,15 @@
     </v-row>
 
     <div class="divrow jspace mt-4">
-      <div class="divrow" style="gap: 15px;">
+      <!-- TODO implements filter to portfolio -->
+      <!-- <div class="divrow" style="gap: 15px;">
         <v-btn class="btn">
           <img src="@/assets/sources/icons/filter-lines.svg" alt="filter-lines icon">
           Add filter
         </v-btn>
-      </div>
+      </div> -->
 
-      <div class="divrow jcenter acenter" style="gap: 5px;">
+      <div class="divrow jcenter acenter ml-auto" style="gap: 5px;">
         <v-btn-toggle class="center delete-mobile" rounded="1" v-model="toggle">
           <v-btn class="btn-toggle" @click="windowStep = 1"><img src="@/assets/sources/icons/table-view.svg" alt="Table icon"></v-btn>
           <v-btn class="btn-toggle" @click="windowStep = 2"><img src="@/assets/sources/icons/card-view.svg" alt="Card icon"></v-btn>
@@ -71,7 +69,7 @@
         v-model:items-per-page="itemsPerPage"
         :headers="headers"
         :items="dataPortfolio"
-        class="mt-6 my-data-table"
+        class="mt-6 my-data-table hide-footer"
         density="compact"
         >
           <template #[`item.actions`]="{ item }">

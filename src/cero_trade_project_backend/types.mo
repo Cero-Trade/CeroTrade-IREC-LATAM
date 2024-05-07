@@ -49,7 +49,15 @@ module {
 
   public type UserProfile = {
     companyLogo: CompanyLogo;
-    profile: Text;
+    principalId: Text;
+    companyId: Text;
+    companyName: Text;
+    city: Text;
+    country: Text;
+    address: Text;
+    email: Text;
+    createdAt: Text;
+    updatedAt: Text;
   };
 
   public type TokenInfo = {
@@ -141,6 +149,14 @@ module {
     tokenId: Text;
     lowerPriceICP: Price;
     higherPriceICP: Price;
+    assetInfo: AssetInfo;
+    mwh: TokenAmount;
+  };
+
+  public type MarketplaceSellersInfo = {
+    tokenId: Text;
+    userProfile: UserProfile;
+    priceICP: Price;
     assetInfo: AssetInfo;
     mwh: TokenAmount;
   };

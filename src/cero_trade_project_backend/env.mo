@@ -2,6 +2,7 @@ module {
   public let VITE_BASE_URL: Text = "/";
   public let VITE_SECURE_STORAGE_NAME_SPACE: Text = "cero_trade__";
   public let VITE_SECURE_STORAGE_KEY: Text = "246810";
+  public let VITE_CERO_ADMIN: Text = "xg3d4-4qgwm-hsuv6-5knrn-wfuzg-netgo-vazc5-2htvp-z5lkc-2gskw-nae";
   public let DFX_VERSION: Text = "0.15.2";
   public let DFX_NETWORK: Text = "local";
   public let CANISTER_CANDID_PATH_AGENT: Text = "/home/detextre4/repositories/cero-trade-repo/mvp1.0/.dfx/local/canisters/agent/agent.did";
