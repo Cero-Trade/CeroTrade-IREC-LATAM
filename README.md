@@ -42,6 +42,18 @@ To deploy only backend canisters run
 
 `dfx deploy agent`
 
+### Register wasm modules
+
+Register wasm module into backend canisters by run:
+```
+dfx canister call token_index registerWasmArray
+dfx canister call user_index registerWasmArray
+dfx canister call transaction_index registerWasmArray
+```
+
+### Deploying token canisters
+`dfx canister call token_index registerToken '("token_id")'`
+
 ### Generate wasm modules (Note: only cero-devs)
 ```
 dfx canister create token
@@ -67,18 +79,6 @@ git add ./wasm_modules
 git commit -m "config/new-wasm-modules"
 git push
 ```
-
-### Register wasm modules
-
-Register wasm module into backend canisters by run:
-```
-dfx canister call token_index registerWasmArray
-dfx canister call user_index registerWasmArray
-dfx canister call transaction_index registerWasmArray
-```
-
-### Deploying token canisters
-`dfx canister call token_index registerToken '("token_id")'`
 
 ### Compiles and hot-reloads for development
 `npm run dev`
