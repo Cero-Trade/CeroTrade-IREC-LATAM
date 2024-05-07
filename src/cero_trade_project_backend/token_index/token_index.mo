@@ -39,15 +39,15 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
     tokenDirectoryEntries := [];
   };
 
-  private func callValidation(caller: Principal) { assert Principal.fromText(ENV.AGENT_CANISTER_ID) == caller };
-  private func adminValidation(caller: Principal) { assert adminCaller == caller };
+  private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.AGENT_CANISTER_ID) == caller };
+  private func _adminValidation(caller: Principal) { assert adminCaller == caller };
 
   /// get size of tokenDirectory collection
   public query func length(): async Nat { tokenDirectory.size() };
 
   /// register wasm module to dynamic token canister, only admin can run it
   public shared({ caller }) func registerWasmArray(): async() {
-    adminValidation(caller);
+    _adminValidation(caller);
 
     let branch = switch(ENV.DFX_NETWORK) {
       case("ic") "main";
@@ -67,7 +67,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
 
   /// register [tokenDirectory] collection
   public shared({ caller }) func registerToken(tokenId: Text): async Principal {
-    adminValidation(caller);
+    _adminValidation(caller);
 
     if (tokenId == "") throw Error.reject("Must to provide a tokenId");
 
@@ -154,7 +154,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
 
   /// delete [tokenDirectory] collection
   public shared({ caller }) func deleteToken(tokenId: Text): async () {
-    adminValidation(caller);
+    _adminValidation(caller);
 
     switch(tokenDirectory.get(tokenId)) {
       case(null) throw Error.reject("Token doesn't exists");
@@ -176,7 +176,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
     idle_cycles_burned_per_day: Nat;
     module_hash: ?[Nat8];
   } {
-    adminValidation(caller);
+    _adminValidation(caller);
 
     switch(tokenDirectory.get(tokenId)) {
       case(null) throw Error.reject("Token doesn't exists");
@@ -189,7 +189,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
 
   /// resume token status
   public shared({ caller }) func startToken(tokenId: T.TokenId): async () {
-    adminValidation(caller);
+    _adminValidation(caller);
 
     switch(tokenDirectory.get(tokenId)) {
       case(null) throw Error.reject("Token doesn't exists");
@@ -202,7 +202,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
 
   /// stop token status
   public shared({ caller }) func stopToken(tokenId: T.TokenId): async () {
-    adminValidation(caller);
+    _adminValidation(caller);
 
     switch(tokenDirectory.get(tokenId)) {
       case(null) throw Error.reject("Token doesn't exists");
@@ -215,7 +215,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
 
   /// get canister id that allow current user
   public shared({ caller }) func getTokenCanister(tokenId: T.TokenId): async T.CanisterId {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (tokenDirectory.get(tokenId)) {
       case (null) { throw Error.reject("Token not found"); };
@@ -224,7 +224,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
   };
 
   public shared({ caller }) func getRemainingAmount(tokenId: T.TokenId): async T.TokenAmount {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
@@ -233,7 +233,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
   };
 
   public shared({ caller }) func getAssetInfo(tokenId: T.TokenId): async T.AssetInfo {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
@@ -242,7 +242,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
   };
 
   public shared({ caller }) func mintToken(uid: T.UID, tokenId: T.TokenId, amount: T.TokenAmount, inMarket: T.TokenAmount): async() {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
@@ -251,7 +251,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
   };
 
   public shared({ caller }) func burnToken(uid: T.UID, tokenId: T.TokenId, amount: T.TokenAmount, inMarket: T.TokenAmount): async() {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
@@ -261,7 +261,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
 
   // get token portfolio for a specific user
   public shared({ caller }) func getTokenPortfolio(uid: T.UID, tokenId: T.TokenId): async T.TokenInfo {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found on Portfolio");
@@ -273,7 +273,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
     data: [T.TokenInfo];
     totalPages: Nat;
   } {
-    callValidation(caller);
+    _callValidation(caller);
 
     // define page based on statement
     let startPage = switch(page) {
@@ -351,7 +351,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
 
 
   public shared({ caller }) func getSingleTokenInfo(tokenId: T.TokenId): async T.AssetInfo {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found on cero trade");
@@ -360,7 +360,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
   };
 
   public shared({ caller }) func getTokensInfo(tokenIds: [T.TokenId]): async [T.AssetInfo] {
-    callValidation(caller);
+    _callValidation(caller);
 
     let tokens = Buffer.Buffer<T.AssetInfo>(100);
 
@@ -382,7 +382,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
   };
 
   public shared({ caller }) func checkUserToken(uid: T.UID, tokenId: T.TokenId): async Bool {
-    callValidation(caller);
+    _callValidation(caller);
 
     try {
       switch (tokenDirectory.get(tokenId)) {
@@ -399,7 +399,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
 
 
   // TODO implements this transfer function to icp tokens
-  // private func transfer(args: {
+  // private func _transfer(args: {
   //   amount: T.Price;
   //   recipentLedger: ICRC.AccountIdentifier;
   // }) : async Result.Result<IcpLedger.BlockIndex, Text> {
@@ -444,7 +444,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
 
 
   public shared({ caller }) func purchaseToken(uid: T.UID, recipent: { uid: T.UID; ledger: ICRC.AccountIdentifier }, tokenId: T.TokenId, amount: T.TokenAmount, inMarket: T.TokenAmount): async T.BlockHash {
-    callValidation(caller);
+    _callValidation(caller);
 
     Debug.print("recipent ledger " # debug_show (recipent.ledger));
 

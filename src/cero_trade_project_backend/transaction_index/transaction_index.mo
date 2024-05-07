@@ -41,15 +41,15 @@ shared({ caller = adminCaller }) actor class TransactionIndex() = this {
     transactionsDirectoryEntries := [];
   };
 
-  private func callValidation(caller: Principal) { assert Principal.fromText(ENV.AGENT_CANISTER_ID) == caller };
-  private func adminValidation(caller: Principal) { assert adminCaller == caller };
+  private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.AGENT_CANISTER_ID) == caller };
+  private func _adminValidation(caller: Principal) { assert adminCaller == caller };
 
   /// get size of transactionsDirectory collection
   public query func length(): async Nat { transactionsDirectory.size() };
 
   /// register wasm module to dynamic transactions canister, only admin can run it
   public shared({ caller }) func registerWasmArray(): async() {
-    adminValidation(caller);
+    _adminValidation(caller);
 
     let branch = switch(ENV.DFX_NETWORK) {
       case("ic") "main";
@@ -79,7 +79,7 @@ shared({ caller = adminCaller }) actor class TransactionIndex() = this {
   };
 
   /// autonomous function, will be executed when current canister it is full
-  private func createCanister(): async ?T.CanisterId {
+  private func _createCanister(): async ?T.CanisterId {
     Debug.print(debug_show ("before registerToken: " # Nat.toText(Cycles.balance())));
 
     Cycles.add(300_000_000_000);
@@ -114,7 +114,7 @@ shared({ caller = adminCaller }) actor class TransactionIndex() = this {
 
   /// register [transactionsDirectory] collection
   public shared({ caller }) func registerTransaction(txInfo: T.TransactionInfo) : async T.TransactionId {
-    callValidation(caller);
+    _callValidation(caller);
 
     try {
       let errorText = "Error generating canister";
@@ -123,7 +123,7 @@ shared({ caller = adminCaller }) actor class TransactionIndex() = this {
       let cid: T.CanisterId = switch(currentCanisterid) {
         case(null) {
           /// generate canister
-          currentCanisterid := await createCanister();
+          currentCanisterid := await _createCanister();
           switch(currentCanisterid) {
             case(null) throw Error.reject(errorText);
             case(?cid) cid;
@@ -134,7 +134,7 @@ shared({ caller = adminCaller }) actor class TransactionIndex() = this {
           let haveMemory = await checkMemoryStatus();
           if (haveMemory) { cid } else {
             /// generate canister
-            currentCanisterid := await createCanister();
+            currentCanisterid := await _createCanister();
             switch(currentCanisterid) {
               case(null) throw Error.reject(errorText);
               case(?cid) cid;
@@ -155,7 +155,7 @@ shared({ caller = adminCaller }) actor class TransactionIndex() = this {
 
 
   public shared({ caller }) func getRedemptions(txIds: [T.TransactionId]) : async [T.TransactionInfo] {
-    callValidation(caller);
+    _callValidation(caller);
 
     let txs = Buffer.Buffer<T.TransactionInfo>(100);
 

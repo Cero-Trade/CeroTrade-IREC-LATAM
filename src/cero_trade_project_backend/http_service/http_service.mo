@@ -15,7 +15,7 @@ import HT "./http_service_types";
 //Actor
 actor HttpService {
 
-  private func extractHost(url: Text): Text {
+  private func _extractHost(url: Text): Text {
     let partsIter = Text.split(url, #char '/');
     let parts = Iter.toArray(partsIter);
 
@@ -49,10 +49,10 @@ actor HttpService {
     transformed;
   };
 
-  private func generateHeaders(url: Text, customHeaders: [HT.HttpHeader]) : [HT.HttpHeader] {
+  private func _generateHeaders(url: Text, customHeaders: [HT.HttpHeader]) : [HT.HttpHeader] {
     // prepare headers for the system http_request call
     let default_headers  = Buffer.fromArray<HT.HttpHeader>([
-      { name = "Host"; value = extractHost(url) # HT.port },
+      { name = "Host"; value = _extractHost(url) # HT.port },
       { name = "User-Agent"; value = HT.headerName },
       { name = "Content-Type"; value = "application/json" },
     ]);
@@ -61,7 +61,7 @@ actor HttpService {
     Buffer.toArray<HT.HttpHeader>(default_headers);
   };
 
-  private func sendRequest(request: HT.HttpRequestArgs) : async Text {
+  private func _sendRequest(request: HT.HttpRequestArgs) : async Text {
     // DECLARE MANAGEMENT CANISTER
     let ic : HT.IC = actor ("aaaaa-aa");
 
@@ -125,13 +125,13 @@ actor HttpService {
     let http_request : HT.HttpRequestArgs = {
       url = url;
       max_response_bytes = null; //optional for request
-      headers = generateHeaders(url, args.headers);
+      headers = _generateHeaders(url, args.headers);
       body = null; //optional for request
       method = #get;
       transform = ?transform_context;
     };
 
-    await sendRequest(http_request)
+    await _sendRequest(http_request)
   };
 
 
@@ -151,12 +151,12 @@ actor HttpService {
     let http_request : HT.HttpRequestArgs = {
       url = url;
       max_response_bytes = null; //optional for request
-      headers = generateHeaders(url, args.headers);
+      headers = _generateHeaders(url, args.headers);
       body = ?request_body_as_nat8; //provide body for POST request
       method = #post;
       transform = ?transform_context;
     };
 
-    await sendRequest(http_request)
+    await _sendRequest(http_request)
   };
 };

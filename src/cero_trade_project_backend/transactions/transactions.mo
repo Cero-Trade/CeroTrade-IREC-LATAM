@@ -31,7 +31,7 @@ actor Transactions {
     transactionsEntries := [];
   };
 
-  private func callValidation(caller: Principal) { assert Principal.fromText(ENV.TRANSACTION_INDEX_CANISTER_ID) == caller };
+  private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.TRANSACTION_INDEX_CANISTER_ID) == caller };
 
   /// get size of transactions collection
   public query func length(): async Nat { transactions.size() };
@@ -39,7 +39,7 @@ actor Transactions {
 
   /// register transaction to cero trade
   public shared({ caller }) func registerTransaction(txInfo: T.TransactionInfo): async T.TransactionId {
-    callValidation(caller);
+    _callValidation(caller);
 
     let txId = Nat.toText(transactions.size() + 1);
     let tx = { txInfo with transactionId = txId };
@@ -49,7 +49,7 @@ actor Transactions {
   };
 
   public shared({ caller }) func getRedemptions(txIds: [T.TransactionId]): async [T.TransactionInfo] {
-    callValidation(caller);
+    _callValidation(caller);
 
     let txs = Buffer.Buffer<T.TransactionInfo>(100);
 

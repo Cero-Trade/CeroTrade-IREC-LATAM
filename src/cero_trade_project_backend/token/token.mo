@@ -16,7 +16,7 @@ actor class Token(_tokenId: ?T.TokenId) = this {
     case (null) "0";
     case (?value) value;
   };
-  private stable var isInitialized: Bool = false;
+  private stable var _isInitialized: Bool = false;
 
   /// asset metadata
   stable var assetInfo: ?T.AssetInfo = null;
@@ -34,11 +34,11 @@ actor class Token(_tokenId: ?T.TokenId) = this {
 
   /// initialization function
   public func init(assetMetadata: T.AssetInfo): async() {
-    if (isInitialized) throw Error.reject("Canister has been initialized");
+    if (_isInitialized) throw Error.reject("Canister has been initialized");
 
     assetInfo := ?assetMetadata;
     leftToMint := assetMetadata.volumeProduced;
-    isInitialized := true;
+    _isInitialized := true;
   };
 
   /// funcs to persistent collection state
@@ -48,13 +48,13 @@ actor class Token(_tokenId: ?T.TokenId) = this {
     userIrecsEntries := [];
   };
 
-  private func callValidation(caller: Principal) { assert Principal.fromText(ENV.TOKEN_INDEX_CANISTER_ID) == caller };
+  private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.TOKEN_INDEX_CANISTER_ID) == caller };
 
 
 
   /// add token to collection
   public shared({ caller }) func mintToken(uid: T.UID, amount: T.TokenAmount, inMarket: T.TokenAmount) : async () {
-    callValidation(caller);
+    _callValidation(caller);
 
     if (leftToMint < amount) throw Error.reject("Limit tokens to mint is" # Nat.toText(leftToMint));
 
@@ -80,7 +80,7 @@ actor class Token(_tokenId: ?T.TokenId) = this {
 
 
   public shared({ caller }) func burnToken(uid: T.UID, amount: T.TokenAmount, inMarket: T.TokenAmount): async() {
-    callValidation(caller);
+    _callValidation(caller);
 
     let burnedAmount: T.TokenAmount = switch(userIrecs.get(uid)) {
       case(null) throw Error.reject(userNotFound);
@@ -102,7 +102,7 @@ actor class Token(_tokenId: ?T.TokenId) = this {
 
 
   public shared({ caller }) func purchaseToken(uid: T.UID, recipent: T.UID, amount: T.TokenAmount, inMarket: T.TokenAmount): async() {
-    callValidation(caller);
+    _callValidation(caller);
 
     // burn tokens to recipent
     let burnedAmount: T.TokenAmount = switch(userIrecs.get(recipent)) {
@@ -142,7 +142,7 @@ actor class Token(_tokenId: ?T.TokenId) = this {
 
 
   public shared({ caller }) func getUserMinted(uid: T.UID): async T.TokenInfo {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch(userIrecs.get(uid)) {
       case(null) throw Error.reject(userNotFound);
@@ -164,7 +164,7 @@ actor class Token(_tokenId: ?T.TokenId) = this {
   public query func getTokenId(): async T.TokenId { tokenId };
 
   public shared({ caller }) func getCanisterId(): async T.CanisterId {
-    callValidation(caller);
+    _callValidation(caller);
     Principal.fromActor(this)
   };
 }
