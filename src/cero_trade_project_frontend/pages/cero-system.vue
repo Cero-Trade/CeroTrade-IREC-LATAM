@@ -71,7 +71,7 @@ async function mintCall() {
 
   try {
     mintForm.value.tokenAmount = Number(mintForm.value.tokenAmount)
-    await CeroSystemApi.purchaseToken(mintForm.value)
+    await CeroSystemApi.mintToken(mintForm.value)
 
     toast.success(`token minted to user ${mintForm.value.user}`)
   } catch (error) {

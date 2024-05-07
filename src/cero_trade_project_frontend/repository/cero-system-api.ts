@@ -2,7 +2,7 @@ import { useAgentCanister as agent, getErrorMessage } from "@/services/icp-provi
 import { AuthClientApi } from "./auth-client-api";
 
 export class CeroSystemApi {
-  static async purchaseToken({ user, tokenId, tokenAmount }: {
+  static async mintToken({ user, tokenId, tokenAmount }: {
     user: string,
     tokenId: string,
     tokenAmount: number,
