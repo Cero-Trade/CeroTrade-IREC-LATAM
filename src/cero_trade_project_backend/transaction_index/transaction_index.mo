@@ -70,8 +70,6 @@ shared({ caller = adminCaller }) actor class TransactionIndex() = this {
   /// returns true if canister have storage memory,
   /// false if havent enough
   public shared({ caller }) func checkMemoryStatus() : async Bool {
-    adminValidation(caller);
-
     let status = switch(currentCanisterid) {
       case(null) throw Error.reject("Cant find transactions canisters registered");
       case(?cid) await ic.canister_status({ canister_id = cid });
