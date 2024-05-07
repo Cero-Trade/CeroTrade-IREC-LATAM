@@ -269,26 +269,84 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
     };
   };
 
-  public shared({ caller }) func getPortfolio(uid: T.UID, tokenIds: [T.TokenId]): async [T.TokenInfo] {
+  public shared({ caller }) func getPortfolio(uid: T.UID, tokenIds: [T.TokenId], page: ?Nat, length: ?Nat, assetTypes: ?[T.AssetType], country: ?Text, mwhRange: ?[T.TokenAmount]): async {
+    data: [T.TokenInfo];
+    totalPages: Nat;
+  } {
     callValidation(caller);
+
+    // define page based on statement
+    let startPage = switch(page) {
+      case(null) 1;
+      case(?value) value;
+    };
+
+    // define length based on statement
+    let maxLength = switch(length) {
+      case(null) 50;
+      case(?value) value;
+    };
 
     let tokens = Buffer.Buffer<T.TokenInfo>(100);
 
+    // calculate range of elements returned
+    let startIndex: Nat = (startPage - 1) * maxLength;
+    var i = 0;
+
     Debug.print(debug_show ("before getPortfolio: " # Nat.toText(Cycles.balance())));
 
+
     for(item in tokenIds.vals()) {
-      switch (tokenDirectory.get(item)) {
-        case (null) {};
-        case (?cid) {
-          let token: T.TokenInfo = await TokenCanister(cid).getUserMinted(uid);
-          tokens.add(token);
+      if (i >= startIndex and i < startIndex + maxLength) {
+        switch(tokenDirectory.get(item)) {
+          case(null) {};
+
+          case(?cid) {
+            let token: T.TokenInfo = await TokenCanister(cid).getUserMinted(uid);
+
+            // filter by tokenId
+            let filterRange: Bool = switch(mwhRange) {
+              case(null) true;
+              case(?range) token.totalAmount >= range[0] and token.totalAmount <= range[1];
+            };
+
+            if (filterRange) tokens.add(token);
+          };
         };
       };
+      i += 1;
     };
 
-    Debug.print(debug_show ("later getPortfolio: " # Nat.toText(Cycles.balance())));
 
-    Buffer.toArray<T.TokenInfo>(tokens);
+    let filteredTokens: [T.TokenInfo] = Array.filter<T.TokenInfo>(Buffer.toArray<T.TokenInfo>(tokens), func (item) {
+      // by assetTypes
+      let assetTypeMatches = switch (assetTypes) {
+        case(null) true;
+        case(?assets) {
+          let assetType = Array.find<T.AssetType>(assets, func (assetType) { assetType == item.assetInfo.assetType });
+          assetType != null
+        };
+      };
+
+      // by country
+      let countryMatches = switch (country) {
+        case(null) true;
+        case(?value) item.assetInfo.specifications.country == value;
+      };
+
+      assetTypeMatches and countryMatches;
+    });
+
+
+    Debug.print(debug_show ("later getPortfolio: " # Nat.toText(Cycles.balance())));
+    
+    var totalPages: Nat = i / maxLength;
+    if (totalPages <= 0) totalPages := 1;
+
+    {
+      data = filteredTokens;
+      totalPages;
+    }
   };
 
 

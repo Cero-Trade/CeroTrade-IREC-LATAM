@@ -89,9 +89,15 @@ actor Agent {
   public shared({ caller }) func checkUserToken(tokenId: T.TokenId): async Bool { await TokenIndex.checkUserToken(caller, tokenId) };
 
   /// get user portfolio information
-  public shared({ caller }) func getPortfolio(): async { tokensInfo: [T.TokenInfo]; tokensRedemption: [T.TransactionInfo] } {
+  public shared({ caller }) func getPortfolio(page: ?Nat, length: ?Nat, assetTypes: ?[T.AssetType], country: ?Text, mwhRange: ?[T.TokenAmount]): async {
+    tokensInfo: { data: [T.TokenInfo]; totalPages: Nat; };
+    tokensRedemption: [T.TransactionInfo]
+  } {
     let tokenIds = await UserIndex.getPortfolioTokenIds(caller);
-    let tokensInfo: [T.TokenInfo] = await TokenIndex.getPortfolio(caller, tokenIds);
+    let tokensInfo: {
+      data: [T.TokenInfo];
+      totalPages: Nat;
+    } = await TokenIndex.getPortfolio(caller, tokenIds, page, length, assetTypes, country, mwhRange);
 
     let txIds = await UserIndex.getTransactionIds(caller);
     let tokensRedemption: [T.TransactionInfo] = await TransactionIndex.getRedemptions(txIds);

@@ -92,11 +92,30 @@ export class AgentCanister {
   }
 
 
-  static async getPortfolio(): Promise<{tokensInfo: TokenModel[], tokensRedemption: TransactionInfo[]}> {
-    try {
-      const response = await agent().getPortfolio() as {tokensInfo: TokenModel[], tokensRedemption: TransactionInfo[]}
+  static async getPortfolio({ page, length, assetTypes, country, mwhRange }:
+    {
+      page?: number,
+      length?: number,
+      assetTypes?: string[],
+      country?: string,
+      mwhRange?: number[],
+    }): Promise<{
+    tokensInfo: { data: TokenModel[]; totalPages: number; },
+    tokensRedemption: TransactionInfo[]
+  }> {
+    assetTypes ??= []
+    mwhRange ??= []
 
-      for (const item of response.tokensInfo) {
+    try {
+      const response = await agent().getPortfolio(
+        page ? [page] : [],
+        length ? [length] : [],
+        assetTypes.length ? [assetTypes.map(energy => ({ [energy]: energy }))] : [],
+        country ? [country] : [],
+        mwhRange.length ? [mwhRange] : [],
+      ) as {tokensInfo: { data: TokenModel[]; totalPages: number; }, tokensRedemption: TransactionInfo[]}
+
+      for (const item of response.tokensInfo.data) {
         // format record value
         item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
         item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
@@ -108,6 +127,8 @@ export class AgentCanister {
         item.assetInfo.endDate = new Date(Number(item.assetInfo.endDate))
         item.assetInfo.dates.forEach(e => { e = new Date(Number(e)) })
       }
+
+      response.tokensInfo.totalPages = Number(response.tokensInfo.totalPages)
 
       for (const item of response.tokensRedemption) {
         item.txType = Object.values(item.txType)[0] as TxType
