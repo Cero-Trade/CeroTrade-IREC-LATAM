@@ -1,0 +1,195 @@
+@use "mixins" as mix;
+@use "variables" as vars;
+
+//---------------------------------------------------------------------------------------------//
+//======================================== animations =========================================//
+//---------------------------------------------------------------------------------------------//
+@keyframes aparecer {
+  0% {opacity: 50%}
+  100% {opacity: 100%}
+}
+@keyframes hover {
+  0% {
+    transform: scale(1.1, 1.1);
+    opacity: 50%;
+  }
+  100% {
+    transform: scale(1, 1);
+    opacity: 100%;
+  }
+}
+@keyframes linea {
+  0% {transform: scaleX(0)}
+  100% {transform: scaleX(1)}
+}
+@keyframes movement {
+  0% {transform: translateY(0)}
+  50% {transform: translateY(-10%)}
+  100% {transform: translateY(10%)}
+}
+@keyframes encoger {
+  0% {
+    transform-origin: center;
+    transform: scaleX(1.2);
+  }
+  100% {transform: scaleX(1)}
+}
+@keyframes glitch{
+  2%,64%{transform: translate(2px,0) skew(0deg)}
+  4%,60%{transform: translate(-2px,0) skew(0deg)}
+  62%{transform: translate(0,0) skew(5deg)}
+}
+@keyframes glitchTop{
+  2%,64%{transform: translate(2px,-2px)}
+  4%,60%{transform: translate(-2px,2px)}
+  62%{transform: translate(13px,-1px) skew(-13deg)}
+}
+@keyframes glitchBotom{
+  2%,64%{transform: translate(-2px,0)}
+  4%,60%{transform: translate(-2px,0)}
+  62%{transform: translate(-22px,5px) skew(21deg)}
+}
+@keyframes moveup {
+  0% {transform: translateY(95%)}
+  100% {transform: translateY(0)}
+}
+@keyframes movedown {
+  0% {transform: translateY(-95%)}
+  100% {transform: translateY(0)}
+}
+@keyframes moveleft {
+  0% {transform: translateX(-95%)}
+  100% {transform: translateX(0)}
+}
+@keyframes moveright {
+  0% {transform: translateX(95%)}
+  100% {transform: translateX(0)}
+}
+
+//---------------------------------------------------------------------------------------------//
+//===================================== custome clasess =======================================//
+//---------------------------------------------------------------------------------------------//
+/* hover */
+.hover-arrowback:hover :is(i, img){
+  transition: .2s vars.$ease-return;
+  transform: translateX(-2px);
+}
+.hover-line {
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    margin: auto !important;
+    width: 100% !important;
+    height: 100% !important;
+    background-color: var(--line, red) !important;
+    opacity: 0 !important;
+    border-radius: 50px !important;
+    transform: scaleX(0.2) !important;
+    transform-origin: left !important;
+    transition: 250ms vars.$ease-return !important;
+  }
+  &:is(:hover, :focus):before {
+    opacity: 0.2 !important;
+    transform: scaleX(1) !important;
+  }
+}
+/*example
+  <span class="hover-line">
+*/
+
+.hover-split {
+  position: relative !important;
+  line-height: 1 !important;
+  color: transparent !important;
+  $split-position:  49%;
+  $split-thickness: 4px;
+  // === line ===
+  &::before {
+    content: '' !important;
+    display: block !important;
+    position: absolute !important;
+    top: $split-position !important;
+    left: -10% !important;
+    right: -10% !important;
+    height: $split-thickness !important;
+    border-radius: $split-thickness !important;
+    margin-top: calc((4px / 2) * -1) !important;
+    background: var(--line, red) !important;
+    transform: scale(0) !important;
+    transition: transform .8s cubic-bezier(.16,1.08,.38,.98) !important;
+    z-index: 1 !important;
+  }
+  // === Top/bottom mask =====
+  .mask {
+    display: block !important;
+    position: absolute !important;
+    overflow: hidden !important;
+    color: var(--mask, #000);
+    top: 0 !important;
+    height: $split-position !important;
+    transition: all .8s cubic-bezier(.16,1.08,.38,.98) !important;
+    &>* { display: block !important }
+  }
+  // === Bottom mask specific =====
+  .mask + .mask {
+    top: $split-position - 0.1 !important;
+    height: 100 - $split-position + 0.1 !important;
+    &>* { transform: translateY(-$split-position) !important }
+  }
+  // === hover effect =====
+  &:is(:hover, :active) {
+    .mask { color: vars.$primary !important; transform: skewX(12deg) translateX(5px) !important }
+    .mask + .mask { transform: skewX(12deg) translateX(-5px) !important }
+    &::before { transform: scale(1) !important }
+  }
+}
+/*example
+  <span class="hover-split">example
+    <span class="mask"><span>example</span></span>
+    <span class="mask"><span>example</span></span>
+  </span>
+*/
+
+
+/* animations */ 
+.anim-aparecer {animation: aparecer .5s vars.$ease-return}
+.anim-hover {animation: hover .5s vars.$ease-return}
+.anim-linea {animation: linea .5s vars.$ease-return}
+.anim-movement {animation: movement .5s vars.$ease-return}
+.anim-encoger {animation: encoger .5s vars.$ease-return}
+.anim-glitch {animation: glitch 1s linear infinite}
+.anim-glitchTop {animation: glitchTop 1s linear infinite}
+.anim-glitchTop {animation: glitchBottom 1s linear infinite}
+.anim-moveup {animation: moveup .5s vars.$ease-return}
+.anim-movedown {animation: movedown .5s vars.$ease-return}
+.anim-moveleft {animation: moveleft .5s vars.$ease-return}
+.anim-moveright {animation: moveright .5s vars.$ease-return}
+.anim-slide {
+  --distance: 1.2em;
+  width: calc(var(--distance) * 3) !important;
+  height: var(--distance) !important;
+  line-height: var(--distance) !important;
+  position: relative !important;
+  overflow-y: hidden !important;
+  &>* {
+    position: absolute !important;
+    top: 0;
+    @include mix.animation(5s infinite) {
+      0% {top: 0}
+      25% {top: calc(var(--distance) * -1)}
+      50% {top: calc(var(--distance) * -2)}
+      75% {top: calc(var(--distance) * -3)}
+    }
+  }
+}
+/*example
+  <span class="anim-slide" style="line-height: var(--distance) !important">
+    <span>word1<br>word2<br>word3<br>word4</span>
+  </span>
+*/
+

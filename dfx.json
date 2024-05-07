@@ -1,0 +1,81 @@
+{
+  "canisters": {
+    "users": {
+      "main": "src/cero_trade_project_backend/users/users.mo",
+      "type": "motoko"
+    },
+    "user_index": {
+      "main": "src/cero_trade_project_backend/user_index/user_index.mo",
+      "type": "motoko",
+      "dependencies": [ "http_service" ]
+    },
+    "token": {
+      "main": "src/cero_trade_project_backend/token/token.mo",
+      "type": "motoko"
+    },
+    "token_index": {
+      "main": "src/cero_trade_project_backend/token_index/token_index.mo",
+      "type": "motoko",
+      "dependencies": [ "http_service" ]
+    },
+    "transactions": {
+      "main": "src/cero_trade_project_backend/transactions/transactions.mo",
+      "type": "motoko"
+    },
+    "transaction_index": {
+      "main": "src/cero_trade_project_backend/transaction_index/transaction_index.mo",
+      "type": "motoko",
+      "dependencies": [ "http_service" ]
+    },
+    "marketplace": {
+      "main": "src/cero_trade_project_backend/marketplace/marketplace.mo",
+      "type": "motoko"
+    },
+    "http_service": {
+      "main": "src/cero_trade_project_backend/http_service/http_service.mo",
+      "type": "motoko"
+    },
+    "agent": {
+      "main": "src/cero_trade_project_backend/agent/agent.mo",
+      "type": "motoko",
+      "dependencies": [
+        "http_service",
+        "users",
+        "user_index",
+        "token_index",
+        "transaction_index",
+        "marketplace"
+      ]
+    },
+    "cero_trade_project_frontend": {
+      "dependencies": [ "agent" ],
+      "frontend": {
+        "entrypoint": "dist/index.html"
+      },
+      "source": [
+        "dist/"
+      ],
+      "type": "assets"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": "mops sources"
+    }
+  },
+  "networks": {
+    "local": {
+      "bind": "127.0.0.1:4943",
+      "type": "ephemeral"
+    },
+    "ic": {
+      "providers": [
+        "https://mainnet.dfinity.network"
+      ],
+      "type": "persistent"
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}

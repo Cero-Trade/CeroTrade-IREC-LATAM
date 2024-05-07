@@ -1,0 +1,50 @@
+@use '@/assets/styles/utils/variables.scss' as *;
+//---------------------------------------------------------------------------------------------//
+//====================================== error-page ===========================================//
+//---------------------------------------------------------------------------------------------//
+
+#error-page {
+  height: 100%;
+  gap: 1em;
+
+  h1 {
+    font-size: 12em;
+    @media (max-width: 300px) {font-size: 9em;}
+    line-height: 1 !important;
+    color: $primary;
+    letter-spacing: -7px;
+    animation: glitch 1s linear infinite;
+    &:is(:before, :after) {
+      content: attr(title);
+      position: absolute;
+      left: 0;
+    }
+    &:before {
+      animation: glitchTop 1s linear infinite;
+      clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
+      -webkit-clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
+    }
+    &:after{
+      animation: glitchBotom 1.5s linear infinite;
+      clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
+      -webkit-clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
+    }
+  }
+
+  h1 + span {
+    font-size: 3em;
+    line-height: 1 !important
+  }
+
+  .v-btn {
+    background: $primary;
+    border: 2px solid $primary;
+    border-radius: 50.6557px;
+    height: max-content;
+    padding: 12px 15px;
+    span {
+      font-size: 2em;
+      color: $text-btn;
+    }
+  }
+}

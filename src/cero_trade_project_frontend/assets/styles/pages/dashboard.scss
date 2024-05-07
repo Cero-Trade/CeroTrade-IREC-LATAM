@@ -1,0 +1,545 @@
+@use "@/assets/styles/main.scss" as *;
+//---------------------------------------------------------------------------------------------//
+//========================================= home ==============================================//
+//---------------------------------------------------------------------------------------------//
+
+#dashboard {
+  @extend .parent;
+  @extend .margin-global;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  margin-block: 30px;
+
+  .no-bottom-pa{
+    padding-bottom: 0px!important;
+  }
+  
+  .apexcharts-toolbar{
+    display: none!important;
+  }
+
+  .p12{
+    font-weight: 300!important;
+    font-size: 12px;
+    line-height: 18px;
+  }
+
+  .btn-max-content{
+    width: max-content!important;
+  }
+
+  h4{
+    font-weight: 700;
+  }
+
+  h6{
+    font-weight: 500!important;
+  }
+
+  .bold{
+    font-weight: 700!important;
+  }
+
+  .sheet{
+    background-color: #CCCCCC;
+    border-radius: 10px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid rgba(0,0,0,0.25);
+  }
+
+  .tertiary{
+    color: $tertiary;
+  }
+
+  img{
+    border-radius: 0px;
+    border: 0px solid #fff!important;
+    background-color: transparent!important;
+    box-shadow: 0px;
+    padding: 0px;
+  }
+
+  .verifyStatus{
+    border: 1px solid #17B26A!important;
+    background-color: #F6FEF9!important;
+  }
+
+  .icon-green{
+    background-color: #DCFAE6;
+    border-radius: 50%;
+    padding: 10px;
+    font-size: 15px;
+    color: #17B26A;
+  }
+
+  .v-btn{
+    border-radius: 10px!important;
+  }
+
+  .btn-mobile-width{
+    @include media(max, 660px){
+      min-width: 100%!important;
+      width: 100%!important;
+    }
+  }
+
+  .divcol-mobile{
+    @include media(max, 660px){
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: flex-start;
+    }
+  }
+}
+
+
+
+/////////// responsive ////////////////////
+.apexcharts-toolbar{
+  display: none!important;
+}
+.apexcharts-xaxis-tick{
+  display: none!important;
+}
+span{
+  @include media(max, 660px){
+    font-size: 12px!important;
+  }
+}
+
+.mbb16{
+  @include media(max, 660px){
+    margin-bottom: 16px!important;
+  }
+}
+.mbb0{
+  @include media(max, 660px){
+    margin-bottom: 0px!important;
+  }
+}
+
+.v-card{
+  @include media(max, 660px){
+    padding: 15px!important;
+  }
+}
+
+.div-cards-mobile{
+  @include media(max, 660px){
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    justify-content: flex-start;
+    margin-bottom: 20px;
+
+    h5, img, .v-icon{
+      margin-bottom: 0px!important;
+    }
+
+    h5{
+      font-weight: 500;
+    }
+  }
+}
+
+// ////////////////////////dialogs//////////////////
+
+.v-dialog{
+ .v-overlay__content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  .card-dialog-connect{
+    width: 900px;
+    max-width: 900px!important;
+    position: relative;
+    padding-block: 20px!important;
+
+    @include media(max, 660px){
+      width: 100vw!important;
+      .divrow-mobile{
+        display: grid;
+        grid-template-columns: 1fr 90px;
+
+        h6{
+          font-size: 14px;
+        }
+
+        .btn{
+          justify-self: end;
+          align-self: center;
+        }
+      }
+    }
+    
+    .tertiary{
+      color: $tertiary;
+    }
+
+    .close{
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      color: $tertiary;
+    }
+
+    img{
+      border-radius: 0px;
+      border: 0px solid #fff!important;
+      background-color: transparent!important;
+      box-shadow: 0px;
+      padding: 0px;
+    }
+
+    .v-btn{
+      background-color: #fff!important;
+      border: 1px solid rgba(0,0,0,0.25)!important;
+      width: max-content!important;
+      border-radius: 10px!important;
+    }
+  }
+ }
+}
+
+.v-dialog{
+  .v-overlay__content {
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   .card-dialog-credit-card{
+    width: 600px;
+     max-width: 600px!important;
+     position: relative;
+     padding-block: 20px!important;
+     @include media(max, 660px){
+      width: 100vw!important;
+
+      .v-btn{
+        min-width: 49%!important;
+      }
+    }
+     .tertiary{
+       color: $tertiary;
+     }
+
+     .input{
+      max-height: 45px!important;
+      height: 45px;
+
+      i{
+        font-size: 20px;
+      }
+
+      .v-field{
+        height: 40px!important;
+        max-height: 40px!important;
+        min-height: 1px!important;
+        border-radius: 10px!important;
+      }
+
+      input{
+        color: #000!important;
+        font-size: 13px;
+        height: 40px!important;
+        max-height: 40px!important;
+        min-height: 1px!important;
+        margin-top: -5px;
+      }
+
+      .v-field__input{
+        padding-left: 15px;
+        padding-block: 5px;
+        height: 40px!important;
+        max-height: 40px!important;
+        min-height: 1px!important;
+      }
+    }
+ 
+     .close{
+       position: absolute;
+       top: 15px;
+       right: 15px;
+       color: $tertiary;
+     }
+ 
+     img{
+       border-radius: 0px;
+       border: 0px solid #fff!important;
+       background-color: transparent!important;
+       box-shadow: 0px;
+       padding: 0px;
+     }
+ 
+     .v-btn{
+       border: 1px solid rgba(0,0,0,0.25)!important;
+       width: max-content!important;
+       border-radius: 10px!important;
+       --fw: 700!important;
+     }
+   }
+  }
+ }
+
+ .v-dialog{
+  overflow: visible!important;
+  .v-overlay__content {
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   .card-dialog-2fa{
+     width: 400px;
+     max-width: 400px!important;
+     position: relative;
+     padding-block: 20px!important;
+     @include media(max, 660px){
+      width: 100vw!important;
+
+      .v-btn{
+        min-width: 49%!important;
+      }
+    }
+     .tertiary{
+       color: $tertiary;
+     }
+
+     .select{
+      margin-top: -5px;
+      max-width: max-content!important;
+      .v-field__input{
+        padding-left: 0px;
+        color: #000;
+      }
+    }
+
+     .input{
+      max-height: 45px!important;
+      height: 45px;
+
+      i{
+        font-size: 20px;
+      }
+
+      .v-field{
+        height: 40px!important;
+        max-height: 40px!important;
+        min-height: 1px!important;
+        border-radius: 10px!important;
+      }
+
+      input{
+        color: #000!important;
+        font-size: 13px;
+        height: 40px!important;
+        max-height: 40px!important;
+        min-height: 1px!important;
+        margin-top: -5px;
+      }
+
+      .v-field__input{
+        padding-left: 5px;
+        padding-block: 5px;
+        height: 40px!important;
+        max-height: 40px!important;
+        min-height: 1px!important;
+      }
+    }
+ 
+     .close{
+       position: absolute;
+       top: 15px;
+       right: 15px;
+       color: $tertiary;
+     }
+ 
+     img{
+       border-radius: 0px;
+       border: 0px solid #fff!important;
+       background-color: transparent!important;
+       box-shadow: 0px;
+       padding: 0px;
+     }
+ 
+     .v-btn{
+       border: 1px solid rgba(0,0,0,0.25)!important;
+       width: max-content!important;
+       border-radius: 10px!important;
+       --fw: 700!important;
+     }
+   }
+  }
+ }
+
+ .v-dialog{
+  overflow: visible!important;
+  .v-overlay__content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    .card-dialog-participant{
+      width: 900px;
+      max-width: 900px!important;
+      position: relative;
+      padding-block: 20px!important;
+      @include media(max, 660px){
+        width: 100vw!important;
+      }
+
+      .showmobile{
+        display: none;
+
+        @include media(max, 960px){
+          display: grid;
+        }
+      }
+      .deletemobile{
+        display: grid;
+
+        @include media(max, 960px){
+          display: none;
+        }
+      }
+
+      .divcol-mobile{
+        @include media(max, 660px){
+          flex-direction: column;
+          gap: 10px!important;
+          justify-content: flex-start;
+          align-items: flex-start;
+
+          .v-btn{
+            min-width: 100%!important;
+          }
+
+          .v-btn:first-of-type{
+            background-color: #fff!important;
+            border: 1px solid rgba(0,0,0,0.25)!important;
+          }
+        }
+      }
+
+      .tertiary{
+        color: $tertiary;
+      }
+      .close{
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        color: $tertiary;
+      }
+
+      img{
+        border-radius: 0px;
+        border: 0px solid #fff!important;
+        background-color: transparent!important;
+        box-shadow: 0px;
+        padding: 0px;
+      }
+
+      .v-btn{
+        border: 1px solid rgba(0,0,0,0.25)!important;
+        width: max-content!important;
+        border-radius: 10px!important;
+        --fw: 700!important;
+        min-height: 30px!important;
+        height: 40px!important;
+      }
+
+      .check{
+        background-color: #F2F4F7;
+        border-radius: 50%;
+        padding: 10px;
+        font-size: 15px;
+        color: #667085;
+      }
+
+      .check-green{
+        background-color: #DCFAE6;
+        border-radius: 50%;
+        padding: 10px;
+        font-size: 15px;
+        color: #17B26A;
+      }
+    }
+  }
+}
+
+.v-dialog{
+  overflow: visible!important;
+  .v-overlay__content {
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   .card-dialog-form{
+     width: 400px;
+     max-width: 400px!important;
+     position: relative;
+     padding-block: 20px!important;
+     @include media(max, 660px){
+        width: 100vw!important;
+      }
+     .tertiary{
+       color: $tertiary;
+     }
+
+     .input{
+      max-height: 45px!important;
+      height: 45px;
+
+      i{
+        font-size: 20px;
+      }
+
+      .v-field{
+        height: 40px!important;
+        max-height: 40px!important;
+        min-height: 1px!important;
+        border-radius: 10px!important;
+      }
+
+      input{
+        color: #000!important;
+        font-size: 13px;
+        height: 40px!important;
+        max-height: 40px!important;
+        min-height: 1px!important;
+        margin-top: -5px;
+      }
+
+      .v-field__input{
+        padding-left: 5px;
+        padding-block: 5px;
+        height: 40px!important;
+        max-height: 40px!important;
+        min-height: 1px!important;
+      }
+    }
+ 
+     .close{
+       position: absolute;
+       top: 15px;
+       right: 15px;
+       color: $tertiary;
+     }
+ 
+     img{
+       border-radius: 0px;
+       border: 0px solid #fff!important;
+       background-color: transparent!important;
+       box-shadow: 0px;
+       padding: 0px;
+     }
+ 
+     .v-btn{
+       width: max-content!important;
+       border-radius: 10px!important;
+       --fw: 700!important;
+     }
+   }
+  }
+ }

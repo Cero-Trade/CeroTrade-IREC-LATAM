@@ -1,0 +1,1368 @@
+<!-- TODO performe validations -->
+
+<template>
+  <div id="token-details">
+    <span class="mb-10 acenter" style="color: #475467; font-size: 16px; font-weight: 700;">
+      <img src="@/assets/sources/icons/home-layout.svg" alt="Home Icon" style="width: 20px;">
+      <img src="@/assets/sources/icons/chevron-right-light.svg" alt="arrow right icon" class="mx-1">
+      <span class="text-first">{{ prevRoutePatch }}</span>
+      <img src="@/assets/sources/icons/chevron-right-light.svg" alt="arrow right icon" class="mx-1">
+      <span style="color: #00555B;">Asset # {{ tokenId }}</span>
+    </span>
+    <h3 class="acenter mb-4">
+      <company-logo
+        :energy-src="energies[tokenDetail?.assetInfo.assetType]"
+        :country-src="countries[tokenDetail?.assetInfo.specifications.country]"
+        class="mr-4"
+      ></company-logo>
+      Asset # {{ tokenId }}
+    </h3>
+
+    <v-row>
+      <v-col xl="8" lg="8" md="8" cols="12">
+        <v-row>
+          <v-col xl="5" lg="5" cols="12">
+            <v-card class="card cards-rec">
+              <div class="jspace divrow mb-1">
+                <span style="color: #475467;">Type</span>
+                <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
+                  <img :src="energiesColored[tokenDetail?.assetInfo.assetType]" :alt="`${tokenDetail?.assetInfo.assetType} icon`" style="width: 20px;">
+                  {{ tokenDetail?.assetInfo.assetType }} energy
+                </span>
+              </div>
+
+              <div class="jspace divrow mt-3 mb-1">
+                <span style="color: #475467;">Start date of production</span>
+                <span>{{ tokenDetail?.assetInfo.startDate.toDateString() }}</span>
+              </div>
+
+              <div class="jspace divrow mt-3 mb-1">
+                <span style="color: #475467;">End date of production</span>
+                <span>{{ tokenDetail?.assetInfo.endDate.toDateString() }}</span>
+              </div>
+
+              <div class="jspace divrow mt-3 mb-1">
+                <span style="color: #475467;">CO2 Emission</span>
+                <span>{{ tokenDetail?.assetInfo.co2Emission }}%</span>
+              </div>
+
+              <div class="jspace divrow mt-3 mb-1">
+                <span style="color: #475467;">Radioactivity emission</span>
+                <span>{{ tokenDetail?.assetInfo.radioactivityEmnission }}%</span>
+              </div>
+            </v-card>
+          </v-col>
+
+          <v-col xl="4" lg="4" cols="12">
+            <v-card class="card relative" style="min-height: 100%!important;">
+              <span>Amount owned/produced</span>
+              <div id="chart">
+                <apexchart type="radialBar" :options="chartOptions" :series="seriesOwnedVsProduced"></apexchart>
+              </div>
+            </v-card>
+          </v-col>
+
+          <v-col xl="3" lg="3" cols="12">
+            <v-card class="card divcol jspace absolute-card-portfolio mb-2">
+              <span>Total amount owned</span>
+              <h5 class="bold" style="position: absolute; bottom: 0; left: 20px;">{{ tokenDetail?.totalAmount }} MWh</h5>
+            </v-card>
+
+            <v-card class="card divcol jspace absolute-card-portfolio">
+              <span>Amount for sale</span>
+              <h5 class="bold" style="position: absolute; bottom: 0; left: 20px;">{{ tokenDetail?.inMarket }} MWh</h5>
+            </v-card>
+          </v-col>
+          <v-col cols="12">
+            <v-card class="card" style="padding-left: 20px!important;">
+              <v-tabs
+                v-model="tabsSpecifications"
+                bg-color="transparent"
+                color="basil"
+                class="mt-6"
+              >
+                <v-tab value="one" class="tab-btn" style="border: none!important; border-radius: 0px!important;">
+                  Device Details
+                </v-tab>
+                <v-tab value="two" class="tab-btn" style="border: none!important; border-radius: 0px!important;">
+                  Specifications
+                </v-tab>
+                <v-tab value="three" class="tab-btn delete-mobile" style="border: none!important; border-radius: 0px!important;">
+                  Dates
+                </v-tab>
+              </v-tabs>
+
+              <hr style="border-bottom: 2px solid rgba(0,0,0,0.25)!important; width: 100%!important; position: relative; top: -2px;">
+              <v-window v-model="tabsSpecifications">
+                <v-window-item value="one">
+                  <h5 class="bold mb-6 mt-4">Device Details</h5>
+
+                  <v-row>
+                    <v-col xl="8" lg="8" md="8" cols="12">
+                      <div class="jspace divrow mt-3 mb-1">
+                        <span style="color: #475467;">Name</span>
+                        <span>{{ tokenDetail?.assetInfo.deviceDetails.name }}</span>
+                      </div>
+
+                      <div class="jspace divrow mb-1">
+                        <span style="color: #475467;">Type</span>
+                        <span>{{ tokenDetail?.assetInfo.deviceDetails.deviceType }}</span>
+                      </div>
+
+                      <div class="jspace divrow mt-3 mb-1">
+                        <span style="color: #475467;">Device group</span>
+                        <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
+                          <img :src="energiesColored[tokenDetail?.assetInfo.assetType]" :alt="`${tokenDetail?.assetInfo.assetType} icon`" style="width: 20px;">
+                          {{ tokenDetail?.assetInfo.assetType }}
+                        </span>
+                      </div>
+
+                      <div class="jspace divrow mt-3 mb-1" style="gap: 20px;">
+                        <span style="color: #475467;">Description</span>
+                        <span style="text-align: right; max-width: 60%;">{{ tokenDetail?.assetInfo.deviceDetails.description }}</span>
+                      </div>
+                    </v-col>
+                  </v-row>
+                </v-window-item>
+
+                <v-window-item value="two">
+                  <h5 class="bold mb-6 mt-4">Specifications</h5>
+
+                  <v-row>
+                    <v-col xl="8" lg="8" md="8" cols="12">
+                      <div class="jspace divrow mt-3 mb-1">
+                        <span style="color: #475467;">Device Code</span>
+                        <span>{{ tokenDetail?.assetInfo.specifications.deviceCode }}</span>
+                      </div>
+
+                      <div class="jspace divrow mb-1">
+                        <span style="color: #475467;">Capacity</span>
+                        <span>{{ tokenDetail?.assetInfo.specifications.capacity }}</span>
+                      </div>
+
+                      <div class="jspace divrow mt-3 mb-1">
+                        <span style="color: #475467;">Location</span>
+                        <span>{{ tokenDetail?.assetInfo.specifications.location }}</span>
+                      </div>
+
+                      <div class="jspace divrow mt-3 mb-1">
+                        <span style="color: #475467;">Latitude</span>
+                        <span>{{ tokenDetail?.assetInfo.specifications.latitude }}</span>
+                      </div>
+
+                      <div class="jspace divrow mt-3 mb-1">
+                        <span style="color: #475467;">Longitude</span>
+                        <span>{{ tokenDetail?.assetInfo.specifications.longitude }}</span>
+                      </div>
+
+                      <div class="jspace divrow mt-3 mb-1">
+                        <span style="color: #475467;">Address</span>
+                        <span>{{ tokenDetail?.assetInfo.specifications.address }}</span>
+                      </div>
+
+                      <div class="jspace divrow mt-3 mb-1">
+                        <span style="color: #475467;">State/Province</span>
+                        <span>{{ tokenDetail?.assetInfo.specifications.stateProvince }}</span>
+                      </div>
+
+                      <div class="jspace divrow mt-3 mb-1">
+                        <span style="color: #475467;">Country</span>
+                        <span>{{ tokenDetail?.assetInfo.specifications.country }}</span>
+                      </div>
+                    </v-col>
+                  </v-row>
+                </v-window-item>
+
+                <v-window-item value="three">
+                  <h5 class="bold mb-6 mt-4">Dates</h5>
+
+                  <v-row class="mt-3">
+                    <v-col xl="8" lg="8" md="8" cols="12">
+                      <div
+                        v-for="(date, index) in tokenDetail?.assetInfo.dates" :key="index"
+                        class="jspace divrow mb-1"
+                      >
+                        <span style="color: #475467;">{{
+                          index === 0 ? "Registration Date"
+                          : index === 1 ? "Commissioning Date"
+                          : "Expire Date"
+                        }}</span>
+                        <span>{{ date.toDateString() }}</span>
+                      </div>
+                    </v-col>
+                  </v-row>
+                </v-window-item>
+              </v-window>
+            </v-card>
+          </v-col>
+
+          <v-col cols="12">
+            <h5 class="bold">Other sellers</h5>
+
+            <v-data-table
+            v-model:items-per-page="itemsPerPage"
+            :headers="headers"
+            :items="dataMarketplace"
+            items-per-page="-1"
+            class="my-data-table deletemobile"
+            density="compact"
+            >
+              <template #[`item.token_id`]="{ item }">
+                <span class="acenter bold" style="color: #475467;">
+                  {{ item.token_id }} 
+                </span>
+              </template>
+
+              <template #[`item.energy_source`]="{ item }">
+                <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
+                  <img :src="energies[item.energy_source]" :alt="`${item.energy_source} icon`" style="width: 20px;">
+                  {{ item.energy_source }}
+                </span>
+              </template>
+
+              <template #[`item.price`]="{ item }">
+                <span class="divrow jspace acenter">
+                  {{ item.price }} <v-sheet class="chip-currency bold">{{ item.currency }}</v-sheet>
+                </span>
+              </template>
+
+              <template #[`item.country`]="{ item }">
+                <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
+                  <img :src="countries[item.country]" :alt="`${item.country} Icon`" style="width: 20px;">
+                  {{ item.country }}
+                </span>
+              </template>
+
+              <template #[`item.mwh`]="{ item }">
+                <span class="divrow acenter">
+                  <img src="@/assets/sources/icons/lightbulb.svg" alt="lightbulb icon">
+                  {{ item.mwh }}
+                </span>
+              </template>
+
+              <template #[`item.actions`]="{ item }">
+                <v-chip @click="goDetails(item)" color="white" class="chip-table mr-1" style="border-radius: 10px!important;">
+                  <img src="@/assets/sources/icons/wallet.svg" alt="wallet">
+                </v-chip>
+              </template>
+            </v-data-table>
+          </v-col>
+
+          <v-col v-for="(item,index) in dataMarketplace" :key="index" xl="3" lg="3" md="4" sm="6" cols="12" class="showmobile">
+            <v-card class="card cards-marketplace">
+              <div class="divrow jspace acenter mb-6">
+                <div class="divcol astart" style="gap: 5px;">
+                  <span style="color: #475467;">Asset id</span>
+                  <h6 class="mb-0 font700">{{ item.token_id }}</h6>
+                </div>
+
+                <v-btn class="btn" @click="goDetails(item)">
+                  <img src="@/assets/sources/icons/wallet.svg" alt="wallet">
+                </v-btn>
+              </div>
+
+              <div class="jspace divrow mb-1">
+                <span>Price</span>
+                <span style="color: #475467;">{{ item.currency }} {{ item.price }}</span>
+              </div>
+
+              <div class="jspace divrow mb-1">
+                <span>Energy source</span>
+                <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap; color: #475467;">
+                  <img :src="energies[item.energy_source]" :alt="`${item.energy_source} icon`" style="width: 20px;">
+                  {{ item.energy_source }}
+                </span>
+              </div>
+
+              <div class="jspace divrow mb-1">
+                <span>Country</span>
+                <span style="color: #475467;" class="acenter text-capitalize">
+                  <img :src="countries[item.country]" alt="icon" class="mr-1" style="width: 20px;"> {{ item.country }}
+                </span>
+              </div>
+
+              <div class="jspace divrow mb-1">
+                <span>MWh</span>
+                <span class="d-flex flex-acenter mr-1" style="color: #475467;">
+                  <img src="@/assets/sources/icons/lightbulb.svg" alt="lightbulb icon" style="width: 20px">
+                {{ item.mwh }}</span>
+              </div>
+
+              <div class="jspace divrow mb-1">
+                <span>Volume</span>
+                <span style="color: #475467;">{{ item.volume }}</span>
+              </div>
+            </v-card>
+          </v-col>
+        </v-row>
+      </v-col>
+
+      <v-col xl="4" lg="4" md="4" cols="12">
+        <v-col cols="12" class="pt-0 pl-0">
+          <v-form v-model="amountSelected" @submit.prevent>
+            <v-card class="card mb-6 divcol astart card-currency">
+              <div class="jspace" style="width: 100%;">
+                <div class="divcol mr-2" style="gap: 10px;">
+                  <label>Choose quantity (MWh)</label>
+                  <div class="divrow" style="gap: 5px;">
+                    <v-btn class="btn2" style="max-height: 40px!important;"
+                      @click="tokenAmount ? tokenAmount-- : null"
+                    >-</v-btn>
+                    <v-text-field
+                    v-model="tokenAmount"
+                    class="input hide-spin" variant="outlined" elevation="0"
+                    type="number"
+                    :rules="[globalRules.requiredNumber]"
+                    ></v-text-field>
+                    <v-btn class="btn2" style="max-height: 40px!important;"
+                      @click="tokenAmount ? tokenAmount++ : tokenAmount=1"
+                    >+</v-btn>
+                  </div>
+                </div>
+              </div>
+            </v-card>
+
+            <div class="divrow mb-4" style="gap: 10px; flex-wrap: wrap;">
+              <v-btn v-if="haveToken" class="btn btn2" @click="showDialog('sell')" style="flex: 1 1 calc(50% - 10px)">
+                Sell
+              </v-btn>
+
+              <v-btn v-if="haveToken" class="btn btn2" @click="showDialog('takeOff')" style="flex: 1 1 calc(50% - 10px)">
+                Take off market
+              </v-btn>
+
+              <v-btn class="btn btn2" @click="showDialog('buy')" style="flex: 1 1 calc(50% - 10px)">
+                Buy
+              </v-btn>
+
+              <v-btn v-if="haveToken" class="btn" @click="showDialog('redeem')" style="flex: 1 1 calc(50% - 10px)">
+                Redeem Token
+              </v-btn>
+            </div>
+
+            <!-- TODO commented until api connection -->
+            <!-- <div v-for="(item,index) in dataPdf" :key="index" class="border mb-2 jspace">
+              <div class="divrow acenter">
+                <img src="@/assets/sources/icons/pdf.svg" alt="PDF">
+                <div class="divcol ml-2">
+                  <span style="color: #475467; font-weight: 500;">{{ item.name }}</span>
+                  <span style="color: #475467;">{{ item.weight }}</span>
+                </div>
+              </div>
+
+              <v-card class="card center" style="width: max-content!important; border-radius: 10px!important;">
+                <img src="@/assets/sources/icons/download.svg" alt="download icon" style="width: 18px">
+              </v-card>
+            </div> -->
+
+
+            <!-- TODO commented until api connection -->
+            <!-- <v-card class="card divcol pt-6">
+              <span style="color: #475467;">Redemption amount (MWh)</span>
+              <span class="mt-2 mb-4" style="color: #475467;">
+                <img src="@/assets/sources/icons/lightbulb.svg" alt="lightbulb icon" style="width: 15px">
+                420
+              </span>
+
+              <span style="color: #475467;">Redemption Date</span>
+              <span class="mt-2 mb-4">{{ date }}</span>
+
+              <div v-for="(item,index) in dataPdf" :key="index" class="border mb-2 jspace">
+                <div class="divrow acenter">
+                  <img src="@/assets/sources/icons/pdf.svg" alt="PDF">
+                  <div class="divcol ml-2">
+                    <span style="color: #475467; font-weight: 500;">{{ item.name }}</span>
+                    <span style="color: #475467;">{{ item.weight }}</span>
+                  </div>
+                </div>
+
+                <v-card class="card center" style="width: max-content!important; border-radius: 10px!important;">
+                  <img src="@/assets/sources/icons/download.svg" alt="download icon" style="width: 18px">
+                </v-card>
+              </div>
+            </v-card> -->
+          </v-form>
+        </v-col>
+      </v-col>
+    </v-row>
+    
+    <!-- Dialog Take off market -->
+    <v-dialog v-model="dialogTakeOffMarket" persistent>
+      <v-card class="card dialog-card-detokenize">
+        <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="dialogTakeOffMarket = false">
+        <v-sheet class="mb-6 double-sheet">
+          <v-sheet>
+            <img src="@/assets/sources/icons/wallet.svg" alt="Wallet" style="width: 20px;">
+          </v-sheet>
+        </v-sheet>
+        <h6>Take off market details</h6>
+        <span class="tertiary">You are about to take some of your tokens off the marketplace. They will just be stored in your portafolio now.</span>
+
+        <v-card class="card mt-6 pa-6">
+          <span class="bold mt-3">Checkout review</span>
+
+          <v-divider class="mb-3 mt-4"  thickness="2" style="width: 150%; position: relative; left: -50px;"></v-divider>
+          
+          <div class="jspace divrow mb-4 acenter">
+            <h5 class="acenter mb-0 bold h5-mobile">
+              <company-logo
+                :energy-src="energies[tokenDetail?.assetInfo.assetType]"
+                :country-src="countries[tokenDetail?.assetInfo.specifications.country]"
+                class="mr-4"
+              ></company-logo>
+              #{{ tokenId }}
+            </h5>
+          </div>
+          
+          <div class="jspace divrow mb-1">
+            <span style="color: #475467;">Energy source type</span>
+            <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
+              <img :src="energiesColored[tokenDetail?.assetInfo.assetType]" :alt="`${tokenDetail?.assetInfo.assetType} icon`" style="width: 20px;">
+              {{ tokenDetail?.assetInfo.assetType }}
+            </span>
+          </div>
+
+          <div class="jspace divrow mb-1">
+            <span style="color: #475467;">Country</span>
+            <span class="flex-center" style="gap: 5px">
+              <img :src="countries[tokenDetail?.assetInfo.specifications.country]" :alt="`${tokenDetail?.assetInfo.specifications.country} flag`">
+              {{ tokenDetail?.assetInfo.specifications.country }}
+            </span>
+          </div>
+
+          <div class="jspace divrow mb-1">
+            <span style="color: #475467;">Amount</span>
+            <span>{{ tokenAmount }}MWh</span>
+          </div>
+        </v-card>
+
+        <div class="divrow center mt-6" style="gap: 10px;">
+          <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogTakeOffMarket = false">Cancel</v-btn>
+          <v-btn class="btn" @click="dialogTakeOffMarket = false; takeOffMarket()" style="border: none!important;">Take off market</v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+
+    <!-- Dialog redeem sure -->
+    <v-dialog v-model="dialogRedeemSure" persistent>
+      <v-card class="card dialog-card-tokenize">
+        <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="dialogRedeemSure = false">
+        <v-sheet class="mb-6 double-sheet">
+          <v-sheet>
+            <img src="@/assets/sources/icons/refresh.svg" alt="refresh icon">
+          </v-sheet>
+        </v-sheet>
+        <h6>Are you sure you want to redeem your I-REC?</h6>
+        <span class="tertiary">By redeeming your I-RECs, the associated tokens will be irreversibly burnt and sent to a burn wallet, removing them from circulation. The I-RECs will then be officially redeemed in your name, rendering them non-tradeable. This process is utilized to claim certifications and other environmental benefits. Once completed, this action is final and cannot be reversed.</span>
+
+        <div class="divrow center mt-6" style="gap: 10px;">
+          <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogRedeemSure = false">Cancel</v-btn>
+          <v-btn class="btn" @click="dialogRedeemSure = false;  dialogRedeem = true" style="border: none!important;">Yes, I am sure</v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+
+    <!-- Dialog Redeem -->
+    <v-dialog v-model="dialogRedeem" persistent>
+      <v-form ref="formRedeem" @submit.prevent>
+        <v-card class="card dialog-card-detokenize">
+          <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="dialogRedeem = false">
+          <v-sheet class="mb-6 double-sheet">
+            <v-sheet>
+              <img src="@/assets/sources/icons/wallet.svg" alt="Wallet" style="width: 20px;">
+            </v-sheet>
+          </v-sheet>
+          <h6>IREC redemption details</h6>
+          <span class="tertiary">Please check all information on your tokenized assets’ redemption. You can redeem them to your own name, or to another company’s name by deeming them a beneficiary of yours.</span>
+
+          <div class="flex-column mt-4" style="gap: 5px">
+            <label for="beneficiary">Beneficiary account (company)</label>
+            <v-text-field
+              v-model="redeemBeneficiary"
+              id="beneficiary"
+              variant="solo"
+              flat
+              class="select mb-8"
+              bg-color="transparent"
+              placeholder="beneficiary account"
+              :rules="[globalRules.required]"
+            ></v-text-field>
+          </div>
+
+          <!-- <v-btn class="btn2" style="width: max-content !important">Add beneficiary</v-btn> -->
+
+          <v-card class="card cards-rec mt-6 pa-6">
+            <span class="bold mt-3">Checkout review</span>
+
+            <v-divider class="mb-3 mt-4"  thickness="2" style="width: 150%; position: relative; left: -50px;"></v-divider>
+            
+            <div class="jspace divrow mb-2 acenter">
+              <h5 class="acenter h5-mobile">
+                <company-logo
+                  :energy-src="energies[tokenDetail?.assetInfo.assetType]"
+                  :country-src="countries[tokenDetail?.assetInfo.specifications.country]"
+                  class="mr-4"
+                ></company-logo>
+                #{{ tokenId }}
+              </h5>
+            </div>
+
+            <div class="jspace divrow mb-1">
+              <span style="color: #475467;">Energy source type</span>
+              <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
+                <img :src="energiesColored[tokenDetail?.assetInfo.assetType]" :alt="`${tokenDetail?.assetInfo.assetType} icon`" style="width: 20px;">
+                {{ tokenDetail?.assetInfo.assetType }}
+              </span>
+            </div>
+
+            <div class="jspace divrow mb-1">
+              <span style="color: #475467;">Country</span>
+              <span class="flex-center" style="gap: 5px">
+                <img :src="countries[tokenDetail?.assetInfo.specifications.country]" :alt="`${tokenDetail?.assetInfo.specifications.country} flag`">
+                {{ tokenDetail?.assetInfo.country }}
+              </span>
+            </div>
+
+            <div class="jspace divrow mb-1">
+              <span style="color: #475467;">Amount</span>
+              <span>{{ tokenAmount }}MWh</span>
+            </div>
+
+            <v-divider class="mb-3 mt-4"  thickness="2" style="width: 100%;"></v-divider>
+
+            <div class="jspace divrow mt-4">
+              <span>Subtotal</span>
+              <span>$124.05</span>
+            </div>
+            <div class="jspace divrow mt-1">
+              <span>IVA (19%)</span>
+              <span>$12.41</span>
+            </div>
+            <div class="jspace divrow mt-1">
+              <span class="bold">Total</span>
+              <span class="bold">$136.46</span>
+            </div>
+          </v-card>
+
+          <div class="border-card mt-6">
+            <div class="jspace divrow">
+              <span class="bold">Payment method</span>
+              <div class="divrow mb-4" style="gap: 10px;">
+                <!-- <img src="@/assets/sources/icons/visa.svg" alt="Visa">
+                <img src="@/assets/sources/icons/mastercard.svg" alt="Mastercard">
+                <img src="@/assets/sources/icons/mastercard-yellow.svg" alt="Mastercard"> -->
+                <img src="@/assets/sources/icons/internet-computer-icon.svg" alt="icp">
+              </div>
+            </div>
+
+            <!-- TODO commented for while -->
+            <!-- <div class="jspace divrow">
+              <v-btn class="btn" style="background-color: #fff!important; width: max-content!important;">Change</v-btn>
+
+              <span class="bold">Payment with ICP</span>
+            </div> -->
+          </div>
+
+          <div class="divrow center mt-6" style="gap: 10px;">
+            <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogRedeem = false">Cancel</v-btn>
+            <v-btn class="btn" @click="async () => {
+              if (!(await formRedeem.validate()).valid) return
+
+              dialogRedeem = false;
+              redeemToken()
+            }" style="border: none!important;">Redeem</v-btn>
+          </div>
+        </v-card>
+      </v-form>
+    </v-dialog>
+
+    <!-- Dialog static price -->
+    <v-dialog v-model="dialogStaticPrice" persistent>
+      <v-form ref="formStaticPrice" @submit.prevent>
+        <v-card class="card dialog-card-detokenize">
+          <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="dialogStaticPrice = false">
+          <v-sheet class="mb-6 double-sheet">
+            <v-sheet>
+              <img src="@/assets/sources/icons/sell.svg" alt="Sell" style="width: 20px; height: 20px;">
+            </v-sheet>
+          </v-sheet>
+          <h6 class="bold">Price</h6>
+          <span class="tertiary mb-4">Set the price you want to sell every MWh of your tokenized asset for. The price is set in ICP.</span>
+
+          <label for="sale_amount">Sale amount</label>
+
+          <v-text-field
+            v-model="tokenPrice"
+            id="card-number" class="input textfield-select" variant="solo"  flat
+            elevation="0" placeholder="10"
+            type="number"
+            :rules="[globalRules.requiredNumber]"
+          >
+            <template #append-inner>
+              <img
+                title="Amount per 1 MWh"
+                src="@/assets/sources/icons/help-circle.svg"
+                alt="help-circle icon"
+                class="mr-2"
+                style="width: 18px"
+              >
+
+              ICP
+
+              <!-- <v-select
+                v-model="selectedCurrency"
+                :items="itemsCurrency"
+                variant="solo"
+                flat
+                density="compact"
+                menu-icon=""
+                class="select"
+                bg-color="transparent"
+                hide-details
+                style="color: #000;z-index: 99;"
+              >
+                <template #append-inner="{ isFocused }">
+                  <img
+                    src="@/assets/sources/icons/chevron-down.svg"
+                    alt="chevron-down icon"
+                    :style="`transform: ${isFocused.value ? 'rotate(180deg)' : 'none'};`"
+                  >
+                </template>
+              </v-select> -->
+            </template>
+          </v-text-field>
+          
+
+          <div class="divrow center mt-6" style="gap: 10px;">
+            <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogStaticPrice = false;">
+              <img src="@/assets/sources/icons/arrow-left.svg" alt="arrow-left icon">
+              Back
+            </v-btn>
+            <v-btn class="btn" @click="async () => {
+              if (!(await formStaticPrice.validate()).valid) return
+
+              dialogSellingDetailsReview = true
+              dialogStaticPrice = false;
+            }
+            " style="border: none!important;">Confirm</v-btn>
+          </div>
+        </v-card>
+      </v-form>
+    </v-dialog>
+
+    <!-- Dialog selling details review -->
+    <v-dialog v-model="dialogSellingDetailsReview" persistent>
+      <v-card class="card dialog-card-detokenize">
+        <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="dialogSellingDetailsReview = false">
+        <v-sheet class="mb-6 double-sheet">
+          <v-sheet>
+            <img src="@/assets/sources/icons/wallet.svg" alt="Wallet" style="width: 20px;">
+          </v-sheet>
+        </v-sheet>
+        <h6>Selling details review</h6>
+        <span class="tertiary">Please check all details regarding the sale of your tokenized asset before you proceed, including the price and amount in MWh you will to put on the market.</span>
+
+        <v-card class="card mt-6 pa-6">
+          <span class="bold mt-3">Checkout review</span>
+
+          <v-divider class="mb-3 mt-4"  thickness="2" style="width: 150%; position: relative; left: -50px;"></v-divider>
+          
+          <div class="jspace divrow mb-4 acenter">
+            <h5 class="acenter mb-0 bold h5-mobile">
+              <company-logo
+                :energy-src="energies[tokenDetail?.assetInfo.assetType]"
+                :country-src="countries[tokenDetail?.assetInfo.specifications.country]"
+                class="mr-4"
+              ></company-logo>
+              #{{ tokenId }}
+            </h5>
+            <div class="divrow mb-0 astart acenter">
+              <h5 class="mb-0 mr-2 h5-mobile">
+                {{ tokenPrice ?? 0 }} ICP
+              </h5>
+              <span style="color:#475467">per MWh</span>
+            </div>          
+          </div>
+
+
+          <div class="jspace divrow mb-1">
+            <span style="color: #475467;">Energy source type</span>
+            <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
+              <img :src="energiesColored[tokenDetail?.assetInfo.assetType]" :alt="`${tokenDetail?.assetInfo.assetType} icon`" style="width: 20px;">
+              {{ tokenDetail?.assetInfo.assetType }}
+            </span>
+          </div>
+
+          <div class="jspace divrow mb-1">
+            <span style="color: #475467;">Country</span>
+            <span class="flex-center" style="gap: 5px">
+              <img :src="countries[tokenDetail?.assetInfo.specifications.country]" :alt="`${tokenDetail?.assetInfo.country} flag`">
+              {{ tokenDetail?.assetInfo.country }}
+            </span>
+          </div>
+
+          <div class="jspace divrow mb-1">
+            <span style="color: #475467;">Amount</span>
+            <span>{{ tokenAmount }}MWh</span>
+          </div>
+        </v-card>
+
+        <div class="divrow center mt-6" style="gap: 10px;">
+          <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogSellingDetailsReview = false">Cancel</v-btn>
+          <v-btn class="btn" @click="putOnSale()" style="border: none!important;">Put on the market</v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+
+    <!-- Dialog choose seller -->
+    <v-dialog v-model="dialogChooseSeller" persistent>
+      <v-form ref="formChooseSeller" @submit.prevent>
+        <v-card class="card dialog-card-detokenize">
+          <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="dialogChooseSeller = false">
+          <v-sheet class="mb-6 double-sheet">
+            <v-sheet>
+              <img src="@/assets/sources/icons/wallet.svg" alt="Wallet" style="width: 20px;">
+            </v-sheet>
+          </v-sheet>
+          <h6>Choose seller</h6>
+          <span class="tertiary">This is a list of all sellers of this tokenized asset.</span>
+
+          <div class="d-flex" style="gap: 20px">
+            <v-select
+              v-model="sellerSelected"
+              :items="['Sphere']"
+              variant="outline"
+              flat
+              menu-icon=""
+              class="select mb-4"
+              bg-color="#ffffff"
+              density="compact"
+              :rules="[globalRules.required]"
+              @update:model-value="(value) => {
+                tokenPrice = 10
+              }"
+            >
+              <template #append-inner="{ isFocused }">
+                <img
+                  src="@/assets/sources/icons/chevron-down.svg"
+                  alt="chevron-down icon"
+                  :style="`transform: ${isFocused.value ? 'rotate(180deg)' : 'none'};`"
+                >
+              </template>
+            </v-select>
+            
+            <div class="divcol" style="gap: 10px;">
+              <label class="text-end">Price</label>
+              <h6>{{ tokenPrice ?? 0 }} ICP</h6>
+            </div>
+          </div>
+
+          <div class="divrow center mt-6" style="gap: 10px;">
+            <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogChooseSeller = false">Cancel</v-btn>
+            <v-btn class="btn" @click="async () => {
+              if (!(await formChooseSeller.validate()).valid) return
+
+              dialogPurchaseReview = true
+              dialogChooseSeller = false;
+            }" style="border: none!important;">Proceed with payment</v-btn>
+          </div>
+        </v-card>
+      </v-form>
+    </v-dialog>
+
+    <!-- Dialog purchase review -->
+    <v-dialog v-model="dialogPurchaseReview" persistent>
+      <v-card class="card dialog-card-detokenize">
+        <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="dialogPurchaseReview = false">
+        <v-sheet class="mb-6 double-sheet">
+          <v-sheet>
+            <img src="@/assets/sources/icons/wallet.svg" alt="Wallet" style="width: 20px;">
+          </v-sheet>
+        </v-sheet>
+        <h6>Purchase review</h6>
+        <span class="tertiary">Please make sure all details on your token purchase are correct and you agree with transaction and tax fees. After selecting your payment method, please proceed with payment.</span>
+
+        <v-card class="card cards-rec mt-6 pa-6">
+          <span class="bold mt-3">Checkout review</span>
+
+          <v-divider class="mb-3 mt-4"  thickness="2" style="width: 150%; position: relative; left: -50px;"></v-divider>
+          
+          <div class="jspace divrow mb-2 acenter">
+            <h5 class="acenter h5-mobile">
+              <company-logo
+                :energy-src="energies[tokenDetail?.assetInfo.assetType]"
+                :country-src="countries[tokenDetail?.assetInfo.specifications.country]"
+                class="mr-4"
+              ></company-logo>
+              #{{ tokenId }}
+            </h5>
+            <div class="divrow astart acenter">
+              <h5 class="mr-2 h5-mobile">
+                {{ tokenPrice ?? 0 }} ICP
+              </h5>
+              <span style="color:#475467">per MWh</span>
+            </div>
+          </div>
+
+          <div class="jspace divrow mb-1">
+            <span style="color: #475467;">Energy source type</span>
+            <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
+              <img :src="energiesColored[tokenDetail?.assetInfo.assetType]" :alt="`${tokenDetail?.assetInfo.assetType} icon`" style="width: 20px;">
+              {{ tokenDetail?.assetInfo.assetType }}
+            </span>
+          </div>
+
+          <div class="jspace divrow mb-1">
+            <span style="color: #475467;">Region</span>
+            <span>{{ tokenDetail?.assetInfo.specifications.region }}</span>
+          </div>
+
+          <v-divider class="mb-3 mt-4"  thickness="2" style="width: 100%;"></v-divider>
+
+          <div class="jspace divrow mt-4">
+            <span>Subtotal</span>
+            <span>$124.05</span>
+          </div>
+          <div class="jspace divrow mt-1">
+            <span>Transaction fee (10%)</span>
+            <span>$12.41</span>
+          </div>
+          <div class="jspace divrow mt-1">
+            <span>IVA (19%)</span>
+            <span>$12.41</span>
+          </div>
+          <div class="jspace divrow mt-1">
+            <span class="bold">Total</span>
+            <span class="bold">$136.46</span>
+          </div>
+        </v-card>
+
+        <div class="border-card mt-6">
+          <div class="jspace divrow">
+            <span class="bold">Payment method</span>
+            <div class="divrow mb-4" style="gap: 10px;">
+              <!-- <img src="@/assets/sources/icons/visa.svg" alt="Visa">
+              <img src="@/assets/sources/icons/mastercard.svg" alt="Mastercard">
+              <img src="@/assets/sources/icons/mastercard-yellow.svg" alt="Mastercard"> -->
+              <img src="@/assets/sources/icons/internet-computer-icon.svg" alt="icp">
+            </div>
+          </div>
+
+          <!-- TODO commented for while -->
+          <!-- <div class="jspace divrow">
+            <v-btn class="btn" style="background-color: #fff!important; width: max-content!important;">Change</v-btn>
+
+            <span class="bold">Payment with ICP</span>
+          </div> -->
+        </div>
+
+        <div class="divrow center mt-6" style="gap: 10px;">
+          <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogPurchaseReview = false">Cancel</v-btn>
+          <v-btn class="btn" @click="purchaseToken()" style="border: none!important;">Proceed with payment</v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+
+    <!-- Dialog payment confirm -->
+    <v-dialog v-model="dialogPaymentConfirm" persistent>
+      <v-card class="card dialog-card-detokenize">
+        <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="dialogPaymentConfirm = false">
+        <v-sheet class="mb-6 double-sheet">
+          <v-sheet>
+            <img src="@/assets/sources/icons/check-verified.svg" alt="check-verified icon" style="width: 22px">
+          </v-sheet>
+        </v-sheet>
+        <h6>Payment confirmation</h6>
+        <span class="tertiary">The transaction was done succesfully. You can now check your Portafolio to find your new token. In the receipt bellow you will find all purchase information, feel free to download.</span>
+
+        <v-card class="card mt-6 pa-6">
+          <div class="jspace divrow mb-1 acenter">
+            <h5 class="acenter h5-mobile">
+              <company-logo
+                :energy-src="energies[tokenDetail?.assetInfo.assetType]"
+                :country-src="countries[tokenDetail?.assetInfo.specifications.country]"
+                class="mr-4"
+              ></company-logo>
+              #{{ tokenId }}
+            </h5>
+            <div class="divrow astart acenter">
+              <h5 class="mr-2 h5-mobile">
+                {{ tokenPrice ?? 0 }} ICP
+              </h5>
+              <span style="color:#475467">per MWh</span>
+            </div>
+          </div>
+
+          <div class="jspace divrow mb-1">
+            <span style="color: #475467;">Energy source type</span>
+            <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
+              <img :src="energiesColored[tokenDetail?.assetInfo.assetType]" :alt="`${tokenDetail?.assetInfo.assetType} icon`" style="width: 20px;">
+              {{ tokenDetail?.assetInfo.assetType }}
+            </span>
+          </div>
+
+          <div class="jspace divrow mb-1">
+            <span style="color: #475467;">Region</span>
+            <span>{{ tokenDetail?.assetInfo.specifications.region }}</span>
+          </div>
+
+          <div class="jspace divrow mb-1">
+            <span style="color: #475467;">Start date</span>
+            <span>{{ tokenDetail?.assetInfo.startDate.toDateString() }}</span>
+          </div>
+
+          <div class="jspace divrow mb-1">
+            <span style="color: #475467;">End date</span>
+            <span>{{ tokenDetail?.assetInfo.endDate.toDateString() }}</span>
+          </div>
+        </v-card>
+
+        <!-- TODO commented until api connection -->
+        <!-- <div v-for="(item,index) in dataPdfCofirm" :key="index" class="border mb-4 mt-6 jspace">
+          <div class="divrow acenter">
+            <img src="@/assets/sources/icons/pdf.svg" alt="PDF">
+            <div class="divcol ml-2">
+              <span style="color: #475467; font-weight: 500;">{{ item.name }}</span>
+              <span style="color: #475467;">{{ item.weight }}</span>
+            </div>
+          </div>
+
+          <v-card class="card center" style="width: max-content!important;">
+            <img src="@/assets/sources/icons/download.svg" alt="download icon" style="width: 22px">
+          </v-card>
+        </div> -->
+
+        <div class="divrow center mt-6" style="gap: 10px;">
+          <v-btn class="btn flex-grow-1" @click="dialogRedeemCertificates = true; dialogPaymentConfirm = false" style="border: none!important;">Continue</v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+
+    <!-- Dialog Redeem Certificates -->
+    <v-dialog v-model="dialogRedeemCertificates" persistent>
+      <v-card class="card dialog-card-detokenize">
+        <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="dialogRedeemCertificates = false">
+        <v-sheet class="mb-6 double-sheet">
+          <v-sheet>
+            <img src="@/assets/sources/icons/check-verified.svg" alt="check-verified icon" style="width: 22px">
+          </v-sheet>
+        </v-sheet>
+        <h6>Do you want to redeem the cerfificates you just bought?</h6>
+        <span class="tertiary">Obtain the redemption statement for your certificates right away by triggering the redemption flow: it’s a couple of clicks away.</span>
+        <span class="tertiary bold mt-2 acenter">
+          <img src="@/assets/sources/icons/info-circle.svg" alt="info-circle icon" class="mr-1" style="width: 23px">
+          Learn more
+        </span>
+
+        <div class="divrow center mt-6" style="gap: 10px;">
+          <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogRedeemCertificates = false">Not Now</v-btn>
+          <v-btn class="btn" @click="redeemToken()" style="border: none!important;">Yes, redeem</v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+  </div>
+</template>
+
+<script setup>
+import '@/assets/styles/pages/token-details.scss'
+import Apexchart from "vue3-apexcharts"
+import SphereIcon from '@/assets/sources/companies/sphere.svg'
+import KapidagIcon from '@/assets/sources/companies/kapidag.svg'
+import SisyphusIcon from '@/assets/sources/companies/sisyphus.svg'
+import FocalPointIcon from '@/assets/sources/companies/focal-point.svg'
+import SilverStoneIcon from '@/assets/sources/companies/silverstone.svg'
+import GeneralElectricIcon from '@/assets/sources/companies/general-electric.svg'
+import BlueSkyIcon from '@/assets/sources/companies/bluesky.svg'
+import ZenithIcon from '@/assets/sources/companies/zenith.svg'
+import LibertyIcon from '@/assets/sources/companies/liberty.svg'
+import SunshineIcon from '@/assets/sources/companies/sunshine.svg'
+import PrimeIcon from '@/assets/sources/companies/prime.svg'
+
+import HydroEnergyIcon from '@/assets/sources/energies/hydro.svg'
+import OceanEnergyIcon from '@/assets/sources/energies/ocean.svg'
+import GeothermalEnergyIcon from '@/assets/sources/energies/geothermal.svg'
+import BiomeEnergyIcon from '@/assets/sources/energies/biome.svg'
+import WindEnergyIcon from '@/assets/sources/energies/wind.svg'
+import SolarEnergyIcon from '@/assets/sources/energies/solar.svg'
+
+import HydroEnergyColorIcon from '@/assets/sources/energies/hydro-color.svg'
+import WindEnergyColorIcon from '@/assets/sources/energies/wind-color.svg'
+import SolarEnergyColorIcon from '@/assets/sources/energies/solar-color.svg'
+
+import ChileIcon from '@/assets/sources/icons/CL.svg'
+import { AgentCanister } from '@/repository/agent-canister'
+import { computed, onBeforeMount, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useToast } from 'vue-toastification'
+import variables from '@/mixins/variables'
+import { closeLoader, showLoader } from '@/plugins/functions'
+
+const
+  route = useRoute(),
+  router = useRouter(),
+  toast = useToast(),
+  { globalRules } = variables,
+
+companies = ref({
+  'Sphere': SphereIcon,
+  'KAPIDAĞ RES': KapidagIcon,
+  'Sisyphus': SisyphusIcon,
+  'Focal Point': FocalPointIcon,
+  'SIlverstone': SilverStoneIcon,
+  'General Electric': GeneralElectricIcon,
+  'BlueSky': BlueSkyIcon,
+  'Zenith': ZenithIcon,
+  'Liberty': LibertyIcon,
+  'Sunshine': SunshineIcon,
+  'Prime': PrimeIcon,
+}),
+energiesColored = {
+  hydro: HydroEnergyColorIcon,
+  ocean: OceanEnergyIcon,
+  geothermal: GeothermalEnergyIcon,
+  biome: BiomeEnergyIcon,
+  wind: WindEnergyColorIcon,
+  sun: SolarEnergyColorIcon,
+},
+energies = {
+  hydro: HydroEnergyIcon,
+  ocean: OceanEnergyIcon,
+  geothermal: GeothermalEnergyIcon,
+  biome: BiomeEnergyIcon,
+  wind: WindEnergyIcon,
+  sun: SolarEnergyIcon,
+},
+countries = {
+  chile: ChileIcon
+},
+tokenDetail = ref(undefined),
+headers = [
+  { title: 'Asset ID', key: 'token_id', sortable: false },
+  { title: 'Energy source', key: 'energy_source', sortable: false },
+  { title: 'Country', key: 'country', sortable: false },
+  { title: 'Price', key: 'price', sortable: false },
+  { title: 'MWh', key: 'mwh', sortable: false },
+  { title: 'Volume Produced', key: 'volume', sortable: false },
+  { title: 'Actions', key: 'actions', sortable: false, align: 'center'},
+],
+dataMarketplace = ref([]),
+
+itemsPerPage = 100,
+dialogTakeOffMarket = ref(false),
+dialogPaymentConfirm = ref(false),
+dialogChooseSeller = ref(false),
+formChooseSeller = ref(),
+dialogPurchaseReview = ref(false),
+dialogRedeemCertificates = ref(false),
+dialogParticipantBenefits = ref(false),
+dialogSellingDetailsReview = ref(false),
+dialogDynamicPrice = ref(false),
+itemsCurrency = ref(['USD', 'VES']),
+selectedCurrency = ref('USD'),
+dialogStaticPrice = ref(false),
+formStaticPrice = ref(),
+radioSell = ref(null),
+dialogSellOptions = ref(false),
+dialogRedeem = ref(false),
+formRedeem = ref(),
+dialogRedeemSure = ref(false),
+dialogDetokenize = ref(false),
+tabsSpecifications = ref(null),
+dataPdfRedeem = [
+  {
+    name: 'Certificate',
+    weight: '200 KB'
+  }
+],
+dataPdfCofirm = [
+  {
+    name: 'Download receipt',
+    weight: '200 KB'
+  }
+],
+dataPdf =[
+  {
+    name: 'Receipt',
+    weight: '148 KB',
+  },
+],
+date = '24/04/23',
+dialogAreYouSure = ref(false),
+tokenBenefits = [
+  {
+    name:"Lorem, ipsum dolor sit amet consectetur",
+  },
+  {
+    name:"Lorem, ipsum dolor sit amet consectetur",
+  },
+  {
+    name:"Lorem, ipsum dolor sit amet consectetur",
+  },
+  {
+    name:"Lorem, ipsum dolor sit amet consectetur",
+  },
+  {
+    name:"Lorem, ipsum dolor sit amet consectetur",
+  },
+],
+
+time_selection = 'Year',
+
+seriesOwnedVsProduced = ref([]),
+chartOptions = {
+  colors: ['#C6F221'],
+  chart: {
+    type: 'radialBar',
+    offsetY: -20,
+    sparkline: {
+      enabled: true
+    }
+  },
+  plotOptions: {
+    radialBar: {
+      startAngle: -90,
+      endAngle: 90,
+      track: {
+        background: "#F2F4F7",
+        rounded: true,
+        opacity: 1.0,
+        strokeWidth: '97%',
+        margin: 5,
+        dropShadow: {
+          enabled: true,
+          top: 2,
+          left: 0,
+          color: '#fff',
+          opacity: 1,
+          blur: 2
+        },
+        strokeLinecap: 'round',
+      },
+      dataLabels: {
+        name: {
+          show: true,
+          color: '#475467',
+          position: 'bottom',
+          fontSize: '14px',
+          offsetY: -35
+        },
+        value: {
+          fontSize: '28px',
+          color: 'black',
+          fontWeight: '700',
+          position: 'top',
+          offsetY: -20
+        }
+      }
+    }
+  },
+  grid: {
+    padding: {
+      top: 0,
+      bottom: 30,
+    }
+  },
+  fill: {
+    type: 'solid',
+  },
+  labels: ['Available'],
+},
+haveToken = ref(false),
+amountSelected = ref(),
+sellerSelected = ref(undefined),
+tokenPrice = ref(null),
+tokenAmount = ref(undefined),
+redeemBeneficiary = ref(undefined),
+
+
+tokenId = computed(() => route.query.tokenId),
+prevRoutePatch  = computed(() => {
+  const fullPath = router.options.history.state.back,
+  path = fullPath.split('?')[0]
+
+  return path.substring(1, path.length).split('-').join(' ')
+})
+
+
+// dialogs state management
+
+// buy flow
+watch(dialogChooseSeller, (value) => {
+  if (dialogPurchaseReview.value) return
+  if (!value) {
+    sellerSelected.value = null
+    tokenPrice.value = null
+  }
+})
+watch(dialogPurchaseReview, (value) => {
+  if (dialogPaymentConfirm.value) return
+  if (!value) {
+    sellerSelected.value = null
+    tokenPrice.value = null
+  }
+})
+watch(dialogPaymentConfirm, (value) => {
+  if (!value) {
+    sellerSelected.value = null
+    tokenPrice.value = null
+  }
+})
+
+// sell flow
+watch(dialogStaticPrice, (value) => {
+  if (dialogSellingDetailsReview.value) return
+  if (!value) tokenPrice.value = null
+})
+watch(dialogSellingDetailsReview, (value) => {
+  if (!value) tokenPrice.value = null
+})
+
+// redeem flow
+watch(dialogRedeem, (value) => {
+  if (!value) redeemBeneficiary.value = null
+})
+
+
+onBeforeMount(() => {
+  getData()
+
+  const input = route.query.input
+  if (input) {
+    router.replace({ path: '/token-details', query: { tokenId: tokenId.value } })
+
+    switch (input) {
+      case 'sell': dialogStaticPrice.value = true
+        break;
+
+      case 'redeem': dialogRedeemSure.value = true
+        break;
+
+      case 'takeOff': dialogTakeOffMarket.value = true
+        break;
+    }
+  }
+})
+
+
+async function getData() {
+  try {
+    const [checkToken, token, marketplace] = await Promise.allSettled([
+      AgentCanister.checkUserToken(tokenId.value),
+      AgentCanister.getTokenDetails(tokenId.value),
+      AgentCanister.getMarketplace(),
+    ])
+
+    haveToken.value = checkToken
+    tokenDetail.value = token.value
+    seriesOwnedVsProduced.value = [token.value.totalAmount / token.value.assetInfo.volumeProduced || 0]
+
+    const list = []
+    for (const item of marketplace.value) {
+      list.push({
+        token_id: item.tokenId,
+        energy_source: item.assetInfo.assetType,
+        country: item.assetInfo.specifications.country,
+        price: item.lowerPriceICP === item.higherPriceICP ? item.higherPriceICP : `${item.lowerPriceICP} - ${item.higherPriceICP}`,
+        mwh: item.mwh,
+        volume: item.assetInfo.volumeProduced,
+      })
+    }
+
+    dataMarketplace.value = list.sort((a, b) => a.token_id - b.token_id)
+  } catch (error) {
+    console.error(error);
+    toast.error(error)
+  }
+}
+
+function showDialog(input) {
+  if (!amountSelected.value) return toast.warning('Must to choose a quanitty')
+
+  switch (input) {
+    case "sell": dialogStaticPrice.value = true
+      break;
+    case "buy": dialogChooseSeller.value = true
+      break;
+    case "takeOff": dialogTakeOffMarket.value = true
+      break;
+    case "redeem": dialogRedeemSure.value = true
+      break;
+  }
+}
+
+async function purchaseToken() {
+  try {
+    showLoader()
+    const tx = await AgentCanister.purchaseToken(tokenId.value, sellerSelected.value, Number(tokenAmount.value), Number(tokenPrice.value))
+    await getData()
+
+    closeLoader()
+    dialogPaymentConfirm.value = true
+    dialogPurchaseReview.value = false;
+
+    console.log("purchase token", tx);
+    toast.success("Your purchase has been completed successfully")
+  } catch (error) {
+    closeLoader()
+    console.error(error);
+    toast.error(error)
+  }
+}
+
+async function putOnSale() {
+  try {
+    showLoader()
+    await AgentCanister.putOnSale(tokenId.value, Number(tokenAmount.value), Number(tokenPrice.value))
+    await getData()
+
+    closeLoader()
+    dialogSellingDetailsReview.value = false;
+
+    console.log("put on sale");
+    toast.success(`You have put ${tokenAmount.value} tokens up for sale`)
+  } catch (error) {
+    console.error(error);
+    toast.error(error)
+  }
+}
+
+async function takeOffMarket() {
+  try {
+    showLoader()
+    await AgentCanister.takeTokenOffMarket(tokenId.value, Number(tokenAmount.value))
+    await getData()
+
+    closeLoader()
+
+    console.log("take off market");
+    toast.success(`You have taken ${tokenAmount.value} from the market`)
+  } catch (error) {
+    console.error(error);
+    toast.error(error)
+  }
+}
+
+async function redeemToken() {
+  try {
+    showLoader()
+    const tx = await AgentCanister.redeemToken(tokenId.value, redeemBeneficiary.value, Number(tokenAmount.value))
+    await getData()
+
+    closeLoader()
+    dialogRedeemCertificates.value = false;
+
+    console.log("redeem token", tx);
+    toast.success(`you have redeemed ${tokenAmount.value} tokens`)
+  } catch (error) {
+    console.error(error);
+    toast.error(error)
+  }
+}
+
+function goDetails({ token_id: tokenId }, input) {
+  const query = { tokenId }
+  if (input) query.input = input
+
+  router.push({ path: '/token-details', query })
+}
+</script>
