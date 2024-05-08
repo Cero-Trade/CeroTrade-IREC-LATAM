@@ -6,11 +6,22 @@ import Blob "mo:base/Blob";
 import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import Error "mo:base/Error";
+import Array "mo:base/Array";
 
 // Types
 import ICRC "./ICRC";
+import ENV "./env";
 
 module {
+  // global admin assert validation
+  public func adminValidation(caller: Principal, adminCaller: Principal) {
+    assert ENV.DFX_NETWORK == "local" or Array.find<Principal>([
+      adminCaller,
+      Principal.fromText(ENV.VITE_CERO_ADMIN_1),
+      Principal.fromText(ENV.VITE_CERO_ADMIN_2)
+    ], func x = x == caller) != null
+  };
+
   public type UID = Principal;
   public type CanisterId = Principal;
   public type TokenId = Text;
@@ -182,9 +193,9 @@ module {
   public type WasmModule = Blob;
 
   public type WasmModuleName = {
+    #token: Text;
     #users: Text;
     #transactions: Text;
-    #token: Text;
   };
 
   public let LOW_MEMORY_LIMIT: Nat = 50000;

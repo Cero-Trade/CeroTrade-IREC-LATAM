@@ -46,13 +46,16 @@ To deploy only backend canisters run
 
 Register wasm module into backend canisters by run:
 ```
-dfx canister call token_index registerWasmArray
-dfx canister call user_index registerWasmArray
-dfx canister call transaction_index registerWasmArray
+dfx canister call agent registerWasmModule '(variant { "token" = "token" })'
+dfx canister call agent registerWasmModule '(variant { "users" = "users" })'
+dfx canister call agent registerWasmModule '(variant { "transactions" = "transactions" })'
 ```
 
 ### Deploying token canisters
-`dfx canister call token_index registerToken '("token_id")'`
+`dfx canister call agent registerToken '("token_id")'`
+
+### Minting tokens to users
+`dfx canister call agent mintTokenToUser '("recipent", "TokenId", TokenAmount)'`
 
 ### Generate wasm modules (Note: only cero-devs)
 ```
