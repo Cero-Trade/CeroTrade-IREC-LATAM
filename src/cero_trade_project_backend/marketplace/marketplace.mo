@@ -45,15 +45,13 @@ actor class Marketplace() = this {
     };
   };
 
-  private func callValidation(caller: Principal) {
-    assert Principal.fromText(ENV.AGENT_CANISTER_ID) == caller or Principal.fromActor(this) == caller
-  };
+  private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.AGENT_CANISTER_ID) == caller or Principal.fromActor(this) == caller };
 
 
 
   // check if token is already on the market
   public shared({ caller }) func isOnMarket(tokenId : T.TokenId) : async Bool {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (tokensInMarket.get(tokenId)) {
       case (null) { return false };
@@ -63,7 +61,7 @@ actor class Marketplace() = this {
 
   // check if user is already selling a token
   public shared({ caller }) func isSellingToken(user : T.UID, tokenId : T.TokenId): async Bool {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (tokensInMarket.get(tokenId)) {
       case (null) { return false };
@@ -81,7 +79,7 @@ actor class Marketplace() = this {
   };
 
   // new token in market
-  private func newTokensInMarket(tokenId : T.TokenId, user : T.UID, quantity : T.TokenAmount, priceICP: T.Price): async () {
+  private func _newTokensInMarket(tokenId : T.TokenId, user : T.UID, quantity : T.TokenAmount, priceICP: T.Price): async () {
     // user is selling a new token
     let usersxToken = HM.HashMap<T.UID, T.UserTokenInfo>(4, Principal.equal, Principal.hash);
 
@@ -103,7 +101,7 @@ actor class Marketplace() = this {
   };
 
   // update token information
-  private func updatetokenMarketInfo(user : T.UID, tokenId : T.TokenId, quantity : T.TokenAmount, priceICP: T.Price): async () {
+  private func _updatetokenMarketInfo(user : T.UID, tokenId : T.TokenId, quantity : T.TokenAmount, priceICP: T.Price): async () {
     switch (tokensInMarket.get(tokenId)) {
       case (null) {
         throw Error.reject("Token not found in the market");
@@ -139,22 +137,22 @@ actor class Marketplace() = this {
 
   // handles new token information on market
   public shared({ caller }) func putOnSale(tokenId : T.TokenId, quantity : T.TokenAmount, user : T.UID, priceICP: T.Price) : async () {
-    callValidation(caller);
+    _callValidation(caller);
 
     // Check if the user is already selling the token
     let isSelling = await isSellingToken(user, tokenId);
     if (isSelling != false) {
       // update the existing sale
-      await updatetokenMarketInfo(user, tokenId, quantity, priceICP);
+      await _updatetokenMarketInfo(user, tokenId, quantity, priceICP);
     } else {
       // add the new sale
-      await newTokensInMarket(tokenId, user, quantity, priceICP);
+      await _newTokensInMarket(tokenId, user, quantity, priceICP);
     };
   };
 
   // check how many token id is available for sale
   public shared({ caller }) func getAvailableTokens(tokenId : T.TokenId) : async T.TokenAmount {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (tokensInMarket.get(tokenId)) {
       case (null) {
@@ -168,7 +166,7 @@ actor class Marketplace() = this {
 
   // check how many token id is being sold by a user
   public shared({ caller }) func getUserTokensOnSale(user : T.UID, tokenId : T.TokenId) : async T.TokenAmount {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (tokensInMarket.get(tokenId)) {
       case (null) {
@@ -189,7 +187,7 @@ actor class Marketplace() = this {
 
   // check price of a token on the market of a user
   public shared({ caller }) func getTokenPrice(tokenId : T.TokenId, user : T.UID) : async T.Price {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (tokensInMarket.get(tokenId)) {
       case (null) {
@@ -210,7 +208,7 @@ actor class Marketplace() = this {
 
   // handles reducing token offer from the market
   public shared({ caller }) func takeOffSale(tokenId: T.TokenId, quantity: T.TokenAmount, user: T.UID): async () {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (tokensInMarket.get(tokenId)) {
       case (null) {
@@ -225,21 +223,21 @@ actor class Marketplace() = this {
             let newQuantity: T.TokenAmount = userTokenInfo.quantity - quantity;
             // if the new quantity is 0, remove the user from tokensxuser
             if (newQuantity == 0) {
-              await deleteUserTokenfromMarket(tokenId, user);
+              await _deleteUserTokenfromMarket(tokenId, user);
               let newTotalQuantity: T.TokenAmount = tokenMarket.totalQuantity - quantity;
               // if the new total quantity is 0, remove the token from the market
               if (newTotalQuantity == 0) {
-                  await deleteTokensInMarket(tokenId);
+                  await _deleteTokensInMarket(tokenId);
               } else if (newTotalQuantity > 0) {
                   // Update the total quantity in the market info
-                  await reduceTotalQuantity(tokenId, quantity);
+                  await _reduceTotalQuantity(tokenId, quantity);
               } else {
                   throw Error.reject("Token quantity cannot be less than 0");
               };
             } else if (newQuantity > 0) {
               // Update the user's token quantity and market info
-              await reduceOffer(tokenId, quantity, user);
-              await reduceTotalQuantity(tokenId, quantity);
+              await _reduceOffer(tokenId, quantity, user);
+              await _reduceTotalQuantity(tokenId, quantity);
             } else {
               throw Error.reject("User's token quantity cannot be less than 0");
             };
@@ -250,7 +248,7 @@ actor class Marketplace() = this {
   };
 
   // Function to delete a user's token from the market
-  private func deleteUserTokenfromMarket(tokenId: T.TokenId, user: T.UID): async () {
+  private func _deleteUserTokenfromMarket(tokenId: T.TokenId, user: T.UID): async () {
     switch (tokensInMarket.get(tokenId)) {
       case (null){
         throw Error.reject("Token not found in the market");
@@ -269,7 +267,7 @@ actor class Marketplace() = this {
   };
 
   // Function to reduce the total quantity of a token in the market
-  private func reduceTotalQuantity(tokenId: T.TokenId, quantity: T.TokenAmount): async () {
+  private func _reduceTotalQuantity(tokenId: T.TokenId, quantity: T.TokenAmount): async () {
     switch (tokensInMarket.get(tokenId)) {
       case (null) {
         throw Error.reject("Token not found in the market");
@@ -283,7 +281,7 @@ actor class Marketplace() = this {
           };
           tokensInMarket.put(tokenId, updatedInfo);
         } else if (newTotalQuantity == 0) {
-          await deleteTokensInMarket(tokenId);
+          await _deleteTokensInMarket(tokenId);
         } else {
           throw Error.reject("Token quantity cannot be less than 0");
         };
@@ -292,7 +290,7 @@ actor class Marketplace() = this {
   };
 
   // Function to reduce the offer of a token in the market
-  private func reduceOffer(tokenId: T.TokenId, quantity: T.TokenAmount, user: T.UID): async () {
+  private func _reduceOffer(tokenId: T.TokenId, quantity: T.TokenAmount, user: T.UID): async () {
     switch (tokensInMarket.get(tokenId)) {
       case (null) {
         throw Error.reject("Token not found in the market");
@@ -309,7 +307,7 @@ actor class Marketplace() = this {
               let newUserTokenInfo = { userTokenInfo with quantity = Int.abs(newUserQuantity) };
               info.usersxToken.put(user, newUserTokenInfo);
             } else if (newUserQuantity == 0) {
-              await deleteUserTokenfromMarket(tokenId, user);
+              await _deleteUserTokenfromMarket(tokenId, user);
             } else {
               throw Error.reject("User's token quantity cannot be less than 0");
             };
@@ -320,7 +318,7 @@ actor class Marketplace() = this {
   };
 
   
-  private func getMinMax(hashmap: HM.HashMap<T.UID, T.UserTokenInfo>): (?T.Price, ?T.Price) {
+  private func _getMinMax(hashmap: HM.HashMap<T.UID, T.UserTokenInfo>): (?T.Price, ?T.Price) {
     var min : ?T.Price = null;
     var max : ?T.Price = null;
 
@@ -380,7 +378,7 @@ actor class Marketplace() = this {
     var i = 0;
 
     for ((currentTokenId, value) in tokensInMarket.entries()) {
-      let (min, max) = getMinMax(value.usersxToken);
+      let (min, max) = _getMinMax(value.usersxToken);
       let lowerPriceICP: T.Price = switch(min) {
         case(null) { { e8s = 0 } };
         case(?value) value;
@@ -519,7 +517,7 @@ actor class Marketplace() = this {
 
 
   // Function to delete a token from the market
-  private func deleteTokensInMarket(tokenId: T.TokenId): async () {
+  private func _deleteTokensInMarket(tokenId: T.TokenId): async () {
     tokensInMarket.delete(tokenId);
   };
 };

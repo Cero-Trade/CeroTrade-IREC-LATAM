@@ -43,15 +43,15 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
     usersDirectoryEntries := [];
   };
 
-  private func callValidation(caller: Principal) { assert Principal.fromText(ENV.AGENT_CANISTER_ID) == caller };
-  private func adminValidation(caller: Principal) { assert adminCaller == caller };
+  private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.AGENT_CANISTER_ID) == caller };
+  private func _adminValidation(caller: Principal) { assert adminCaller == caller };
 
   /// get size of usersDirectory collection
   public query func length(): async Nat { usersDirectory.size() };
 
   /// register wasm module to dynamic users canister, only admin can run it
   public shared({ caller }) func registerWasmArray(): async() {
-    adminValidation(caller);
+    _adminValidation(caller);
 
     let branch = switch(ENV.DFX_NETWORK) {
       case("ic") "main";
@@ -85,7 +85,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
   };
 
   /// autonomous function, will be executed when current canister it is full
-  private func createCanister(): async ?T.CanisterId {
+  private func _createCanister(): async ?T.CanisterId {
     Debug.print(debug_show ("before create_canister: " # Nat.toText(Cycles.balance())));
 
     Cycles.add(300_000_000_000);
@@ -114,7 +114,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
     return ?canister_id
   };
 
-  private func deleteUserWeb2(token: Text): async() {
+  private func _deleteUserWeb2(token: Text): async() {
     let formData = { token };
     let formBlob = to_candid(formData);
     let formKeys = ["token"];
@@ -130,7 +130,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
   /// register [usersDirectory] collection
   public shared({ caller }) func registerUser(uid: T.UID, form: T.RegisterForm) : async() {
-    callValidation(caller);
+    _callValidation(caller);
 
     // WARN just for debug
     Debug.print(Principal.toText(uid));
@@ -170,7 +170,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
       let cid: T.CanisterId = switch(currentCanisterid) {
         case(null) {
           /// generate canister
-          currentCanisterid := await createCanister();
+          currentCanisterid := await _createCanister();
           switch(currentCanisterid) {
             case(null) throw Error.reject(errorText);
             case(?cid) cid;
@@ -181,7 +181,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
           let haveMemory = await checkMemoryStatus();
           if (haveMemory) { cid } else {
             /// generate canister
-            currentCanisterid := await createCanister();
+            currentCanisterid := await _createCanister();
             switch(currentCanisterid) {
               case(null) throw Error.reject(errorText);
               case(?cid) cid;
@@ -195,7 +195,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
       usersDirectory.put(uid, cid);
     } catch (error) {
-      await deleteUserWeb2(trimmedToken);
+      await _deleteUserWeb2(trimmedToken);
 
       throw Error.reject(Error.message(error));
     };
@@ -203,7 +203,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
   /// store user avatar into users collection
   public shared({ caller }) func storeCompanyLogo(uid: T.UID, avatar: T.CompanyLogo): async() {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch(usersDirectory.get(uid)) {
       case(null) throw Error.reject(notExists);
@@ -213,7 +213,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
   /// delete user to cero trade
   public shared({ caller }) func deleteUser(uid: T.UID): async() {
-    callValidation(caller);
+    _callValidation(caller);
 
     let cid: T.CanisterId = switch(usersDirectory.get(uid)) {
       case(null) throw Error.reject(notExists);
@@ -222,7 +222,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
     let token = await UsersCanister(cid).getUserToken(uid);
 
-    await deleteUserWeb2(token);
+    await _deleteUserWeb2(token);
 
     await UsersCanister(cid).deleteUser(uid);
 
@@ -231,7 +231,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
   /// get canister id that allow current user
   public shared({ caller }) func getUserCanister(uid: T.UID) : async T.CanisterId {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
@@ -241,7 +241,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
   /// update user portfolio
   public shared({ caller }) func updatePorfolio(uid: T.UID, token: T.TokenId) : async() {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
@@ -251,7 +251,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
   // update user transactions
   public shared({ caller }) func updateTransactions(uid: T.UID, txId: T.TransactionId) : async() {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
@@ -262,7 +262,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
   /// get profile information
   public shared({ caller }) func getProfile(uid: T.UID): async T.UserProfile {
-    callValidation(caller);
+    _callValidation(caller);
 
     let cid: T.CanisterId = switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
@@ -311,7 +311,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
   /// get portfolio information
   public shared({ caller }) func getPortfolioTokenIds(uid: T.UID): async [T.TokenId] {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
@@ -322,7 +322,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
   /// get transaction user ids
   public shared({ caller }) func getTransactionIds(uid: T.UID): async [T.TransactionId] {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
@@ -333,7 +333,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
   /// get user account ledger
   public shared({ caller }) func getUserLedger(uid: T.UID): async Blob {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);

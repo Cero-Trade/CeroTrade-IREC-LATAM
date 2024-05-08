@@ -74,6 +74,7 @@ export default defineConfig((userConfig) => {
       'process.env': {
         BASE_URL: env.VITE_BASE_URL,
         SECURE_STORAGE_NAME_SPACE: env.VITE_SECURE_STORAGE_NAME_SPACE,
+        CERO_ADMIN: env.VITE_CERO_ADMIN,
         DFX_NETWORK: env.DFX_NETWORK,
         ...canisterDefinitions,
       },

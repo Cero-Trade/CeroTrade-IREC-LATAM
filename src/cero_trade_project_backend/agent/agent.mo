@@ -21,11 +21,14 @@ import Marketplace "canister:marketplace";
 // types
 import T "../types";
 import HT "../http_service/http_service_types";
+import ENV "../env";
 
-actor Agent {
+shared({ caller = adminCaller }) actor class Agent() {
   // constants
   stable let alreadyExists = "User already exists on cero trade";
   stable let notExists = "User doesn't exists on cero trade";
+
+  private func _adminValidation(caller: Principal) { assert Principal.fromText(ENV.VITE_CERO_ADMIN) == caller or adminCaller == caller };
 
 
   /// login user into cero trade
@@ -51,20 +54,24 @@ actor Agent {
 
 
   /// performe mint with tokenId and amount requested
-  public shared({ caller }) func mintToken(tokenId: T.TokenId, tokenAmount: T.TokenAmount): async() {
+  public shared({ caller }) func mintToken(recipent: T.Beneficiary, tokenId: T.TokenId, tokenAmount: T.TokenAmount): async() {
+    _adminValidation(caller);
+
+    let beneficiary = Principal.fromText(recipent);
+
     // check if user exists
-    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
+    if (not (await UserIndex.checkPrincipal(beneficiary))) throw Error.reject(notExists);
 
     // mint token to user token collection
-    let tokensInMarket = await Marketplace.getUserTokensOnSale(caller, tokenId);
-    await TokenIndex.mintToken(caller, tokenId, tokenAmount, tokensInMarket);
+    let tokensInMarket = await Marketplace.getUserTokensOnSale(beneficiary, tokenId);
+    await TokenIndex.mintToken(beneficiary, tokenId, tokenAmount, tokensInMarket);
 
     // update user portfolio
-    await UserIndex.updatePorfolio(caller, tokenId);
+    await UserIndex.updatePorfolio(beneficiary, tokenId);
   };
 
 
-  /// helper function to performe burn method
+  /// performe mint with tokenId and amount requested
   private func _burnToken(caller: T.UID, tokenId: T.TokenId, tokenAmount: T.TokenAmount): async() {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
@@ -76,9 +83,6 @@ actor Agent {
     // update user portfolio
     await UserIndex.updatePorfolio(caller, tokenId);
   };
-
-  /// performe mint with tokenId and amount requested
-  public shared({ caller }) func burnToken(tokenId: T.TokenId, tokenAmount: T.TokenAmount): async() { await _burnToken(caller, tokenId, tokenAmount) };
 
 
   /// get profile information
