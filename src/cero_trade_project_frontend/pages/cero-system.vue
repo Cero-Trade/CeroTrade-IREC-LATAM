@@ -109,7 +109,7 @@ async function registerWasmModule(input) {
   try {
     await CeroSystemApi.registerWasmModule(input)
 
-    toast.success(`token minted to user ${mintToUserForm.value.user}`)
+    toast.success(`Wasm module registered: ${input} `)
   } catch (error) {
     toast.error(error)
   }
@@ -125,7 +125,7 @@ async function registerTokenCall() {
     const res = await CeroSystemApi.registerToken(registerTokenForm.value.tokenId)
     console.log(res);
 
-    toast.success("token minted")
+    toast.success("Token minted")
   } catch (error) {
     toast.error(error)
   }
@@ -141,7 +141,7 @@ async function mintToUserCall() {
     mintToUserForm.value.tokenAmount = Number(mintToUserForm.value.tokenAmount)
     await CeroSystemApi.mintTokenToUser(mintToUserForm.value)
 
-    toast.success(`token minted to user ${mintToUserForm.value.user}`)
+    toast.success(`Token minted to user ${mintToUserForm.value.user}`)
   } catch (error) {
     toast.error(error)
   }
