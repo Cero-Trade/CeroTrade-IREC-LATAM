@@ -44,14 +44,13 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
   };
 
   private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.AGENT_CANISTER_ID) == caller };
-  private func _adminValidation(caller: Principal) { assert adminCaller == caller };
 
   /// get size of usersDirectory collection
   public query func length(): async Nat { usersDirectory.size() };
 
   /// register wasm module to dynamic users canister, only admin can run it
   public shared({ caller }) func registerWasmArray(): async() {
-    _adminValidation(caller);
+    _callValidation(caller);
 
     let branch = switch(ENV.DFX_NETWORK) {
       case("ic") "main";

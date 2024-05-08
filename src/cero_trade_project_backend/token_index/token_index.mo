@@ -40,14 +40,13 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
   };
 
   private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.AGENT_CANISTER_ID) == caller };
-  private func _adminValidation(caller: Principal) { assert adminCaller == caller };
 
   /// get size of tokenDirectory collection
   public query func length(): async Nat { tokenDirectory.size() };
 
   /// register wasm module to dynamic token canister, only admin can run it
   public shared({ caller }) func registerWasmArray(): async() {
-    _adminValidation(caller);
+    _callValidation(caller);
 
     let branch = switch(ENV.DFX_NETWORK) {
       case("ic") "main";
@@ -67,7 +66,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
 
   /// register [tokenDirectory] collection
   public shared({ caller }) func registerToken(tokenId: Text): async Principal {
-    _adminValidation(caller);
+    _callValidation(caller);
 
     if (tokenId == "") throw Error.reject("Must to provide a tokenId");
 
@@ -154,7 +153,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
 
   /// delete [tokenDirectory] collection
   public shared({ caller }) func deleteToken(tokenId: Text): async () {
-    _adminValidation(caller);
+    T.adminValidation(caller, adminCaller);
 
     switch(tokenDirectory.get(tokenId)) {
       case(null) throw Error.reject("Token doesn't exists");
@@ -176,7 +175,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
     idle_cycles_burned_per_day: Nat;
     module_hash: ?[Nat8];
   } {
-    _adminValidation(caller);
+    T.adminValidation(caller, adminCaller);
 
     switch(tokenDirectory.get(tokenId)) {
       case(null) throw Error.reject("Token doesn't exists");
@@ -189,7 +188,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
 
   /// resume token status
   public shared({ caller }) func startToken(tokenId: T.TokenId): async () {
-    _adminValidation(caller);
+    T.adminValidation(caller, adminCaller);
 
     switch(tokenDirectory.get(tokenId)) {
       case(null) throw Error.reject("Token doesn't exists");
@@ -202,7 +201,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
 
   /// stop token status
   public shared({ caller }) func stopToken(tokenId: T.TokenId): async () {
-    _adminValidation(caller);
+    T.adminValidation(caller, adminCaller);
 
     switch(tokenDirectory.get(tokenId)) {
       case(null) throw Error.reject("Token doesn't exists");
@@ -241,7 +240,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
     };
   };
 
-  public shared({ caller }) func mintToken(uid: T.UID, tokenId: T.TokenId, amount: T.TokenAmount, inMarket: T.TokenAmount): async() {
+  public shared({ caller }) func mintTokenToUser(uid: T.UID, tokenId: T.TokenId, amount: T.TokenAmount, inMarket: T.TokenAmount): async() {
     _callValidation(caller);
 
     switch (tokenDirectory.get(tokenId)) {

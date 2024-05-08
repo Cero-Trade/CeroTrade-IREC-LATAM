@@ -21,14 +21,11 @@ import Marketplace "canister:marketplace";
 // types
 import T "../types";
 import HT "../http_service/http_service_types";
-import ENV "../env";
 
 shared({ caller = adminCaller }) actor class Agent() {
   // constants
   stable let alreadyExists = "User already exists on cero trade";
   stable let notExists = "User doesn't exists on cero trade";
-
-  private func _adminValidation(caller: Principal) { assert Principal.fromText(ENV.VITE_CERO_ADMIN) == caller or adminCaller == caller };
 
 
   /// login user into cero trade
@@ -53,9 +50,29 @@ shared({ caller = adminCaller }) actor class Agent() {
   public shared({ caller }) func deleteUser(): async() { await UserIndex.deleteUser(caller) };
 
 
+  /// register a canister wasm module
+  public shared({ caller }) func registerWasmModule(moduleName: T.WasmModuleName): async() {
+    T.adminValidation(caller, adminCaller);
+
+    switch(moduleName) {
+      case(#token("token")) await TokenIndex.registerWasmArray();
+      case(#users("users")) await UserIndex.registerWasmArray();
+      case(#transactions("transactions")) await TransactionIndex.registerWasmArray();
+      case _ throw Error.reject("Module name doesn't exists");
+    };
+  };
+
+
+  /// register token on platform
+  public shared({ caller }) func registerToken(tokenId: T.TokenId): async Principal {
+    T.adminValidation(caller, adminCaller);
+    await TokenIndex.registerToken(tokenId);
+  };
+
+
   /// performe mint with tokenId and amount requested
-  public shared({ caller }) func mintToken(recipent: T.Beneficiary, tokenId: T.TokenId, tokenAmount: T.TokenAmount): async() {
-    _adminValidation(caller);
+  public shared({ caller }) func mintTokenToUser(recipent: T.Beneficiary, tokenId: T.TokenId, tokenAmount: T.TokenAmount): async() {
+    T.adminValidation(caller, adminCaller);
 
     let beneficiary = Principal.fromText(recipent);
 
@@ -64,7 +81,7 @@ shared({ caller = adminCaller }) actor class Agent() {
 
     // mint token to user token collection
     let tokensInMarket = await Marketplace.getUserTokensOnSale(beneficiary, tokenId);
-    await TokenIndex.mintToken(beneficiary, tokenId, tokenAmount, tokensInMarket);
+    await TokenIndex.mintTokenToUser(beneficiary, tokenId, tokenAmount, tokensInMarket);
 
     // update user portfolio
     await UserIndex.updatePorfolio(beneficiary, tokenId);

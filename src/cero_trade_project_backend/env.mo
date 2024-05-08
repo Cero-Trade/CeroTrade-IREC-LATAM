@@ -2,7 +2,8 @@ module {
   public let VITE_BASE_URL: Text = "/";
   public let VITE_SECURE_STORAGE_NAME_SPACE: Text = "cero_trade__";
   public let VITE_SECURE_STORAGE_KEY: Text = "246810";
-  public let VITE_CERO_ADMIN: Text = "2vxsx-fae";
+  public let VITE_CERO_ADMIN_1: Text = "mgxfs-dzb6c-2y37x-zlz22-fqhaf-d5v3p-hfjig-6fj6z-zbvsu-3642y-zqe";
+  public let VITE_CERO_ADMIN_2: Text = "fu2ff-hrlsy-p5ppu-n44ag-fpfut-mrirb-im7vn-tnry3-ajkhn-vyxnp-uae";
   public let DFX_VERSION: Text = "0.15.2";
   public let DFX_NETWORK: Text = "local";
   public let CANISTER_CANDID_PATH_AGENT: Text = "/home/detextre4/repositories/cero-trade-repo/mvp1.0/.dfx/local/canisters/agent/agent.did";
