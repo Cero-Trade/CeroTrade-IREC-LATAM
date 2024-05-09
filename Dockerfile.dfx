@@ -1,0 +1,26 @@
+# Dockerfile.dfx
+FROM ubuntu:20.04
+
+# Install dependencies required for dfx
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    build-essential \
+    libssl-dev \
+    pkg-config \
+    cmake \
+    libunwind8 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Download and install a specific version of dfx
+ENV DFX_VERSION="0.15.2"
+RUN curl -LO "https://github.com/dfinity/sdk/releases/download/${DFX_VERSION}/dfx-${DFX_VERSION}-x86_64-linux.tar.gz" && \
+    tar -xzf dfx-${DFX_VERSION}-x86_64-linux.tar.gz -C /usr/local/bin && \
+    rm dfx-${DFX_VERSION}-x86_64-linux.tar.gz
+
+# Add dfx to the PATH
+ENV DFX_PATH="/usr/local/bin/dfx"
+ENV PATH="$DFX_PATH:$PATH"
+
+# Cache installation
+RUN dfx cache install
