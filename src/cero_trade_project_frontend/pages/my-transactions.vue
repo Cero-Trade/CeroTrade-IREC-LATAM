@@ -122,97 +122,180 @@
 
     <!-- Dialog Filters -->
     <v-dialog v-model="dialogFilters" persistent width="100%" min-width="290" max-width="500">
-      <v-card class="card dialog-card-detokenize d-flex flex-column" style="min-width: 100% !important">
-        <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="dialogFilters = false">
+      <v-form ref="filtersFormRef" @submit.prevent>
+        <v-card class="card dialog-card-detokenize d-flex flex-column" style="min-width: 100% !important">
+          <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="dialogFilters = false">
 
-        <div class="d-flex mb-2 align-center" style="gap: 10px">
-          <v-sheet class="double-sheet">
-            <v-sheet>
-              <img src="@/assets/sources/icons/filter-lines.svg" alt="filter-lines icon" style="width: 22px">
+          <div class="d-flex mb-2 align-center" style="gap: 10px">
+            <v-sheet class="double-sheet">
+              <v-sheet>
+                <img src="@/assets/sources/icons/filter-lines.svg" alt="filter-lines icon" style="width: 22px">
+              </v-sheet>
             </v-sheet>
-          </v-sheet>
 
-          <h6 class="mb-0">Filters</h6>
-        </div>
+            <h6 class="mb-0">Filters</h6>
+          </div>
 
 
-        <v-btn
-          class="btn mb-4 ml-auto"
-          style="background-color: #fff !important; width: max-content !important"
-          @click="Object.keys(filters).forEach(e => filters[e] = null)"
-        >clear all</v-btn>
+          <v-btn
+            class="btn mb-4 ml-auto"
+            style="background-color: #fff !important; width: max-content !important"
+            @click="Object.keys(filters).forEach(e => filters[e] = null)"
+          >clear all</v-btn>
 
-        <v-autocomplete
-          v-model="filters.country"
-          :items="countries"
-          variant="outlined"
-          flat elevation="0"
-          item-title="name"
-          item-value="name"
-          label="country"
-          class="select mb-4"
-        ></v-autocomplete>
+          <div class="d-flex mb-7" style="gap: 20px;">
+            <v-menu v-model="fromDateMenu" :close-on-content-click="false">
+              <template v-slot:activator="{ props }">
+                <v-text-field
+                  v-model="filters.fromDate"
+                  label="Select from date"
+                  readonly v-bind="props"
+                  variant="outlined"
+                  density="compact"
+                  class="select"
+                  style="flex-basis: 50%;"
+                  :rules="[(v) => {
+                    if (filters.toDate && !v) return 'Must to select from date'
+                    return true
+                  }]"
+                >
+                  <template #append-inner>
+                    <img
+                      v-if="filters.fromDate"
+                      src="@/assets/sources/icons/close.svg"
+                      alt="close icon"
+                      class="pointer"
+                      @click="filters.fromDate = null"
+                    >
+                  </template>
+                </v-text-field>
+              </template>
 
-        <v-range-slider
-          v-model="filters.priceRange"
-          :min="0"
-          :max="1000"
-          :step="1"
-          variant="solo"
-          elevation="0"
-          label="Mwh range"
-          :thumb-label="filters.priceRange ? 'always' : false"
-          class="align-center mt-3"
-          hide-details
-        ></v-range-slider>
+              <v-date-picker
+                title=""
+                color="rgb(var(--v-theme-secondary))"
+                hide-actions
+                @update:model-value="(v) => { filters.fromDate = moment(v).format('YYYY/MM/DD') }"
+              >
+                <template v-slot:header></template>
+              </v-date-picker>
+            </v-menu>
 
-        <v-range-slider
-          v-model="filters.mwhRange"
-          :min="0"
-          :max="1000"
-          :step="1"
-          variant="solo"
-          elevation="0"
-          label="Mwh range"
-          :thumb-label="filters.mwhRange ? 'always' : false"
-          class="align-center mt-3"
-          hide-details
-        ></v-range-slider>
 
-        <v-select
-          v-model="filters.method"
-          :items="txMethodValues"
-          variant="outlined"
-          flat elevation="0"
-          item-title="name"
-          item-value="name"
-          label="Via"
-          class="select mt-3 mb-3"
-          hide-details
-        ></v-select>
+            <v-menu v-model="toDateMenu" :close-on-content-click="false">
+              <template v-slot:activator="{ props }">
+                <v-text-field
+                  v-model="filters.toDate"
+                  label="Select to date"
+                  readonly v-bind="props"
+                  variant="outlined"
+                  density="compact"
+                  class="select"
+                  style="flex-basis: 50%;"
+                  :rules="[(v) => {
+                    if (filters.fromDate && !v) return 'Must to select to date'
+                    return true
+                  }]"
+                >
+                  <template #append-inner>
+                    <img
+                      v-if="filters.toDate"
+                      src="@/assets/sources/icons/close.svg" alt="close icon"
+                      class="pointer"
+                      @click="filters.toDate = null"
+                    >
+                  </template>
+                </v-text-field>
+              </template>
 
-        <label>Asset types</label>
-        <v-chip-group
-          v-model="filters.assetTypes"
-          column
-          multiple
-        >
-          <v-chip
-            v-for="(value, key, i) in energies" :key="i"
+              <v-date-picker
+                title=""
+                color="rgb(var(--v-theme-secondary))"
+                hide-actions
+                @update:model-value="(v) => { filters.toDate = moment(v).format('YYYY/MM/DD') }"
+              >
+                <template v-slot:header></template>
+              </v-date-picker>
+            </v-menu>
+          </div>
+
+          <v-autocomplete
+            v-model="filters.country"
+            :items="countries"
             variant="outlined"
-            rounded="50"
-            filter
+            flat elevation="0"
+            item-title="name"
+            item-value="name"
+            label="country"
+            class="select mb-4"
+          ></v-autocomplete>
+
+          <v-range-slider
+            v-model="filters.priceRange"
+            :min="0"
+            :max="1000"
+            :step="1"
+            variant="solo"
+            elevation="0"
+            label="Mwh range"
+            :thumb-label="filters.priceRange ? 'always' : false"
+            class="align-center mt-3"
+            hide-details
+          ></v-range-slider>
+
+          <v-range-slider
+            v-model="filters.mwhRange"
+            :min="0"
+            :max="1000"
+            :step="1"
+            variant="solo"
+            elevation="0"
+            label="Mwh range"
+            :thumb-label="filters.mwhRange ? 'always' : false"
+            class="align-center mt-3"
+            hide-details
+          ></v-range-slider>
+
+          <v-select
+            v-model="filters.method"
+            :items="txMethodValues"
+            variant="outlined"
+            flat elevation="0"
+            item-title="name"
+            item-value="name"
+            label="Via"
+            class="select mt-3 mb-3"
+            hide-details
+          ></v-select>
+
+          <label>Asset types</label>
+          <v-chip-group
+            v-model="filters.assetTypes"
+            column
+            multiple
           >
-            <img :src="value" :alt="`${key} energy`" class="mr-2"> {{ key }}
-          </v-chip>
-        </v-chip-group>
+            <v-chip
+              v-for="(value, key, i) in energies" :key="i"
+              variant="outlined"
+              rounded="50"
+              filter
+            >
+              <img :src="value" :alt="`${key} energy`" class="mr-2"> {{ key }}
+            </v-chip>
+          </v-chip-group>
 
 
-        <div class="divrow center mt-6" style="gap: 10px;">
-          <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogFilters = false">Cancel</v-btn>
-          <v-btn class="btn" @click="dialogFilters = false; getData()" style="border: none!important;">Apply</v-btn>
-        </div>
-      </v-card>
+          <div class="divrow center mt-6" style="gap: 10px;">
+            <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogFilters = false">Cancel</v-btn>
+            <v-btn class="btn" @click="async () => {
+              if (!(await filtersFormRef.validate()).valid) return
+
+              dialogFilters = false;
+              getData()
+            }" style="border: none!important;">Apply</v-btn>
+          </div>
+        </v-card>
+      </v-form>
     </v-dialog>
   </div>
 </template>
@@ -244,6 +327,7 @@ import { AgentCanister } from '@/repository/agent-canister'
 import { TxType, TxMethod } from '@/models/transaction-model'
 import { useToast } from 'vue-toastification'
 import { useRouter } from 'vue-router'
+import moment from "moment";
 
 const
   router = useRouter(),
@@ -314,13 +398,19 @@ txMethodValues = [
 ],
 
 dialogFilters = ref(),
+filtersFormRef = ref(),
 filters = ref({
   country: null,
   priceRange: null,
   mwhRange: null,
   assetTypes: null,
   method: null,
+  fromDate: null,
+  toDate: null,
 }),
+
+fromDateMenu = ref(),
+toDateMenu = ref(),
 
 
 windowStepComputed = computed(() => {
@@ -331,6 +421,14 @@ windowStepComputed = computed(() => {
   }
 })
 
+
+watch(fromDateMenu, (value) => {
+  if (!value) filtersFormRef.value.validate()
+})
+
+watch(toDateMenu, (value) => {
+  if (!value) filtersFormRef.value.validate()
+})
 
 watch(windowStepComputed, (newVal) => {
   windowStep.value = newVal;
@@ -347,6 +445,11 @@ onBeforeMount(() => {
 async function getData() {
   loading.value = true
 
+  // map dates
+  let rangeDates
+  if (filters.value.fromDate && filters.value.toDate)
+    rangeDates = [filters.value.fromDate, filters.value.toDate]
+
   // map asset types
   const assetTypes = []
   for (const index of filters.value.assetTypes ?? []) assetTypes.push(Object.keys(energies)[index])
@@ -362,6 +465,7 @@ async function getData() {
       mwhRange: filters.value.mwhRange,
       assetTypes,
       method: filters.value.method,
+      rangeDates,
     }),
     list = []
 

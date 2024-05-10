@@ -24,6 +24,7 @@ export default {
       return true
     },
   },
+  dateFormat: 'YYYY-MM-DDTHH:mm:ss.sssssssssZ',
   isProduction: process.env.NODE_ENV === 'production',
 
   isLogged() {

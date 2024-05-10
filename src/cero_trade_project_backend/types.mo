@@ -22,6 +22,10 @@ module {
     ], func x = x == caller) != null
   };
 
+  // TODO try to change to simplest format to better filtering
+  // global date format variable
+  public let dateFormat: Text = "YYYY-MM-DDTHH:mm:ss.sssssssssZ";
+
   public type UID = Principal;
   public type CanisterId = Principal;
   public type TokenId = Text;
@@ -265,6 +269,6 @@ module {
   public type TransactionsInterface = actor {
     length: query () -> async Nat;
     registerTransaction: (tx: TransactionInfo) -> async TransactionId;
-    getTransactionsById: query (txIds: [TransactionId], txType: ?TxType, priceRange: ?[Price], mwhRange: ?[TokenAmount], method: ?TxMethod) -> async [TransactionInfo];
+    getTransactionsById: query (txIds: [TransactionId], txType: ?TxType, priceRange: ?[Price], mwhRange: ?[TokenAmount], method: ?TxMethod, rangeDates: ?[Text]) -> async [TransactionInfo];
   };
 }

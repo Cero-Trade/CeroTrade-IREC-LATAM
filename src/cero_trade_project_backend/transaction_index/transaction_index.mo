@@ -214,7 +214,7 @@ shared({ caller = adminCaller }) actor class TransactionIndex() = this {
   };
 
   /// get transactions by tx id
-  public shared({ caller }) func getTransactionsById(txIds: [T.TransactionId], txType: ?T.TxType, priceRange: ?[T.Price], mwhRange: ?[T.TokenAmount], method: ?T.TxMethod) : async [T.TransactionInfo] {
+  public shared({ caller }) func getTransactionsById(txIds: [T.TransactionId], txType: ?T.TxType, priceRange: ?[T.Price], mwhRange: ?[T.TokenAmount], method: ?T.TxMethod, rangeDates: ?[Text]) : async [T.TransactionInfo] {
     _callValidation(caller);
 
     let txs = Buffer.Buffer<T.TransactionInfo>(50);
@@ -240,7 +240,7 @@ shared({ caller = adminCaller }) actor class TransactionIndex() = this {
 
     // iterate canisters to get transactions supplied
     for((cid, txIds) in directory.entries()) {
-      let transactions: [T.TransactionInfo] = await TransactionsCanister(cid).getTransactionsById(txIds, txType, priceRange, mwhRange, method);
+      let transactions: [T.TransactionInfo] = await TransactionsCanister(cid).getTransactionsById(txIds, txType, priceRange, mwhRange, method, rangeDates);
       txs.append(Buffer.fromArray<T.TransactionInfo>(transactions));
     };
 

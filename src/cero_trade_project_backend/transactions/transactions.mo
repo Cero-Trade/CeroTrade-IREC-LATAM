@@ -9,6 +9,7 @@ import Buffer "mo:base/Buffer";
 import Nat64 "mo:base/Nat64";
 import Hash "mo:base/Hash";
 import Iter "mo:base/Iter";
+import DateTime "mo:datetime/DateTime";
 
 
 // types
@@ -48,7 +49,7 @@ shared({ caller = transactionIndexCaller }) actor class Transactions() {
   };
 
 
-  public query func getTransactionsById(txIds: [T.TransactionId], txType: ?T.TxType, priceRange: ?[T.Price], mwhRange: ?[T.TokenAmount], method: ?T.TxMethod): async [T.TransactionInfo] {
+  public query func getTransactionsById(txIds: [T.TransactionId], txType: ?T.TxType, priceRange: ?[T.Price], mwhRange: ?[T.TokenAmount], method: ?T.TxMethod, rangeDates: ?[Text]): async [T.TransactionInfo] {
     let txs = Buffer.Buffer<T.TransactionInfo>(50);
 
     for(tx in txIds.vals()) {
@@ -80,7 +81,31 @@ shared({ caller = transactionIndexCaller }) actor class Transactions() {
             case(?value) txInfo.method == value;
           };
 
-          if (filterType and filterPrice and filterRange and filterMethod) txs.add(txInfo)
+          // filter by dates
+          let filterDates: Bool = switch(rangeDates) {
+            case(null) true;
+            case(?dates) {
+              let txDate = switch(DateTime.fromText(txInfo.date, T.dateFormat)) {
+                case(null) throw Error.reject("Failed to parse datetime");
+                case(?dateTime) dateTime;
+              };
+
+              let compareFrom = switch(DateTime.fromText(dates[0], T.dateFormat)) {
+                case(null) throw Error.reject("Failed to parse datetime");
+                case(?dateTime) dateTime.compare(txDate) == #equal or dateTime.compare(txDate) == #less;
+              };
+
+              let compareTo = switch(DateTime.fromText(dates[1], T.dateFormat)) {
+                case(null) throw Error.reject("Failed to parse datetime");
+                case(?dateTime) dateTime.compare(txDate) == #equal or dateTime.compare(txDate) == #greater;
+              };
+
+              compareFrom and compareTo
+            };
+          };
+
+
+          if (filterType and filterPrice and filterRange and filterMethod and filterDates) txs.add(txInfo)
         };
       };
     };

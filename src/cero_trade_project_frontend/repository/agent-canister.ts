@@ -7,6 +7,8 @@ import { AssetType, TokenModel } from "@/models/token-model";
 import { TokensICP, TransactionHistoryInfo, TransactionInfo, TxMethodDef, TxTypeDef } from "@/models/transaction-model";
 import { MarketplaceInfo, MarketplaceSellersInfo } from "@/models/marketplace-model";
 import { Principal } from "@dfinity/principal";
+import moment from "moment";
+import variables from "@/mixins/variables";
 
 export class AgentCanister {
   static async register(data: {
@@ -330,7 +332,7 @@ export class AgentCanister {
   }
 
 
-  static async getTransactions({ page, length, txType, country, priceRange, mwhRange, assetTypes, method }: {
+  static async getTransactions({ page, length, txType, country, priceRange, mwhRange, assetTypes, method, rangeDates }: {
     page?: number,
     length?: number,
     txType?: TxTypeDef,
@@ -339,10 +341,12 @@ export class AgentCanister {
     mwhRange?: number[],
     assetTypes?: AssetType[],
     method?: TxMethodDef,
+    rangeDates?: Date[],
   }): Promise<{ data: TransactionHistoryInfo[]; totalPages: number; }> {
     priceRange ??= []
     mwhRange ??= []
     assetTypes ??= []
+    rangeDates ??= []
 
     try {
       const response = await agent().getTransactionsByUser(
@@ -354,6 +358,7 @@ export class AgentCanister {
         mwhRange.length ? [mwhRange] : [],
         assetTypes.length ? [assetTypes.map(energy => ({ [energy]: energy }))] : [],
         method ? [{[method]: method}] : [],
+        rangeDates.length ? [rangeDates.map(e => moment(e).format(variables.dateFormat))] : [],
       ) as { data: TransactionHistoryInfo[]; totalPages: number; }
 
       for (const item of response.data) {

@@ -57,6 +57,10 @@
 //   }
 // }
 
+.v-date-picker .text-primary {
+  color: rgb(var(--v-theme-secondary)) !important;
+}
+
 .v-dialog {
   .v-overlay__content {
 
