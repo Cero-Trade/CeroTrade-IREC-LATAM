@@ -4,7 +4,7 @@ import avatar from '@/assets/sources/images/avatar-online.svg'
 import store from "@/store";
 import { UserProfileModel } from "@/models/user-profile-model";
 import { AssetType, TokenModel } from "@/models/token-model";
-import { TransactionHistoryInfo, TransactionInfo, TxMethodDef, TxTypeDef } from "@/models/transaction-model";
+import { TokensICP, TransactionHistoryInfo, TransactionInfo, TxMethodDef, TxTypeDef } from "@/models/transaction-model";
 import { MarketplaceInfo, MarketplaceSellersInfo } from "@/models/marketplace-model";
 import { Principal } from "@dfinity/principal";
 
@@ -330,16 +330,30 @@ export class AgentCanister {
   }
 
 
-  static async getTransactions({ page, length, txType }: {
+  static async getTransactions({ page, length, txType, country, priceRange, mwhRange, assetTypes, method }: {
     page?: number,
     length?: number,
     txType?: TxTypeDef,
+    country?: string,
+    priceRange?: TokensICP[],
+    mwhRange?: number[],
+    assetTypes?: AssetType[],
+    method?: TxMethodDef,
   }): Promise<{ data: TransactionHistoryInfo[]; totalPages: number; }> {
+    priceRange ??= []
+    mwhRange ??= []
+    assetTypes ??= []
+
     try {
       const response = await agent().getTransactionsByUser(
         page ? [page] : [],
         length ? [length] : [],
         txType ? [{[txType]: txType}] : [],
+        country ? [country] : [],
+        priceRange.length ? [priceRange.map(price => ({ e8s: price }))] : [],
+        mwhRange.length ? [mwhRange] : [],
+        assetTypes.length ? [assetTypes.map(energy => ({ [energy]: energy }))] : [],
+        method ? [{[method]: method}] : [],
       ) as { data: TransactionHistoryInfo[]; totalPages: number; }
 
       for (const item of response.data) {

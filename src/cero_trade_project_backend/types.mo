@@ -265,6 +265,6 @@ module {
   public type TransactionsInterface = actor {
     length: query () -> async Nat;
     registerTransaction: (tx: TransactionInfo) -> async TransactionId;
-    getTransactionsById: query (txIds: [TransactionId], txType: ?TxType, priceRange: ?[Price], mwhRange: ?[TokenAmount]) -> async [TransactionInfo];
+    getTransactionsById: query (txIds: [TransactionId], txType: ?TxType, priceRange: ?[Price], mwhRange: ?[TokenAmount], method: ?TxMethod) -> async [TransactionInfo];
   };
 }

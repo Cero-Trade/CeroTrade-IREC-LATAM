@@ -86,6 +86,10 @@
         </span>
       </template>
 
+      <template #[`item.date`]="{ item }">
+        <span class="divrow jspace acenter" style="min-width: 100px;">{{ item.date }}</span>
+      </template>
+
       <template #[`item.country`]="{ item }">
         <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
           <img :src="countriesImg[item.country]" :alt="`${item.country} Icon`" style="width: 20px;">
@@ -174,6 +178,18 @@
           hide-details
         ></v-range-slider>
 
+        <v-select
+          v-model="filters.method"
+          :items="txMethodValues"
+          variant="outlined"
+          flat elevation="0"
+          item-title="name"
+          item-value="name"
+          label="Via"
+          class="select mt-3 mb-3"
+          hide-details
+        ></v-select>
+
         <label>Asset types</label>
         <v-chip-group
           v-model="filters.assetTypes"
@@ -224,7 +240,7 @@ import SolarEnergyIcon from '@/assets/sources/energies/solar.svg'
 import ChileIcon from '@/assets/sources/icons/CL.svg'
 import { ref, computed, watch, onBeforeMount } from 'vue'
 import { AgentCanister } from '@/repository/agent-canister'
-import { TxType } from '@/models/transaction-model'
+import { TxType, TxMethod } from '@/models/transaction-model'
 import { useToast } from 'vue-toastification'
 import { useRouter } from 'vue-router'
 
@@ -291,12 +307,18 @@ currentPage = ref(1),
 itemsPerPage = ref(50),
 totalPages = ref(1),
 
+txMethodValues = [
+  TxMethod.bankTransfer,
+  TxMethod.blockchainTransfer
+],
+
 dialogFilters = ref(),
 filters = ref({
   country: null,
   priceRange: null,
   mwhRange: null,
   assetTypes: null,
+  method: null,
 }),
 
 
@@ -324,12 +346,21 @@ onBeforeMount(() => {
 async function getData() {
   loading.value = true
 
+  // map asset types
+  const assetTypes = []
+  for (const index of filters.value.assetTypes ?? []) assetTypes.push(Object.keys(energies)[index])
+
   try {
     // get getPortfolio
     const { data, total } = await AgentCanister.getTransactions({
       length: itemsPerPage.value,
       page: currentPage.value,
       txType: tabs[tab.value].value,
+      country: filters.value.country,
+      priceRange: filters.value.priceRange,
+      mwhRange: filters.value.mwhRange,
+      assetTypes,
+      method: filters.value.method,
     }),
     list = []
 
@@ -343,7 +374,7 @@ async function getData() {
         country: item.assetInfo.specifications.country,
         mwh: item.tokenAmount,
         asset_id: item.assetInfo.tokenId,
-        date: item.date,
+        date: item.date.toDateString(),
         price: item.priceICP.e8s,
         via: item.method,
       })

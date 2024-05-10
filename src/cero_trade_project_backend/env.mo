@@ -6,7 +6,7 @@ module {
   public let VITE_CERO_ADMIN_2: Text = "fu2ff-hrlsy-p5ppu-n44ag-fpfut-mrirb-im7vn-tnry3-ajkhn-vyxnp-uae";
   public let DFX_VERSION: Text = "0.15.2";
   public let DFX_NETWORK: Text = "local";
-  public let CANISTER_CANDID_PATH_AGENT: Text = "/home/valecita-linux/cerotrade/.dfx/local/canisters/agent/agent.did";
+  public let CANISTER_CANDID_PATH_AGENT: Text = "/home/detextre4/repositories/cero-trade-repo/mvp1.0/.dfx/local/canisters/agent/agent.did";
   public let USERS_CANISTER_ID: Text = "a3shf-5eaaa-aaaaa-qaafa-cai";
   public let CANISTER_ID_USERS: Text = "a3shf-5eaaa-aaaaa-qaafa-cai";
   public let USER_INDEX_CANISTER_ID: Text = "asrmz-lmaaa-aaaaa-qaaeq-cai";
@@ -28,5 +28,5 @@ module {
   public let AGENT_CANISTER_ID: Text = "bkyz2-fmaaa-aaaaa-qaaaq-cai";
   public let CANISTER_ID_AGENT: Text = "bkyz2-fmaaa-aaaaa-qaaaq-cai";
   public let CANISTER_ID: Text = "bd3sg-teaaa-aaaaa-qaaba-cai";
-  public let CANISTER_CANDID_PATH: Text = "/home/valecita-linux/cerotrade/.dfx/local/canisters/cero_trade_project_frontend/assetstorage.did";
+  public let CANISTER_CANDID_PATH: Text = "/home/detextre4/repositories/cero-trade-repo/mvp1.0/.dfx/local/canisters/cero_trade_project_frontend/assetstorage.did";
 }

@@ -3,7 +3,6 @@ import { UserProfileModel } from "./user-profile-model";
 
 export type TokensICP = { e8s: number };
 
-
 export enum TxMethod {
   blockchainTransfer = 'blockchainTransfer',
   bankTransfer = 'bankTransfer',

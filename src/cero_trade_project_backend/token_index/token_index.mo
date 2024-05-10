@@ -72,7 +72,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
       await ic.install_code({
         arg = to_candid(tokenId);
         wasm_module;
-        mode = #reinstall;
+        mode = #upgrade;
         canister_id;
       });
     };
