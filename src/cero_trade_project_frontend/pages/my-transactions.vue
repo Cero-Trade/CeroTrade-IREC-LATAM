@@ -68,6 +68,7 @@
             cover
             sizes="20px"
             rounded="50%"
+            class="flex-grow-0"
           />
           {{ item.recipentName }}
         </span>
