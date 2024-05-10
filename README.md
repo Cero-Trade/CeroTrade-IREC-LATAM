@@ -107,6 +107,9 @@ https://internetcomputer.org/docs/current/developer-docs/setup/cycles/cycles-fau
 
 * import: `dfx identity import <new_identity_name> <exported_identity_root_file.pem>`
 
+#### How to add canister controllers
+https://internetcomputer.org/docs/current/developer-docs/smart-contracts/maintain/control#setting-the-controllers-of-a-canister
+
 #### Mainnet deploy
 https://internetcomputer.org/docs/current/developer-docs/setup/deploy-mainnet
 

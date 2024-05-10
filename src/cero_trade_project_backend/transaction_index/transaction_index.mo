@@ -19,10 +19,11 @@ import HttpService "canister:http_service";
 import T "../types";
 import ENV "../env";
 
-shared({ caller = adminCaller }) actor class TransactionIndex() = this {
-  stable let ic : T.IC = actor ("aaaaa-aa");
+actor class TransactionIndex() = this {
   private func TransactionsCanister(cid: T.CanisterId): T.TransactionsInterface { actor (Principal.toText(cid)) };
   stable var wasm_module: Blob = "";
+
+  stable var controllers: ?[Principal] = null;
 
   stable let notExists = "Transaciton doesn't exists";
   stable let alreadyExists = "Transaction already exists on cero trade";
@@ -45,6 +46,13 @@ shared({ caller = adminCaller }) actor class TransactionIndex() = this {
 
   /// get size of transactionsDirectory collection
   public query func length(): async Nat { transactionsDirectory.size() };
+
+  /// register canister controllers
+  public shared({ caller }) func registerControllers(): async () {
+    _callValidation(caller);
+
+    controllers := await T.getControllers(Principal.fromActor(this));
+  };
 
   /// register wasm module to dynamic transactions canister, only admin can run it
   public shared({ caller }) func registerWasmArray(): async() {
@@ -86,7 +94,7 @@ shared({ caller = adminCaller }) actor class TransactionIndex() = this {
     };
 
     for (canister_id in deployedCanisters.vals()) {
-      await ic.install_code({
+      await T.ic.install_code({
         arg = to_candid();
         wasm_module;
         mode = #upgrade;
@@ -97,7 +105,7 @@ shared({ caller = adminCaller }) actor class TransactionIndex() = this {
 
   /// resume all deployed canisters
   public shared({ caller }) func startAllDeployedCanisters(): async () {
-    T.adminValidation(caller, adminCaller);
+    T.adminValidation(caller, controllers);
 
     let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
     for (cid in transactionsDirectory.vals()) {
@@ -108,13 +116,13 @@ shared({ caller = adminCaller }) actor class TransactionIndex() = this {
 
     for(canister_id in deployedCanisters.vals()) {
       Cycles.add(20_949_972_000);
-      await ic.start_canister({ canister_id });
+      await T.ic.start_canister({ canister_id });
     };
   };
 
   /// stop all deployed canisters
   public shared({ caller }) func stopAllDeployedCanisters(): async () {
-    T.adminValidation(caller, adminCaller);
+    T.adminValidation(caller, controllers);
 
     let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
     for (cid in transactionsDirectory.vals()) {
@@ -125,7 +133,7 @@ shared({ caller = adminCaller }) actor class TransactionIndex() = this {
 
     for(canister_id in deployedCanisters.vals()) {
       Cycles.add(20_949_972_000);
-      await ic.stop_canister({ canister_id });
+      await T.ic.stop_canister({ canister_id });
     };
   };
 
@@ -134,7 +142,7 @@ shared({ caller = adminCaller }) actor class TransactionIndex() = this {
   public shared({ caller }) func checkMemoryStatus() : async Bool {
     let status = switch(currentCanisterid) {
       case(null) throw Error.reject("Cant find transactions canisters registered");
-      case(?cid) await ic.canister_status({ canister_id = cid });
+      case(?cid) await T.ic.canister_status({ canister_id = cid });
     };
 
     status.memory_size > T.LOW_MEMORY_LIMIT
@@ -145,9 +153,9 @@ shared({ caller = adminCaller }) actor class TransactionIndex() = this {
     Debug.print(debug_show ("before registerToken: " # Nat.toText(Cycles.balance())));
 
     Cycles.add(300_000_000_000);
-    let { canister_id } = await ic.create_canister({
+    let { canister_id } = await T.ic.create_canister({
       settings = ?{
-        controllers = ?[Principal.fromActor(this)];
+        controllers;
         compute_allocation = null;
         memory_allocation = null;
         freezing_threshold = null;
@@ -157,7 +165,7 @@ shared({ caller = adminCaller }) actor class TransactionIndex() = this {
     Debug.print(debug_show ("later create_canister: " # Nat.toText(Cycles.balance())));
 
     try {
-      await ic.install_code({
+      await T.ic.install_code({
         arg = to_candid();
         wasm_module;
         mode = #install;

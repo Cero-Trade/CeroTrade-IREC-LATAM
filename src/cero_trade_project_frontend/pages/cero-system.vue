@@ -95,10 +95,7 @@ mintToUserForm = ref({
 
 
 onBeforeMount(() => {
-  if (process.env.DFX_NETWORK === 'ic' && ![
-    process.env.CERO_ADMIN_1,
-    process.env.CERO_ADMIN_2,
-  ].includes(AuthClientApi.getPrincipal().toString())) return router.back()
+  // TODO make password to access this view
 })
 
 

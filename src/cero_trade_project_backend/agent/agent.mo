@@ -22,7 +22,9 @@ import Marketplace "canister:marketplace";
 import T "../types";
 import HT "../http_service/http_service_types";
 
-shared({ caller = adminCaller }) actor class Agent() {
+actor class Agent() = this {
+  stable var controllers: ?[Principal] = null;
+
   // constants
   stable let alreadyExists = "User already exists on cero trade";
   stable let notExists = "User doesn't exists on cero trade";
@@ -50,9 +52,20 @@ shared({ caller = adminCaller }) actor class Agent() {
   public shared({ caller }) func deleteUser(): async() { await UserIndex.deleteUser(caller) };
 
 
+  /// register canister controllers
+  public shared({ caller }) func registerControllers(): async () {
+    T.adminValidation(caller, controllers);
+
+    controllers := await T.getControllers(Principal.fromActor(this));
+
+    await UserIndex.registerControllers();
+    await TokenIndex.registerControllers();
+    await TransactionIndex.registerControllers();
+  };
+
   /// register a canister wasm module
   public shared({ caller }) func registerWasmModule(moduleName: T.WasmModuleName): async() {
-    T.adminValidation(caller, adminCaller);
+    T.adminValidation(caller, controllers);
 
     switch(moduleName) {
       case(#token("token")) await TokenIndex.registerWasmArray();
@@ -65,14 +78,14 @@ shared({ caller = adminCaller }) actor class Agent() {
 
   /// register token on platform
   public shared({ caller }) func registerToken(tokenId: T.TokenId): async Principal {
-    T.adminValidation(caller, adminCaller);
+    T.adminValidation(caller, controllers);
     await TokenIndex.registerToken(tokenId);
   };
 
 
   /// performe mint with tokenId and amount requested
   public shared({ caller }) func mintTokenToUser(recipent: T.Beneficiary, tokenId: T.TokenId, tokenAmount: T.TokenAmount): async() {
-    T.adminValidation(caller, adminCaller);
+    T.adminValidation(caller, controllers);
 
     // check if user exists
     if (not (await UserIndex.checkPrincipal(recipent))) throw Error.reject(notExists);
@@ -101,7 +114,12 @@ shared({ caller = adminCaller }) actor class Agent() {
 
 
   /// get profile information
-  public shared({ caller }) func getProfile(): async T.UserProfile { await UserIndex.getProfile(caller) };
+  public shared({ caller }) func getProfile(uid: ?T.UID): async T.UserProfile {
+    switch(uid) {
+      case(null) await UserIndex.getProfile(caller);
+      case(?value) await UserIndex.getProfile(value);
+    };
+  };
 
 
   /// function to know if user have current token
@@ -273,7 +291,7 @@ shared({ caller = adminCaller }) actor class Agent() {
 
 
   /// get marketplace sellers information
-  public shared({ caller }) func getMarketplaceSellers(page: ?Nat, length: ?Nat, tokenId: ?T.TokenId, country: ?Text, companyName: ?Text, priceRange: ?[T.Price], excludeCaller: Bool): async {
+  public shared({ caller }) func getMarketplaceSellers(page: ?Nat, length: ?Nat, tokenId: ?T.TokenId, country: ?Text, priceRange: ?[T.Price], excludeCaller: Bool): async {
     data: [T.MarketplaceSellersInfo];
     totalPages: Nat;
   } {
@@ -298,14 +316,6 @@ shared({ caller = adminCaller }) actor class Agent() {
       totalPages: Nat;
     } = await Marketplace.getMarketplaceSellers(page, length, tokenId, priceRange, excludedCaller);
 
-    // get users info
-    let usersInfo: [T.UserProfile] = await UserIndex.getUsers(Array.map<{
-      tokenId: T.TokenId;
-      userId: T.UID;
-      mwh: T.TokenAmount;
-      priceICP: T.Price;
-    }, T.UID>(marketInfo, func x = x.userId));
-
     // get tokens info
     let tokensInfo: [T.AssetInfo] = await TokenIndex.getTokensInfo(Array.map<{
       tokenId: T.TokenId;
@@ -325,12 +335,10 @@ shared({ caller = adminCaller }) actor class Agent() {
 
       let assetInfo: ?T.AssetInfo = Array.find<T.AssetInfo>(tokensInfo, func (info) { info.tokenId == item.tokenId });
 
-      let userProfile: ?T.UserProfile = Array.find<T.UserProfile>(usersInfo, func (user) { Principal.fromText(user.principalId) == item.userId });
-
 
       // build MarketplaceSellersInfo object
       {
-        userProfile;
+        sellerId = item.userId;
         tokenId = item.tokenId;
         mwh = item.mwh;
         priceICP = item.priceICP;
@@ -354,18 +362,7 @@ shared({ caller = adminCaller }) actor class Agent() {
         };
       };
 
-      // by company name
-      let compantNameMatches = switch (companyName) {
-        case(null) true;
-        case(?value) {
-          switch(item.userProfile) {
-            case(null) false;
-            case(?userProfile) Text.contains(userProfile.companyName, #text value);
-          };
-        };
-      };
-
-      compantNameMatches and countryMatches;
+      countryMatches;
     });
 
     { data = filteredMarketplace; totalPages }
@@ -534,12 +531,6 @@ shared({ caller = adminCaller }) actor class Agent() {
 
     let transactionsInfo: [T.TransactionInfo] = await TransactionIndex.getTransactionsById(Buffer.toArray<T.TransactionId>(txIdsFiltered), txType, priceRange, mwhRange, method, rangeDates);
 
-    // get users info
-    let usersInfo: [T.UserProfile] = await UserIndex.getUsers(Array.map<T.TransactionInfo, T.UID>(transactionsInfo, func (x) {
-      if (x.from != caller) { x.from }
-      else { x.to }
-    }));
-
     // get tokens info
     let tokensInfo: [T.AssetInfo] = await TokenIndex.getTokensInfo(Array.map<T.TransactionInfo, Text>(transactionsInfo, func x = x.tokenId));
 
@@ -548,11 +539,6 @@ shared({ caller = adminCaller }) actor class Agent() {
     let transactions: [T.TransactionHistoryInfo] = Array.map<T.TransactionInfo, T.TransactionHistoryInfo>(transactionsInfo, func (item) {
 
       let assetInfo: ?T.AssetInfo = Array.find<T.AssetInfo>(tokensInfo, func (info) { info.tokenId == item.tokenId });
-
-      let recipentProfile: ?T.UserProfile = Array.find<T.UserProfile>(usersInfo, func (user) {
-        Principal.fromText(user.principalId) == item.from or 
-        Principal.fromText(user.principalId) == item.to
-      });
 
 
       // build MarketplaceSellersInfo object
@@ -564,7 +550,8 @@ shared({ caller = adminCaller }) actor class Agent() {
         priceICP = item.priceICP;
         date = item.date;
         method = item.method;
-        recipentProfile;
+        from = item.from;
+        to = item.to;
         assetInfo;
       }
     });

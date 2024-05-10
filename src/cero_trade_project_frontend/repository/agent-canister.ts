@@ -72,9 +72,9 @@ export class AgentCanister {
   }
 
 
-  static async getProfile(): Promise<UserProfileModel> {
+  static async getProfile(uid?: Principal): Promise<UserProfileModel> {
     try {
-      const userProfile = await agent().getProfile() as UserProfileModel
+      const userProfile = await agent().getProfile(uid ? [uid] : []) as UserProfileModel
       userProfile.companyLogo = getUrlFromArrayBuffer(userProfile.companyLogo) || avatar
 
       store.commit('setProfile', userProfile)
@@ -235,12 +235,11 @@ export class AgentCanister {
   }
 
 
-  static async getMarketplaceSellers({ page, length, tokenId, country, companyName, priceRange, excludeCaller }: {
+  static async getMarketplaceSellers({ page, length, tokenId, country, priceRange, excludeCaller }: {
     page?: number,
     length?: number,
     tokenId?: string,
     country?: string,
-    companyName?: string,
     priceRange?: number[],
     excludeCaller: boolean,
   }): Promise<{ data: MarketplaceSellersInfo[], totalPages: number }> {
@@ -253,7 +252,6 @@ export class AgentCanister {
         length ? [length] : [],
         tokenId ? [tokenId] : [],
         country ? [country] : [],
-        companyName ? [companyName] : [],
         priceRange.length ? [priceRange.map(price => ({ e8s: price }))] : [],
         excludeCaller,
       ) as { data: MarketplaceSellersInfo[], totalPages: number }
@@ -261,10 +259,12 @@ export class AgentCanister {
       for (const item of response.data) {
         // format record value
         item.mwh = Number(item.mwh)
+
+        // get nullable object
+        item.assetInfo = item.assetInfo[0]
         item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
         item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
         item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
-        item.userProfile.companyLogo = getUrlFromArrayBuffer(item.userProfile.companyLogo) || avatar
       }
 
       response.totalPages = Number(response.totalPages)
@@ -368,10 +368,8 @@ export class AgentCanister {
         item.method = Object.values(item.method)[0] as TxMethodDef
         item.date = new Date(item.date)
 
+        // get nullable object
         item.assetInfo = item.assetInfo[0]
-        item.recipentProfile = item.recipentProfile[0]
-        item.recipentProfile.companyLogo = getUrlFromArrayBuffer(item.recipentProfile.companyLogo) || avatar
-
         item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
         item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
         item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)

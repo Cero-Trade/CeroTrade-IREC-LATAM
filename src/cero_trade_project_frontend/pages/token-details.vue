@@ -219,18 +219,33 @@
             density="compact"
             @update:options="getMarketPlace()"
             >
-              <template #[`item.company`]="{ item }">
-                <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-                  <v-img-load
-                    :src="item.userProfile.companyLogo"
-                    :alt="`${item.userProfile.companyName} logo`"
-                    rounded="50%"
-                    sizes="20px"
-                    class="flex-grow-0"
-                    cover
-                  />
-                  {{ item.userProfile.companyName }}
-                </span>
+              <template #[`item.seller`]="{ item }">
+                <v-menu :close-on-content-click="false" @update:model-value="(value) => getSellerProfile(value, item.seller)">
+                    <template #activator="{ props }">
+                      <a v-bind="props" class="text-capitalize pointer flex-acenter" style="gap: 5px; text-wrap: nowrap">{{ item.seller }}</a>
+                    </template>
+
+                    <v-card class="px-4 py-2 bg-secondary d-flex">
+                      <v-progress-circular
+                        v-if="!previewSeller"
+                        indeterminate
+                        color="rgb(var(--v-theme-primary))"
+                        class="mx-auto"
+                      ></v-progress-circular>
+
+                      <span v-else class="flex-acenter" style="gap: 10px; text-wrap: nowrap">
+                        <v-img-load
+                          :src="previewSeller.companyLogo"
+                          :alt="`${previewSeller.companyName} logo`"
+                          cover
+                          sizes="30px"
+                          rounded="50%"
+                          class="flex-grow-0"
+                        />
+                        {{ previewSeller.companyName }}
+                      </span>
+                    </v-card>
+                  </v-menu>
               </template>
 
               <template #[`item.price`]="{ item }">
@@ -273,22 +288,37 @@
 
             <v-col v-else v-for="(item,index) in dataMarketplace" :key="index" xl="3" lg="3" md="4" sm="6" cols="12" class="showmobile">
               <v-card class="card cards-marketplace">
-                <div class="divrow jspace acenter mb-6">
-                  <span class="text-capitalize flex-acenter" style="gap: 5px; font-size: 15px !important; text-wrap: nowrap">
-                    <v-img-load
-                      :src="item.userProfile.companyLogo"
-                      :alt="`${item.userProfile.companyName} logo`"
-                      rounded="50%"
-                      sizes="30px"
-                      class="flex-grow-0"
-                      cover
-                    />
-                    {{ item.userProfile.companyName }}
-                  </span>
+                <v-btn class="ml-auto mb-2 btn" @click="selectSeller(item)">Buy</v-btn>
 
-                  <v-btn class="btn" @click="selectSeller(item)">
-                    Buy
-                  </v-btn>
+                <div class="jspace divrow mb-1">
+                  <span>Seller ID</span>
+
+                  <v-menu :close-on-content-click="false" @update:model-value="(value) => getSellerProfile(value, item.seller)">
+                    <template #activator="{ props }">
+                      <a v-bind="props" style="color: #475467;" class="acenter pointer text-capitalize">{{ item.seller }}</a>
+                    </template>
+
+                    <v-card class="px-4 py-2 bg-secondary d-flex">
+                      <v-progress-circular
+                        v-if="!previewSeller"
+                        indeterminate
+                        color="rgb(var(--v-theme-primary))"
+                        class="mx-auto"
+                      ></v-progress-circular>
+
+                      <span v-else class="flex-acenter" style="gap: 10px; text-wrap: nowrap">
+                        <v-img-load
+                          :src="previewSeller.companyLogo"
+                          :alt="`${previewSeller.companyName} logo`"
+                          cover
+                          sizes="30px"
+                          rounded="50%"
+                          class="flex-grow-0"
+                        />
+                        {{ previewSeller.companyName }}
+                      </span>
+                    </v-card>
+                  </v-menu>
                 </div>
 
                 <div class="jspace divrow mb-1">
@@ -773,18 +803,8 @@
           density="compact"
           @update:options="getMarketPlace"
           >
-            <template #[`item.company`]="{ item }">
-              <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-                <v-img-load
-                  :src="item.userProfile.companyLogo"
-                  :alt="`${item.userProfile.companyName} logo`"
-                  rounded="50%"
-                  sizes="20px"
-                  class="flex-grow-0"
-                  cover
-                />
-                {{ item.userProfile.companyName }}
-              </span>
+            <template #[`item.seller`]="{ item }">
+              <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">{{ item.seller }}</span>
             </template>
 
             <template #[`item.price`]="{ item }">
@@ -1156,7 +1176,7 @@ countriesImg = {
 },
 tokenDetail = ref(undefined),
 headers = [
-  { title: 'Company', key: 'company', sortable: false },
+  { title: 'Seller ID', key: 'seller', sortable: false },
   { title: 'Country', key: 'country', sortable: false },
   { title: 'Price', key: 'price', sortable: false },
   { title: 'MWh', key: 'mwh', sortable: false },
@@ -1301,6 +1321,8 @@ filters = ref({
   priceRange: null,
 }),
 
+previewSeller = ref(null),
+
 
 tokenId = computed(() => route.query.tokenId),
 prevRoutePatch  = computed(() => {
@@ -1401,17 +1423,16 @@ async function getMarketPlace() {
       tokenId: tokenId.value,
       length: itemsPerPage.value,
       country: filters.value.country?.toLowerCase(),
-      companyName: filters.value.companyName,
       priceRange: filters.value.priceRange,
       page: currentPage.value,
-      excludeCaller: true,
+      excludeCaller: false,
     }),
     list = []
 
     // build dataMarketplace
     for (const item of marketplace.data) {
       list.push({
-        userProfile: item.userProfile,
+        seller: item.sellerId,
         country: item.assetInfo.specifications.country,
         price: item.priceICP.e8s,
         mwh: item.mwh,
@@ -1521,6 +1542,16 @@ async function redeemToken() {
   } catch (error) {
     closeLoader()
     console.error(error);
+    toast.error(error)
+  }
+}
+
+async function getSellerProfile(value, uid) {
+  if (!value) previewSeller.value = null
+
+  try {
+    previewSeller.value = await AgentCanister.getProfile(uid)
+  } catch (error) {
     toast.error(error)
   }
 }

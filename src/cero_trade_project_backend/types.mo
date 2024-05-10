@@ -10,16 +10,21 @@ import Array "mo:base/Array";
 
 // Types
 import ICRC "./ICRC";
-import ENV "./env";
 
 module {
+  public let ic : IC = actor ("aaaaa-aa");
+
+  public func getControllers(canister_id: CanisterId): async ?[Principal] {
+    let status = await ic.canister_status({ canister_id });
+    status.settings.controllers
+  };
+
   // global admin assert validation
-  public func adminValidation(caller: Principal, adminCaller: Principal) {
-    assert ENV.DFX_NETWORK == "local" or Array.find<Principal>([
-      adminCaller,
-      Principal.fromText(ENV.VITE_CERO_ADMIN_1),
-      Principal.fromText(ENV.VITE_CERO_ADMIN_2)
-    ], func x = x == caller) != null
+  public func adminValidation(caller: Principal, controllers: ?[Principal]) {
+    assert switch(controllers) {
+      case(null) true;
+      case(?value) Array.find<Principal>(value, func x = x == caller) != null;
+    };
   };
 
   // TODO try to change to simplest format to better filtering
@@ -103,7 +108,8 @@ module {
   public type TransactionHistoryInfo = {
     transactionId: TransactionId;
     blockHash: BlockHash;
-    recipentProfile: ?UserProfile;
+    from: UID;
+    to: Beneficiary;
     assetInfo: ?AssetInfo;
     txType: TxType;
     tokenAmount: TokenAmount;
@@ -175,7 +181,7 @@ module {
 
   public type MarketplaceSellersInfo = {
     tokenId: Text;
-    userProfile: ?UserProfile;
+    sellerId: UID;
     priceICP: Price;
     assetInfo: ?AssetInfo;
     mwh: TokenAmount;

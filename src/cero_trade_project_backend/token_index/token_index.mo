@@ -22,11 +22,11 @@ import HT "../http_service/http_service_types";
 import ICRC "../ICRC";
 import ENV "../env";
 
-shared({ caller = adminCaller }) actor class TokenIndex() = this {
-  stable let ic : T.IC = actor ("aaaaa-aa");
+actor class TokenIndex() = this {
   private func TokenCanister(cid: T.CanisterId): T.TokenInterface { actor (Principal.toText(cid)) };
   stable var wasm_module: Blob = "";
 
+  stable var controllers: ?[Principal] = null;
 
   var tokenDirectory: HM.HashMap<T.TokenId, T.CanisterId> = HM.HashMap(16, Text.equal, Text.hash);
   stable var tokenDirectoryEntries : [(T.TokenId, T.CanisterId)] = [];
@@ -43,6 +43,13 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
 
   /// get size of tokenDirectory collection
   public query func length(): async Nat { tokenDirectory.size() };
+
+  /// register canister controllers
+  public shared({ caller }) func registerControllers(): async () {
+    _callValidation(caller);
+
+    controllers := await T.getControllers(Principal.fromActor(this));
+  };
 
   /// register wasm module to dynamic token canister, only admin can run it
   public shared({ caller }) func registerWasmArray(): async() {
@@ -69,7 +76,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
 
     // update deployed canisters
     for((tokenId, canister_id) in tokenDirectory.entries()) {
-      await ic.install_code({
+      await T.ic.install_code({
         arg = to_candid(tokenId);
         wasm_module;
         mode = #upgrade;
@@ -90,9 +97,9 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
         Debug.print(debug_show ("before registerToken: " # Nat.toText(Cycles.balance())));
 
         Cycles.add(300_000_000_000);
-        let { canister_id } = await ic.create_canister({
+        let { canister_id } = await T.ic.create_canister({
           settings = ?{
-            controllers = ?[Principal.fromActor(this), caller];
+            controllers;
             compute_allocation = null;
             memory_allocation = null;
             freezing_threshold = null;
@@ -102,7 +109,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
         Debug.print(debug_show ("later create_canister: " # Nat.toText(Cycles.balance())));
 
         try {
-          await ic.install_code({
+          await T.ic.install_code({
             arg = to_candid(tokenId);
             wasm_module;
             mode = #install;
@@ -155,8 +162,8 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
           tokenDirectory.put(tokenId, canister_id);
           return canister_id
         } catch (error) {
-          await ic.stop_canister({ canister_id });
-          await ic.delete_canister({ canister_id });
+          await T.ic.stop_canister({ canister_id });
+          await T.ic.delete_canister({ canister_id });
           throw Error.reject(Error.message(error));
         }
       };
@@ -165,14 +172,14 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
 
   /// delete [tokenDirectory] collection
   public shared({ caller }) func deleteToken(tokenId: Text): async () {
-    T.adminValidation(caller, adminCaller);
+    T.adminValidation(caller, controllers);
 
     switch(tokenDirectory.get(tokenId)) {
       case(null) throw Error.reject("Token doesn't exists");
       case(?canister_id) {
         Cycles.add(20_949_972_000);
-        await ic.stop_canister({ canister_id });
-        await ic.delete_canister({ canister_id });
+        await T.ic.stop_canister({ canister_id });
+        await T.ic.delete_canister({ canister_id });
         let _ = tokenDirectory.remove(tokenId)
       };
     }
@@ -187,34 +194,34 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
     idle_cycles_burned_per_day: Nat;
     module_hash: ?[Nat8];
   } {
-    T.adminValidation(caller, adminCaller);
+    T.adminValidation(caller, controllers);
 
     switch(tokenDirectory.get(tokenId)) {
       case(null) throw Error.reject("Token doesn't exists");
       case(?canister_id) {
         Cycles.add(20_949_972_000);
-        return await ic.canister_status({ canister_id });
+        return await T.ic.canister_status({ canister_id });
       };
     };
   };
 
   /// resume all deployed canisters
   public shared({ caller }) func startAllDeployedCanisters(): async () {
-    T.adminValidation(caller, adminCaller);
+    T.adminValidation(caller, controllers);
 
     for(canister_id in tokenDirectory.vals()) {
       Cycles.add(20_949_972_000);
-      await ic.start_canister({ canister_id });
+      await T.ic.start_canister({ canister_id });
     };
   };
 
   /// stop all deployed canisters
   public shared({ caller }) func stopAllDeployedCanisters(): async () {
-    T.adminValidation(caller, adminCaller);
+    T.adminValidation(caller, controllers);
 
     for(canister_id in tokenDirectory.vals()) {
       Cycles.add(20_949_972_000);
-      await ic.stop_canister({ canister_id });
+      await T.ic.stop_canister({ canister_id });
     };
   };
 

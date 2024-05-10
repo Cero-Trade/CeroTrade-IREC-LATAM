@@ -31,7 +31,8 @@ export interface TransactionInfo {
 export interface TransactionHistoryInfo {
   transactionId: string;
   blockHash: number;
-  recipentProfile?: UserProfileModel;
+  from: string;
+  to: string;
   assetInfo: AssetInfoModel;
   txType: TxTypeDef;
   tokenAmount: number;

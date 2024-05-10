@@ -1,6 +1,5 @@
 import { AssetInfoModel } from "./token-model";
 import { TokensICP } from "./transaction-model";
-import { UserProfileModel } from "./user-profile-model";
 
 export interface MarketplaceInfo {
   tokenId: Text;
@@ -11,7 +10,7 @@ export interface MarketplaceInfo {
 }
 
 export interface MarketplaceSellersInfo {
-  userProfile: UserProfileModel;
+  sellerId: string;
   tokenId: Text;
   priceICP: TokensICP;
   mwh: number;

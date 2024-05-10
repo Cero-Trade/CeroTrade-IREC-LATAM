@@ -59,19 +59,34 @@
           : '#2970FF'
         } !important`">{{ item.type }}</span>
       </template>
-      
-      <template #[`item.recipentName`]="{ item }">
-        <span class="flex-acenter" style="gap: 5px; text-wrap: nowrap">
-          <v-img-load
-            :src="item.recipentLogo"
-            :alt="`${item.recipentName} logo`"
-            cover
-            sizes="20px"
-            rounded="50%"
-            class="flex-grow-0"
-          />
-          {{ item.recipentName }}
-        </span>
+
+      <template #[`item.recipent`]="{ item }">
+        <v-menu :close-on-content-click="false" @update:model-value="(value) => getRecipentProfile(value, item.recipent)">
+          <template #activator="{ props }">
+            <a v-bind="props" class="flex-acenter pointer" style="gap: 5px; text-wrap: nowrap">{{ item.recipent }}</a>
+          </template>
+
+          <v-card class="px-4 py-2 bg-secondary d-flex">
+            <v-progress-circular
+              v-if="!previewRecipent"
+              indeterminate
+              color="rgb(var(--v-theme-primary))"
+              class="mx-auto"
+            ></v-progress-circular>
+
+            <span v-else class="flex-acenter" style="gap: 10px; text-wrap: nowrap">
+              <v-img-load
+                :src="previewRecipent.companyLogo"
+                :alt="`${previewRecipent.companyName} logo`"
+                cover
+                sizes="30px"
+                rounded="50%"
+                class="flex-grow-0"
+              />
+              {{ previewRecipent.companyName }}
+            </span>
+          </v-card>
+        </v-menu>
       </template>
 
       <template #[`item.energy_source`]="{ item }">
@@ -381,7 +396,7 @@ countriesImg = {
   { title: 'Energy source', key: 'energy_source', sortable: false },
   { title: 'Price (ICP)', key: 'price', align: 'center', sortable: false },
   { title: 'Country', key: 'country', sortable: false },
-  { title: 'Recipent', key: 'recipentName', sortable: false },
+  { title: 'Recipent ID', key: 'recipent', sortable: false },
   { title: 'MWh', key: 'mwh', sortable: false },
   { title: 'Date', key: 'date', sortable: false },
   { title: 'Via', key: 'via', align: 'center', sortable: false },
@@ -396,6 +411,8 @@ txMethodValues = [
   TxMethod.bankTransfer,
   TxMethod.blockchainTransfer
 ],
+
+previewRecipent = ref(null),
 
 dialogFilters = ref(),
 filtersFormRef = ref(),
@@ -473,8 +490,7 @@ async function getData() {
       list.push({
         transaction_id: item.transactionId,
         type: item.txType,
-        recipentName: item.recipentProfile.companyName,
-        recipentLogo: item.recipentProfile.companyLogo,
+        recipent: item.to,
         energy_source: item.assetInfo.assetType,
         country: item.assetInfo.specifications.country,
         mwh: item.tokenAmount,
@@ -493,6 +509,16 @@ async function getData() {
   }
 
   loading.value = false
+}
+
+async function getRecipentProfile(value, uid) {
+  if (!value) previewRecipent.value = null
+
+  try {
+    previewRecipent.value = await AgentCanister.getProfile(uid)
+  } catch (error) {
+    toast.error(error)
+  }
 }
 
 function goDetails(){
