@@ -28,7 +28,7 @@ module {
   public type TransactionId = Text;
   public type RedemId = Text;
   public type CompanyLogo = [Nat8];
-  public type Beneficiary = Text;
+  public type Beneficiary = UID;
   public type BlockHash = Nat64;
   public type TokenAmount = Nat;
   public type Price = ICRC.Tokens;
@@ -77,30 +77,35 @@ module {
     inMarket: TokenAmount;
     assetInfo: AssetInfo;
   };
-  
-  // public type RedemInfo = {
-  //   redemId: RedemId;
-  //   tokenId: TokenId;
-  //   redAmount: Nat;
-  //   tokenInfo: TokenInfo;
-  //   redemStatement: ?Blob;
-  //   date: Nat64;
-  // };
 
-  public type TransactionRecipent = {
-    #redemptionRecipent: Beneficiary;
-    #transferRecipent: UID;
+  public type TxMethod = {
+    #blockchainTransfer: Text;
+    #bankTransfer: Text;
   };
 
   public type TransactionInfo = {
     transactionId: TransactionId;
     blockHash: BlockHash;
     from: UID;
-    to: TransactionRecipent;
+    to: Beneficiary;
     tokenId: TokenId;
     txType: TxType;
     tokenAmount: TokenAmount;
     priceICP: Price;
+    date: Text;
+    method: TxMethod;
+  };
+
+  public type TransactionHistoryInfo = {
+    transactionId: TransactionId;
+    blockHash: BlockHash;
+    recipentProfile: ?UserProfile;
+    assetInfo: ?AssetInfo;
+    txType: TxType;
+    tokenAmount: TokenAmount;
+    priceICP: Price;
+    date: Text;
+    method: TxMethod;
   };
 
   public type TxType = {
@@ -142,14 +147,14 @@ module {
   public type AssetInfo = {
     tokenId: TokenId;
     assetType: AssetType;
-    startDate: Nat64;
-    endDate: Nat64;
+    startDate: Text;
+    endDate: Text;
     co2Emission: Float;
     radioactivityEmnission: Float;
     volumeProduced: TokenAmount;
     deviceDetails: DeviceDetails;
     specifications: Specifications;
-    dates: [Nat64];
+    dates: [Text];
   };
 
   //
@@ -166,9 +171,9 @@ module {
 
   public type MarketplaceSellersInfo = {
     tokenId: Text;
-    userProfile: UserProfile;
+    userProfile: ?UserProfile;
     priceICP: Price;
-    assetInfo: AssetInfo;
+    assetInfo: ?AssetInfo;
     mwh: TokenAmount;
   };
 
@@ -260,6 +265,6 @@ module {
   public type TransactionsInterface = actor {
     length: query () -> async Nat;
     registerTransaction: (tx: TransactionInfo) -> async TransactionId;
-    getRedemptions: query (txIds: [TransactionId]) -> async [TransactionInfo];
+    getTransactionsById: query (txIds: [TransactionId], txType: ?TxType, priceRange: ?[Price], mwhRange: ?[TokenAmount]) -> async [TransactionInfo];
   };
 }

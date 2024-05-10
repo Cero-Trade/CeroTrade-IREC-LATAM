@@ -3,6 +3,7 @@ import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import Cycles "mo:base/ExperimentalCycles";
 import Blob "mo:base/Blob";
+import Buffer "mo:base/Buffer";
 import Array "mo:base/Array";
 import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
@@ -22,7 +23,7 @@ import ENV "../env";
 shared({ caller = adminCaller }) actor class UserIndex() = this {
   stable let ic : T.IC = actor ("aaaaa-aa");
   private func UsersCanister(cid: T.CanisterId): T.UsersInterface { actor (Principal.toText(cid)) };
-  stable var wasm_array : [Nat] = [];
+  stable var wasm_module: Blob = "";
 
 
   // constants
@@ -60,17 +61,80 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
     let wasmModule = await HttpService.get("https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # branch # "/wasm_modules/users.json", { headers = [] });
 
     let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
-    wasm_array := Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
+    let wasm_array = Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
       switch (Nat.fromText(part)) {
         case null 0;
         case (?n) n;
       }
     });
+    let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
+
+    // register wasm
+    wasm_module := Blob.fromArray(nums8);
+
+
+    // update deployed canisters
+    let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
+    for (cid in usersDirectory.vals()) {
+      if (not(Buffer.contains<T.CanisterId>(deployedCanisters, cid, Principal.equal))) {
+        deployedCanisters.append(Buffer.fromArray<T.CanisterId>([cid]));
+      };
+    };
+
+    if (deployedCanisters.size() == 0) {
+      switch(currentCanisterid) {
+        case(null) {};
+        case(?cid) deployedCanisters.add(cid);
+      };
+    };
+
+    for (canister_id in deployedCanisters.vals()) {
+      await ic.install_code({
+        arg = to_candid();
+        wasm_module;
+        mode = #reinstall;
+        canister_id;
+      });
+    };
   };
 
   /// validate user existence
   public query func checkPrincipal(uid: T.UID) : async Bool { usersDirectory.get(uid) != null };
 
+
+  /// resume all deployed canisters
+  public shared({ caller }) func startAllDeployedCanisters(): async () {
+    T.adminValidation(caller, adminCaller);
+
+    let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
+    for (cid in usersDirectory.vals()) {
+      if (not(Buffer.contains<T.CanisterId>(deployedCanisters, cid, Principal.equal))) {
+        deployedCanisters.append(Buffer.fromArray<T.CanisterId>([cid]));
+      };
+    };
+
+    for(canister_id in deployedCanisters.vals()) {
+      Cycles.add(20_949_972_000);
+      await ic.start_canister({ canister_id });
+    };
+  };
+
+  /// stop all deployed canisters
+  public shared({ caller }) func stopAllDeployedCanisters(): async () {
+    T.adminValidation(caller, adminCaller);
+
+    let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
+    for (cid in usersDirectory.vals()) {
+      if (not(Buffer.contains<T.CanisterId>(deployedCanisters, cid, Principal.equal))) {
+        deployedCanisters.append(Buffer.fromArray<T.CanisterId>([cid]));
+      };
+    };
+
+    for(canister_id in deployedCanisters.vals()) {
+      Cycles.add(20_949_972_000);
+      await ic.stop_canister({ canister_id });
+    };
+  };
 
   /// returns true if canister have storage memory,
   /// false if havent enough
@@ -99,11 +163,9 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
     Debug.print(debug_show ("later create_canister: " # Nat.toText(Cycles.balance())));
 
-    let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
-
     await ic.install_code({
       arg = to_candid();
-      wasm_module = Blob.fromArray(nums8);
+      wasm_module;
       mode = #install;
       canister_id;
     });
@@ -305,6 +367,62 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
         };
       };
     };
+  };
+
+
+  /// get user profiles information
+  public shared({ caller }) func getUsers(uids: [T.UID]): async [T.UserProfile] {
+    _callValidation(caller);
+
+    let users = Buffer.Buffer<T.UserProfile>(50);
+
+    for(uid in uids.vals()) {
+
+      let cid: T.CanisterId = switch(usersDirectory.get(uid)) {
+        case (null) throw Error.reject(notExists);
+        case(?cid) cid;
+      };
+
+      let token = await UsersCanister(cid).getUserToken(uid);
+      let profileJson = await HttpService.get(HT.apiUrl # "users/retrieve/" # token, { headers = [] });
+      let companyLogo = await UsersCanister(cid).getCompanyLogo(uid);
+
+      switch(Serde.JSON.fromText(profileJson, null)) {
+        case(#err(_)) throw Error.reject("cannot serialize profile data");
+
+        case(#ok(blob)) {
+          let profilePart: ?{
+            principalId: Text;
+            companyId: Text;
+            companyName: Text;
+            city: Text;
+            country: Text;
+            address: Text;
+            email: Text;
+            createdAt: Text;
+            updatedAt: Text;
+          } = from_candid(blob);
+
+          switch(profilePart) {
+            case(null) throw Error.reject("cannot serialize profile data");
+            case(?profile) users.add({
+              companyLogo;
+              principalId = profile.principalId;
+              companyId = profile.companyId;
+              companyName = profile.companyName;
+              city = profile.city;
+              country = profile.country;
+              address = profile.address;
+              email = profile.email;
+              createdAt = profile.createdAt;
+              updatedAt = profile.updatedAt;
+            });
+          };
+        };
+      };
+    };
+
+    Buffer.toArray<T.UserProfile>(users);
   };
 
 

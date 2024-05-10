@@ -6,10 +6,10 @@ import Blob "mo:base/Blob";
 import Text "mo:base/Text";
 import Array "mo:base/Array";
 import Nat "mo:base/Nat";
-import Nat64 "mo:base/Nat64";
 import Float "mo:base/Float";
 import Int64 "mo:base/Int64";
 import Buffer "mo:base/Buffer";
+import DateTime "mo:datetime/DateTime";
 
 // canisters
 import HttpService "canister:http_service";
@@ -74,17 +74,15 @@ shared({ caller = adminCaller }) actor class Agent() {
   public shared({ caller }) func mintTokenToUser(recipent: T.Beneficiary, tokenId: T.TokenId, tokenAmount: T.TokenAmount): async() {
     T.adminValidation(caller, adminCaller);
 
-    let beneficiary = Principal.fromText(recipent);
-
     // check if user exists
-    if (not (await UserIndex.checkPrincipal(beneficiary))) throw Error.reject(notExists);
+    if (not (await UserIndex.checkPrincipal(recipent))) throw Error.reject(notExists);
 
     // mint token to user token collection
-    let tokensInMarket = await Marketplace.getUserTokensOnSale(beneficiary, tokenId);
-    await TokenIndex.mintTokenToUser(beneficiary, tokenId, tokenAmount, tokensInMarket);
+    let tokensInMarket = await Marketplace.getUserTokensOnSale(recipent, tokenId);
+    await TokenIndex.mintTokenToUser(recipent, tokenId, tokenAmount, tokensInMarket);
 
     // update user portfolio
-    await UserIndex.updatePorfolio(beneficiary, tokenId);
+    await UserIndex.updatePorfolio(recipent, tokenId);
   };
 
 
@@ -121,7 +119,7 @@ shared({ caller = adminCaller }) actor class Agent() {
     } = await TokenIndex.getPortfolio(caller, tokenIds, page, length, assetTypes, country, mwhRange);
 
     let txIds = await UserIndex.getTransactionIds(caller);
-    let tokensRedemption: [T.TransactionInfo] = await TransactionIndex.getRedemptions(txIds);
+    let tokensRedemption: [T.TransactionInfo] = await TransactionIndex.getTransactionsById(txIds, ?#redemption("redemption"), null, null);
 
     { tokensInfo; tokensRedemption };
   };
@@ -211,8 +209,8 @@ shared({ caller = adminCaller }) actor class Agent() {
             assetInfo = {
               tokenId = item.tokenId;
               assetType = #hydro("hydro");
-              startDate: Nat64 = 1714419814052;
-              endDate: Nat64 = 1717012111263;
+              startDate = "2024-04-29T19:43:34.000Z";
+              endDate = "2024-05-29T19:48:31.000Z";
               co2Emission: Float = 11.22;
               radioactivityEmnission: Float = 10.20;
               volumeProduced: T.TokenAmount = 1000;
@@ -232,7 +230,7 @@ shared({ caller = adminCaller }) actor class Agent() {
                 stateProvince = "chile";
                 country = "chile";
               };
-              dates: [Nat64] = [1714419814052, 1717012111263, 1717012111263];
+              dates = ["2024-04-29T19:43:34.000Z", "2024-05-29T19:48:31.000Z", "2024-05-29T19:48:31.000Z"];
             };
           }
         };
@@ -258,10 +256,7 @@ shared({ caller = adminCaller }) actor class Agent() {
       // by assetTypes
       let assetTypeMatches = switch (assetTypes) {
         case(null) true;
-        case(?assets) {
-          let assetType = Array.find<T.AssetType>(assets, func (assetType) { assetType == item.assetInfo.assetType });
-          assetType != null
-        };
+        case(?assets) Array.find<T.AssetType>(assets, func (assetType) { assetType == item.assetInfo.assetType }) != null;
       };
 
       // by country
@@ -304,10 +299,12 @@ shared({ caller = adminCaller }) actor class Agent() {
     } = await Marketplace.getMarketplaceSellers(page, length, tokenId, priceRange, excludedCaller);
 
     // get users info
-    let usersInfo = Buffer.Buffer<T.UserProfile>(100);
-    for(item in marketInfo.vals()) {
-      usersInfo.add(await UserIndex.getProfile(item.userId));
-    };
+    let usersInfo: [T.UserProfile] = await UserIndex.getUsers(Array.map<{
+      tokenId: T.TokenId;
+      userId: T.UID;
+      mwh: T.TokenAmount;
+      priceICP: T.Price;
+    }, T.UID>(marketInfo, func x = x.userId));
 
     // get tokens info
     let tokensInfo: [T.AssetInfo] = await TokenIndex.getTokensInfo(Array.map<{
@@ -326,57 +323,9 @@ shared({ caller = adminCaller }) actor class Agent() {
       priceICP: T.Price;
     }, T.MarketplaceSellersInfo>(marketInfo, func (item) {
 
-      let assetInfo: T.AssetInfo = switch(Array.find<T.AssetInfo>(tokensInfo, func (info) { info.tokenId == item.tokenId })) {
-        case(null) {
-          /// this case will not occur, just here to can compile
-          {
-            tokenId = item.tokenId;
-            assetType = #hydro("hydro");
-            startDate: Nat64 = 1714419814052;
-            endDate: Nat64 = 1717012111263;
-            co2Emission: Float = 11.22;
-            radioactivityEmnission: Float = 10.20;
-            volumeProduced: T.TokenAmount = 1000;
-            deviceDetails = {
-              name = "machine";
-              deviceType = "type";
-              group = #hydro("hydro");
-              description = "description";
-            };
-            specifications = {
-              deviceCode = "200";
-              capacity: T.TokenAmount = 1000;
-              location = "location";
-              latitude: Float = 0;
-              longitude: Float = 1;
-              address = "address anywhere";
-              stateProvince = "chile";
-              country = "chile";
-            };
-            dates: [Nat64] = [1714419814052, 1717012111263, 1717012111263];
-          }
-        };
-        case(?value) value;
-      };
+      let assetInfo: ?T.AssetInfo = Array.find<T.AssetInfo>(tokensInfo, func (info) { info.tokenId == item.tokenId });
 
-      let userProfile: T.UserProfile = switch(Array.find<T.UserProfile>(Buffer.toArray(usersInfo), func (user) { Principal.fromText(user.principalId) == item.userId })) {
-        case(null) {
-          /// this case will not occur, just here to can compile
-          {
-            companyLogo: [Nat8] = [];
-            principalId = "";
-            companyId = "";
-            companyName = "";
-            city = "";
-            country = "";
-            address = "";
-            email = "";
-            createdAt = "";
-            updatedAt = "";
-          }
-        };
-        case(?value) value;
-      };
+      let userProfile: ?T.UserProfile = Array.find<T.UserProfile>(usersInfo, func (user) { Principal.fromText(user.principalId) == item.userId });
 
 
       // build MarketplaceSellersInfo object
@@ -397,13 +346,23 @@ shared({ caller = adminCaller }) actor class Agent() {
       // by country
       let countryMatches = switch (country) {
         case(null) true;
-        case(?value) item.assetInfo.specifications.country == value;
+        case(?value) {
+          switch(item.assetInfo) {
+            case(null) false;
+            case(?assetInfo) assetInfo.specifications.country == value;
+          };
+        };
       };
 
       // by company name
       let compantNameMatches = switch (companyName) {
         case(null) true;
-        case(?value) Text.contains(item.userProfile.companyName, #text value);
+        case(?value) {
+          switch(item.userProfile) {
+            case(null) false;
+            case(?userProfile) Text.contains(userProfile.companyName, #text value);
+          };
+        };
       };
 
       compantNameMatches and countryMatches;
@@ -418,29 +377,34 @@ shared({ caller = adminCaller }) actor class Agent() {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
-    let testingRecipent = caller /* recipent <- replace in future for recipent */;
-
-    let recipentLedger = await UserIndex.getUserLedger(testingRecipent);
+    let recipentLedger = await UserIndex.getUserLedger(recipent);
 
     // performe ICP transfer and update token canister
     let tokensInMarket = await Marketplace.getUserTokensOnSale(caller, tokenId);
-    let blockHash: T.BlockHash = await TokenIndex.purchaseToken(caller, { uid = testingRecipent; ledger = recipentLedger }, tokenId, tokenAmount, tokensInMarket);
+    let blockHash: T.BlockHash = await TokenIndex.purchaseToken(caller, { uid = recipent; ledger = recipentLedger }, tokenId, tokenAmount, tokensInMarket);
 
     // build transaction
     let txInfo: T.TransactionInfo = {
       transactionId = "0";
       blockHash;
       from = caller;
-      to = #transferRecipent(testingRecipent);
+      to = recipent;
       tokenId;
       txType = #transfer("transfer");
       tokenAmount;
       priceICP = { e8s = Int64.toNat64(Float.toInt64(priceICP)) };
+      date = DateTime.now().toText();
+      method = #blockchainTransfer("blockchainTransfer");
     };
 
     // register transaction
     let txId = await TransactionIndex.registerTransaction(txInfo);
+    // store to caller
     await UserIndex.updateTransactions(caller, txId);
+
+    // ----> Warn commented while beneficiary flow is builded <----
+    // // store to recipent
+    // await UserIndex.updateTransactions(Principal.fromText(recipent), txId);
 
     // take token off marketplace
     await Marketplace.takeOffSale(tokenId, tokenAmount, caller);
@@ -513,13 +477,15 @@ shared({ caller = adminCaller }) actor class Agent() {
 
     let txInfo: T.TransactionInfo = {
       transactionId = "0";
-      blockHash = 12345678901234567890;
+      blockHash = 12345678901234567890; // TODO replace with real blockhash
       from = caller;
-      to = #redemptionRecipent(beneficiary);
+      to = beneficiary;
       tokenId;
       txType = #redemption("redemption");
       tokenAmount = quantity;
       priceICP;
+      date = DateTime.now().toText();
+      method = #blockchainTransfer("blockchainTransfer");
     };
 
     // register transaction
@@ -527,5 +493,113 @@ shared({ caller = adminCaller }) actor class Agent() {
     await UserIndex.updateTransactions(caller, txId);
 
     txInfo
+  };
+
+
+  // get user transactions
+  public shared({ caller }) func getTransactionsByUser(page: ?Nat, length: ?Nat, txType: ?T.TxType, country: ?Text, priceRange: ?[T.Price], mwhRange: ?[T.TokenAmount], assetTypes: ?[T.AssetType]): async {
+    data: [T.TransactionHistoryInfo];
+    totalPages: Nat;
+  } {
+    // check if user exists
+    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
+
+    // define page based on statement
+    let startPage = switch(page) {
+      case(null) 1;
+      case(?value) value;
+    };
+
+    // define length based on statement
+    let maxLength = switch(length) {
+      case(null) 50;
+      case(?value) value;
+    };
+
+    let txIds = await UserIndex.getTransactionIds(caller);
+    let txIdsFiltered = Buffer.Buffer<T.TransactionId>(50);
+
+    // calculate range of elements returned
+    let startIndex: Nat = (startPage - 1) * maxLength;
+    var i = 0;
+
+    for (txId in txIds.vals()) {
+      if (i >= startIndex and i < startIndex + maxLength) txIdsFiltered.add(txId);
+      i += 1;
+    };
+
+    var totalPages: Nat = i / maxLength;
+    if (totalPages <= 0) totalPages := 1;
+
+
+    let transactionsInfo: [T.TransactionInfo] = await TransactionIndex.getTransactionsById(Buffer.toArray<T.TransactionId>(txIdsFiltered), txType, priceRange, mwhRange);
+
+    // get users info
+    let usersInfo: [T.UserProfile] = await UserIndex.getUsers(Array.map<T.TransactionInfo, T.UID>(transactionsInfo, func (x) {
+      if (x.from != caller) { x.from }
+      else { x.to }
+    }));
+
+    // get tokens info
+    let tokensInfo: [T.AssetInfo] = await TokenIndex.getTokensInfo(Array.map<T.TransactionInfo, Text>(transactionsInfo, func x = x.tokenId));
+
+
+    // map market and asset values to marketplace info
+    let transactions: [T.TransactionHistoryInfo] = Array.map<T.TransactionInfo, T.TransactionHistoryInfo>(transactionsInfo, func (item) {
+
+      let assetInfo: ?T.AssetInfo = Array.find<T.AssetInfo>(tokensInfo, func (info) { info.tokenId == item.tokenId });
+
+      let recipentProfile: ?T.UserProfile = Array.find<T.UserProfile>(usersInfo, func (user) {
+        Principal.fromText(user.principalId) == item.from or 
+        Principal.fromText(user.principalId) == item.to
+      });
+
+
+      // build MarketplaceSellersInfo object
+      {
+        transactionId = item.transactionId;
+        blockHash = item.blockHash;
+        txType = item.txType;
+        tokenAmount = item.tokenAmount;
+        priceICP = item.priceICP;
+        date = item.date;
+        method = item.method;
+        recipentProfile;
+        assetInfo;
+      }
+    });
+
+
+    // Apply filters
+    let filteredTransactions: [T.TransactionHistoryInfo] = Array.filter<T.TransactionHistoryInfo>(transactions, func (item) {
+      // by country
+      let countryMatches = switch (country) {
+        case(null) true;
+        case(?value) {
+          switch(item.assetInfo) {
+            case(null) false;
+            case(?assetInfo) assetInfo.specifications.country == value;
+          };
+        };
+      };
+
+      // by assetTypes
+      let assetTypeMatches = switch (assetTypes) {
+        case(null) true;
+        case(?assets) {
+          switch(item.assetInfo) {
+            case(null) false;
+            case(?asset) Array.find<T.AssetType>(assets, func (assetType) { assetType == asset.assetType }) != null;
+          };
+        };
+      };
+
+      countryMatches and assetTypeMatches;
+    });
+
+    {
+      data = filteredTransactions;
+      totalPages
+    }
   };
 }

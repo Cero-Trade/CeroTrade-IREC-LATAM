@@ -10,14 +10,14 @@ import Nat64 "mo:base/Nat64";
 import TM "mo:base/TrieMap";
 import Hash "mo:base/Hash";
 import Iter "mo:base/Iter";
+import Debug "mo:base/Debug";
 import AccountIdentifier "mo:account-identifier";
 
 
 // types
 import T "../types";
-import ENV "../env";
 
-actor Users {
+shared({ caller = userIndexCaller }) actor class Users() {
   // constants
   stable let userNotFound: Text = "User not found";
 
@@ -33,7 +33,7 @@ actor Users {
     usersEntries := [];
   };
 
-  private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.USER_INDEX_CANISTER_ID) == caller };
+  private func _callValidation(caller: Principal) { assert userIndexCaller == caller };
 
   /// get size of users collection
   public query func length(): async Nat { users.size() };

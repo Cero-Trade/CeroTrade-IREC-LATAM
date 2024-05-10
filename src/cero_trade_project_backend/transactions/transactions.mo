@@ -13,9 +13,8 @@ import Iter "mo:base/Iter";
 
 // types
 import T "../types";
-import ENV "../env";
 
-actor Transactions {
+shared({ caller = transactionIndexCaller }) actor class Transactions() {
   // constants
   stable let notFound: Text = "Transaction not found";
 
@@ -31,7 +30,7 @@ actor Transactions {
     transactionsEntries := [];
   };
 
-  private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.TRANSACTION_INDEX_CANISTER_ID) == caller };
+  private func _callValidation(caller: Principal) { assert transactionIndexCaller == caller };
 
   /// get size of transactions collection
   public query func length(): async Nat { transactions.size() };
@@ -48,15 +47,35 @@ actor Transactions {
     txId
   };
 
-  public shared({ caller }) func getRedemptions(txIds: [T.TransactionId]): async [T.TransactionInfo] {
-    _callValidation(caller);
 
-    let txs = Buffer.Buffer<T.TransactionInfo>(100);
+  public query func getTransactionsById(txIds: [T.TransactionId], txType: ?T.TxType, priceRange: ?[T.Price], mwhRange: ?[T.TokenAmount]): async [T.TransactionInfo] {
+    let txs = Buffer.Buffer<T.TransactionInfo>(50);
 
     for(tx in txIds.vals()) {
       switch(transactions.get(tx)) {
         case(null) {};
-        case(?txInfo) txs.add(txInfo);
+
+        case(?txInfo) {
+          // filter by mwhRange
+          let filterRange: Bool = switch(mwhRange) {
+            case(null) true;
+            case(?range) txInfo.tokenAmount >= range[0] and txInfo.tokenAmount <= range[1];
+          };
+
+          // filter priceRange
+          let filterPrice: Bool = switch(priceRange) {
+            case(null) true;
+            case(?range) txInfo.priceICP.e8s >= range[0].e8s and txInfo.priceICP.e8s <= range[1].e8s;
+          };
+
+          // filter by txType
+          let filterType: Bool = switch(txType) {
+            case(null) true;
+            case(?typeTx) txInfo.txType == typeTx;
+          };
+
+          if (filterType and filterPrice and filterRange) txs.add(txInfo)
+        };
       };
     };
 

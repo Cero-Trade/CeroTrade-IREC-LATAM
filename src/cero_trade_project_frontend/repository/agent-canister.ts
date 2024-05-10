@@ -4,8 +4,9 @@ import avatar from '@/assets/sources/images/avatar-online.svg'
 import store from "@/store";
 import { UserProfileModel } from "@/models/user-profile-model";
 import { AssetType, TokenModel } from "@/models/token-model";
-import { TransactionInfo, TxType } from "@/models/transaction-model";
+import { TransactionHistoryInfo, TransactionInfo, TxMethodDef, TxTypeDef } from "@/models/transaction-model";
 import { MarketplaceInfo, MarketplaceSellersInfo } from "@/models/marketplace-model";
+import { Principal } from "@dfinity/principal";
 
 export class AgentCanister {
   static async register(data: {
@@ -123,15 +124,15 @@ export class AgentCanister {
         item.inMarket = Number(item.inMarket)
         item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
         // format dates
-        item.assetInfo.startDate = new Date(Number(item.assetInfo.startDate))
-        item.assetInfo.endDate = new Date(Number(item.assetInfo.endDate))
-        item.assetInfo.dates.forEach(e => { e = new Date(Number(e)) })
+        item.assetInfo.startDate = new Date(item.assetInfo.startDate)
+        item.assetInfo.endDate = new Date(item.assetInfo.endDate)
+        item.assetInfo.dates.forEach(e => { e = new Date(e) })
       }
 
       response.tokensInfo.totalPages = Number(response.tokensInfo.totalPages)
 
       for (const item of response.tokensRedemption) {
-        item.txType = Object.values(item.txType)[0] as TxType
+        item.txType = Object.values(item.txType)[0] as TxTypeDef
         item.to = Object.values(item.to)[0] as string
         item.tokenAmount = Number(item.tokenAmount)
       }
@@ -154,11 +155,11 @@ export class AgentCanister {
       token.assetInfo.specifications.capacity = Number(token.assetInfo.specifications.capacity)
       // format dates
       token.assetInfo.assetType = Object.values(token.assetInfo.assetType)[0] as AssetType
-      token.assetInfo.startDate = new Date(Number(token.assetInfo.startDate))
-      token.assetInfo.endDate = new Date(Number(token.assetInfo.endDate))
+      token.assetInfo.startDate = new Date(token.assetInfo.startDate)
+      token.assetInfo.endDate = new Date(token.assetInfo.endDate)
 
       const dates: Date[] = [];
-      for (const date of token.assetInfo.dates) dates.push(new Date(Number(date)))
+      for (const date of token.assetInfo.dates) dates.push(new Date(date))
       token.assetInfo.dates = dates
 
       return token
@@ -180,11 +181,11 @@ export class AgentCanister {
       token.assetInfo.specifications.capacity = Number(token.assetInfo.specifications.capacity)
       // format dates
       token.assetInfo.assetType = Object.values(token.assetInfo.assetType)[0] as AssetType
-      token.assetInfo.startDate = new Date(Number(token.assetInfo.startDate))
-      token.assetInfo.endDate = new Date(Number(token.assetInfo.endDate))
+      token.assetInfo.startDate = new Date(token.assetInfo.startDate)
+      token.assetInfo.endDate = new Date(token.assetInfo.endDate)
 
       const dates: Date[] = [];
-      for (const date of token.assetInfo.dates) dates.push(new Date(Number(date)))
+      for (const date of token.assetInfo.dates) dates.push(new Date(date))
       token.assetInfo.dates = dates
 
       return token
@@ -276,8 +277,11 @@ export class AgentCanister {
 
   static async purchaseToken(tokenId: string, recipent: string, amount: number, price: number): Promise<TransactionInfo> {
     try {
-      const tx = await agent().purchaseToken(tokenId, recipent, amount, price) as TransactionInfo
-      tx.txType = Object.values(tx.txType)[0] as TxType
+      /* TODO replace in future for recipent */
+      const testingRecipent = Principal.fromText("2vxsx-fae");
+
+      const tx = await agent().purchaseToken(tokenId, testingRecipent, amount, price) as TransactionInfo
+      tx.txType = Object.values(tx.txType)[0] as TxTypeDef
       tx.to = Object.values(tx.to)[0] as string
 
       return tx
@@ -311,11 +315,52 @@ export class AgentCanister {
 
   static async redeemToken(tokenId: string, beneficiary: string, amount: number): Promise<TransactionInfo> {
     try {
-      const tx = await agent().redeemToken(tokenId, beneficiary, amount) as TransactionInfo
-      tx.txType = Object.values(tx.txType)[0] as TxType
+      /* TODO replace in future for beneficiary */
+      const testingBeneficiary = Principal.fromText("2vxsx-fae");
+
+      const tx = await agent().redeemToken(tokenId, testingBeneficiary, amount) as TransactionInfo
+      tx.txType = Object.values(tx.txType)[0] as TxTypeDef
       tx.to = Object.values(tx.to)[0] as string
 
       return tx
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+
+  static async getTransactions({ page, length, txType }: {
+    page?: number,
+    length?: number,
+    txType?: TxTypeDef,
+  }): Promise<{ data: TransactionHistoryInfo[]; totalPages: number; }> {
+    try {
+      const response = await agent().getTransactionsByUser(
+        page ? [page] : [],
+        length ? [length] : [],
+        txType ? [{[txType]: txType}] : [],
+      ) as { data: TransactionHistoryInfo[]; totalPages: number; }
+
+      for (const item of response.data) {
+        // format record value
+        item.tokenAmount = Number(item.tokenAmount)
+        item.txType = Object.values(item.txType)[0] as TxTypeDef
+        item.method = Object.values(item.method)[0] as TxMethodDef
+        item.date = new Date(item.date)
+
+        item.assetInfo = item.assetInfo[0]
+        item.recipentProfile = item.recipentProfile[0]
+        item.recipentProfile.companyLogo = getUrlFromArrayBuffer(item.recipentProfile.companyLogo) || avatar
+
+        item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
+        item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
+        item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
+      }
+
+      response.totalPages = Number(response.totalPages)
+
+      return response
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)

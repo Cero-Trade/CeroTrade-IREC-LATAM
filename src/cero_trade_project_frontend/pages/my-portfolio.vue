@@ -214,7 +214,6 @@
         ></v-autocomplete>
 
         <v-range-slider
-          id="price-range"
           v-model="filters.mwhRange"
           :min="0"
           :max="1000"

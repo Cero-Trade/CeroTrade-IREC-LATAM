@@ -8,10 +8,9 @@ import Nat "mo:base/Nat";
 // types
 import ICRC "../ICRC";
 import T "../types";
-import ENV "../env";
 
 
-actor class Token(_tokenId: ?T.TokenId) = this {
+shared({ caller = tokenIndexCaller }) actor class Token(_tokenId: ?T.TokenId) = this {
   stable let tokenId = switch (_tokenId) {
     case (null) "0";
     case (?value) value;
@@ -48,7 +47,7 @@ actor class Token(_tokenId: ?T.TokenId) = this {
     userIrecsEntries := [];
   };
 
-  private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.TOKEN_INDEX_CANISTER_ID) == caller };
+  private func _callValidation(caller: Principal) { assert tokenIndexCaller == caller };
 
 
 

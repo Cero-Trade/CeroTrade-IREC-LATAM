@@ -57,7 +57,7 @@
 
           <template #[`item.price`]="{ item }">
             <span class="divrow jspace acenter">
-              {{ item.price }} <v-sheet class="chip-currency bold">{{ item.currency }}</v-sheet>
+              {{ item.price }} <v-sheet class="chip-currency bold">ICP</v-sheet>
             </span>
           </template>
 
@@ -191,7 +191,6 @@
         ></v-autocomplete>
 
         <v-range-slider
-          id="price-range"
           v-model="filters.priceRange"
           :min="0"
           :max="1000"
@@ -278,7 +277,7 @@ headers = [
   { title: 'Asset ID', key: 'token_id', sortable: false },
   { title: 'Energy source', key: 'energy_source', sortable: false },
   { title: 'Country', key: 'country', sortable: false },
-  { title: 'Price', key: 'price', sortable: false },
+  { title: 'Price (ICP)', key: 'price', sortable: false },
   { title: 'MWh', key: 'mwh', sortable: false },
   { title: 'Volume Produced', key: 'volume', sortable: false },
   { title: 'Actions', key: 'actions', sortable: false, align: 'center'},

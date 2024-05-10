@@ -125,7 +125,7 @@ async function registerTokenCall() {
     const res = await CeroSystemApi.registerToken(registerTokenForm.value.tokenId)
     console.log(res);
 
-    toast.success("Token minted")
+    toast.success("Token registered")
   } catch (error) {
     toast.error(error)
   }

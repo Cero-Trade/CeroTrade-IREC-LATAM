@@ -38,7 +38,7 @@ Deploy canisters
 
 `dfx deploy`
 
-To deploy only backend canisters run
+Deploy only backend canisters
 
 `dfx deploy agent`
 
@@ -55,7 +55,7 @@ dfx canister call agent registerWasmModule '(variant { "transactions" = "transac
 `dfx canister call agent registerToken '("token_id")'`
 
 ### Minting tokens to users
-`dfx canister call agent mintTokenToUser '("recipent", "TokenId", TokenAmount)'`
+`dfx canister call agent mintTokenToUser '("recipent", "tokenId", tokenAmount)'`
 
 ### Generate wasm modules (Note: only cero-devs)
 ```

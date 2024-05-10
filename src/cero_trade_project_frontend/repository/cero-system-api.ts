@@ -26,7 +26,7 @@ export class CeroSystemApi {
     tokenAmount: number,
   }): Promise<void> {
     try {
-      await agent().mintTokenToUser(user, tokenId, tokenAmount)
+      await agent().mintTokenToUser(Principal.fromText(user), tokenId, tokenAmount)
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)

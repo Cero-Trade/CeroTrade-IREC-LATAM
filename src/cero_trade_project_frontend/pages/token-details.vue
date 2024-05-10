@@ -1059,7 +1059,6 @@
         ></v-text-field>
 
         <v-range-slider
-          id="price-range"
           v-model="filters.priceRange"
           :min="0"
           :max="1000"
@@ -1485,6 +1484,7 @@ async function putOnSale() {
     console.log("put on sale");
     toast.success(`You have put ${tokenAmount.value} tokens up for sale`)
   } catch (error) {
+    closeLoader()
     console.error(error);
     toast.error(error)
   }
@@ -1501,6 +1501,7 @@ async function takeOffMarket() {
     console.log("take off market");
     toast.success(`You have taken ${tokenAmount.value} from the market`)
   } catch (error) {
+    closeLoader()
     console.error(error);
     toast.error(error)
   }
@@ -1518,6 +1519,7 @@ async function redeemToken() {
     console.log("redeem token", tx);
     toast.success(`you have redeemed ${tokenAmount.value} tokens`)
   } catch (error) {
+    closeLoader()
     console.error(error);
     toast.error(error)
   }

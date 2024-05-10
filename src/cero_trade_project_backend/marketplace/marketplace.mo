@@ -1,6 +1,4 @@
 import Error "mo:base/Error";
-
-import MarketplaceTypes = "./marketplace_types";
 import HM = "mo:base/HashMap";
 import Principal "mo:base/Principal";
 import Text "mo:base/Text";
@@ -13,35 +11,35 @@ import ENV "../env";
 
 actor class Marketplace() = this {
 
-  var tokensInMarket : HM.HashMap<T.TokenId, T.TokenMarketInfo> = HM.HashMap(100, Text.equal, Text.hash);
+  var tokensInMarket : HM.HashMap<T.TokenId, T.TokenMarketInfo> = HM.HashMap(50, Text.equal, Text.hash);
   stable var tokensInMarketEntries : [(T.TokenId, T.TokenAmount, [(T.UID, T.UserTokenInfo)])] = [];
 
   /// funcs to persistent collection state
   system func preupgrade() {
-    let marketplace = Buffer.Buffer<(T.TokenId, T.TokenAmount, [(T.UID, T.UserTokenInfo)])>(100);
+    let marketplace = Buffer.Buffer<(T.TokenId, T.TokenAmount, [(T.UID, T.UserTokenInfo)])>(50);
 
-    for ((tokenId, value) in tokensInMarket.entries()) {
-      let usersxToken = Buffer.Buffer<((T.UID, T.UserTokenInfo))>(100);
+    for ((tokenId, tokenMarketInfo) in tokensInMarket.entries()) {
+      let usersxToken = Buffer.Buffer<((T.UID, T.UserTokenInfo))>(50);
 
-      for ((key2, value2) in value.usersxToken.entries()) {
-        usersxToken.add( (key2, value2) )
+      for ((userId, userTokenInfo) in tokenMarketInfo.usersxToken.entries()) {
+        usersxToken.add( (userId, userTokenInfo) )
       };
 
-      marketplace.add( (tokenId, value.totalQuantity, Buffer.toArray<(T.UID, T.UserTokenInfo)>(usersxToken)) );
+      marketplace.add( (tokenId, tokenMarketInfo.totalQuantity, Buffer.toArray<(T.UID, T.UserTokenInfo)>(usersxToken)) );
     };
 
     tokensInMarketEntries := Buffer.toArray<(T.TokenId, T.TokenAmount, [(T.UID, T.UserTokenInfo)])>(marketplace)
   };
 
   system func postupgrade() {
-    for ((key, totalQuantity, users) in tokensInMarketEntries.vals()) {
+    for ((tokenId, totalQuantity, users) in tokensInMarketEntries.vals()) {
       var usersxToken = HM.HashMap<T.UID, T.UserTokenInfo>(100, Principal.equal, Principal.hash);
 
-      for ((key2, value2) in users.vals()) {
-        usersxToken.put(key2, value2);
+      for ((userId, userTokenInfo) in users.vals()) {
+        usersxToken.put(userId, userTokenInfo);
       };
 
-      tokensInMarket.put(key, { totalQuantity; usersxToken });
+      tokensInMarket.put(tokenId, { totalQuantity; usersxToken });
     };
   };
 
@@ -371,21 +369,21 @@ actor class Marketplace() = this {
       mwh: T.TokenAmount;
       lowerPriceICP: T.Price;
       higherPriceICP: T.Price;
-    }>(100);
+    }>(50);
 
     // calculate range of elements returned
     let startIndex: Nat = (startPage - 1) * maxLength;
     var i = 0;
 
-    for ((currentTokenId, value) in tokensInMarket.entries()) {
-      let (min, max) = _getMinMax(value.usersxToken);
+    for ((currentTokenId, tokenMarketInfo) in tokensInMarket.entries()) {
+      let (min, max) = _getMinMax(tokenMarketInfo.usersxToken);
       let lowerPriceICP: T.Price = switch(min) {
         case(null) { { e8s = 0 } };
-        case(?value) value;
+        case(?minPrice) minPrice;
       };
       let higherPriceICP: T.Price = switch(max) {
         case(null) { { e8s = 0 } };
-        case(?value) value;
+        case(?maxPrice) maxPrice;
       };
 
       // filter by tokenId
@@ -397,7 +395,7 @@ actor class Marketplace() = this {
       if (i >= startIndex and i < startIndex + maxLength and filterRange) {
         marketplace.add({
           tokenId = currentTokenId;
-          mwh = value.totalQuantity;
+          mwh = tokenMarketInfo.totalQuantity;
           lowerPriceICP;
           higherPriceICP;
         });
@@ -447,24 +445,24 @@ actor class Marketplace() = this {
       userId: T.UID;
       mwh: T.TokenAmount;
       priceICP: T.Price;
-    }>(100);
+    }>(50);
 
     // calculate range of elements returned
     let startIndex: Nat = (startPage - 1) * maxLength;
     var i = 0;
 
-    for ((currentTokenId, value) in tokensInMarket.entries()) {
+    for ((currentTokenId, tokenMarketInfo) in tokensInMarket.entries()) {
 
       // rule to exclude caller
       let excludeCallerRule = switch(excludedCaller) {
         case(null) true;
-        case(?caller) value.usersxToken.get(caller) == null;
+        case(?caller) tokenMarketInfo.usersxToken.get(caller) == null;
       };
 
 
       if (i >= startIndex and i < startIndex + maxLength and excludeCallerRule) {
 
-        for((userId, userToken) in value.usersxToken.entries()) {
+        for((userId, userToken) in tokenMarketInfo.usersxToken.entries()) {
           switch(tokenId) {
 
             // return default values
