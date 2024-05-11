@@ -1,10 +1,7 @@
-import Debug "mo:base/Debug";
 import Blob "mo:base/Blob";
 import Cycles "mo:base/ExperimentalCycles";
-import Error "mo:base/Error";
 import Array "mo:base/Array";
 import Nat8 "mo:base/Nat8";
-import Nat64 "mo:base/Nat64";
 import Text "mo:base/Text";
 import Iter "mo:base/Iter";
 import Buffer "mo:base/Buffer";
@@ -61,7 +58,7 @@ actor HttpService {
     Buffer.toArray<HT.HttpHeader>(default_headers);
   };
 
-  private func _sendRequest(request: HT.HttpRequestArgs) : async Text {
+  private func _sendRequest<system>(request: HT.HttpRequestArgs) : async Text {
     // DECLARE MANAGEMENT CANISTER
     let ic : HT.IC = actor ("aaaaa-aa");
 
@@ -74,7 +71,7 @@ actor HttpService {
     //The way Cycles.add() works is that it adds those cycles to the next asynchronous call
     //"Function add(amount) indicates the additional amount of cycles to be transferred in the next remote call"
     //See: https://internetcomputer.org/docs/current/references/ic-interface-spec/#ic-http_request
-    Cycles.add(20_949_972_000);
+    Cycles.add<system>(20_949_972_000);
 
     // MAKE HTTPS REQUEST AND WAIT FOR RESPONSE
     //Since the cycles were added above, you can just call the management canister with HTTPS outcalls below

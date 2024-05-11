@@ -18,22 +18,23 @@ import { setAppLoader } from '../plugins/functions';
 import { AgentCanister } from '../repository/agent-canister';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
-import { useToast } from 'vue-toastification';
 const
   store = useStore(),
-  router = useRouter(),
-  toast = useToast()
+  router = useRouter()
 
 
 onBeforeMount(getData)
 
 
 async function getData() {
+  setAppLoader(true)
+
   try {
     await AgentCanister.getProfile()
 
     setAppLoader(false)
   } catch (error) {
+    setAppLoader(false)
     console.error(error);
     router.push('/auth/login')
   }

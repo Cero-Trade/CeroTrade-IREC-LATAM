@@ -10,7 +10,7 @@ import Nat8 "mo:base/Nat8";
 import Nat64 "mo:base/Nat64";
 import Iter "mo:base/Iter";
 import Buffer "mo:base/Buffer";
-import Result "mo:base/Result";
+// import Result "mo:base/Result";
 import Debug "mo:base/Debug";
 
 // canisters
@@ -18,7 +18,7 @@ import HttpService "canister:http_service";
 
 // types
 import T "../types";
-import HT "../http_service/http_service_types";
+// import HT "../http_service/http_service_types";
 import ICRC "../ICRC";
 import ENV "../env";
 
@@ -39,7 +39,7 @@ actor class TokenIndex() = this {
     tokenDirectoryEntries := [];
   };
 
-  private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.AGENT_CANISTER_ID) == caller };
+  private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.CANISTER_ID_AGENT) == caller };
 
   /// get size of tokenDirectory collection
   public query func length(): async Nat { tokenDirectory.size() };
@@ -86,7 +86,7 @@ actor class TokenIndex() = this {
   };
 
   /// register [tokenDirectory] collection
-  public shared({ caller }) func registerToken(tokenId: Text): async Principal {
+  public shared({ caller }) func registerToken<system>(tokenId: Text): async Principal {
     _callValidation(caller);
 
     if (tokenId == "") throw Error.reject("Must to provide a tokenId");
@@ -96,7 +96,7 @@ actor class TokenIndex() = this {
       case(null) {
         Debug.print(debug_show ("before registerToken: " # Nat.toText(Cycles.balance())));
 
-        Cycles.add(300_000_000_000);
+        Cycles.add<system>(300_000_000_000);
         let { canister_id } = await T.ic.create_canister({
           settings = ?{
             controllers;
@@ -171,13 +171,13 @@ actor class TokenIndex() = this {
   };
 
   /// delete [tokenDirectory] collection
-  public shared({ caller }) func deleteToken(tokenId: Text): async () {
+  public shared({ caller }) func deleteToken<system>(tokenId: Text): async () {
     T.adminValidation(caller, controllers);
 
     switch(tokenDirectory.get(tokenId)) {
       case(null) throw Error.reject("Token doesn't exists");
       case(?canister_id) {
-        Cycles.add(20_949_972_000);
+        Cycles.add<system>(20_949_972_000);
         await T.ic.stop_canister({ canister_id });
         await T.ic.delete_canister({ canister_id });
         let _ = tokenDirectory.remove(tokenId)
@@ -186,7 +186,7 @@ actor class TokenIndex() = this {
   };
 
   /// manage deployed canister status
-  public shared({ caller }) func statusDeployedCanisterById(tokenId: T.TokenId): async {
+  public shared({ caller }) func statusDeployedCanisterById<system>(tokenId: T.TokenId): async {
     status: { #stopped; #stopping; #running };
     memory_size: Nat;
     cycles: Nat;
@@ -199,28 +199,28 @@ actor class TokenIndex() = this {
     switch(tokenDirectory.get(tokenId)) {
       case(null) throw Error.reject("Token doesn't exists");
       case(?canister_id) {
-        Cycles.add(20_949_972_000);
+        Cycles.add<system>(20_949_972_000);
         return await T.ic.canister_status({ canister_id });
       };
     };
   };
 
   /// resume all deployed canisters
-  public shared({ caller }) func startAllDeployedCanisters(): async () {
+  public shared({ caller }) func startAllDeployedCanisters<system>(): async () {
     T.adminValidation(caller, controllers);
 
     for(canister_id in tokenDirectory.vals()) {
-      Cycles.add(20_949_972_000);
+      Cycles.add<system>(20_949_972_000);
       await T.ic.start_canister({ canister_id });
     };
   };
 
   /// stop all deployed canisters
-  public shared({ caller }) func stopAllDeployedCanisters(): async () {
+  public shared({ caller }) func stopAllDeployedCanisters<system>(): async () {
     T.adminValidation(caller, controllers);
 
     for(canister_id in tokenDirectory.vals()) {
-      Cycles.add(20_949_972_000);
+      Cycles.add<system>(20_949_972_000);
       await T.ic.stop_canister({ canister_id });
     };
   };
@@ -400,7 +400,7 @@ actor class TokenIndex() = this {
       switch (tokenDirectory.get(tokenId)) {
         case (null) return false;
         case (?cid) {
-          let token = await TokenCanister(cid).getUserMinted(uid);
+          let _ = await TokenCanister(cid).getUserMinted(uid);
           return true;
         }
       };

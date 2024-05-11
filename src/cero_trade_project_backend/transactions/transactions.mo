@@ -4,10 +4,7 @@ import Text "mo:base/Text";
 import Nat "mo:base/Nat";
 import Error "mo:base/Error";
 import Bool "mo:base/Bool";
-import Array "mo:base/Array";
 import Buffer "mo:base/Buffer";
-import Nat64 "mo:base/Nat64";
-import Hash "mo:base/Hash";
 import Iter "mo:base/Iter";
 import DateTime "mo:datetime/DateTime";
 
@@ -16,10 +13,6 @@ import DateTime "mo:datetime/DateTime";
 import T "../types";
 
 shared({ caller = transactionIndexCaller }) actor class Transactions() {
-  // constants
-  stable let notFound: Text = "Transaction not found";
-
-
   var transactions: HM.HashMap<T.TransactionId, T.TransactionInfo> = HM.HashMap(16, Text.equal, Text.hash);
   stable var transactionsEntries : [(T.TransactionId, T.TransactionInfo)] = [];
 

@@ -22,6 +22,7 @@ If .did are not created correctly
 
 Generate declarations
 ```
+mkdir -p .dfx/local/canisters/cero_trade_project_frontend && cp assetstorage.did .dfx/local/canisters/cero_trade_project_frontend/assetstorage.did
 dfx generate
 cp src/declarations/users/* .dfx/local/canisters/users/
 cp src/declarations/user_index/* .dfx/local/canisters/user_index/

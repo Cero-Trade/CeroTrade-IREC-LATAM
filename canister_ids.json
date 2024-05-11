@@ -1,0 +1,32 @@
+{
+  "agent": {
+    "ic": "z5nar-oiaaa-aaaak-qihba-cai"
+  },
+  "cero_trade_project_frontend": {
+    "ic": "z2mgf-dqaaa-aaaak-qihbq-cai"
+  },
+  "http_service": {
+    "ic": "zplxi-cyaaa-aaaak-qihca-cai"
+  },
+  "marketplace": {
+    "ic": "zikr4-paaaa-aaaak-qihcq-cai"
+  },
+  "token": {
+    "ic": "zbj2a-ziaaa-aaaak-qihda-cai"
+  },
+  "token_index": {
+    "ic": "zgi4u-uqaaa-aaaak-qihdq-cai"
+  },
+  "transaction_index": {
+    "ic": "ylgy2-3yaaa-aaaak-qihea-cai"
+  },
+  "transactions": {
+    "ic": "ymh6o-waaaa-aaaak-qiheq-cai"
+  },
+  "user_index": {
+    "ic": "yfevs-aiaaa-aaaak-qihfa-cai"
+  },
+  "users": {
+    "ic": "ycftg-nqaaa-aaaak-qihfq-cai"
+  }
+}

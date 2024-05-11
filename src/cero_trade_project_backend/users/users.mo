@@ -4,13 +4,8 @@ import Text "mo:base/Text";
 import Nat "mo:base/Nat";
 import Error "mo:base/Error";
 import Bool "mo:base/Bool";
-import Array "mo:base/Array";
 import Buffer "mo:base/Buffer";
-import Nat64 "mo:base/Nat64";
-import TM "mo:base/TrieMap";
-import Hash "mo:base/Hash";
 import Iter "mo:base/Iter";
-import Debug "mo:base/Debug";
 import AccountIdentifier "mo:account-identifier";
 
 

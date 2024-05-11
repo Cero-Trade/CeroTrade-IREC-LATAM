@@ -2,7 +2,6 @@ import Principal "mo:base/Principal";
 import Error "mo:base/Error";
 import Debug "mo:base/Debug";
 import Cycles "mo:base/ExperimentalCycles";
-import Blob "mo:base/Blob";
 import Text "mo:base/Text";
 import Array "mo:base/Array";
 import Nat "mo:base/Nat";
@@ -12,7 +11,6 @@ import Buffer "mo:base/Buffer";
 import DateTime "mo:datetime/DateTime";
 
 // canisters
-import HttpService "canister:http_service";
 import UserIndex "canister:user_index";
 import TokenIndex "canister:token_index";
 import TransactionIndex "canister:transaction_index";
@@ -20,13 +18,11 @@ import Marketplace "canister:marketplace";
 
 // types
 import T "../types";
-import HT "../http_service/http_service_types";
 
 actor class Agent() = this {
   stable var controllers: ?[Principal] = null;
 
   // constants
-  stable let alreadyExists = "User already exists on cero trade";
   stable let notExists = "User doesn't exists on cero trade";
 
 
@@ -436,7 +432,7 @@ actor class Agent() = this {
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
     // check if token exists
-    let tokenPortofolio = await TokenIndex.getTokenPortfolio(caller, tokenId);
+    let _ = await TokenIndex.getTokenPortfolio(caller, tokenId);
 
     // check if user is already selling
     let isSelling = await Marketplace.isSellingToken(caller, tokenId);

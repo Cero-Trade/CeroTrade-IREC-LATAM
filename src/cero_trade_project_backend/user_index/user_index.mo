@@ -44,7 +44,7 @@ actor class UserIndex() = this {
     usersDirectoryEntries := [];
   };
 
-  private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.AGENT_CANISTER_ID) == caller };
+  private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.CANISTER_ID_AGENT) == caller };
 
   /// get size of usersDirectory collection
   public query func length(): async Nat { usersDirectory.size() };
@@ -110,7 +110,7 @@ actor class UserIndex() = this {
 
 
   /// resume all deployed canisters
-  public shared({ caller }) func startAllDeployedCanisters(): async () {
+  public shared({ caller }) func startAllDeployedCanisters<system>(): async () {
     T.adminValidation(caller, controllers);
 
     let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
@@ -121,13 +121,13 @@ actor class UserIndex() = this {
     };
 
     for(canister_id in deployedCanisters.vals()) {
-      Cycles.add(20_949_972_000);
+      Cycles.add<system>(20_949_972_000);
       await T.ic.start_canister({ canister_id });
     };
   };
 
   /// stop all deployed canisters
-  public shared({ caller }) func stopAllDeployedCanisters(): async () {
+  public shared({ caller }) func stopAllDeployedCanisters<system>(): async () {
     T.adminValidation(caller, controllers);
 
     let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
@@ -138,14 +138,14 @@ actor class UserIndex() = this {
     };
 
     for(canister_id in deployedCanisters.vals()) {
-      Cycles.add(20_949_972_000);
+      Cycles.add<system>(20_949_972_000);
       await T.ic.stop_canister({ canister_id });
     };
   };
 
   /// returns true if canister have storage memory,
   /// false if havent enough
-  public shared({ caller }) func checkMemoryStatus() : async Bool {
+  public func checkMemoryStatus() : async Bool {
     let status = switch(currentCanisterid) {
       case(null) throw Error.reject("Cant find users canisters registered");
       case(?cid) await T.ic.canister_status({ canister_id = cid });
@@ -155,10 +155,10 @@ actor class UserIndex() = this {
   };
 
   /// autonomous function, will be executed when current canister it is full
-  private func _createCanister(): async ?T.CanisterId {
+  private func _createCanister<system>(): async ?T.CanisterId {
     Debug.print(debug_show ("before create_canister: " # Nat.toText(Cycles.balance())));
 
-    Cycles.add(300_000_000_000);
+    Cycles.add<system>(300_000_000_000);
     let { canister_id } = await T.ic.create_canister({
       settings = ?{
         controllers;
@@ -187,7 +187,7 @@ actor class UserIndex() = this {
     let formBlob = to_candid(formData);
     let formKeys = ["token"];
 
-    let res = await HttpService.post(HT.apiUrl # "users/delete", {
+    let _ = await HttpService.post(HT.apiUrl # "users/delete", {
         headers = [];
         bodyJson = switch(Serde.JSON.toText(formBlob, formKeys, null)) {
           case(#err(error)) throw Error.reject("Cannot serialize data");

@@ -43,7 +43,7 @@ actor class Marketplace() = this {
     };
   };
 
-  private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.AGENT_CANISTER_ID) == caller or Principal.fromActor(this) == caller };
+  private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.CANISTER_ID_AGENT) == caller or Principal.fromActor(this) == caller };
 
 
 

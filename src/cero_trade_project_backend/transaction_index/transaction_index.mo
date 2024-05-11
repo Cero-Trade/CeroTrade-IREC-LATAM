@@ -9,7 +9,6 @@ import Nat8 "mo:base/Nat8";
 import Iter "mo:base/Iter";
 import Error "mo:base/Error";
 import Debug "mo:base/Debug";
-import List "mo:base/List";
 import Buffer "mo:base/Buffer";
 
 // canisters
@@ -25,9 +24,6 @@ actor class TransactionIndex() = this {
 
   stable var controllers: ?[Principal] = null;
 
-  stable let notExists = "Transaciton doesn't exists";
-  stable let alreadyExists = "Transaction already exists on cero trade";
-
 
   var transactionsDirectory: HM.HashMap<T.TransactionId, T.CanisterId> = HM.HashMap(16, Text.equal, Text.hash);
   stable var transactionsDirectoryEntries : [(T.TransactionId, T.CanisterId)] = [];
@@ -42,7 +38,7 @@ actor class TransactionIndex() = this {
     transactionsDirectoryEntries := [];
   };
 
-  private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.AGENT_CANISTER_ID) == caller };
+  private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.CANISTER_ID_AGENT) == caller };
 
   /// get size of transactionsDirectory collection
   public query func length(): async Nat { transactionsDirectory.size() };
@@ -104,7 +100,7 @@ actor class TransactionIndex() = this {
   };
 
   /// resume all deployed canisters
-  public shared({ caller }) func startAllDeployedCanisters(): async () {
+  public shared({ caller }) func startAllDeployedCanisters<system>(): async () {
     T.adminValidation(caller, controllers);
 
     let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
@@ -115,13 +111,13 @@ actor class TransactionIndex() = this {
     };
 
     for(canister_id in deployedCanisters.vals()) {
-      Cycles.add(20_949_972_000);
+      Cycles.add<system>(20_949_972_000);
       await T.ic.start_canister({ canister_id });
     };
   };
 
   /// stop all deployed canisters
-  public shared({ caller }) func stopAllDeployedCanisters(): async () {
+  public shared({ caller }) func stopAllDeployedCanisters<system>(): async () {
     T.adminValidation(caller, controllers);
 
     let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
@@ -132,14 +128,14 @@ actor class TransactionIndex() = this {
     };
 
     for(canister_id in deployedCanisters.vals()) {
-      Cycles.add(20_949_972_000);
+      Cycles.add<system>(20_949_972_000);
       await T.ic.stop_canister({ canister_id });
     };
   };
 
   /// returns true if canister have storage memory,
   /// false if havent enough
-  public shared({ caller }) func checkMemoryStatus() : async Bool {
+  public func checkMemoryStatus() : async Bool {
     let status = switch(currentCanisterid) {
       case(null) throw Error.reject("Cant find transactions canisters registered");
       case(?cid) await T.ic.canister_status({ canister_id = cid });
@@ -149,10 +145,10 @@ actor class TransactionIndex() = this {
   };
 
   /// autonomous function, will be executed when current canister it is full
-  private func _createCanister(): async ?T.CanisterId {
+  private func _createCanister<system>(): async ?T.CanisterId {
     Debug.print(debug_show ("before registerToken: " # Nat.toText(Cycles.balance())));
 
-    Cycles.add(300_000_000_000);
+    Cycles.add<system>(300_000_000_000);
     let { canister_id } = await T.ic.create_canister({
       settings = ?{
         controllers;

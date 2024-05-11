@@ -65,7 +65,6 @@
 
 <script setup>
 import variables from '@/mixins/variables';
-import { AuthClientApi } from '@/repository/auth-client-api';
 import { CeroSystemApi } from '@/repository/cero-system-api';
 import { onBeforeMount, ref } from 'vue'
 import { useRouter } from 'vue-router';

@@ -6,7 +6,6 @@ import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
 
 // types
-import ICRC "../ICRC";
 import T "../types";
 
 
