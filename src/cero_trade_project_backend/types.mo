@@ -9,10 +9,11 @@ import Error "mo:base/Error";
 import Array "mo:base/Array";
 
 // Types
+import IC_MANAGEMENT "./ic_management_canister_interface";
 import ICRC "./ICRC";
 
 module {
-  public let ic : IC = actor ("aaaaa-aa");
+  public let ic : IC_MANAGEMENT.IC = actor ("aaaaa-aa");
 
   public func getControllers(canister_id: CanisterId): async ?[Principal] {
     let status = await ic.canister_status({ canister_id });
@@ -197,15 +198,9 @@ module {
     priceICP: Price;
   };
 
+  public type CanisterSettings = IC_MANAGEMENT.CanisterSettings;
 
-  public type CanisterSettings = {
-    controllers: ?[Principal];
-    compute_allocation: ?Nat;
-    memory_allocation: ?Nat;
-    freezing_threshold: ?Nat;
-  };
-
-  public type WasmModule = Blob;
+  public type WasmModule = IC_MANAGEMENT.WasmModule;
 
   public type WasmModuleName = {
     #token: Text;
@@ -214,34 +209,6 @@ module {
   };
 
   public let LOW_MEMORY_LIMIT: Nat = 50000;
-
-  //3. Declaring the management canister which you use to make the Canister dictionary
-  public type IC = actor {
-    create_canister: shared {settings: ?CanisterSettings} -> async {canister_id: CanisterId};
-    update_settings : shared {
-      canister_id: Principal;
-      settings: CanisterSettings;
-    } -> async();
-    canister_status: shared {canister_id: CanisterId} -> async {
-      status: { #stopped; #stopping; #running };
-      memory_size: Nat;
-      cycles: Nat;
-      settings: CanisterSettings;
-      idle_cycles_burned_per_day: Nat;
-      module_hash: ?[Nat8];
-    };
-    install_code : shared {
-      arg: Blob;
-      wasm_module: WasmModule;
-      mode: { #reinstall; #upgrade; #install };
-      canister_id: CanisterId;
-    } -> async();
-    uninstall_code : shared {canister_id: CanisterId} -> async();
-    deposit_cycles: shared {canister_id: CanisterId} -> async();
-    start_canister: shared {canister_id: CanisterId} -> async();
-    stop_canister: shared {canister_id: CanisterId} -> async();
-    delete_canister: shared {canister_id: CanisterId} -> async();
-  };
 
   public type UsersInterface = actor {
     length: query () -> async Nat;

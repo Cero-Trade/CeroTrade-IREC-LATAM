@@ -17,11 +17,6 @@ Install mops dependencies globally if havent
 Otherwise install mops proyect dependencies
 `mops install`
 
-If .did are not created correctly
-
-`dfx canister create --all`
-`dfx build`
-
 Generate declarations
 ```
 mkdir -p .dfx/local/canisters/cero_trade_project_frontend && cp assetstorage.did .dfx/local/canisters/cero_trade_project_frontend/assetstorage.did
@@ -37,13 +32,12 @@ cp src/declarations/marketplace/* .dfx/local/canisters/marketplace/
 cp src/declarations/http_service/* .dfx/local/canisters/http_service/
 ```
 
-Deploy canisters
+Generate env.mo and deploy canisters
 
-`dfx deploy`
-
-Deploy only backend canisters
-
-`dfx deploy agent`
+```
+dfx deploy
+dfx deploy agent
+```
 
 ### Register wasm modules
 
@@ -122,6 +116,9 @@ https://internetcomputer.org/docs/current/developer-docs/smart-contracts/maintai
 
 #### Mainnet deploy
 https://internetcomputer.org/docs/current/developer-docs/setup/deploy-mainnet
+
+### IC Management Canister docs
+https://internetcomputer.org/docs/current/references/ic-interface-spec#ic-management-canister
 
 ### Mops site url
 https://mops.one/
