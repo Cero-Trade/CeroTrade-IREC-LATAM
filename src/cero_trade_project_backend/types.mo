@@ -6,18 +6,39 @@ import Blob "mo:base/Blob";
 import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import Error "mo:base/Error";
+import Array "mo:base/Array";
 
 // Types
+import IC_MANAGEMENT "./ic_management_canister_interface";
 import ICRC "./ICRC";
 
 module {
+  public let ic : IC_MANAGEMENT.IC = actor ("aaaaa-aa");
+
+  public func getControllers(canister_id: CanisterId): async ?[Principal] {
+    let status = await ic.canister_status({ canister_id });
+    status.settings.controllers
+  };
+
+  // global admin assert validation
+  public func adminValidation(caller: Principal, controllers: ?[Principal]) {
+    assert switch(controllers) {
+      case(null) true;
+      case(?value) Array.find<Principal>(value, func x = x == caller) != null;
+    };
+  };
+
+  // TODO try to change to simplest format to better filtering
+  // global date format variable
+  public let dateFormat: Text = "YYYY-MM-DDTHH:mm:ss.sssssssssZ";
+
   public type UID = Principal;
   public type CanisterId = Principal;
   public type TokenId = Text;
   public type TransactionId = Text;
   public type RedemId = Text;
   public type CompanyLogo = [Nat8];
-  public type Beneficiary = Text;
+  public type Beneficiary = UID;
   public type BlockHash = Nat64;
   public type TokenAmount = Nat;
   public type Price = ICRC.Tokens;
@@ -49,7 +70,15 @@ module {
 
   public type UserProfile = {
     companyLogo: CompanyLogo;
-    profile: Text;
+    principalId: Text;
+    companyId: Text;
+    companyName: Text;
+    city: Text;
+    country: Text;
+    address: Text;
+    email: Text;
+    createdAt: Text;
+    updatedAt: Text;
   };
 
   public type TokenInfo = {
@@ -58,30 +87,36 @@ module {
     inMarket: TokenAmount;
     assetInfo: AssetInfo;
   };
-  
-  // public type RedemInfo = {
-  //   redemId: RedemId;
-  //   tokenId: TokenId;
-  //   redAmount: Nat;
-  //   tokenInfo: TokenInfo;
-  //   redemStatement: ?Blob;
-  //   date: Nat64;
-  // };
 
-  public type TransactionRecipent = {
-    #redemptionRecipent: Beneficiary;
-    #transferRecipent: UID;
+  public type TxMethod = {
+    #blockchainTransfer: Text;
+    #bankTransfer: Text;
   };
 
   public type TransactionInfo = {
     transactionId: TransactionId;
     blockHash: BlockHash;
     from: UID;
-    to: TransactionRecipent;
+    to: Beneficiary;
     tokenId: TokenId;
     txType: TxType;
     tokenAmount: TokenAmount;
     priceICP: Price;
+    date: Text;
+    method: TxMethod;
+  };
+
+  public type TransactionHistoryInfo = {
+    transactionId: TransactionId;
+    blockHash: BlockHash;
+    from: UID;
+    to: Beneficiary;
+    assetInfo: ?AssetInfo;
+    txType: TxType;
+    tokenAmount: TokenAmount;
+    priceICP: Price;
+    date: Text;
+    method: TxMethod;
   };
 
   public type TxType = {
@@ -123,14 +158,14 @@ module {
   public type AssetInfo = {
     tokenId: TokenId;
     assetType: AssetType;
-    startDate: Nat64;
-    endDate: Nat64;
+    startDate: Text;
+    endDate: Text;
     co2Emission: Float;
     radioactivityEmnission: Float;
     volumeProduced: TokenAmount;
     deviceDetails: DeviceDetails;
     specifications: Specifications;
-    dates: [Nat64];
+    dates: [Text];
   };
 
   //
@@ -145,6 +180,14 @@ module {
     mwh: TokenAmount;
   };
 
+  public type MarketplaceSellersInfo = {
+    tokenId: Text;
+    sellerId: UID;
+    priceICP: Price;
+    assetInfo: ?AssetInfo;
+    mwh: TokenAmount;
+  };
+
   public type TokenMarketInfo = {
     totalQuantity: TokenAmount;
     usersxToken: HM.HashMap<UID, UserTokenInfo>;
@@ -155,51 +198,17 @@ module {
     priceICP: Price;
   };
 
+  public type CanisterSettings = IC_MANAGEMENT.CanisterSettings;
 
-  public type CanisterSettings = {
-    controllers: ?[Principal];
-    compute_allocation: ?Nat;
-    memory_allocation: ?Nat;
-    freezing_threshold: ?Nat;
-  };
-
-  public type WasmModule = Blob;
+  public type WasmModule = IC_MANAGEMENT.WasmModule;
 
   public type WasmModuleName = {
+    #token: Text;
     #users: Text;
     #transactions: Text;
-    #token: Text;
   };
 
   public let LOW_MEMORY_LIMIT: Nat = 50000;
-
-  //3. Declaring the management canister which you use to make the Canister dictionary
-  public type IC = actor {
-    create_canister: shared {settings: ?CanisterSettings} -> async {canister_id: CanisterId};
-    update_settings : shared {
-      canister_id: Principal;
-      settings: CanisterSettings;
-    } -> async();
-    canister_status: shared {canister_id: CanisterId} -> async {
-      status: { #stopped; #stopping; #running };
-      memory_size: Nat;
-      cycles: Nat;
-      settings: CanisterSettings;
-      idle_cycles_burned_per_day: Nat;
-      module_hash: ?[Nat8];
-    };
-    install_code : shared {
-      arg: Blob;
-      wasm_module: WasmModule;
-      mode: { #reinstall; #upgrade; #install };
-      canister_id: CanisterId;
-    } -> async();
-    uninstall_code : shared {canister_id: CanisterId} -> async();
-    deposit_cycles: shared {canister_id: CanisterId} -> async();
-    start_canister: shared {canister_id: CanisterId} -> async();
-    stop_canister: shared {canister_id: CanisterId} -> async();
-    delete_canister: shared {canister_id: CanisterId} -> async();
-  };
 
   public type UsersInterface = actor {
     length: query () -> async Nat;
@@ -233,6 +242,6 @@ module {
   public type TransactionsInterface = actor {
     length: query () -> async Nat;
     registerTransaction: (tx: TransactionInfo) -> async TransactionId;
-    getRedemptions: query (txIds: [TransactionId]) -> async [TransactionInfo];
+    getTransactionsById: query (txIds: [TransactionId], txType: ?TxType, priceRange: ?[Price], mwhRange: ?[TokenAmount], method: ?TxMethod, rangeDates: ?[Text]) -> async [TransactionInfo];
   };
 }

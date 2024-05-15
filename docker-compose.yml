@@ -1,0 +1,27 @@
+# docker-compose.yml
+version: "3.8"
+
+services:
+  dapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - DFX_VERSION="0.15.2"
+    command: ["/app/build_script.sh"]
+    depends_on:
+      - dfx
+  dfx:
+    build:
+      context: .
+      dockerfile: Dockerfile.dfx
+    volumes:
+      - ./dfx_state:/var/opt/dfx
+    ports:
+      - "8000:8000"
+      - "4943:4943"
+    command: ["dfx", "start", "--background", "--clean"]

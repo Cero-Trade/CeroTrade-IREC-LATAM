@@ -3,6 +3,7 @@ import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import Cycles "mo:base/ExperimentalCycles";
 import Blob "mo:base/Blob";
+import Buffer "mo:base/Buffer";
 import Array "mo:base/Array";
 import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
@@ -19,11 +20,11 @@ import T "../types";
 import HT "../http_service/http_service_types";
 import ENV "../env";
 
-shared({ caller = adminCaller }) actor class UserIndex() = this {
-  stable let ic : T.IC = actor ("aaaaa-aa");
+actor class UserIndex() = this {
   private func UsersCanister(cid: T.CanisterId): T.UsersInterface { actor (Principal.toText(cid)) };
-  stable var wasm_array : [Nat] = [];
+  stable var wasm_module: Blob = "";
 
+  stable var controllers: ?[Principal] = null;
 
   // constants
   stable let alreadyExists = "User already exists on cero trade";
@@ -43,15 +44,21 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
     usersDirectoryEntries := [];
   };
 
-  private func callValidation(caller: Principal) { assert Principal.fromText(ENV.AGENT_CANISTER_ID) == caller };
-  private func adminValidation(caller: Principal) { assert adminCaller == caller };
+  private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.CANISTER_ID_AGENT) == caller };
 
   /// get size of usersDirectory collection
   public query func length(): async Nat { usersDirectory.size() };
 
+  /// register canister controllers
+  public shared({ caller }) func registerControllers(): async () {
+    _callValidation(caller);
+
+    controllers := await T.getControllers(Principal.fromActor(this));
+  };
+
   /// register wasm module to dynamic users canister, only admin can run it
   public shared({ caller }) func registerWasmArray(): async() {
-    adminValidation(caller);
+    _callValidation(caller);
 
     let branch = switch(ENV.DFX_NETWORK) {
       case("ic") "main";
@@ -61,39 +68,100 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
     let wasmModule = await HttpService.get("https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # branch # "/wasm_modules/users.json", { headers = [] });
 
     let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
-    wasm_array := Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
+    let wasm_array = Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
       switch (Nat.fromText(part)) {
         case null 0;
         case (?n) n;
       }
     });
+    let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
+
+    // register wasm
+    wasm_module := Blob.fromArray(nums8);
+
+
+    // update deployed canisters
+    let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
+    for (cid in usersDirectory.vals()) {
+      if (not(Buffer.contains<T.CanisterId>(deployedCanisters, cid, Principal.equal))) {
+        deployedCanisters.append(Buffer.fromArray<T.CanisterId>([cid]));
+      };
+    };
+
+    if (deployedCanisters.size() == 0) {
+      switch(currentCanisterid) {
+        case(null) {};
+        case(?cid) deployedCanisters.add(cid);
+      };
+    };
+
+    for (canister_id in deployedCanisters.vals()) {
+      await T.ic.install_code({
+        arg = to_candid();
+        wasm_module;
+        mode = #upgrade;
+        canister_id;
+      });
+    };
   };
 
   /// validate user existence
   public query func checkPrincipal(uid: T.UID) : async Bool { usersDirectory.get(uid) != null };
 
 
+  /// resume all deployed canisters
+  public shared({ caller }) func startAllDeployedCanisters<system>(): async () {
+    T.adminValidation(caller, controllers);
+
+    let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
+    for (cid in usersDirectory.vals()) {
+      if (not(Buffer.contains<T.CanisterId>(deployedCanisters, cid, Principal.equal))) {
+        deployedCanisters.append(Buffer.fromArray<T.CanisterId>([cid]));
+      };
+    };
+
+    for(canister_id in deployedCanisters.vals()) {
+      Cycles.add<system>(20_949_972_000);
+      await T.ic.start_canister({ canister_id });
+    };
+  };
+
+  /// stop all deployed canisters
+  public shared({ caller }) func stopAllDeployedCanisters<system>(): async () {
+    T.adminValidation(caller, controllers);
+
+    let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
+    for (cid in usersDirectory.vals()) {
+      if (not(Buffer.contains<T.CanisterId>(deployedCanisters, cid, Principal.equal))) {
+        deployedCanisters.append(Buffer.fromArray<T.CanisterId>([cid]));
+      };
+    };
+
+    for(canister_id in deployedCanisters.vals()) {
+      Cycles.add<system>(20_949_972_000);
+      await T.ic.stop_canister({ canister_id });
+    };
+  };
+
   /// returns true if canister have storage memory,
   /// false if havent enough
-  public shared({ caller }) func checkMemoryStatus() : async Bool {
-    adminValidation(caller);
-
+  public func checkMemoryStatus() : async Bool {
     let status = switch(currentCanisterid) {
       case(null) throw Error.reject("Cant find users canisters registered");
-      case(?cid) await ic.canister_status({ canister_id = cid });
+      case(?cid) await T.ic.canister_status({ canister_id = cid });
     };
 
     status.memory_size > T.LOW_MEMORY_LIMIT
   };
 
   /// autonomous function, will be executed when current canister it is full
-  private func createCanister(): async ?T.CanisterId {
+  private func _createCanister<system>(): async ?T.CanisterId {
     Debug.print(debug_show ("before create_canister: " # Nat.toText(Cycles.balance())));
 
-    Cycles.add(300_000_000_000);
-    let { canister_id } = await ic.create_canister({
+    Cycles.add<system>(300_000_000_000);
+    let { canister_id } = await T.ic.create_canister({
       settings = ?{
-        controllers = ?[Principal.fromActor(this)];
+        controllers;
         compute_allocation = null;
         memory_allocation = null;
         freezing_threshold = null;
@@ -102,11 +170,9 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
     Debug.print(debug_show ("later create_canister: " # Nat.toText(Cycles.balance())));
 
-    let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
-
-    await ic.install_code({
+    await T.ic.install_code({
       arg = to_candid();
-      wasm_module = Blob.fromArray(nums8);
+      wasm_module;
       mode = #install;
       canister_id;
     });
@@ -116,12 +182,12 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
     return ?canister_id
   };
 
-  private func deleteUserWeb2(token: Text): async() {
+  private func _deleteUserWeb2(token: Text): async() {
     let formData = { token };
     let formBlob = to_candid(formData);
     let formKeys = ["token"];
 
-    let res = await HttpService.post(HT.apiUrl # "users/delete", {
+    let _ = await HttpService.post(HT.apiUrl # "users/delete", {
         headers = [];
         bodyJson = switch(Serde.JSON.toText(formBlob, formKeys, null)) {
           case(#err(error)) throw Error.reject("Cannot serialize data");
@@ -132,7 +198,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
   /// register [usersDirectory] collection
   public shared({ caller }) func registerUser(uid: T.UID, form: T.RegisterForm) : async() {
-    callValidation(caller);
+    _callValidation(caller);
 
     // WARN just for debug
     Debug.print(Principal.toText(uid));
@@ -172,7 +238,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
       let cid: T.CanisterId = switch(currentCanisterid) {
         case(null) {
           /// generate canister
-          currentCanisterid := await createCanister();
+          currentCanisterid := await _createCanister();
           switch(currentCanisterid) {
             case(null) throw Error.reject(errorText);
             case(?cid) cid;
@@ -183,7 +249,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
           let haveMemory = await checkMemoryStatus();
           if (haveMemory) { cid } else {
             /// generate canister
-            currentCanisterid := await createCanister();
+            currentCanisterid := await _createCanister();
             switch(currentCanisterid) {
               case(null) throw Error.reject(errorText);
               case(?cid) cid;
@@ -197,7 +263,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
       usersDirectory.put(uid, cid);
     } catch (error) {
-      await deleteUserWeb2(trimmedToken);
+      await _deleteUserWeb2(trimmedToken);
 
       throw Error.reject(Error.message(error));
     };
@@ -205,7 +271,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
   /// store user avatar into users collection
   public shared({ caller }) func storeCompanyLogo(uid: T.UID, avatar: T.CompanyLogo): async() {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch(usersDirectory.get(uid)) {
       case(null) throw Error.reject(notExists);
@@ -215,7 +281,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
   /// delete user to cero trade
   public shared({ caller }) func deleteUser(uid: T.UID): async() {
-    callValidation(caller);
+    _callValidation(caller);
 
     let cid: T.CanisterId = switch(usersDirectory.get(uid)) {
       case(null) throw Error.reject(notExists);
@@ -224,7 +290,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
     let token = await UsersCanister(cid).getUserToken(uid);
 
-    await deleteUserWeb2(token);
+    await _deleteUserWeb2(token);
 
     await UsersCanister(cid).deleteUser(uid);
 
@@ -233,7 +299,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
   /// get canister id that allow current user
   public shared({ caller }) func getUserCanister(uid: T.UID) : async T.CanisterId {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
@@ -243,7 +309,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
   /// update user portfolio
   public shared({ caller }) func updatePorfolio(uid: T.UID, token: T.TokenId) : async() {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
@@ -253,7 +319,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
   // update user transactions
   public shared({ caller }) func updateTransactions(uid: T.UID, txId: T.TransactionId) : async() {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
@@ -264,7 +330,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
   /// get profile information
   public shared({ caller }) func getProfile(uid: T.UID): async T.UserProfile {
-    callValidation(caller);
+    _callValidation(caller);
 
     let cid: T.CanisterId = switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
@@ -272,16 +338,104 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
     };
 
     let token = await UsersCanister(cid).getUserToken(uid);
-    let profile = await HttpService.get(HT.apiUrl # "users/retrieve/" # token, { headers = [] });
+    let profileJson = await HttpService.get(HT.apiUrl # "users/retrieve/" # token, { headers = [] });
     let companyLogo = await UsersCanister(cid).getCompanyLogo(uid);
 
-    { companyLogo; profile; }
+    switch(Serde.JSON.fromText(profileJson, null)) {
+      case(#err(_)) throw Error.reject("cannot serialize profile data");
+
+      case(#ok(blob)) {
+        let profilePart: ?{
+          principalId: Text;
+          companyId: Text;
+          companyName: Text;
+          city: Text;
+          country: Text;
+          address: Text;
+          email: Text;
+          createdAt: Text;
+          updatedAt: Text;
+        } = from_candid(blob);
+
+        switch(profilePart) {
+          case(null) throw Error.reject("cannot serialize profile data");
+          case(?profile) return {
+            companyLogo;
+            principalId = profile.principalId;
+            companyId = profile.companyId;
+            companyName = profile.companyName;
+            city = profile.city;
+            country = profile.country;
+            address = profile.address;
+            email = profile.email;
+            createdAt = profile.createdAt;
+            updatedAt = profile.updatedAt;
+          };
+        };
+      };
+    };
+  };
+
+
+  /// get user profiles information
+  public shared({ caller }) func getUsers(uids: [T.UID]): async [T.UserProfile] {
+    _callValidation(caller);
+
+    let users = Buffer.Buffer<T.UserProfile>(50);
+
+    for(uid in uids.vals()) {
+
+      let cid: T.CanisterId = switch(usersDirectory.get(uid)) {
+        case (null) throw Error.reject(notExists);
+        case(?cid) cid;
+      };
+
+      let token = await UsersCanister(cid).getUserToken(uid);
+      let profileJson = await HttpService.get(HT.apiUrl # "users/retrieve/" # token, { headers = [] });
+      let companyLogo = await UsersCanister(cid).getCompanyLogo(uid);
+
+      switch(Serde.JSON.fromText(profileJson, null)) {
+        case(#err(_)) throw Error.reject("cannot serialize profile data");
+
+        case(#ok(blob)) {
+          let profilePart: ?{
+            principalId: Text;
+            companyId: Text;
+            companyName: Text;
+            city: Text;
+            country: Text;
+            address: Text;
+            email: Text;
+            createdAt: Text;
+            updatedAt: Text;
+          } = from_candid(blob);
+
+          switch(profilePart) {
+            case(null) throw Error.reject("cannot serialize profile data");
+            case(?profile) users.add({
+              companyLogo;
+              principalId = profile.principalId;
+              companyId = profile.companyId;
+              companyName = profile.companyName;
+              city = profile.city;
+              country = profile.country;
+              address = profile.address;
+              email = profile.email;
+              createdAt = profile.createdAt;
+              updatedAt = profile.updatedAt;
+            });
+          };
+        };
+      };
+    };
+
+    Buffer.toArray<T.UserProfile>(users);
   };
 
 
   /// get portfolio information
   public shared({ caller }) func getPortfolioTokenIds(uid: T.UID): async [T.TokenId] {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
@@ -292,7 +446,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
   /// get transaction user ids
   public shared({ caller }) func getTransactionIds(uid: T.UID): async [T.TransactionId] {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
@@ -303,7 +457,7 @@ shared({ caller = adminCaller }) actor class UserIndex() = this {
 
   /// get user account ledger
   public shared({ caller }) func getUserLedger(uid: T.UID): async Blob {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);

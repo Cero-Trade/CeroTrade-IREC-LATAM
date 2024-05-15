@@ -1,5 +1,3 @@
-<!-- TODO implements flow to sell, redeem and take off -->
-
 <template>
   <div id="my-portfolio">
     <span class="mb-4 acenter" style="color:#475467; font-size: 16px; font-weight: 700;">
@@ -41,7 +39,6 @@
           <h5 >{{ totalMwh }}MWh</h5>
         </v-card>
 
-        <!-- TODO where get this -->
         <v-card class="card card-mwh d-flex flex-column-jcenter flex-grow-1">
           <h6>Redeemed MWh</h6>
           <h5>{{ totalRedeemed }}MWh</h5>
@@ -51,7 +48,7 @@
 
     <div class="divrow jspace mt-4">
       <div class="divrow" style="gap: 15px;">
-        <v-btn class="btn">
+        <v-btn class="btn" @click="dialogFilters = true">
           <img src="@/assets/sources/icons/filter-lines.svg" alt="filter-lines icon">
           Add filter
         </v-btn>
@@ -69,10 +66,18 @@
       <v-window-item :value="1">
         <v-data-table
         v-model:items-per-page="itemsPerPage"
+        :items-per-page-options="[
+          {value: 10, title: '10'},
+          {value: 25, title: '25'},
+          {value: 50, title: '50'},
+        ]"
         :headers="headers"
         :items="dataPortfolio"
+        :items-length="totalPages"
+        :loading="loadingPortfolio"
         class="mt-6 my-data-table"
         density="compact"
+        @update:options="getData"
         >
           <template #[`item.actions`]="{ item }">
             <v-chip @click="goDetails(item)" color="white" class="chip-table" style="border-radius: 10px!important;">
@@ -102,7 +107,7 @@
 
           <template #[`item.country`]="{ item }">
             <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-              <img :src="countries[item.country]" :alt="`${item.country} Icon`" style="width: 20px;">
+              <img :src="countriesImg[item.country]" :alt="`${item.country} Icon`" style="width: 20px;">
               {{ item.country }}
             </span>
           </template>
@@ -111,7 +116,17 @@
 
       <v-window-item :value="2" class="pa-2">
         <v-row class="mt-6">
-          <v-col v-for="(item,index) in dataPortfolio" :key="index" xl="3" lg="3" md="4" sm="6" cols="12">
+          <v-progress-circular
+            v-if="loadingPortfolio"
+            indeterminate
+            size="60"
+            color="rgb(var(--v-theme-primary))"
+            class="mx-auto my-16"
+          ></v-progress-circular>
+
+          <span v-else-if="!dataPortfolio.length" class="text-center mx-auto my-16">No data available</span>
+
+          <v-col v-else v-for="(item,index) in dataPortfolio" :key="index" xl="3" lg="3" md="4" sm="6" cols="12">
             <v-card class="card cards-marketplace">
               <div class="divrow jspace acenter mb-6">
                 <div class="divrow center" style="gap: 5px;">
@@ -134,7 +149,7 @@
               <div class="jspace divrow mb-1">
                 <span>Country</span>
                 <span style="color: #475467;" class="acenter text-capitalize">
-                  <img :src="countries[item.country]" alt="icon" class="mr-1" style="width: 20px;"> {{ item.country }}
+                  <img :src="countriesImg[item.country]" alt="icon" class="mr-1" style="width: 20px;"> {{ item.country }}
                 </span>
               </div>
 
@@ -154,11 +169,92 @@
         </v-row>
       </v-window-item>
     </v-window>
+
+
+    <v-pagination
+      v-model="currentPage"
+      :length="totalPages"
+      :disabled="loadingPortfolio"
+      class="mt-4"
+      @update:model-value="getData()"
+    ></v-pagination>
+
+
+    <!-- Dialog Filters -->
+    <v-dialog v-model="dialogFilters" persistent width="100%" min-width="290" max-width="500">
+      <v-card class="card dialog-card-detokenize d-flex flex-column" style="min-width: 100% !important">
+        <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="dialogFilters = false">
+
+        <div class="d-flex mb-2 align-center" style="gap: 10px">
+          <v-sheet class="double-sheet">
+            <v-sheet>
+              <img src="@/assets/sources/icons/filter-lines.svg" alt="filter-lines icon" style="width: 22px">
+            </v-sheet>
+          </v-sheet>
+
+          <h6 class="mb-0">Filters</h6>
+        </div>
+
+
+        <v-btn
+          class="btn mb-4 ml-auto"
+          style="background-color: #fff !important; width: max-content !important"
+          @click="Object.keys(filters).forEach(e => filters[e] = null)"
+        >clear all</v-btn>
+
+        <v-autocomplete
+          v-model="filters.country"
+          :items="countries"
+          variant="outlined"
+          flat elevation="0"
+          item-title="name"
+          item-value="name"
+          label="country"
+          class="select mb-4"
+        ></v-autocomplete>
+
+        <v-range-slider
+          v-model="filters.mwhRange"
+          :min="0"
+          :max="1000"
+          :step="1"
+          variant="solo"
+          elevation="0"
+          label="Mwh range"
+          :thumb-label="filters.mwhRange ? 'always' : false"
+          class="align-center mt-3"
+          hide-details
+        ></v-range-slider>
+
+        <label>Asset types</label>
+        <v-chip-group
+          v-model="filters.assetTypes"
+          column
+          multiple
+        >
+          <v-chip
+            v-for="(value, key, i) in energies" :key="i"
+            variant="outlined"
+            rounded="50"
+            filter
+          >
+            <img :src="value" :alt="`${key} energy`" class="mr-2"> {{ key }}
+          </v-chip>
+        </v-chip-group>
+
+
+        <div class="divrow center mt-6" style="gap: 10px;">
+          <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogFilters = false">Cancel</v-btn>
+          <v-btn class="btn" @click="dialogFilters = false; getData()" style="border: none!important;">Apply</v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script setup>
 import '@/assets/styles/pages/my-portfolio.scss'
+import countries from '@/assets/sources/json/countries-all.json'
 import checkboxCheckedIcon from '@/assets/sources/icons/checkbox-checked.svg'
 import checkboxBaseIcon from '@/assets/sources/icons/checkbox-base.svg'
 import RenewableChart from "@/components/renewable-chart.vue"
@@ -185,6 +281,13 @@ const
 windowStep = ref(undefined),
 tabsWindow = ref(0),
 
+dialogFilters = ref(),
+filters = ref({
+  country: null,
+  mwhRange: null,
+  assetTypes: null,
+}),
+
 energies = {
   hydro: HydroEnergyIcon,
   ocean: OceanEnergyIcon,
@@ -193,7 +296,7 @@ energies = {
   wind: WindEnergyIcon,
   sun: SolarEnergyIcon,
 },
-countries = {
+countriesImg = {
   chile: ChileIcon
 },
 
@@ -217,6 +320,10 @@ dataPortfolio = ref([
   //   checkbox: false,
   // },
 ]),
+loadingPortfolio = ref(true),
+currentPage = ref(1),
+itemsPerPage = ref(50),
+totalPages = ref(1),
 totalRedeemed = ref(0),
 
 allItems = 'All items',
@@ -253,11 +360,24 @@ onBeforeMount(() => {
 
 
 async function getData() {
+  loadingPortfolio.value = true
+
+  // map asset types
+  const assetTypes = []
+  for (const index of filters.value.assetTypes ?? []) assetTypes.push(Object.keys(energies)[index])
+
   try {
-    const { tokensInfo, tokensRedemption } = await AgentCanister.getPortfolio(),
+    // get getPortfolio
+    const { tokensInfo, tokensRedemption } = await AgentCanister.getPortfolio({
+      length: itemsPerPage.value,
+      country: filters.value.country?.toLowerCase(),
+      mwhRange: filters.value.mwhRange,
+      assetTypes,
+      page: currentPage.value,
+    }),
     list = []
 
-    for (const item of tokensInfo) {
+    for (const item of tokensInfo.data) {
       list.push({
         token_id: item.tokenId,
         energy_source: item.assetInfo.assetType,
@@ -267,6 +387,7 @@ async function getData() {
     }
 
     dataPortfolio.value = list.sort((a, b) => a.token_id - b.token_id)
+    totalPages.value = tokensInfo.totalPages
 
     const groupedTokens = list.reduce((acc, item) => {
       let existenceElement = acc.find(elem => elem.energy_source === item.energy_source);
@@ -308,6 +429,8 @@ async function getData() {
     console.error(error);
     toast.error(error)
   }
+
+  loadingPortfolio.value = false
 }
 
 function goDetails({ token_id: tokenId }) {

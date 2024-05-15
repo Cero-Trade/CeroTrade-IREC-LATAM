@@ -4,6 +4,7 @@
   "scripts": {
     "serve": "vite preview",
     "build": "vite build",
+    "optimize": "vite optimize",
     "lint": "eslint . --fix --ignore-path .gitignore",
     "dev": "vite",
     "preview": "vite preview",

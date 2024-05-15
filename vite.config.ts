@@ -35,7 +35,7 @@ export default defineConfig((userConfig) => {
   canisterDefinitions = Object.entries(canisterIds).reduce(
     (acc, [key, val]) => ({
       ...acc,
-      [`${key.toUpperCase()}_CANISTER_ID`]: isDev
+      [`CANISTER_ID_${key.toUpperCase()}`]: isDev
         ? (val as object)['local']
         : (val as object)['ic'],
     }), {},

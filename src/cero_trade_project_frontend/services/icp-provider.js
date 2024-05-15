@@ -6,7 +6,7 @@ import { app as vueApp } from "@/main";
 import * as agentCanister from "../../../.dfx/local/canisters/agent"
 
 
-export const canisterImpl = { canisterId: process.env.CERO_TRADE_PROJECT_FRONTEND_CANISTER_ID }
+export const canisterImpl = { canisterId: process.env.CANISTER_ID_CERO_TRADE_PROJECT_FRONTEND }
 
 export const createActor = (canisterId, idlFactory, options) => {
   const isDevelopment = process.env.DFX_NETWORK !== "ic",

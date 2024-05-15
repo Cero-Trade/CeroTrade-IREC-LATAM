@@ -1,12 +1,13 @@
 import { storageSecureCollection } from "@/plugins/vue3-storage-secure";
 import { useAuthClient as client } from "@/services/icp-provider";
+import { AnonymousIdentity } from "@dfinity/agent";
 import { Principal } from "@dfinity/principal";
 import { useStorage } from "vue3-storage-secure";
 
 export class AuthClientApi {
   static async signOut(returnTo?: string): Promise<void> {
     useStorage().removeStorageSync(storageSecureCollection.tokenAuth)
-    await client().logout({ returnTo })
+    await client()?.logout({ returnTo })
   }
 
   static async signIn(onComplete: Function): Promise<void> {
@@ -32,10 +33,10 @@ export class AuthClientApi {
   }
 
   static isAnonymous(): Boolean {
-    return client().getIdentity().getPrincipal().isAnonymous()
+    return client()?.getIdentity().getPrincipal().isAnonymous() ?? true
   }
 
   static getPrincipal(): Principal {
-    return client().getIdentity().getPrincipal()
+    return client()?.getIdentity().getPrincipal() ?? new AnonymousIdentity().getPrincipal()
   }
 }

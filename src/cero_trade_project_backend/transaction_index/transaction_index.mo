@@ -8,9 +8,7 @@ import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
 import Iter "mo:base/Iter";
 import Error "mo:base/Error";
-import Serde "mo:serde";
 import Debug "mo:base/Debug";
-import List "mo:base/List";
 import Buffer "mo:base/Buffer";
 
 // canisters
@@ -20,13 +18,11 @@ import HttpService "canister:http_service";
 import T "../types";
 import ENV "../env";
 
-shared({ caller = adminCaller }) actor class TransactionIndex() = this {
-  stable let ic : T.IC = actor ("aaaaa-aa");
+actor class TransactionIndex() = this {
   private func TransactionsCanister(cid: T.CanisterId): T.TransactionsInterface { actor (Principal.toText(cid)) };
-  stable var wasm_array : [Nat] = [];
+  stable var wasm_module: Blob = "";
 
-  stable let notExists = "Transaciton doesn't exists";
-  stable let alreadyExists = "Transaction already exists on cero trade";
+  stable var controllers: ?[Principal] = null;
 
 
   var transactionsDirectory: HM.HashMap<T.TransactionId, T.CanisterId> = HM.HashMap(16, Text.equal, Text.hash);
@@ -42,15 +38,21 @@ shared({ caller = adminCaller }) actor class TransactionIndex() = this {
     transactionsDirectoryEntries := [];
   };
 
-  private func callValidation(caller: Principal) { assert Principal.fromText(ENV.AGENT_CANISTER_ID) == caller };
-  private func adminValidation(caller: Principal) { assert adminCaller == caller };
+  private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.CANISTER_ID_AGENT) == caller };
 
   /// get size of transactionsDirectory collection
   public query func length(): async Nat { transactionsDirectory.size() };
 
+  /// register canister controllers
+  public shared({ caller }) func registerControllers(): async () {
+    _callValidation(caller);
+
+    controllers := await T.getControllers(Principal.fromActor(this));
+  };
+
   /// register wasm module to dynamic transactions canister, only admin can run it
   public shared({ caller }) func registerWasmArray(): async() {
-    adminValidation(caller);
+    _callValidation(caller);
 
     let branch = switch(ENV.DFX_NETWORK) {
       case("ic") "main";
@@ -60,35 +62,96 @@ shared({ caller = adminCaller }) actor class TransactionIndex() = this {
     let wasmModule = await HttpService.get("https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # branch # "/wasm_modules/transactions.json", { headers = [] });
 
     let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
-    wasm_array := Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
+    let wasm_array = Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
       switch (Nat.fromText(part)) {
         case null 0;
         case (?n) n;
       }
     });
+    let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
+
+    // register wasm
+    wasm_module := Blob.fromArray(nums8);
+
+
+    // update deployed canisters
+    let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
+    for (cid in transactionsDirectory.vals()) {
+      if (not(Buffer.contains<T.CanisterId>(deployedCanisters, cid, Principal.equal))) {
+        deployedCanisters.append(Buffer.fromArray<T.CanisterId>([cid]));
+      };
+    };
+
+    if (deployedCanisters.size() == 0) {
+      switch(currentCanisterid) {
+        case(null) {};
+        case(?cid) deployedCanisters.add(cid);
+      };
+    };
+
+    for (canister_id in deployedCanisters.vals()) {
+      await T.ic.install_code({
+        arg = to_candid();
+        wasm_module;
+        mode = #upgrade;
+        canister_id;
+      });
+    };
+  };
+
+  /// resume all deployed canisters
+  public shared({ caller }) func startAllDeployedCanisters<system>(): async () {
+    T.adminValidation(caller, controllers);
+
+    let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
+    for (cid in transactionsDirectory.vals()) {
+      if (not(Buffer.contains<T.CanisterId>(deployedCanisters, cid, Principal.equal))) {
+        deployedCanisters.append(Buffer.fromArray<T.CanisterId>([cid]));
+      };
+    };
+
+    for(canister_id in deployedCanisters.vals()) {
+      Cycles.add<system>(20_949_972_000);
+      await T.ic.start_canister({ canister_id });
+    };
+  };
+
+  /// stop all deployed canisters
+  public shared({ caller }) func stopAllDeployedCanisters<system>(): async () {
+    T.adminValidation(caller, controllers);
+
+    let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
+    for (cid in transactionsDirectory.vals()) {
+      if (not(Buffer.contains<T.CanisterId>(deployedCanisters, cid, Principal.equal))) {
+        deployedCanisters.append(Buffer.fromArray<T.CanisterId>([cid]));
+      };
+    };
+
+    for(canister_id in deployedCanisters.vals()) {
+      Cycles.add<system>(20_949_972_000);
+      await T.ic.stop_canister({ canister_id });
+    };
   };
 
   /// returns true if canister have storage memory,
   /// false if havent enough
-  public shared({ caller }) func checkMemoryStatus() : async Bool {
-    adminValidation(caller);
-
+  public func checkMemoryStatus() : async Bool {
     let status = switch(currentCanisterid) {
       case(null) throw Error.reject("Cant find transactions canisters registered");
-      case(?cid) await ic.canister_status({ canister_id = cid });
+      case(?cid) await T.ic.canister_status({ canister_id = cid });
     };
 
     status.memory_size > T.LOW_MEMORY_LIMIT
   };
 
   /// autonomous function, will be executed when current canister it is full
-  private func createCanister(): async ?T.CanisterId {
+  private func _createCanister<system>(): async ?T.CanisterId {
     Debug.print(debug_show ("before registerToken: " # Nat.toText(Cycles.balance())));
 
-    Cycles.add(300_000_000_000);
-    let { canister_id } = await ic.create_canister({
+    Cycles.add<system>(300_000_000_000);
+    let { canister_id } = await T.ic.create_canister({
       settings = ?{
-        controllers = ?[Principal.fromActor(this)];
+        controllers;
         compute_allocation = null;
         memory_allocation = null;
         freezing_threshold = null;
@@ -98,11 +161,9 @@ shared({ caller = adminCaller }) actor class TransactionIndex() = this {
     Debug.print(debug_show ("later create_canister: " # Nat.toText(Cycles.balance())));
 
     try {
-      let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
-
-      await ic.install_code({
+      await T.ic.install_code({
         arg = to_candid();
-        wasm_module = Blob.fromArray(nums8);
+        wasm_module;
         mode = #install;
         canister_id;
       });
@@ -117,7 +178,7 @@ shared({ caller = adminCaller }) actor class TransactionIndex() = this {
 
   /// register [transactionsDirectory] collection
   public shared({ caller }) func registerTransaction(txInfo: T.TransactionInfo) : async T.TransactionId {
-    callValidation(caller);
+    _callValidation(caller);
 
     try {
       let errorText = "Error generating canister";
@@ -126,7 +187,7 @@ shared({ caller = adminCaller }) actor class TransactionIndex() = this {
       let cid: T.CanisterId = switch(currentCanisterid) {
         case(null) {
           /// generate canister
-          currentCanisterid := await createCanister();
+          currentCanisterid := await _createCanister();
           switch(currentCanisterid) {
             case(null) throw Error.reject(errorText);
             case(?cid) cid;
@@ -137,7 +198,7 @@ shared({ caller = adminCaller }) actor class TransactionIndex() = this {
           let haveMemory = await checkMemoryStatus();
           if (haveMemory) { cid } else {
             /// generate canister
-            currentCanisterid := await createCanister();
+            currentCanisterid := await _createCanister();
             switch(currentCanisterid) {
               case(null) throw Error.reject(errorText);
               case(?cid) cid;
@@ -156,26 +217,103 @@ shared({ caller = adminCaller }) actor class TransactionIndex() = this {
     };
   };
 
+  /// get transactions by tx id
+  public shared({ caller }) func getTransactionsById(txIds: [T.TransactionId], txType: ?T.TxType, priceRange: ?[T.Price], mwhRange: ?[T.TokenAmount], method: ?T.TxMethod, rangeDates: ?[Text]) : async [T.TransactionInfo] {
+    _callValidation(caller);
 
-  public shared({ caller }) func getRedemptions(txIds: [T.TransactionId]) : async [T.TransactionInfo] {
-    callValidation(caller);
+    let txs = Buffer.Buffer<T.TransactionInfo>(50);
 
-    let txs = Buffer.Buffer<T.TransactionInfo>(100);
+    Debug.print(debug_show ("before getTransactionsById: " # Nat.toText(Cycles.balance())));
 
-    Debug.print(debug_show ("before getRedemptions: " # Nat.toText(Cycles.balance())));
-
+    // convert transactionsDirectory
+    let directory: HM.HashMap<T.CanisterId, [T.TransactionId]> = HM.HashMap(50, Principal.equal, Principal.hash);
     for(txId in txIds.vals()) {
       switch(transactionsDirectory.get(txId)) {
         case (null) {};
         case(?cid) {
-          let redemptions: [T.TransactionInfo] = await TransactionsCanister(cid).getRedemptions(txIds);
-          txs.append(Buffer.fromArray<T.TransactionInfo>(redemptions));
+          let tempTxIds = switch(directory.get(cid)) {
+            case(null) Buffer.Buffer<T.TransactionId>(50);
+            case(?value) Buffer.fromArray<T.TransactionId>(value);
+          };
+          tempTxIds.add(txId);
+
+          directory.put(cid, Buffer.toArray(tempTxIds));
         };
       };
     };
 
-    Debug.print(debug_show ("later getRedemptions: " # Nat.toText(Cycles.balance())));
+    // iterate canisters to get transactions supplied
+    for((cid, txIds) in directory.entries()) {
+      let transactions: [T.TransactionInfo] = await TransactionsCanister(cid).getTransactionsById(txIds, txType, priceRange, mwhRange, method, rangeDates);
+      txs.append(Buffer.fromArray<T.TransactionInfo>(transactions));
+    };
+
+    Debug.print(debug_show ("later getTransactionsById: " # Nat.toText(Cycles.balance())));
 
     Buffer.toArray<T.TransactionInfo>(txs);
   };
+
+
+  // /// used to get all transactions on cero trade
+  // public shared({ caller }) func getTransactions(page: ?Nat, length: ?Nat, txType: ?T.TxType) : async {
+  //   data: [T.TransactionInfo];
+  //   totalPages: Nat;
+  // } {
+  //   _callValidation(caller);
+
+  //   // define page based on statement
+  //   let startPage = switch(page) {
+  //     case(null) 1;
+  //     case(?value) value;
+  //   };
+
+  //   // define length based on statement
+  //   let maxLength = switch(length) {
+  //     case(null) 50;
+  //     case(?value) value;
+  //   };
+
+  //   let txs = Buffer.Buffer<T.TransactionInfo>(50);
+
+  //   // calculate range of elements returned
+  //   let startIndex: Nat = (startPage - 1) * maxLength;
+  //   var i = 0;
+
+  //   Debug.print(debug_show ("before getTransactions: " # Nat.toText(Cycles.balance())));
+
+  //   // recopile and group txs
+  //   let txsInCanister: HM.HashMap<T.CanisterId, [T.TransactionId]> = HM.HashMap(16, Principal.equal, Principal.hash);
+
+  //   var cidTemp: ?T.CanisterId = null;
+  //   let txIdsTemp = Buffer.Buffer<T.TransactionId>(50);
+
+  //   for((txId, cid) in transactionsDirectory.entries()) {
+  //     if (i >= startIndex and i < startIndex + maxLength) {
+  //       if (cidTemp != ?cid) txIdsTemp.clear();
+  //       cidTemp := ?cid;
+  //       txIdsTemp.add(txId);
+
+  //       txsInCanister.put(cid, Buffer.toArray<T.TransactionId>(txIdsTemp));
+  //     };
+  //     i += 1;
+  //   };
+  //   txIdsTemp.clear();
+
+
+  //   // get transactions
+  //   for((cid, txIds) in txsInCanister.entries()) {
+  //     let transactions: [T.TransactionInfo] = await TransactionsCanister(cid).getTransactionsById(txIds, txType);
+  //     txs.append(Buffer.fromArray<T.TransactionInfo>(transactions));
+  //   };
+
+  //   Debug.print(debug_show ("later getTransactions: " # Nat.toText(Cycles.balance())));
+
+  //   var totalPages: Nat = i / maxLength;
+  //   if (totalPages <= 0) totalPages := 1;
+
+  //   {
+  //     data = Buffer.toArray<T.TransactionInfo>(txs);
+  //     totalPages;
+  //   }
+  // };
 }

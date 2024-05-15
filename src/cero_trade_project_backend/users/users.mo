@@ -4,20 +4,15 @@ import Text "mo:base/Text";
 import Nat "mo:base/Nat";
 import Error "mo:base/Error";
 import Bool "mo:base/Bool";
-import Array "mo:base/Array";
 import Buffer "mo:base/Buffer";
-import Nat64 "mo:base/Nat64";
-import TM "mo:base/TrieMap";
-import Hash "mo:base/Hash";
 import Iter "mo:base/Iter";
 import AccountIdentifier "mo:account-identifier";
 
 
 // types
 import T "../types";
-import ENV "../env";
 
-actor Users {
+shared({ caller = userIndexCaller }) actor class Users() {
   // constants
   stable let userNotFound: Text = "User not found";
 
@@ -33,7 +28,7 @@ actor Users {
     usersEntries := [];
   };
 
-  private func callValidation(caller: Principal) { assert Principal.fromText(ENV.USER_INDEX_CANISTER_ID) == caller };
+  private func _callValidation(caller: Principal) { assert userIndexCaller == caller };
 
   /// get size of users collection
   public query func length(): async Nat { users.size() };
@@ -41,7 +36,7 @@ actor Users {
 
   /// register user to cero trade
   public shared({ caller }) func registerUser(uid: T.UID, token: Text): async() {
-    callValidation(caller);
+    _callValidation(caller);
 
     let userInfo = {
       vaultToken = token;
@@ -59,14 +54,14 @@ actor Users {
 
   /// delete user to cero trade
   public shared({ caller }) func deleteUser(uid: T.UID): async() {
-    callValidation(caller);
+    _callValidation(caller);
     let _ = users.remove(uid)
   };
 
 
   /// store user company logo to cero trade
   public shared({ caller }) func storeCompanyLogo(uid: T.UID, avatar: T.CompanyLogo): async() {
-    callValidation(caller);
+    _callValidation(caller);
 
     let userInfo = switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
@@ -81,7 +76,7 @@ actor Users {
 
   /// get user from usersAvatar collection
   public shared({ caller }) func getCompanyLogo(uid: T.UID) : async T.CompanyLogo {
-    callValidation(caller);
+    _callValidation(caller);
 
     let companyLogo = switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
@@ -97,7 +92,7 @@ actor Users {
 
   /// update user portfolio
   public shared({ caller }) func updatePorfolio(uid: T.UID, tokenId: T.TokenId) : async() {
-    callValidation(caller);
+    _callValidation(caller);
 
     let userInfo = switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
@@ -123,7 +118,7 @@ actor Users {
 
   /// delete user portfolio
   public shared({ caller }) func deletePorfolio(uid: T.UID, tokenId: T.TokenId) : async() {
-    callValidation(caller);
+    _callValidation(caller);
 
     let userInfo = switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
@@ -145,7 +140,7 @@ actor Users {
 
   /// update user transactions
   public shared({ caller }) func updateTransactions(uid: T.UID, txId: T.TransactionId) : async() {
-    callValidation(caller);
+    _callValidation(caller);
 
     let userInfo = switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
@@ -173,7 +168,7 @@ actor Users {
 
 
   public shared({ caller }) func getPortfolioTokenIds(uid: T.UID) : async [T.TokenId] {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
@@ -182,7 +177,7 @@ actor Users {
   };
 
   public shared({ caller }) func getTransactionIds(uid: T.UID) : async [T.TransactionId] {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
@@ -191,7 +186,7 @@ actor Users {
   };
 
   public shared({ caller }) func getBeneficiaries(uid: T.UID) : async [T.Beneficiary] {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (users.get(uid)) {
       case (null) throw Error.reject(userNotFound);
@@ -201,7 +196,7 @@ actor Users {
 
   /// get vaultToken from user
   public shared({ caller }) func getUserToken(uid: T.UID) : async Text {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (users.get(uid)) {
       case (null) { throw Error.reject(userNotFound); };
@@ -211,7 +206,7 @@ actor Users {
 
   /// validate current token
   public shared({ caller }) func validateToken(uid: T.UID, token: Text): async Bool {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (users.get(uid)) {
       case (null) { throw Error.reject(userNotFound); };
@@ -221,7 +216,7 @@ actor Users {
 
   /// obtain user ledger
   public shared({ caller }) func getLedger(uid: T.UID): async Blob {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (users.get(uid)) {
       case (null) { throw Error.reject(userNotFound); };

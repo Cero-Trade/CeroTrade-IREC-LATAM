@@ -10,8 +10,7 @@ import Nat8 "mo:base/Nat8";
 import Nat64 "mo:base/Nat64";
 import Iter "mo:base/Iter";
 import Buffer "mo:base/Buffer";
-import Result "mo:base/Result";
-import Serde "mo:serde";
+// import Result "mo:base/Result";
 import Debug "mo:base/Debug";
 
 // canisters
@@ -19,36 +18,42 @@ import HttpService "canister:http_service";
 
 // types
 import T "../types";
-import HT "../http_service/http_service_types";
+// import HT "../http_service/http_service_types";
 import ICRC "../ICRC";
 import ENV "../env";
 
-shared({ caller = adminCaller }) actor class TokenIndex() = this {
-  stable let ic : T.IC = actor ("aaaaa-aa");
+actor class TokenIndex() = this {
   private func TokenCanister(cid: T.CanisterId): T.TokenInterface { actor (Principal.toText(cid)) };
-  stable var wasm_array : [Nat] = [];
+  stable var wasm_module: Blob = "";
 
+  stable var controllers: ?[Principal] = null;
 
-  var tokenDirectory: HM.HashMap<Text, T.CanisterId> = HM.HashMap(16, Text.equal, Text.hash);
-  stable var tokenDirectoryEntries : [(Text, T.CanisterId)] = [];
+  var tokenDirectory: HM.HashMap<T.TokenId, T.CanisterId> = HM.HashMap(16, Text.equal, Text.hash);
+  stable var tokenDirectoryEntries : [(T.TokenId, T.CanisterId)] = [];
 
 
   /// funcs to persistent collection state
   system func preupgrade() { tokenDirectoryEntries := Iter.toArray(tokenDirectory.entries()) };
   system func postupgrade() {
-    tokenDirectory := HM.fromIter<Text, T.CanisterId>(tokenDirectoryEntries.vals(), 16, Text.equal, Text.hash);
+    tokenDirectory := HM.fromIter<T.TokenId, T.CanisterId>(tokenDirectoryEntries.vals(), 16, Text.equal, Text.hash);
     tokenDirectoryEntries := [];
   };
 
-  private func callValidation(caller: Principal) { assert Principal.fromText(ENV.AGENT_CANISTER_ID) == caller };
-  private func adminValidation(caller: Principal) { assert adminCaller == caller };
+  private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.CANISTER_ID_AGENT) == caller };
 
   /// get size of tokenDirectory collection
   public query func length(): async Nat { tokenDirectory.size() };
 
+  /// register canister controllers
+  public shared({ caller }) func registerControllers(): async () {
+    _callValidation(caller);
+
+    controllers := await T.getControllers(Principal.fromActor(this));
+  };
+
   /// register wasm module to dynamic token canister, only admin can run it
   public shared({ caller }) func registerWasmArray(): async() {
-    adminValidation(caller);
+    _callValidation(caller);
 
     let branch = switch(ENV.DFX_NETWORK) {
       case("ic") "main";
@@ -58,17 +63,31 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
     let wasmModule = await HttpService.get("https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # branch # "/wasm_modules/token.json", { headers = [] });
 
     let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
-    wasm_array := Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
+    let wasm_array = Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
       switch (Nat.fromText(part)) {
         case null 0;
         case (?n) n;
       }
     });
+    let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
+
+    // register wasm
+    wasm_module := Blob.fromArray(nums8);
+
+    // update deployed canisters
+    for((tokenId, canister_id) in tokenDirectory.entries()) {
+      await T.ic.install_code({
+        arg = to_candid(tokenId);
+        wasm_module;
+        mode = #upgrade;
+        canister_id;
+      });
+    };
   };
 
   /// register [tokenDirectory] collection
-  public shared({ caller }) func registerToken(tokenId: Text): async Principal {
-    adminValidation(caller);
+  public shared({ caller }) func registerToken<system>(tokenId: Text): async Principal {
+    _callValidation(caller);
 
     if (tokenId == "") throw Error.reject("Must to provide a tokenId");
 
@@ -77,10 +96,10 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
       case(null) {
         Debug.print(debug_show ("before registerToken: " # Nat.toText(Cycles.balance())));
 
-        Cycles.add(300_000_000_000);
-        let { canister_id } = await ic.create_canister({
+        Cycles.add<system>(300_000_000_000);
+        let { canister_id } = await T.ic.create_canister({
           settings = ?{
-            controllers = ?[Principal.fromActor(this), caller];
+            controllers;
             compute_allocation = null;
             memory_allocation = null;
             freezing_threshold = null;
@@ -90,11 +109,9 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
         Debug.print(debug_show ("later create_canister: " # Nat.toText(Cycles.balance())));
 
         try {
-          let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
-
-          await ic.install_code({
+          await T.ic.install_code({
             arg = to_candid(tokenId);
-            wasm_module = Blob.fromArray(nums8);
+            wasm_module;
             mode = #install;
             canister_id;
           });
@@ -116,8 +133,8 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
             {
               tokenId;
               assetType = energy;
-              startDate: Nat64 = 1714419814052;
-              endDate: Nat64 = 1717012111263;
+              startDate = "2024-04-29T19:43:34.000Z";
+              endDate = "2024-05-29T19:48:31.000Z";
               co2Emission: Float = 11.22;
               radioactivityEmnission: Float = 10.20;
               volumeProduced: T.TokenAmount = 1000;
@@ -137,7 +154,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
                 stateProvince = "chile";
                 country = "chile";
               };
-              dates: [Nat64] = [1714419814052, 1717012111263, 1717012111263];
+              dates = ["2024-04-29T19:43:34.000Z", "2024-05-29T19:48:31.000Z", "2024-05-29T19:48:31.000Z"];
             };
 
           await TokenCanister(canister_id).init(assetMetadata);
@@ -145,8 +162,8 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
           tokenDirectory.put(tokenId, canister_id);
           return canister_id
         } catch (error) {
-          await ic.stop_canister({ canister_id });
-          await ic.delete_canister({ canister_id });
+          await T.ic.stop_canister({ canister_id });
+          await T.ic.delete_canister({ canister_id });
           throw Error.reject(Error.message(error));
         }
       };
@@ -154,22 +171,22 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
   };
 
   /// delete [tokenDirectory] collection
-  public shared({ caller }) func deleteToken(tokenId: Text): async () {
-    adminValidation(caller);
+  public shared({ caller }) func deleteToken<system>(tokenId: Text): async () {
+    T.adminValidation(caller, controllers);
 
     switch(tokenDirectory.get(tokenId)) {
       case(null) throw Error.reject("Token doesn't exists");
       case(?canister_id) {
-        Cycles.add(20_949_972_000);
-        await ic.stop_canister({ canister_id });
-        await ic.delete_canister({ canister_id });
+        Cycles.add<system>(20_949_972_000);
+        await T.ic.stop_canister({ canister_id });
+        await T.ic.delete_canister({ canister_id });
         let _ = tokenDirectory.remove(tokenId)
       };
     }
   };
 
-  /// manage token status
-  public shared({ caller }) func tokenStatus(tokenId: T.TokenId): async {
+  /// manage deployed canister status
+  public shared({ caller }) func statusDeployedCanisterById<system>(tokenId: T.TokenId): async {
     status: { #stopped; #stopping; #running };
     memory_size: Nat;
     cycles: Nat;
@@ -177,46 +194,40 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
     idle_cycles_burned_per_day: Nat;
     module_hash: ?[Nat8];
   } {
-    adminValidation(caller);
+    T.adminValidation(caller, controllers);
 
     switch(tokenDirectory.get(tokenId)) {
       case(null) throw Error.reject("Token doesn't exists");
       case(?canister_id) {
-        Cycles.add(20_949_972_000);
-        return await ic.canister_status({ canister_id });
+        Cycles.add<system>(20_949_972_000);
+        return await T.ic.canister_status({ canister_id });
       };
     };
   };
 
-  /// resume token status
-  public shared({ caller }) func startToken(tokenId: T.TokenId): async () {
-    adminValidation(caller);
+  /// resume all deployed canisters
+  public shared({ caller }) func startAllDeployedCanisters<system>(): async () {
+    T.adminValidation(caller, controllers);
 
-    switch(tokenDirectory.get(tokenId)) {
-      case(null) throw Error.reject("Token doesn't exists");
-      case(?canister_id) {
-        Cycles.add(20_949_972_000);
-        await ic.start_canister({ canister_id });
-      };
+    for(canister_id in tokenDirectory.vals()) {
+      Cycles.add<system>(20_949_972_000);
+      await T.ic.start_canister({ canister_id });
     };
   };
 
-  /// stop token status
-  public shared({ caller }) func stopToken(tokenId: T.TokenId): async () {
-    adminValidation(caller);
+  /// stop all deployed canisters
+  public shared({ caller }) func stopAllDeployedCanisters<system>(): async () {
+    T.adminValidation(caller, controllers);
 
-    switch(tokenDirectory.get(tokenId)) {
-      case(null) throw Error.reject("Token doesn't exists");
-      case(?canister_id) {
-        Cycles.add(20_949_972_000);
-        await ic.stop_canister({ canister_id });
-      };
+    for(canister_id in tokenDirectory.vals()) {
+      Cycles.add<system>(20_949_972_000);
+      await T.ic.stop_canister({ canister_id });
     };
   };
 
   /// get canister id that allow current user
   public shared({ caller }) func getTokenCanister(tokenId: T.TokenId): async T.CanisterId {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (tokenDirectory.get(tokenId)) {
       case (null) { throw Error.reject("Token not found"); };
@@ -225,7 +236,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
   };
 
   public shared({ caller }) func getRemainingAmount(tokenId: T.TokenId): async T.TokenAmount {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
@@ -234,7 +245,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
   };
 
   public shared({ caller }) func getAssetInfo(tokenId: T.TokenId): async T.AssetInfo {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
@@ -242,8 +253,8 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
     };
   };
 
-  public shared({ caller }) func mintToken(uid: T.UID, tokenId: T.TokenId, amount: T.TokenAmount, inMarket: T.TokenAmount): async() {
-    callValidation(caller);
+  public shared({ caller }) func mintTokenToUser(uid: T.UID, tokenId: T.TokenId, amount: T.TokenAmount, inMarket: T.TokenAmount): async() {
+    _callValidation(caller);
 
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
@@ -252,7 +263,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
   };
 
   public shared({ caller }) func burnToken(uid: T.UID, tokenId: T.TokenId, amount: T.TokenAmount, inMarket: T.TokenAmount): async() {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
@@ -262,7 +273,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
 
   // get token portfolio for a specific user
   public shared({ caller }) func getTokenPortfolio(uid: T.UID, tokenId: T.TokenId): async T.TokenInfo {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found on Portfolio");
@@ -270,31 +281,89 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
     };
   };
 
-  public shared({ caller }) func getPortfolio(uid: T.UID, tokenIds: [T.TokenId]): async [T.TokenInfo] {
-    callValidation(caller);
+  public shared({ caller }) func getPortfolio(uid: T.UID, tokenIds: [T.TokenId], page: ?Nat, length: ?Nat, assetTypes: ?[T.AssetType], country: ?Text, mwhRange: ?[T.TokenAmount]): async {
+    data: [T.TokenInfo];
+    totalPages: Nat;
+  } {
+    _callValidation(caller);
 
-    let tokens = Buffer.Buffer<T.TokenInfo>(100);
+    // define page based on statement
+    let startPage = switch(page) {
+      case(null) 1;
+      case(?value) value;
+    };
+
+    // define length based on statement
+    let maxLength = switch(length) {
+      case(null) 50;
+      case(?value) value;
+    };
+
+    let tokens = Buffer.Buffer<T.TokenInfo>(50);
+
+    // calculate range of elements returned
+    let startIndex: Nat = (startPage - 1) * maxLength;
+    var i = 0;
 
     Debug.print(debug_show ("before getPortfolio: " # Nat.toText(Cycles.balance())));
 
-    for(item in tokenIds.vals()) {
-      switch (tokenDirectory.get(item)) {
-        case (null) {};
-        case (?cid) {
-          let token: T.TokenInfo = await TokenCanister(cid).getUserMinted(uid);
-          tokens.add(token);
+
+    for(tokenId in tokenIds.vals()) {
+      if (i >= startIndex and i < startIndex + maxLength) {
+        switch(tokenDirectory.get(tokenId)) {
+          case(null) {};
+
+          case(?cid) {
+            let token: T.TokenInfo = await TokenCanister(cid).getUserMinted(uid);
+
+            // filter by tokenId
+            let filterRange: Bool = switch(mwhRange) {
+              case(null) true;
+              case(?range) token.totalAmount >= range[0] and token.totalAmount <= range[1];
+            };
+
+            if (filterRange) tokens.add(token);
+          };
         };
       };
+      i += 1;
     };
 
-    Debug.print(debug_show ("later getPortfolio: " # Nat.toText(Cycles.balance())));
 
-    Buffer.toArray<T.TokenInfo>(tokens);
+    let filteredTokens: [T.TokenInfo] = Array.filter<T.TokenInfo>(Buffer.toArray<T.TokenInfo>(tokens), func (item) {
+      // by assetTypes
+      let assetTypeMatches = switch (assetTypes) {
+        case(null) true;
+        case(?assets) {
+          let assetType = Array.find<T.AssetType>(assets, func (assetType) { assetType == item.assetInfo.assetType });
+          assetType != null
+        };
+      };
+
+      // by country
+      let countryMatches = switch (country) {
+        case(null) true;
+        case(?value) item.assetInfo.specifications.country == value;
+      };
+
+      assetTypeMatches and countryMatches;
+    });
+
+
+    Debug.print(debug_show ("later getPortfolio: " # Nat.toText(Cycles.balance())));
+    
+    var totalPages: Nat = i / maxLength;
+    if (totalPages <= 0) totalPages := 1;
+
+    {
+      data = filteredTokens;
+      totalPages;
+    }
   };
 
 
   public shared({ caller }) func getSingleTokenInfo(tokenId: T.TokenId): async T.AssetInfo {
-    callValidation(caller);
+    _callValidation(caller);
 
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found on cero trade");
@@ -303,9 +372,9 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
   };
 
   public shared({ caller }) func getTokensInfo(tokenIds: [T.TokenId]): async [T.AssetInfo] {
-    callValidation(caller);
+    _callValidation(caller);
 
-    let tokens = Buffer.Buffer<T.AssetInfo>(100);
+    let tokens = Buffer.Buffer<T.AssetInfo>(50);
 
     Debug.print(debug_show ("before getTokensInfo: " # Nat.toText(Cycles.balance())));
 
@@ -325,13 +394,13 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
   };
 
   public shared({ caller }) func checkUserToken(uid: T.UID, tokenId: T.TokenId): async Bool {
-    callValidation(caller);
+    _callValidation(caller);
 
     try {
       switch (tokenDirectory.get(tokenId)) {
         case (null) return false;
         case (?cid) {
-          let token = await TokenCanister(cid).getUserMinted(uid);
+          let _ = await TokenCanister(cid).getUserMinted(uid);
           return true;
         }
       };
@@ -342,7 +411,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
 
 
   // TODO implements this transfer function to icp tokens
-  // private func transfer(args: {
+  // private func _transfer(args: {
   //   amount: T.Price;
   //   recipentLedger: ICRC.AccountIdentifier;
   // }) : async Result.Result<IcpLedger.BlockIndex, Text> {
@@ -387,7 +456,7 @@ shared({ caller = adminCaller }) actor class TokenIndex() = this {
 
 
   public shared({ caller }) func purchaseToken(uid: T.UID, recipent: { uid: T.UID; ledger: ICRC.AccountIdentifier }, tokenId: T.TokenId, amount: T.TokenAmount, inMarket: T.TokenAmount): async T.BlockHash {
-    callValidation(caller);
+    _callValidation(caller);
 
     Debug.print("recipent ledger " # debug_show (recipent.ledger));
 

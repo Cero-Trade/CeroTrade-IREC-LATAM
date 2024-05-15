@@ -19,6 +19,9 @@
 # rust
 target/
 
+# envs
+.env.local
+
 # frontend code
 node_modules/
 package-lock.json

@@ -10,6 +10,7 @@ export interface TokenModel {
 export type AssetType = "hydro"|"ocean"|"geothermal"|"biome"|"wind"|"sun"|"other";
 
 export interface AssetInfoModel {
+  tokenId: string;
   assetType: AssetType;
   startDate: Date;
   endDate: Date;

@@ -16,10 +16,11 @@ import MyPortfolio from '@/pages/my-portfolio.vue'
 import MyTransactions from '@/pages/my-transactions.vue'
 import Profile from '@/pages/profile.vue'
 import MarketTrends from '@/pages/market-trends.vue'
-import Auth from '@/layouts/empty-layout.vue'
+import Auth from '@/layouts/auth-layout.vue'
 import Register from '@/pages/register.vue'
 import Login from '@/pages/login.vue'
 import PasswordReset from '@/pages/password-reset.vue'
+import ceroSystem from '@/pages/cero-system.vue'
 
 const DEFAULT_TITLE = APP_NAMES.capitalize;
 
@@ -77,6 +78,12 @@ const routes = [
         name: 'Profile',
         component: Profile,
         meta: { head: `Profile - ${DEFAULT_TITLE}` }
+      },
+      {
+        path: 'cero-system',
+        name: 'CeroSystem',
+        component: ceroSystem,
+        meta: { head: `Cero system - ${DEFAULT_TITLE}` }
       },
     ],
   },
