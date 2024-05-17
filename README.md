@@ -1,6 +1,8 @@
 # Cero Trade
 
-Public url: https://z2mgf-dqaaa-aaaak-qihbq-cai.icp0.io?canisterId=z2mgf-dqaaa-aaaak-qihbq-cai
+Public frontend url: https://z2mgf-dqaaa-aaaak-qihbq-cai.icp0.io?canisterId=z2mgf-dqaaa-aaaak-qihbq-cai
+
+Public candid url: https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=<canister_id>
 
 ## Project setup
 Init ic background replica
@@ -125,3 +127,6 @@ https://mops.one/
 
 ### Anonymous principal
 2vxsx-fae
+
+### ICRC Standard Implementation
+https://github.com/PanIndustrial-Org/ICRC_fungible

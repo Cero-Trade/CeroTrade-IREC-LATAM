@@ -8,26 +8,10 @@ import Text "mo:base/Text";
 import Error "mo:base/Error";
 import Array "mo:base/Array";
 
-// Types
-import IC_MANAGEMENT "./ic_management_canister_interface";
-import ICRC "./ICRC";
+// types
+import ICPTypes "./ICPTypes";
 
 module {
-  public let ic : IC_MANAGEMENT.IC = actor ("aaaaa-aa");
-
-  public func getControllers(canister_id: CanisterId): async ?[Principal] {
-    let status = await ic.canister_status({ canister_id });
-    status.settings.controllers
-  };
-
-  // global admin assert validation
-  public func adminValidation(caller: Principal, controllers: ?[Principal]) {
-    assert switch(controllers) {
-      case(null) true;
-      case(?value) Array.find<Principal>(value, func x = x == caller) != null;
-    };
-  };
-
   // TODO try to change to simplest format to better filtering
   // global date format variable
   public let dateFormat: Text = "YYYY-MM-DDTHH:mm:ss.sssssssssZ";
@@ -39,9 +23,10 @@ module {
   public type RedemId = Text;
   public type CompanyLogo = [Nat8];
   public type Beneficiary = UID;
-  public type BlockHash = Nat64;
+  public type TxIndex = Nat;
   public type TokenAmount = Nat;
-  public type Price = ICRC.Tokens;
+  public type Price = { e8s: Nat64 };
+  public type AccountIdentifier = Blob.Blob;
   
   //
   // UsersAgent
@@ -62,7 +47,7 @@ module {
     companyLogo: ?CompanyLogo;
     vaultToken: Text;
     principal: Principal;
-    ledger: ICRC.AccountIdentifier;
+    ledger: AccountIdentifier;
     portfolio: [TokenId];
     transactions: [TransactionId];
     beneficiaries: [Beneficiary];
@@ -95,7 +80,7 @@ module {
 
   public type TransactionInfo = {
     transactionId: TransactionId;
-    blockHash: BlockHash;
+    txIndex: TxIndex;
     from: UID;
     to: Beneficiary;
     tokenId: TokenId;
@@ -108,7 +93,7 @@ module {
 
   public type TransactionHistoryInfo = {
     transactionId: TransactionId;
-    blockHash: BlockHash;
+    txIndex: TxIndex;
     from: UID;
     to: Beneficiary;
     assetInfo: ?AssetInfo;
@@ -148,8 +133,8 @@ module {
     deviceCode: Text;
     capacity: TokenAmount;
     location: Text;
-    latitude: Float;
-    longitude: Float;
+    latitude: Text;
+    longitude: Text;
     address: Text;
     stateProvince: Text;
     country: Text;
@@ -160,8 +145,8 @@ module {
     assetType: AssetType;
     startDate: Text;
     endDate: Text;
-    co2Emission: Float;
-    radioactivityEmnission: Float;
+    co2Emission: Text;
+    radioactivityEmnission: Text;
     volumeProduced: TokenAmount;
     deviceDetails: DeviceDetails;
     specifications: Specifications;
@@ -198,10 +183,6 @@ module {
     priceICP: Price;
   };
 
-  public type CanisterSettings = IC_MANAGEMENT.CanisterSettings;
-
-  public type WasmModule = IC_MANAGEMENT.WasmModule;
-
   public type WasmModuleName = {
     #token: Text;
     #users: Text;
@@ -210,38 +191,10 @@ module {
 
   public let LOW_MEMORY_LIMIT: Nat = 50000;
 
-  public type UsersInterface = actor {
-    length: query () -> async Nat;
-    registerUser: (uid: UID, token: Text) -> async();
-    deleteUser: (uid: UID) -> async();
-    storeCompanyLogo: (uid: UID, avatar: CompanyLogo) -> async();
-    getCompanyLogo: query (uid: UID) -> async CompanyLogo;
-    updatePorfolio: (uid: UID, tokenId: TokenId) -> async();
-    deletePorfolio: (uid: UID, tokenId: TokenId) -> async();
-    updateTransactions: (uid: UID, tx: TransactionId) -> async();
-    getPortfolioTokenIds: query (uid: UID) -> async [TokenId];
-    getTransactionIds: query (uid: UID) -> async [TransactionId];
-    getBeneficiaries: query (uid: UID) -> async [Beneficiary];
-    getUserToken: query (uid: UID) -> async Text;
-    validateToken: query (uid: UID, token: Text) -> async Bool;
-    getLedger: query (uid: UID) -> async Blob;
-  };
-
-  public type TokenInterface = actor {
-    init: (assetMetadata: AssetInfo) -> async();
-    mintToken: (uid: UID, amount: TokenAmount, inMarket: TokenAmount) -> async ();
-    burnToken: (uid: UID, amount: TokenAmount, inMarket: TokenAmount) -> async ();
-    getUserMinted: query (uid: UID) -> async TokenInfo;
-    getAssetInfo: query () -> async AssetInfo;
-    getRemainingAmount: query () -> async TokenAmount;
-    getTokenId: query () -> async TokenId;
-    getCanisterId: query () -> async CanisterId;
-    purchaseToken: (uid: UID, recipent: UID, amount: TokenAmount, inMarket: TokenAmount) -> async();
-  };
-
-  public type TransactionsInterface = actor {
-    length: query () -> async Nat;
-    registerTransaction: (tx: TransactionInfo) -> async TransactionId;
-    getTransactionsById: query (txIds: [TransactionId], txType: ?TxType, priceRange: ?[Price], mwhRange: ?[TokenAmount], method: ?TxMethod, rangeDates: ?[Text]) -> async [TransactionInfo];
+  public type PurchaseInMarketplaceArgs = {
+    marketplace: CanisterId;
+    seller: ICPTypes.Account;
+    buyer: ICPTypes.Account;
+    amount: Nat;
   };
 }

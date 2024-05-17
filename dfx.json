@@ -11,7 +11,8 @@
     },
     "token": {
       "main": "src/cero_trade_project_backend/token/token.mo",
-      "type": "motoko"
+      "type": "motoko",
+      "args": "-v --incremental-gc"
     },
     "token_index": {
       "main": "src/cero_trade_project_backend/token_index/token_index.mo",
