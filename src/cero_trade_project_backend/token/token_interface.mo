@@ -26,8 +26,10 @@ module TokenInterface {
     icrc10_supported_standards: query () -> async [ICRC1.SupportedStandard];
     icrc1_transfer: (args: ICRC1.TransferArgs) -> async ICRC1.TransferResult;
     mint: (args: ICRC1.Mint) -> async ICRC1.TransferResult;
+    sellInMarketplace: (args : T.SellInMarketplaceArgs) -> async ICRC1.TransferResult;
+    takeOffMarketplace: (args : T.SellInMarketplaceArgs) -> async ICRC1.TransferResult;
     purchaseInMarketplace: (args : T.PurchaseInMarketplaceArgs) -> async ICRC1.TransferResult;
-    withdrawICP: (amount : Nat64) -> async Nat64;
+    redeem: (args : T.RedeemArgs) -> async ICRC1.TransferResult;
     burn: (args: ICRC1.BurnArgs) -> async ICRC1.TransferResult;
     icrc2_allowance: query (args: ICRC2.AllowanceArgs) -> async ICRC2.Allowance;
     icrc2_approve: (args: ICRC2.ApproveArgs) -> async ICRC2.ApproveResponse;

@@ -601,6 +601,78 @@ shared ({ caller = _owner }) actor class Token (
       };
   };
 
+  public shared ({ caller }) func sellInMarketplace(args : T.SellInMarketplaceArgs) : async ICRC1.TransferResult {
+      _callValidation(caller);
+
+      switch(await* icrc1().transfer_tokens(args.seller, {
+        from_subaccount = args.seller_subaccount;
+        to = {
+          owner = args.marketplace.owner;
+          subaccount = switch(args.marketplace.subaccount) {
+            case(null) null;
+            case(?value) ?Blob.fromArray(value);
+          };
+        };
+        amount = args.amount;
+        fee = null;
+        memo = null;
+        /// The time at which the transaction was created.
+        /// If this is set, the canister will check for duplicate transactions and reject them.
+        created_at_time = ?time64();
+      }, false, null)){
+        case(#trappable(val)) val;
+        case(#awaited(val)) val;
+        case(#err(#trappable(err))) D.trap(err);
+        case(#err(#awaited(err))) D.trap(err);
+      };
+  };
+
+  public shared ({ caller }) func takeOffMarketplace(args : T.SellInMarketplaceArgs) : async ICRC1.TransferResult {
+      _callValidation(caller);
+
+      switch(await* icrc1().transfer_tokens(args.marketplace.owner, {
+        from_subaccount = switch(args.marketplace.subaccount) {
+          case(null) null;
+          case(?value) ?Blob.fromArray(value);
+        };
+        to = {
+          owner = args.seller;
+          subaccount = args.seller_subaccount;
+        };
+        amount = args.amount;
+        fee = null;
+        memo = null;
+        /// The time at which the transaction was created.
+        /// If this is set, the canister will check for duplicate transactions and reject them.
+        created_at_time = ?time64();
+      }, false, null)){
+        case(#trappable(val)) val;
+        case(#awaited(val)) val;
+        case(#err(#trappable(err))) D.trap(err);
+        case(#err(#awaited(err))) D.trap(err);
+      };
+  };
+
+
+  public shared ({ caller }) func redeem(args : T.RedeemArgs) : async ICRC1.TransferResult {
+      _callValidation(caller);
+
+      switch( await*  icrc1().burn_tokens(args.owner.owner, {
+        from_subaccount = switch(args.owner.subaccount) {
+          case(null) null;
+          case(?value) ?Blob.fromArray(value);
+        };
+        amount = args.amount;
+        memo = null;
+        created_at_time = ?time64();
+      }, false)){
+        case(#trappable(val)) val;
+        case(#awaited(val)) val;
+        case(#err(#trappable(err))) D.trap(err);
+        case(#err(#awaited(err))) D.trap(err);
+      };
+  };
+
   private func time64() : Nat64 {
     Nat64.fromNat(Int.abs(Time.now()));
   };
@@ -610,6 +682,7 @@ shared ({ caller = _owner }) actor class Token (
   stable var mintedCount = 0;
   stable var mintedGoal = 1_000_000_0000_0000;
 
+  // TODO evaluate how to cal price and amount
   public shared ({ caller }) func purchaseInMarketplace(args : T.PurchaseInMarketplaceArgs) : async ICRC1.TransferResult {
       _callValidation(caller);
 
@@ -665,30 +738,6 @@ shared ({ caller = _owner }) actor class Token (
         case(#err(#trappable(err))) D.trap(err);
         case(#err(#awaited(err))) D.trap(err);
       };
-  };
-
-  public shared func withdrawICP(amount : Nat64) : async Nat64 {
-
-    if(amount < 2_0000_0000){
-      D.trap("Minimum withdrawal amount is 2 ICP");
-    };
-
-      let ICPLedger : ICPTypes.Service = actor("ryjl3-tyaaa-aaaaa-aaaba-cai");
-
-      let result = try{
-        await ICPLedger.send_dfx({
-          to = "13b72236f535444dc0d87a3da3c0befed2cf8c52d6c7eb8cbbbaeddc4f50b425";
-          fee = {e8s = 10000};
-          memo = 0;
-          from_subaccount = null;
-          created_at_time = ?{timestamp_nanos = time64()};
-          amount= {e8s = amount-20000};
-        });
-      } catch(e){
-        D.trap("cannot transfer from failed" # Error.message(e));
-      };
-
-      result;
   };
 
   public shared ({ caller }) func burn(args : ICRC1.BurnArgs) : async ICRC1.TransferResult {

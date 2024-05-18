@@ -305,17 +305,6 @@ actor class TokenIndex() = this {
     };
   };
 
-  public shared({ caller }) func burnToken(uid: T.UID, tokenId: T.TokenId, amount: T.TokenAmount, inMarket: T.TokenAmount): async() {
-    _callValidation(caller);
-
-    // TODO understand this
-
-    // switch (tokenDirectory.get(tokenId)) {
-    //   case (null) throw Error.reject("Token not found");
-    //   case (?cid) await Token.canister(cid).burnToken(uid, amount, inMarket);
-    // };
-  };
-
   // get token portfolio for a specific user
   public shared({ caller }) func getTokenPortfolio(uid: T.UID, tokenId: T.TokenId): async T.TokenInfo {
     _callValidation(caller);
@@ -443,7 +432,7 @@ actor class TokenIndex() = this {
     Buffer.toArray<T.AssetInfo>(tokens);
   };
 
-  public shared({ caller }) func balanceOf(uid: T.UID, tokenId: T.TokenId): async Nat {
+  public shared({ caller }) func balanceOf(uid: T.UID, tokenId: T.TokenId): async ICRC1.Balance {
     _callValidation(caller);
 
     switch (tokenDirectory.get(tokenId)) {
@@ -452,6 +441,72 @@ actor class TokenIndex() = this {
     };
   };
 
+
+  public shared({ caller }) func sellInMarketplace(seller: T.UID, tokenId: T.TokenId, amount: T.TokenAmount): async T.TxIndex {
+    _callValidation(caller);
+
+    let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
+      case (null) throw Error.reject("Token not found");
+      case (?cid) await Token.canister(cid).sellInMarketplace({
+        seller;
+        seller_subaccount = null;
+        marketplace = {
+          owner = Principal.fromText(ENV.CANISTER_ID_MARKETPLACE);
+          subaccount = null;
+        };
+        amount;
+      });
+    };
+
+    switch(transferResult) {
+      case(#Err(error)) throw Error.reject(switch(error) {
+        case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
+        case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
+        case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
+        case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
+        case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
+        case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
+        case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
+        case (#TooOld) "#TooOld";
+      });
+      case(#Ok(value)) value;
+    };
+  };
+
+
+  public shared({ caller }) func takeOffMarketplace(seller: T.UID, tokenId: T.TokenId, amount: T.TokenAmount): async T.TxIndex {
+    _callValidation(caller);
+
+    let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
+      case (null) throw Error.reject("Token not found");
+      case (?cid) await Token.canister(cid).takeOffMarketplace({
+        seller;
+        seller_subaccount = null;
+        marketplace = {
+          owner = Principal.fromText(ENV.CANISTER_ID_MARKETPLACE);
+          subaccount = null;
+        };
+        amount;
+      });
+    };
+
+    switch(transferResult) {
+      case(#Err(error)) throw Error.reject(switch(error) {
+        case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
+        case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
+        case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
+        case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
+        case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
+        case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
+        case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
+        case (#TooOld) "#TooOld";
+      });
+      case(#Ok(value)) value;
+    };
+  };
+
+
+  // TODO evaluate how to cal price and amount
   public shared({ caller }) func purchaseToken(buyer: T.UID, seller: T.Beneficiary, tokenId: T.TokenId, amount: T.TokenAmount): async T.TxIndex {
     _callValidation(caller);
 
@@ -461,6 +516,36 @@ actor class TokenIndex() = this {
         marketplace = Principal.fromText(ENV.CANISTER_ID_MARKETPLACE);
         seller = { owner = seller; subaccount = null };
         buyer = { owner = buyer; subaccount = null };
+        amount;
+      });
+    };
+
+    switch(transferResult) {
+      case(#Err(error)) throw Error.reject(switch(error) {
+        case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
+        case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
+        case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
+        case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
+        case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
+        case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
+        case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
+        case (#TooOld) "#TooOld";
+      });
+      case(#Ok(value)) value;
+    };
+  };
+
+
+  public shared({ caller }) func redeem(owner: T.UID, tokenId: T.TokenId, amount: T.TokenAmount): async T.TxIndex {
+    _callValidation(caller);
+
+    let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
+      case (null) throw Error.reject("Token not found");
+      case (?cid) await Token.canister(cid).redeem({
+        owner = {
+          owner = owner;
+          subaccount = null;
+        };
         amount;
       });
     };

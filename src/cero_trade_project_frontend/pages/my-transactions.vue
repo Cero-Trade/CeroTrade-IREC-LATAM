@@ -54,7 +54,7 @@
 
       <template #item.type="{ item }">
         <span class="text-capitalize w700" :style="`
-          color: ${item.type === TxType.transfer ? '#00555B'
+          color: ${item.type === TxType.purchase ? '#00555B'
           : item.type === TxType.redemption ? '#5A02CA'
           : '#2970FF'
         } !important`">{{ item.type }}</span>
@@ -359,7 +359,9 @@ toggle = ref(0),
 tab = ref(0),
 tabs = [
   { text: "All", value: null, },
-  { text: "Transfer", value: TxType.transfer },
+  { text: "Sell", value: TxType.putOnSale },
+  { text: "Purchase", value: TxType.purchase },
+  { text: "Take off Marketplace", value: TxType.takeOffMarketplace },
   { text: "Redemption", value: TxType.redemption }
 ],
 

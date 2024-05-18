@@ -10,7 +10,9 @@ export enum TxMethod {
 export type TxMethodDef = keyof typeof TxMethod
 
 export enum TxType {
-  transfer = 'transfer',
+  putOnSale = 'putOnSale',
+  purchase = 'purchase',
+  takeOffMarketplace = 'takeOffMarketplace',
   redemption = 'redemption',
 }
 export type TxTypeDef = keyof typeof TxType

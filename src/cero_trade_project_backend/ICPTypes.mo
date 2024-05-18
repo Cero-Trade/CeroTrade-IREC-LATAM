@@ -3,7 +3,9 @@
 
 module {
   public type Account = { owner : Principal; subaccount : ?[Nat8] };
+  public type Subaccount = Blob;
   public type AccountBalanceArgs = { account : Text };
+  public type Balance = Nat;
   public type Allowance = { allowance : Nat; expires_at : ?Nat64 };
   public type AllowanceArgs = { account : Account; spender : Account };
   public type ApproveArgs = {

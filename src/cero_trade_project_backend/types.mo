@@ -82,11 +82,11 @@ module {
     transactionId: TransactionId;
     txIndex: TxIndex;
     from: UID;
-    to: Beneficiary;
+    to: ?Beneficiary;
     tokenId: TokenId;
     txType: TxType;
     tokenAmount: TokenAmount;
-    priceICP: Price;
+    priceICP: ?Price;
     date: Text;
     method: TxMethod;
   };
@@ -95,17 +95,19 @@ module {
     transactionId: TransactionId;
     txIndex: TxIndex;
     from: UID;
-    to: Beneficiary;
+    to: ?Beneficiary;
     assetInfo: ?AssetInfo;
     txType: TxType;
     tokenAmount: TokenAmount;
-    priceICP: Price;
+    priceICP: ?Price;
     date: Text;
     method: TxMethod;
   };
 
   public type TxType = {
-    #transfer: Text;
+    #purchase: Text;
+    #putOnSale: Text;
+    #takeOffMarketplace: Text;
     #redemption: Text;
   };
 
@@ -191,10 +193,22 @@ module {
 
   public let LOW_MEMORY_LIMIT: Nat = 50000;
 
+  public type SellInMarketplaceArgs = {
+    seller: Principal;
+    seller_subaccount: ?ICPTypes.Subaccount;
+    marketplace: ICPTypes.Account;
+    amount: ICPTypes.Balance;
+  };
+
   public type PurchaseInMarketplaceArgs = {
     marketplace: CanisterId;
     seller: ICPTypes.Account;
     buyer: ICPTypes.Account;
     amount: Nat;
+  };
+
+  public type RedeemArgs = {
+    owner: ICPTypes.Account;
+    amount: ICPTypes.Balance;
   };
 }

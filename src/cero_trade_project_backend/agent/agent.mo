@@ -98,20 +98,6 @@ actor class Agent() = this {
     txIndex
   };
 
-  // TODO review this process
-  /// performe mint with tokenId and amount requested
-  private func _burnToken(caller: T.UID, tokenId: T.TokenId, tokenAmount: T.TokenAmount): async() {
-    // check if user exists
-    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
-
-    // burn token to user token collection
-    let tokensInMarket = await Marketplace.getUserTokensOnSale(caller, tokenId);
-    await TokenIndex.burnToken(caller, tokenId, tokenAmount, tokensInMarket);
-
-    // update user portfolio
-    await UserIndex.updatePorfolio(caller, tokenId);
-  };
-
 
   /// get profile information
   public shared({ caller }) func getProfile(uid: ?T.UID): async T.UserProfile {
@@ -369,6 +355,7 @@ actor class Agent() = this {
   };
 
 
+  // TODO evaluate how to calc price and amount
   /// performe token purchase
   public shared({ caller }) func purchaseToken(tokenId: T.TokenId, recipent: T.Beneficiary, tokenAmount: T.TokenAmount, priceICP: Float): async T.TransactionInfo {
     // check if user exists
@@ -382,11 +369,11 @@ actor class Agent() = this {
       transactionId = "0";
       txIndex;
       from = caller;
-      to = recipent;
+      to = ?recipent;
       tokenId;
-      txType = #transfer("transfer");
+      txType = #purchase("purchase");
       tokenAmount;
-      priceICP = { e8s = Int64.toNat64(Float.toInt64(priceICP)) };
+      priceICP = ?{ e8s = Int64.toNat64(Float.toInt64(priceICP)) };
       date = DateTime.now().toText();
       method = #blockchainTransfer("blockchainTransfer");
     };
@@ -400,53 +387,95 @@ actor class Agent() = this {
     // // store to recipent
     // await UserIndex.updateTransactions(Principal.fromText(recipent), txId);
 
-    // take token off marketplace
+    // take token off marketplace reference
     await Marketplace.takeOffSale(tokenId, tokenAmount, caller);
 
     txInfo
   };
 
 
-  // TODO checkout all this flow
   /// ask market to put on sale token
-  public shared({ caller }) func sellToken(tokenId: T.TokenId, quantity: T.TokenAmount, priceICP: Float): async() {
+  public shared({ caller }) func sellToken(tokenId: T.TokenId, quantity: T.TokenAmount, priceICP: Float): async T.TransactionInfo {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
-    // check if token exists
-    let tokenPortofolio = await TokenIndex.getTokenPortfolio(caller, tokenId);
+    // check balance
+    let balance = await TokenIndex.balanceOf(caller, tokenId);
 
 
     // check if user is already selling
     let tokensInSale = await Marketplace.getUserTokensOnSale(caller, tokenId);
-    let availableTokens: T.TokenAmount = tokenPortofolio.totalAmount - tokensInSale;
+    let availableTokens: T.TokenAmount = balance - tokensInSale;
 
     // check if user has enough tokens
     if (availableTokens < quantity) throw Error.reject("Not enough tokens");
 
+    // transfer tokens from user to marketplace
+    let txIndex = await TokenIndex.sellInMarketplace(caller, tokenId, quantity);
+
+    // build transaction
+    let txInfo: T.TransactionInfo = {
+      transactionId = "0";
+      txIndex;
+      from = caller;
+      to = null;
+      tokenId;
+      txType = #putOnSale("putOnSale");
+      tokenAmount = quantity;
+      priceICP = ?{ e8s = Int64.toNat64(Float.toInt64(priceICP)) };
+      date = DateTime.now().toText();
+      method = #blockchainTransfer("blockchainTransfer");
+    };
+
+    // register transaction
+    let txId = await TransactionIndex.registerTransaction(txInfo);
+    await UserIndex.updateTransactions(caller, txId);
+
+    // put tokens on marketplace reference
     await Marketplace.putOnSale(tokenId, quantity, caller, { e8s = Int64.toNat64(Float.toInt64(priceICP)) });
+
+    txInfo
   };
 
 
   // ask market to take off market
-  public shared ({ caller }) func takeTokenOffMarket(tokenId: T.TokenId, quantity: T.TokenAmount): async() {
+  public shared ({ caller }) func takeTokenOffMarket(tokenId: T.TokenId, quantity: T.TokenAmount): async T.TransactionInfo {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
-    // check if token exists
-    let _ = await TokenIndex.getTokenPortfolio(caller, tokenId);
-
     // check if user is already selling
     let isSelling = await Marketplace.isSellingToken(caller, tokenId);
-    if (isSelling == false) throw Error.reject("User is not selling this token");
+    if (not isSelling) throw Error.reject("User is not selling this token");
 
     // check if user has enough tokens
     let tokenInSale = await Marketplace.getUserTokensOnSale(caller, tokenId);
     if (tokenInSale < quantity) throw Error.reject("Not enough tokens");
 
+    // transfer tokens from marketplace to user
+    let txIndex = await TokenIndex.takeOffMarketplace(caller, tokenId, quantity);
+
+    // build transaction
+    let txInfo: T.TransactionInfo = {
+      transactionId = "0";
+      txIndex;
+      from = caller;
+      to = null;
+      tokenId;
+      txType = #takeOffMarketplace("takeOffMarketplace");
+      tokenAmount = quantity;
+      priceICP = null;
+      date = DateTime.now().toText();
+      method = #blockchainTransfer("blockchainTransfer");
+    };
+
+    // register transaction
+    let txId = await TransactionIndex.registerTransaction(txInfo);
+    await UserIndex.updateTransactions(caller, txId);
+
+    // take off tokens on marketplace reference
     await Marketplace.takeOffSale(tokenId, quantity, caller);
 
-    return ();
+    txInfo
   };
 
 
@@ -465,20 +494,18 @@ actor class Agent() = this {
     if (availableTokens < quantity) throw Error.reject("Not enough tokens");
 
     // ask token to burn the tokens
-    await _burnToken(caller, tokenId, quantity);
+    let txIndex = await TokenIndex.redeem(caller, tokenId, quantity);
 
     // build transaction
-    let priceICP: T.Price = { e8s = 10_000 };
-
     let txInfo: T.TransactionInfo = {
       transactionId = "0";
-      txIndex = 12345678901234567890; // TODO replace with real txIndex
+      txIndex;
       from = caller;
-      to = beneficiary;
+      to = ?beneficiary;
       tokenId;
       txType = #redemption("redemption");
       tokenAmount = quantity;
-      priceICP;
+      priceICP = null;
       date = DateTime.now().toText();
       method = #blockchainTransfer("blockchainTransfer");
     };
