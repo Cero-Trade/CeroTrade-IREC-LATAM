@@ -690,7 +690,7 @@ shared ({ caller = _owner }) actor class Token (
           spender_subaccount = null;
           memo = null;
           created_at_time = ?time64();
-          amount = args.price;
+          amount = Nat64.toNat(args.priceE8S.e8s);
         });
       } catch(e){
         D.trap("cannot transfer from failed" # Error.message(e));
