@@ -18,6 +18,30 @@
         :rules="[globalRules.required]"
         @keyup="({ key }) => { if (key === 'Enter') registerTokenCall() }"
       ></v-text-field>
+      <v-text-field
+        v-model="registerTokenForm.name"
+        label="Token name"
+        variant="outlined"
+        density="compact"
+        :rules="[globalRules.required]"
+        @keyup="({ key }) => { if (key === 'Enter') registerTokenCall() }"
+      ></v-text-field>
+
+      <v-text-field
+        v-model="registerTokenForm.symbol"
+        label="Token symbol"
+        variant="outlined"
+        density="compact"
+        :rules="[globalRules.required]"
+        @keyup="({ key }) => { if (key === 'Enter') registerTokenCall() }"
+      ></v-text-field>
+
+      <v-img-input
+        v-model="registerTokenForm.logo"
+        label="Token logo"
+        :rules="[globalRules.required]"
+        @keyup="({ key }) => { if (key === 'Enter') registerTokenCall() }"
+      ></v-img-input>
     </v-form>
     <v-btn
       width="150px"
@@ -81,7 +105,12 @@ loadingWasmModule = ref(false),
 // register token module
 registerTokenFormRef = ref(),
 loadingRegisterTokenForm = ref(false),
-registerTokenForm = ref({ tokenId: null }),
+registerTokenForm = ref({
+  tokenId: null,
+  name: null,
+  symbol: null,
+  logo: null,
+}),
 
 // mint to user module
 mintToUserFormRef = ref(),
@@ -118,7 +147,7 @@ async function registerTokenCall() {
   loadingRegisterTokenForm.value = true
 
   try {
-    const res = await CeroSystemApi.registerToken(registerTokenForm.value.tokenId)
+    const res = await CeroSystemApi.registerToken(registerTokenForm.value)
     console.log(res);
 
     toast.success("Token registered")

@@ -15,6 +15,7 @@
       :max-errors="maxErrors"
       :bg-color="bgColor"
       :base-color="baseColor"
+      :class="{ fullWidth, 'v-input--empty': !model?.length }"
       :style="`
         --height: ${isOnlyDigits(height) ? `${height}px` : height};
         --max-height: ${isOnlyDigits(maxHeight) ? `${maxHeight}px` : maxHeight};
@@ -25,6 +26,7 @@
         ${!!sizes ? `--sizes: ${isOnlyDigits(sizes) ? `${sizes}px` : sizes};` : ''}
         --border-radius: ${isOnlyDigits(rounded) ? `${rounded}px` : rounded};
         --border: ${border};
+        --label-align: ${labelAlign};
       `"
       @change="event => {
         const files = event.target.files
@@ -33,6 +35,14 @@
         emit('update:modelValue', files)
       }"
     >
+      <template #label>
+        <slot name="label">{{ label }}</slot>
+      </template>
+
+      <template #append>
+        <slot name="append" />
+      </template>
+
       <template #selection>
         <v-chip rounded="100px" class="v-img-input__length-chip">{{ formatBytes(model[0].size) }}</v-chip>
 
@@ -100,6 +110,9 @@ const
   maxErrors: Number,
   bgColor: String,
   baseColor: String,
+  fullWidth: Boolean,
+  label: String,
+  labelAlign: String,
 }),
 modelValue = computed(() => props.modelValue),
 emit = defineEmits(['update:modelValue']),
@@ -129,14 +142,14 @@ async function getData(value) {
   position: relative;
 
   &__length-chip {
-    position: absolute;
-    right: 5px;
-    bottom: 5px;
+    position: absolute !important;
+    right: 5px !important;
+    bottom: 5px !important;
     z-index: 2;
-    background-color: hsl(0, 0%, 96%);
+    background-color: hsl(0, 0%, 96%) !important;
 
-    .v-chip__underlay { opacity: .3 }
-    .v-chip__content { color: #000 }
+    .v-chip__underlay { opacity: .3 !important }
+    .v-chip__content { color: #000 !important }
   }
 
   .v-input {
@@ -154,14 +167,28 @@ async function getData(value) {
       border-radius: var(--border-radius);
       border: var(--border);
       padding: 0;
-      box-shadow: none;
 
       &__input {
         height: 100%;
         padding: 0;
       }
 
-      &__clearable {
+      &__field > .v-label {
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        min-width: 100% !important;
+        margin: 0 !important;
+        font-size: 16px !important;
+      }
+
+      .v-label { opacity: 0 }
+    }
+
+    &--empty .v-field .v-label { opacity: 1 }
+
+
+    &.fullWidth {
+      .v-field__clearable {
         position: absolute;
         inset: 0;
       }
