@@ -2,7 +2,9 @@
   "canisters": {
     "users": {
       "main": "src/cero_trade_project_backend/users/users.mo",
-      "type": "motoko"
+      "type": "motoko",
+      "args": "-v --incremental-gc",
+      "gzip": true
     },
     "user_index": {
       "main": "src/cero_trade_project_backend/user_index/user_index.mo",
@@ -12,7 +14,8 @@
     "token": {
       "main": "src/cero_trade_project_backend/token/token.mo",
       "type": "motoko",
-      "args": "-v --incremental-gc"
+      "args": "-v --incremental-gc",
+      "gzip": true
     },
     "token_index": {
       "main": "src/cero_trade_project_backend/token_index/token_index.mo",
@@ -21,7 +24,9 @@
     },
     "transactions": {
       "main": "src/cero_trade_project_backend/transactions/transactions.mo",
-      "type": "motoko"
+      "type": "motoko",
+      "args": "-v --incremental-gc",
+      "gzip": true
     },
     "transaction_index": {
       "main": "src/cero_trade_project_backend/transaction_index/transaction_index.mo",

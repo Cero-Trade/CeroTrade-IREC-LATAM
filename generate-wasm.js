@@ -5,7 +5,7 @@ import fs from 'fs/promises';
 
 const args = process.argv.slice(2),
 moduleName = args.find(arg => arg.startsWith('module=')).split('=')[1],
-wasmFile = `.dfx/local/canisters/${moduleName}/${moduleName}.wasm`;
+wasmFile = `.dfx/local/canisters/${moduleName}/${moduleName}.wasm.gz`;
 
 const data = await fs.readFile(wasmFile),
 nat8Array = Array.from(data);

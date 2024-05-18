@@ -37,7 +37,7 @@ cp src/declarations/http_service/* .dfx/local/canisters/http_service/
 Generate env.mo and deploy canisters
 
 ```
-dfx deploy
+dfx deploy cero_trade_project_frontend
 dfx deploy agent
 ```
 
@@ -51,7 +51,9 @@ dfx canister call agent registerWasmModule '(variant { "transactions" = "transac
 ```
 
 ### Deploying token canisters
-`dfx canister call agent registerToken '("token_id")'`
+`
+dfx canister call agent registerToken '("<token_id>", "<name>", "<symbol>", "<logo>")'
+`
 
 ### Minting tokens to users
 `dfx canister call agent mintTokenToUser '("recipent", "tokenId", tokenAmount)'`

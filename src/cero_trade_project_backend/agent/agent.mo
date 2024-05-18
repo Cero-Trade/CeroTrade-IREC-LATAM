@@ -76,7 +76,7 @@ actor class Agent() = this {
 
 
   /// register token on platform
-  public shared({ caller }) func registerToken(tokenId: Text, name: Text, symbol: Text, logo: Text): async Principal {
+  public shared({ caller }) func registerToken(tokenId: Text, name: Text, symbol: Text, logo: Text): async T.CanisterId {
     IC_MANAGEMENT.adminValidation(caller, controllers);
     await TokenIndex.registerToken(tokenId, name, symbol, logo);
   };

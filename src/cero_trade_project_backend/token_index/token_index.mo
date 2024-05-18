@@ -90,7 +90,7 @@ actor class TokenIndex() = this {
   };
 
   /// register [tokenDirectory] collection
-  public shared({ caller }) func registerToken<system>(tokenId: Text, name: Text, symbol: Text, logo: Text): async Principal {
+  public shared({ caller }) func registerToken<system>(tokenId: Text, name: Text, symbol: Text, logo: Text): async T.CanisterId {
     _callValidation(caller);
 
     if (tokenId == "") throw Error.reject("Must to provide a tokenId");
