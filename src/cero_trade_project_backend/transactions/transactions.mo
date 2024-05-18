@@ -59,7 +59,12 @@ shared({ caller = transactionIndexCaller }) actor class Transactions() {
           // filter priceRange
           let filterPrice: Bool = switch(priceRange) {
             case(null) true;
-            case(?range) txInfo.priceE8S.e8s >= range[0].e8s and txInfo.priceE8S.e8s <= range[1].e8s;
+            case(?range) {
+              switch(txInfo.priceE8S) {
+                case(null) true;
+                case(?priceE8S) priceE8S.e8s >= range[0].e8s and priceE8S.e8s <= range[1].e8s;
+              };
+            };
           };
 
           // filter by txType
