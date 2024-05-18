@@ -26,7 +26,6 @@
         :rules="[globalRules.required]"
         @keyup="({ key }) => { if (key === 'Enter') registerTokenCall() }"
       ></v-text-field>
-
       <v-text-field
         v-model="registerTokenForm.symbol"
         label="Token symbol"
@@ -35,13 +34,19 @@
         :rules="[globalRules.required]"
         @keyup="({ key }) => { if (key === 'Enter') registerTokenCall() }"
       ></v-text-field>
-
       <v-img-input
         v-model="registerTokenForm.logo"
-        label="Token logo"
-        :rules="[globalRules.required]"
+        width="150"
+        height="100"
+        prepend-icon=""
+        :rules="[globalRules.listRequired]"
+        style="flex-basis: 100%;"
         @keyup="({ key }) => { if (key === 'Enter') registerTokenCall() }"
-      ></v-img-input>
+      >
+        <template #label>
+          <span class="flex-center mx-auto">Token logo</span>
+        </template>
+      </v-img-input>
     </v-form>
     <v-btn
       width="150px"
