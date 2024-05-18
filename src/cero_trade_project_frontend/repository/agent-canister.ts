@@ -4,7 +4,7 @@ import avatar from '@/assets/sources/images/avatar-online.svg'
 import store from "@/store";
 import { UserProfileModel } from "@/models/user-profile-model";
 import { AssetType, TokenModel } from "@/models/token-model";
-import { TokensICP, TransactionHistoryInfo, TransactionInfo, TxMethodDef, TxTypeDef } from "@/models/transaction-model";
+import { Tokens, TokensICP, TransactionHistoryInfo, TransactionInfo, TxMethodDef, TxTypeDef } from "@/models/transaction-model";
 import { MarketplaceInfo, MarketplaceSellersInfo } from "@/models/marketplace-model";
 import { Principal } from "@dfinity/principal";
 import moment from "moment";
@@ -223,6 +223,10 @@ export class AgentCanister {
         item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
         item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
         item.mwh = Number(item.mwh)
+
+        // convert e8s to icp
+        item.lowerPriceE8S = Number(item.lowerPriceE8S['e8s']) / variables.e8sEquivalence
+        item.higherPriceE8S = Number(item.higherPriceE8S['e8s']) / variables.e8sEquivalence
       }
 
       response.totalPages = Number(response.totalPages)
@@ -265,6 +269,9 @@ export class AgentCanister {
         item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
         item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
         item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
+
+        // convert e8s to icp
+        item.priceE8S = Number(item.priceE8S['e8s']) / variables.e8sEquivalence
       }
 
       response.totalPages = Number(response.totalPages)
@@ -277,7 +284,7 @@ export class AgentCanister {
   }
 
 
-  static async purchaseToken(tokenId: string, recipent: string, amount: number, price: number): Promise<TransactionInfo> {
+  static async purchaseToken(tokenId: string, recipent: string, amount: number, price: TokensICP): Promise<TransactionInfo> {
     try {
       /* TODO replace in future for recipent */
       const testingRecipent = Principal.fromText("2vxsx-fae");
@@ -294,7 +301,7 @@ export class AgentCanister {
   }
 
 
-  static async putOnSale(tokenId: string, quantity: number, price: number): Promise<void> {
+  static async putOnSale(tokenId: string, quantity: number, price: TokensICP): Promise<void> {
     try {
       const res = await agent().sellToken(tokenId, quantity, price)
       console.log(res);
@@ -337,7 +344,7 @@ export class AgentCanister {
     length?: number,
     txType?: TxTypeDef,
     country?: string,
-    priceRange?: TokensICP[],
+    priceRange?: Tokens[],
     mwhRange?: number[],
     assetTypes?: AssetType[],
     method?: TxMethodDef,
@@ -373,6 +380,9 @@ export class AgentCanister {
         item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
         item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
         item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
+
+        // convert e8s to icp
+        item.priceE8S = Number(item.priceE8S['e8s']) / variables.e8sEquivalence
       }
 
       response.totalPages = Number(response.totalPages)

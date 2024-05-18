@@ -1,7 +1,7 @@
 import { AssetInfoModel } from "./token-model";
-import { UserProfileModel } from "./user-profile-model";
 
-export type TokensICP = { e8s: number };
+export type TokensICP = number;
+export type Tokens = { e8s: number };
 
 export enum TxMethod {
   blockchainTransfer = 'blockchainTransfer',
@@ -25,7 +25,7 @@ export interface TransactionInfo {
   tokenId: string;
   txType: TxTypeDef;
   tokenAmount: number;
-  priceICP: TokensICP;
+  priceE8S: TokensICP;
   date: Date;
   method: TxMethodDef;
 }
@@ -38,7 +38,7 @@ export interface TransactionHistoryInfo {
   assetInfo: AssetInfoModel;
   txType: TxTypeDef;
   tokenAmount: number;
-  priceICP: TokensICP;
+  priceE8S: TokensICP;
   date: Date;
   method: TxMethodDef;
 }

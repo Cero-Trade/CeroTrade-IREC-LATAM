@@ -25,6 +25,7 @@ export default {
     },
   },
   dateFormat: 'YYYY-MM-DDTHH:mm:ss.sssssssssZ',
+  e8sEquivalence: 1000000000,
   isProduction: process.env.NODE_ENV === 'production',
 
   isLogged() {

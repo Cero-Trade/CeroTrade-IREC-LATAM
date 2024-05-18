@@ -180,8 +180,8 @@ actor class Agent() = this {
       data: [{
         tokenId: T.TokenId;
         mwh: T.TokenAmount;
-        lowerPriceICP: T.Price;
-        higherPriceICP: T.Price;
+        lowerPriceE8S: T.Price;
+        higherPriceE8S: T.Price;
       }] = marketInfo;
       totalPages: Nat;
     } = await Marketplace.getMarketplace(page, length, priceRange);
@@ -189,16 +189,16 @@ actor class Agent() = this {
     let tokensInfo: [T.AssetInfo] = await TokenIndex.getTokensInfo(Array.map<{
       tokenId: T.TokenId;
       mwh: T.TokenAmount;
-      lowerPriceICP: T.Price;
-      higherPriceICP: T.Price;
+      lowerPriceE8S: T.Price;
+      higherPriceE8S: T.Price;
     }, Text>(marketInfo, func x = x.tokenId));
 
     // map market and asset values to marketplace info
     let marketplace: [T.MarketplaceInfo] = Array.map<{
       tokenId: T.TokenId;
       mwh: T.TokenAmount;
-      lowerPriceICP: T.Price;
-      higherPriceICP: T.Price;
+      lowerPriceE8S: T.Price;
+      higherPriceE8S: T.Price;
     }, T.MarketplaceInfo>(marketInfo, func (item) {
       let assetInfo = Array.find<T.AssetInfo>(tokensInfo, func (info) { info.tokenId == item.tokenId });
 
@@ -208,8 +208,8 @@ actor class Agent() = this {
           {
             tokenId = item.tokenId;
             mwh = item.mwh;
-            lowerPriceICP = item.lowerPriceICP;
-            higherPriceICP = item.higherPriceICP;
+            lowerPriceE8S = item.lowerPriceE8S;
+            higherPriceE8S = item.higherPriceE8S;
             assetInfo = {
               tokenId = item.tokenId;
               assetType = #hydro("hydro");
@@ -244,8 +244,8 @@ actor class Agent() = this {
           {
             tokenId = item.tokenId;
             mwh = item.mwh;
-            lowerPriceICP = item.lowerPriceICP;
-            higherPriceICP = item.higherPriceICP;
+            lowerPriceE8S = item.lowerPriceE8S;
+            higherPriceE8S = item.higherPriceE8S;
             assetInfo = asset;
           }
         };
@@ -297,7 +297,7 @@ actor class Agent() = this {
         tokenId: T.TokenId;
         userId: T.UID;
         mwh: T.TokenAmount;
-        priceICP: T.Price;
+        priceE8S: T.Price;
       }] = marketInfo;
       totalPages: Nat;
     } = await Marketplace.getMarketplaceSellers(page, length, tokenId, priceRange, excludedCaller);
@@ -307,7 +307,7 @@ actor class Agent() = this {
       tokenId: T.TokenId;
       userId: T.UID;
       mwh: T.TokenAmount;
-      priceICP: T.Price;
+      priceE8S: T.Price;
     }, Text>(marketInfo, func x = x.tokenId));
 
 
@@ -316,7 +316,7 @@ actor class Agent() = this {
       tokenId: T.TokenId;
       userId: T.UID;
       mwh: T.TokenAmount;
-      priceICP: T.Price;
+      priceE8S: T.Price;
     }, T.MarketplaceSellersInfo>(marketInfo, func (item) {
 
       let assetInfo: ?T.AssetInfo = Array.find<T.AssetInfo>(tokensInfo, func (info) { info.tokenId == item.tokenId });
@@ -327,7 +327,7 @@ actor class Agent() = this {
         sellerId = item.userId;
         tokenId = item.tokenId;
         mwh = item.mwh;
-        priceICP = item.priceICP;
+        priceE8S = item.priceE8S;
         assetInfo;
       }
     });
@@ -355,14 +355,16 @@ actor class Agent() = this {
   };
 
 
-  // TODO evaluate how to calc price and amount
   /// performe token purchase
   public shared({ caller }) func purchaseToken(tokenId: T.TokenId, recipent: T.Beneficiary, tokenAmount: T.TokenAmount, priceICP: Float): async T.TransactionInfo {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
+    // transform icp to e8s
+    let priceE8S = { e8s: Nat64 = Int64.toNat64(Float.toInt64(priceICP)) * 1_000_000_000 };
+
     // performe ICP transfer and update token canister
-    let txIndex = await TokenIndex.purchaseToken(caller, recipent, tokenId, tokenAmount);
+    let txIndex = await TokenIndex.purchaseToken(caller, recipent, tokenId, tokenAmount, priceE8S);
 
     // build transaction
     let txInfo: T.TransactionInfo = {
@@ -373,7 +375,7 @@ actor class Agent() = this {
       tokenId;
       txType = #purchase("purchase");
       tokenAmount;
-      priceICP = ?{ e8s = Int64.toNat64(Float.toInt64(priceICP)) };
+      priceE8S = ?priceE8S;
       date = DateTime.now().toText();
       method = #blockchainTransfer("blockchainTransfer");
     };
@@ -413,6 +415,9 @@ actor class Agent() = this {
     // transfer tokens from user to marketplace
     let txIndex = await TokenIndex.sellInMarketplace(caller, tokenId, quantity);
 
+    // transform icp to e8s
+    let priceE8S = { e8s: Nat64 = Int64.toNat64(Float.toInt64(priceICP)) * 1_000_000_000 };
+
     // build transaction
     let txInfo: T.TransactionInfo = {
       transactionId = "0";
@@ -422,7 +427,7 @@ actor class Agent() = this {
       tokenId;
       txType = #putOnSale("putOnSale");
       tokenAmount = quantity;
-      priceICP = ?{ e8s = Int64.toNat64(Float.toInt64(priceICP)) };
+      priceE8S = ?priceE8S;
       date = DateTime.now().toText();
       method = #blockchainTransfer("blockchainTransfer");
     };
@@ -432,7 +437,7 @@ actor class Agent() = this {
     await UserIndex.updateTransactions(caller, txId);
 
     // put tokens on marketplace reference
-    await Marketplace.putOnSale(tokenId, quantity, caller, { e8s = Int64.toNat64(Float.toInt64(priceICP)) });
+    await Marketplace.putOnSale(tokenId, quantity, caller, priceE8S);
 
     txInfo
   };
@@ -463,7 +468,7 @@ actor class Agent() = this {
       tokenId;
       txType = #takeOffMarketplace("takeOffMarketplace");
       tokenAmount = quantity;
-      priceICP = null;
+      priceE8S = null;
       date = DateTime.now().toText();
       method = #blockchainTransfer("blockchainTransfer");
     };
@@ -505,7 +510,7 @@ actor class Agent() = this {
       tokenId;
       txType = #redemption("redemption");
       tokenAmount = quantity;
-      priceICP = null;
+      priceE8S = null;
       date = DateTime.now().toText();
       method = #blockchainTransfer("blockchainTransfer");
     };
@@ -572,7 +577,7 @@ actor class Agent() = this {
         txIndex = item.txIndex;
         txType = item.txType;
         tokenAmount = item.tokenAmount;
-        priceICP = item.priceICP;
+        priceE8S = item.priceE8S;
         date = item.date;
         method = item.method;
         from = item.from;

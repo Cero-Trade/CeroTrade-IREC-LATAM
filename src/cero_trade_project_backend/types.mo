@@ -86,7 +86,7 @@ module {
     tokenId: TokenId;
     txType: TxType;
     tokenAmount: TokenAmount;
-    priceICP: ?Price;
+    priceE8S: ?Price;
     date: Text;
     method: TxMethod;
   };
@@ -99,7 +99,7 @@ module {
     assetInfo: ?AssetInfo;
     txType: TxType;
     tokenAmount: TokenAmount;
-    priceICP: ?Price;
+    priceE8S: ?Price;
     date: Text;
     method: TxMethod;
   };
@@ -161,8 +161,8 @@ module {
 
   public type MarketplaceInfo = {
     tokenId: Text;
-    lowerPriceICP: Price;
-    higherPriceICP: Price;
+    lowerPriceE8S: Price;
+    higherPriceE8S: Price;
     assetInfo: AssetInfo;
     mwh: TokenAmount;
   };
@@ -170,7 +170,7 @@ module {
   public type MarketplaceSellersInfo = {
     tokenId: Text;
     sellerId: UID;
-    priceICP: Price;
+    priceE8S: Price;
     assetInfo: ?AssetInfo;
     mwh: TokenAmount;
   };
@@ -182,7 +182,7 @@ module {
 
   public type UserTokenInfo = {
     quantity: TokenAmount;
-    priceICP: Price;
+    priceE8S: Price;
   };
 
   public type WasmModuleName = {
@@ -205,6 +205,7 @@ module {
     seller: ICPTypes.Account;
     buyer: ICPTypes.Account;
     amount: Nat;
+    priceE8S: Price;
   };
 
   public type RedeemArgs = {

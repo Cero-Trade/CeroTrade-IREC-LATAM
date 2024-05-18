@@ -506,8 +506,7 @@ actor class TokenIndex() = this {
   };
 
 
-  // TODO evaluate how to cal price and amount
-  public shared({ caller }) func purchaseToken(buyer: T.UID, seller: T.Beneficiary, tokenId: T.TokenId, amount: T.TokenAmount): async T.TxIndex {
+  public shared({ caller }) func purchaseToken(buyer: T.UID, seller: T.Beneficiary, tokenId: T.TokenId, amount: T.TokenAmount, priceE8S: T.Price): async T.TxIndex {
     _callValidation(caller);
 
     let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
@@ -517,6 +516,7 @@ actor class TokenIndex() = this {
         seller = { owner = seller; subaccount = null };
         buyer = { owner = buyer; subaccount = null };
         amount;
+        priceE8S;
       });
     };
 

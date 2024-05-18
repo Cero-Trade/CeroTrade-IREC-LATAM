@@ -77,13 +77,13 @@ actor class Marketplace() = this {
   };
 
   // new token in market
-  private func _newTokensInMarket(tokenId : T.TokenId, user : T.UID, quantity : T.TokenAmount, priceICP: T.Price): async () {
+  private func _newTokensInMarket(tokenId : T.TokenId, user : T.UID, quantity : T.TokenAmount, priceE8S: T.Price): async () {
     // user is selling a new token
     let usersxToken = HM.HashMap<T.UID, T.UserTokenInfo>(4, Principal.equal, Principal.hash);
 
     let userxTokenInfo = {
       quantity;
-      priceICP;
+      priceE8S;
     };
 
     usersxToken.put(user, userxTokenInfo);
@@ -99,7 +99,7 @@ actor class Marketplace() = this {
   };
 
   // update token information
-  private func _updatetokenMarketInfo(user : T.UID, tokenId : T.TokenId, quantity : T.TokenAmount, priceICP: T.Price): async () {
+  private func _updatetokenMarketInfo(user : T.UID, tokenId : T.TokenId, quantity : T.TokenAmount, priceE8S: T.Price): async () {
     switch (tokensInMarket.get(tokenId)) {
       case (null) {
         throw Error.reject("Token not found in the market");
@@ -116,7 +116,7 @@ actor class Marketplace() = this {
 
             let updatedUserxToken = {
               quantity = newQuantity;
-              priceICP;
+              priceE8S;
             };
 
             info.usersxToken.put(user, updatedUserxToken);
@@ -134,17 +134,17 @@ actor class Marketplace() = this {
   };
 
   // handles new token information on market
-  public shared({ caller }) func putOnSale(tokenId : T.TokenId, quantity : T.TokenAmount, user : T.UID, priceICP: T.Price) : async () {
+  public shared({ caller }) func putOnSale(tokenId : T.TokenId, quantity : T.TokenAmount, user : T.UID, priceE8S: T.Price) : async () {
     _callValidation(caller);
 
     // Check if the user is already selling the token
     let isSelling = await isSellingToken(user, tokenId);
     if (isSelling != false) {
       // update the existing sale
-      await _updatetokenMarketInfo(user, tokenId, quantity, priceICP);
+      await _updatetokenMarketInfo(user, tokenId, quantity, priceE8S);
     } else {
       // add the new sale
-      await _newTokensInMarket(tokenId, user, quantity, priceICP);
+      await _newTokensInMarket(tokenId, user, quantity, priceE8S);
     };
   };
 
@@ -197,7 +197,7 @@ actor class Marketplace() = this {
             throw Error.reject("User is not selling this token");
           };
           case (?usersxTokenInfo) {
-            return usersxTokenInfo.priceICP;
+            return usersxTokenInfo.priceE8S;
           };
         };
       };
@@ -322,18 +322,18 @@ actor class Marketplace() = this {
 
     for ((_, data) in hashmap.entries()) {
       switch (min) {
-        case (null) { min := ?data.priceICP; };
+        case (null) { min := ?data.priceE8S; };
         case (?m) {
-          if (data.priceICP.e8s < m.e8s) {
-            min := ?data.priceICP;
+          if (data.priceE8S.e8s < m.e8s) {
+            min := ?data.priceE8S;
           };
         };
       };
       switch (max) {
-        case (null) { max := ?data.priceICP; };
+        case (null) { max := ?data.priceE8S; };
         case (?m) {
-          if (data.priceICP.e8s > m.e8s) {
-            max := ?data.priceICP;
+          if (data.priceE8S.e8s > m.e8s) {
+            max := ?data.priceE8S;
           };
         };
       };
@@ -347,8 +347,8 @@ actor class Marketplace() = this {
     data: [{
       tokenId: T.TokenId;
       mwh: T.TokenAmount;
-      lowerPriceICP: T.Price;
-      higherPriceICP: T.Price;
+      lowerPriceE8S: T.Price;
+      higherPriceE8S: T.Price;
     }];
     totalPages: Nat;
   } {
@@ -367,8 +367,8 @@ actor class Marketplace() = this {
     let marketplace = Buffer.Buffer<{
       tokenId: T.TokenId;
       mwh: T.TokenAmount;
-      lowerPriceICP: T.Price;
-      higherPriceICP: T.Price;
+      lowerPriceE8S: T.Price;
+      higherPriceE8S: T.Price;
     }>(50);
 
     // calculate range of elements returned
@@ -377,11 +377,11 @@ actor class Marketplace() = this {
 
     for ((currentTokenId, tokenMarketInfo) in tokensInMarket.entries()) {
       let (min, max) = _getMinMax(tokenMarketInfo.usersxToken);
-      let lowerPriceICP: T.Price = switch(min) {
+      let lowerPriceE8S: T.Price = switch(min) {
         case(null) { { e8s = 0 } };
         case(?minPrice) minPrice;
       };
-      let higherPriceICP: T.Price = switch(max) {
+      let higherPriceE8S: T.Price = switch(max) {
         case(null) { { e8s = 0 } };
         case(?maxPrice) maxPrice;
       };
@@ -389,15 +389,15 @@ actor class Marketplace() = this {
       // filter by tokenId
       let filterRange: Bool = switch(priceRange) {
         case(null) true;
-        case(?range) lowerPriceICP.e8s >= range[0].e8s and higherPriceICP.e8s <= range[1].e8s;
+        case(?range) lowerPriceE8S.e8s >= range[0].e8s and higherPriceE8S.e8s <= range[1].e8s;
       };
 
       if (i >= startIndex and i < startIndex + maxLength and filterRange) {
         marketplace.add({
           tokenId = currentTokenId;
           mwh = tokenMarketInfo.totalQuantity;
-          lowerPriceICP;
-          higherPriceICP;
+          lowerPriceE8S;
+          higherPriceE8S;
         });
       };
       i += 1;
@@ -410,8 +410,8 @@ actor class Marketplace() = this {
       data = Buffer.toArray<{
         tokenId: T.TokenId;
         mwh: T.TokenAmount;
-        lowerPriceICP: T.Price;
-        higherPriceICP: T.Price;
+        lowerPriceE8S: T.Price;
+        higherPriceE8S: T.Price;
       }>(marketplace);
       totalPages;
     }
@@ -424,7 +424,7 @@ actor class Marketplace() = this {
       tokenId: T.TokenId;
       userId: T.UID;
       mwh: T.TokenAmount;
-      priceICP: T.Price;
+      priceE8S: T.Price;
     }];
     totalPages: Nat;
   } {
@@ -444,7 +444,7 @@ actor class Marketplace() = this {
       tokenId: T.TokenId;
       userId: T.UID;
       mwh: T.TokenAmount;
-      priceICP: T.Price;
+      priceE8S: T.Price;
     }>(50);
 
     // calculate range of elements returned
@@ -471,7 +471,7 @@ actor class Marketplace() = this {
                 userId;
                 tokenId = currentTokenId;
                 mwh = userToken.quantity;
-                priceICP = userToken.priceICP;
+                priceE8S = userToken.priceE8S;
               });
             };
 
@@ -481,7 +481,7 @@ actor class Marketplace() = this {
               // filter by tokenId
               let filterRange: Bool = switch(priceRange) {
                 case(null) true;
-                case(?range) userToken.priceICP.e8s >= range[0].e8s and userToken.priceICP.e8s <= range[1].e8s;
+                case(?range) userToken.priceE8S.e8s >= range[0].e8s and userToken.priceE8S.e8s <= range[1].e8s;
               };
 
               if (currentTokenId == token and filterRange) {
@@ -489,7 +489,7 @@ actor class Marketplace() = this {
                   userId;
                   tokenId = currentTokenId;
                   mwh = userToken.quantity;
-                  priceICP = userToken.priceICP;
+                  priceE8S = userToken.priceE8S;
                 });
               };
             };
@@ -507,7 +507,7 @@ actor class Marketplace() = this {
         tokenId: T.TokenId;
         userId: T.UID;
         mwh: T.TokenAmount;
-        priceICP: T.Price;
+        priceE8S: T.Price;
       }>(marketplace);
       totalPages;
     }

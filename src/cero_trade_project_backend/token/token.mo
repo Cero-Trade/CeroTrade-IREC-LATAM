@@ -677,12 +677,6 @@ shared ({ caller = _owner }) actor class Token (
     Nat64.fromNat(Int.abs(Time.now()));
   };
 
-  stable var bonus : Nat = 1000_0000_0000;
-  stable var bonusDen : Nat = 1_0000_0000;
-  stable var mintedCount = 0;
-  stable var mintedGoal = 1_000_000_0000_0000;
-
-  // TODO evaluate how to cal price and amount
   public shared ({ caller }) func purchaseInMarketplace(args : T.PurchaseInMarketplaceArgs) : async ICRC1.TransferResult {
       _callValidation(caller);
 
@@ -696,7 +690,7 @@ shared ({ caller = _owner }) actor class Token (
           spender_subaccount = null;
           memo = null;
           created_at_time = ?time64();
-          amount = args.amount-10000;
+          amount = args.price;
         });
       } catch(e){
         D.trap("cannot transfer from failed" # Error.message(e));
@@ -709,16 +703,6 @@ shared ({ caller = _owner }) actor class Token (
         };
       };
 
-
-      let mintingAmount = (bonus/bonusDen) * args.amount;
-      mintedCount += mintingAmount;
-
-      //recalculate bonus
-      if(mintedCount > mintedGoal){
-        bonus := bonus/2;
-        mintedCount := 0;
-      };
-
       let newtokens = await* icrc1().mint_tokens(args.marketplace, {
         to = {
           owner = args.buyer.owner;
@@ -727,7 +711,7 @@ shared ({ caller = _owner }) actor class Token (
             case(?val) ?Blob.fromArray(val);
           };
         };               // The account receiving the newly minted tokens.
-        amount = mintingAmount;           // The number of tokens to mint.
+        amount = args.amount;           // The number of tokens to mint.
         created_at_time = ?time64();
         memo = null;
       });

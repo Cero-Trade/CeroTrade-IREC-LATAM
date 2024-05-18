@@ -1434,7 +1434,7 @@ async function getMarketPlace() {
       list.push({
         seller: item.sellerId,
         country: item.assetInfo.specifications.country,
-        price: item.priceICP.e8s,
+        price: item.priceE8S.e8s,
         mwh: item.mwh,
       })
     }

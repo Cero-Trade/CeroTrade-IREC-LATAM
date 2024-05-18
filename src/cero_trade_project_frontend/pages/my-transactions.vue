@@ -498,7 +498,7 @@ async function getData() {
         mwh: item.tokenAmount,
         asset_id: item.assetInfo.tokenId,
         date: item.date.toDateString(),
-        price: item.priceICP.e8s,
+        price: item.priceE8S.e8s,
         via: item.method,
       })
     }
