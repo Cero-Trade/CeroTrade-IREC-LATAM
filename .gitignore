@@ -12,6 +12,7 @@
 
 # dfx temporary files
 .dfx/
+candid
 
 # generated files
 **/declarations/

@@ -251,10 +251,8 @@ actor class TokenIndex() = this {
     };
   };
 
-  /// get canister id that allow current user
-  public shared({ caller }) func getTokenCanister(tokenId: T.TokenId): async T.CanisterId {
-    _callValidation(caller);
-
+  /// get canister id that allow current token
+  public query func getTokenCanister(tokenId: T.TokenId): async T.CanisterId {
     switch (tokenDirectory.get(tokenId)) {
       case (null) { throw Error.reject("Token not found"); };
       case (?cid) { return cid };

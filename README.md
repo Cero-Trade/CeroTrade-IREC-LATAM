@@ -131,3 +131,6 @@ https://mops.one/
 
 ### ICRC Standard Implementation
 https://github.com/PanIndustrial-Org/ICRC_fungible
+
+### NNS local deployment
+https://internetcomputer.org/docs/current/developer-docs/developer-tools/cli-tools/cli-reference/dfx-nns
