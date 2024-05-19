@@ -56,7 +56,9 @@ dfx canister call agent registerToken '("<token_id>", "<name>", "<symbol>", "<lo
 `
 
 ### Minting tokens to users
-`dfx canister call agent mintTokenToUser '("recipent", "tokenId", tokenAmount)'`
+`
+dfx canister call agent mintTokenToUser '("<recipent>", "<tokenId>", <tokenAmount>)'
+`
 
 ### Generate wasm modules (Note: only cero-devs)
 ```
