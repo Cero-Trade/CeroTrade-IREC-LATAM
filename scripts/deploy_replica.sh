@@ -15,7 +15,9 @@ cp src/declarations/marketplace/* .dfx/local/canisters/marketplace/
 cp src/declarations/http_service/* .dfx/local/canisters/http_service/
 
 # Generate env.mo and deploy canisters
-dfx deploy cero_trade_project_frontend
+dfx canister create --all
+dfx build cero_trade_project_frontend
+dfx canister install cero_trade_project_frontend
 dfx deploy agent
 
 if [ "$arg" = "modules" ]; then
