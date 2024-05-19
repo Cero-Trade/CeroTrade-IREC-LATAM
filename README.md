@@ -70,11 +70,10 @@ dfx build transactions
 
 Generate the wasm module like array run command below
 
-Note: must to add package.json field -> "type": "module",
 ```
-npm run generate-wasm -- module=token
-npm run generate-wasm -- module=users
-npm run generate-wasm -- module=transactions
+npm run generate-wasm token
+npm run generate-wasm users
+npm run generate-wasm transactions
 ```
 
 Push the current ./wasm_modules commit folder to github
