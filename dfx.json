@@ -67,13 +67,19 @@
   "defaults": {
     "build": {
       "args": "",
-      "packtool": "mops sources"
+      "packtool": "mops sources",
+      "replica": {
+        "subnet_type": "system"
+      }
     }
   },
   "networks": {
     "local": {
-      "bind": "127.0.0.1:4943",
-      "type": "ephemeral"
+      "bind": "127.0.0.1:8080",
+      "type": "ephemeral",
+      "replica": {
+        "subnet_type": "system"
+      }
     },
     "ic": {
       "providers": [
