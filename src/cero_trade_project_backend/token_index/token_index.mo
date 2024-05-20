@@ -88,7 +88,12 @@ actor class TokenIndex() = this {
     // update deployed canisters
     for((tokenId, canister_id) in tokenDirectory.entries()) {
       await IC_MANAGEMENT.ic.install_code({
-        arg = to_candid(tokenId);
+        arg = to_candid({
+          name = await Token.canister(canister_id).icrc1_name();
+          symbol = await Token.canister(canister_id).icrc1_symbol();
+          logo = await Token.canister(canister_id).icrc1_logo();
+          assetMetadata = await Token.canister(canister_id).assetMetadata();
+        });
         wasm_module;
         mode = #upgrade;
         canister_id;

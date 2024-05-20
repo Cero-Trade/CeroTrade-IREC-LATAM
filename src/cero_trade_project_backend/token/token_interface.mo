@@ -13,6 +13,7 @@ module TokenInterface {
 
   public type Token = actor {
     icrc1_name: query () -> async Text;
+    icrc1_logo: query () -> async Text;
     icrc1_symbol: query () -> async Text;
     icrc1_decimals: query () -> async Nat8;
     icrc1_fee: query () -> async ICRC1.Balance;

@@ -306,6 +306,10 @@ shared ({ caller = _owner }) actor class Token(
     icrc1().symbol();
   };
 
+  public shared query func icrc1_logo() : async Text {
+    args.logo;
+  };
+
   public shared query func icrc1_decimals() : async Nat8 {
     icrc1().decimals();
   };
