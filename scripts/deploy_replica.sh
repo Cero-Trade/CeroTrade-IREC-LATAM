@@ -1,7 +1,14 @@
 #!/bin/bash
 
 # Define optional modules argument
-arg=$1
+modulesArg=$1
+nnsArg=$2
+
+# Deploy nns canisters
+if [ "$nnsArg" = "nns" ]; then
+  dfx nns install
+  dfx nns import
+fi
 
 # Generate declarations
 mkdir -p .dfx/local/canisters/cero_trade_project_frontend && cp assetstorage.did .dfx/local/canisters/cero_trade_project_frontend/assetstorage.did
@@ -24,7 +31,7 @@ dfx deploy agent
 
 npm run upgrade-controllers $(dfx identity get-principal)
 
-if [ "$arg" = "modules" ]; then
+if [ "$modulesArg" = "modules" ]; then
   # Register wasm modules
   dfx canister create token
   dfx build token
