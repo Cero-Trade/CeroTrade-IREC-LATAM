@@ -43,7 +43,7 @@ shared ({ caller = _owner }) actor class Token(
       owner = _owner;
       subaccount = null;
     };
-    max_supply = null;
+    max_supply = ?args.assetMetadata.volumeProduced;
     min_burn_amount = ?10000;
     max_memo = ?64;
     advanced_settings = null;
@@ -540,33 +540,9 @@ shared ({ caller = _owner }) actor class Token(
   };
 
   public shared ({ caller }) func icrc1_transfer(args : ICRC1.TransferArgs) : async ICRC1.TransferResult {
+    // TODO implements cero trade comission here
+
     switch (await* icrc1().transfer_tokens(caller, args, false, null)) {
-      case (#trappable(val)) val;
-      case (#awaited(val)) val;
-      case (#err(#trappable(err))) D.trap(err);
-      case (#err(#awaited(err))) D.trap(err);
-    };
-  };
-
-  public shared ({ caller }) func mintTokenToUser(args : T.MintToUserArgs) : async ICRC1.TransferResult {
-    _callValidation(caller);
-
-    switch (await* icrc1().transfer_tokens(args.funder, {
-      from_subaccount = null;
-      to = {
-        owner = args.to.owner;
-        subaccount = switch (args.to.subaccount) {
-          case (null) null;
-          case (?value) ?Blob.fromArray(value);
-        };
-      };
-      amount = args.amount;
-      fee = null;
-      memo = null;
-      /// The time at which the transaction was created.
-      /// If this is set, the canister will check for duplicate transactions and reject them.
-      created_at_time = ?time64();
-    }, false, null)) {
       case (#trappable(val)) val;
       case (#awaited(val)) val;
       case (#err(#trappable(err))) D.trap(err);
@@ -585,6 +561,11 @@ shared ({ caller = _owner }) actor class Token(
     };
   };
 
+  private func time64() : Nat64 {
+    Nat64.fromNat(Int.abs(Time.now()));
+  };
+
+  // TODO review this function
   public shared ({ caller }) func sellInMarketplace(args : T.SellInMarketplaceArgs) : async ICRC1.TransferResult {
     _callValidation(caller);
 
@@ -618,6 +599,7 @@ shared ({ caller = _owner }) actor class Token(
     };
   };
 
+  // TODO review this function
   public shared ({ caller }) func takeOffMarketplace(args : T.SellInMarketplaceArgs) : async ICRC1.TransferResult {
     _callValidation(caller);
 
@@ -651,6 +633,7 @@ shared ({ caller = _owner }) actor class Token(
     };
   };
 
+  // TODO review this function
   public shared ({ caller }) func redeem(args : T.RedeemArgs) : async ICRC1.TransferResult {
     _callValidation(caller);
 
@@ -676,10 +659,7 @@ shared ({ caller = _owner }) actor class Token(
     };
   };
 
-  private func time64() : Nat64 {
-    Nat64.fromNat(Int.abs(Time.now()));
-  };
-
+  // TODO review this function
   public shared ({ caller }) func purchaseInMarketplace(args : T.PurchaseInMarketplaceArgs) : async ICRC1.TransferResult {
     _callValidation(caller);
 

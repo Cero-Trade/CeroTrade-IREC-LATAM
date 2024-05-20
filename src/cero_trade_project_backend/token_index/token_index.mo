@@ -8,9 +8,10 @@ import Array "mo:base/Array";
 import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
 import Nat64 "mo:base/Nat64";
+import Int "mo:base/Int";
 import Iter "mo:base/Iter";
+import Time "mo:base/Time";
 import Buffer "mo:base/Buffer";
-// import Result "mo:base/Result";
 import Debug "mo:base/Debug";
 
 import ICRC1 "mo:icrc1-mo/ICRC1";
@@ -282,18 +283,21 @@ actor class TokenIndex() = this {
   };
 
 
-  public shared({ caller }) func mintTokenToUser(funder: T.UID, recipent: T.Beneficiary, tokenId: T.TokenId, amount: T.TokenAmount): async T.TxIndex {
+  public shared({ caller }) func mintTokenToUser(recipent: T.Beneficiary, tokenId: T.TokenId, amount: T.TokenAmount): async T.TxIndex {
     _callValidation(caller);
 
     let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
-      case (?cid) await Token.canister(cid).mintTokenToUser({
-        funder;
-        amount;
+      case (?cid) await Token.canister(cid).icrc1_transfer({
+        from_subaccount = null;
         to = {
           owner = recipent;
           subaccount = null;
         };
+        amount;
+        fee = null;
+        memo = null;
+        created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
       });
     };
 

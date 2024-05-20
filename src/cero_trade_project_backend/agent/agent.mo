@@ -95,7 +95,7 @@ actor class Agent() = this {
     if (not (await UserIndex.checkPrincipal(recipent))) throw Error.reject(notExists);
 
     // mint token to user token collection
-    let txIndex = await TokenIndex.mintTokenToUser(caller, recipent, tokenId, tokenAmount);
+    let txIndex = await TokenIndex.mintTokenToUser(recipent, tokenId, tokenAmount);
 
     // update user portfolio
     await UserIndex.updatePorfolio(recipent, tokenId);

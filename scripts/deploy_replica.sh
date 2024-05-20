@@ -50,9 +50,9 @@ if [ "$modulesArg" = "modules" ]; then
   git add ./wasm_modules
   git commit -m "config/new-wasm-modules"
   git push
-
-  # Register wasm module into backend canisters
-  dfx canister call agent registerWasmModule '(variant { "token" = "token" })'
-  dfx canister call agent registerWasmModule '(variant { "users" = "users" })'
-  dfx canister call agent registerWasmModule '(variant { "transactions" = "transactions" })'
 fi
+
+# Register wasm module into backend canisters
+dfx canister call agent registerWasmModule '(variant { "token" = "token" })'
+dfx canister call agent registerWasmModule '(variant { "users" = "users" })'
+dfx canister call agent registerWasmModule '(variant { "transactions" = "transactions" })'

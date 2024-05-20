@@ -8,6 +8,9 @@ import Text "mo:base/Text";
 import Error "mo:base/Error";
 import Array "mo:base/Array";
 
+// types
+import ENV "./env";
+
 module IC_MANAGEMENT_CANISTER_INTERFACE {
   public let ic : IC = actor ("aaaaa-aa");
 
@@ -18,6 +21,8 @@ module IC_MANAGEMENT_CANISTER_INTERFACE {
 
   // global admin assert validation
   public func adminValidation(caller: Principal, controllers: ?[Principal]) {
+    if (ENV.DFX_NETWORK != "ic") return assert true;
+
     assert switch(controllers) {
       case(null) true;
       case(?value) Array.find<Principal>(value, func x = x == caller) != null;
