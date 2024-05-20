@@ -50,6 +50,11 @@ actor class Agent() = this {
   /// delete user into cero trade
   public shared({ caller }) func deleteUser(): async() { await UserIndex.deleteUser(caller) };
 
+  /// get canister controllers
+  public shared({ caller }) func getControllers(): async ?[Principal] {
+    IC_MANAGEMENT.adminValidation(caller, controllers);
+    await IC_MANAGEMENT.getControllers(Principal.fromActor(this));
+  };
 
   /// register canister controllers
   public shared({ caller }) func registerControllers(): async () {
@@ -76,7 +81,10 @@ actor class Agent() = this {
 
 
   /// register token on platform
-  public shared({ caller }) func registerToken(tokenId: Text, name: Text, symbol: Text, logo: Text): async T.CanisterId {
+  public shared({ caller }) func registerToken(tokenId: Text, name: Text, symbol: Text, logo: Text): async {
+    canisterId : T.CanisterId;
+    assetMetadata : T.AssetInfo;
+  } {
     IC_MANAGEMENT.adminValidation(caller, controllers);
     await TokenIndex.registerToken(tokenId, name, symbol, logo);
   };

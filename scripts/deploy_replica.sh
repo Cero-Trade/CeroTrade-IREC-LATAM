@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Define optional modules argument
 arg=$1
 
@@ -19,6 +21,8 @@ dfx canister create --all
 dfx build cero_trade_project_frontend
 dfx canister install cero_trade_project_frontend
 dfx deploy agent
+
+npm run upgrade-controllers $(dfx identity get-principal)
 
 if [ "$arg" = "modules" ]; then
   # Register wasm modules

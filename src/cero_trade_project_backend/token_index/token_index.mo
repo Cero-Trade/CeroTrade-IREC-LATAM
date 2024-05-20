@@ -48,6 +48,12 @@ actor class TokenIndex() = this {
   /// get size of tokenDirectory collection
   public query func length(): async Nat { tokenDirectory.size() };
 
+  /// get canister controllers
+  public shared({ caller }) func getControllers(): async ?[Principal] {
+    IC_MANAGEMENT.adminValidation(caller, controllers);
+    await IC_MANAGEMENT.getControllers(Principal.fromActor(this));
+  };
+
   /// register canister controllers
   public shared({ caller }) func registerControllers(): async () {
     _callValidation(caller);
@@ -90,7 +96,10 @@ actor class TokenIndex() = this {
   };
 
   /// register [tokenDirectory] collection
-  public shared({ caller }) func registerToken<system>(tokenId: Text, name: Text, symbol: Text, logo: Text): async T.CanisterId {
+  public shared({ caller }) func registerToken<system>(tokenId: Text, name: Text, symbol: Text, logo: Text): async {
+    canisterId : T.CanisterId;
+    assetMetadata : T.AssetInfo;
+  } {
     _callValidation(caller);
 
     if (tokenId == "") throw Error.reject("Must to provide a tokenId");
@@ -104,7 +113,14 @@ actor class TokenIndex() = this {
         /// create canister
         let { canister_id } = await IC_MANAGEMENT.ic.create_canister({
           settings = ?{
-            controllers;
+            controllers = switch(controllers) {
+              case(null) null;
+              case(?value) {
+                let currentControllers = Buffer.fromArray<Principal>(value);
+                currentControllers.add(Principal.fromActor(this));
+                ?Buffer.toArray<Principal>(currentControllers);
+              };
+            };
             compute_allocation = null;
             memory_allocation = null;
             freezing_threshold = null;
@@ -163,15 +179,22 @@ actor class TokenIndex() = this {
 
           Debug.print(debug_show ("later install_canister: " # Nat.toText(Cycles.balance())));
 
-          await Token.canister(canister_id).admin_init();
+          try {
+            await Token.canister(canister_id).admin_init();
+          } catch (error) {
+            Debug.print(Error.message(error));
+          };
 
           tokenDirectory.put(tokenId, canister_id);
-          return canister_id
+          return {
+            canisterId = canister_id;
+            assetMetadata;
+          }
         } catch (error) {
           await IC_MANAGEMENT.ic.stop_canister({ canister_id });
           await IC_MANAGEMENT.ic.delete_canister({ canister_id });
           throw Error.reject(Error.message(error));
-        }
+        };
       };
     };
   };

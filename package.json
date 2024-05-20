@@ -8,9 +8,11 @@
     "lint": "eslint . --fix --ignore-path .gitignore",
     "dev": "vite",
     "preview": "vite preview",
-    "generate-wasm": "chmod +x scripts/generate_wasm.sh && scripts/generate_wasm.sh",
-    "generate-env.mo": "chmod +x scripts/generate_env.mo.sh && scripts/generate_env.mo.sh",
-    "deploy": "chmod +x scripts/deploy_replica.sh && scripts/deploy_replica.sh"
+    "generate-wasm": "bash scripts/generate_wasm.sh",
+    "generate-env.mo": "bash scripts/generate_env.mo.sh",
+    "deploy": "bash scripts/deploy_replica.sh",
+    "upgrade-controllers": "bash scripts/upgrade_controllers.sh",
+    "deploy-token": "bash scripts/deploy_token.sh"
   },
   "dependencies": {
     "@connect2ic/core": "^0.1.6",

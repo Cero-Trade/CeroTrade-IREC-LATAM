@@ -52,6 +52,12 @@ actor class UserIndex() = this {
   /// get size of usersDirectory collection
   public query func length(): async Nat { usersDirectory.size() };
 
+  /// get canister controllers
+  public shared({ caller }) func getControllers(): async ?[Principal] {
+    IC_MANAGEMENT.adminValidation(caller, controllers);
+    await IC_MANAGEMENT.getControllers(Principal.fromActor(this));
+  };
+
   /// register canister controllers
   public shared({ caller }) func registerControllers(): async () {
     _callValidation(caller);
@@ -184,7 +190,14 @@ actor class UserIndex() = this {
     Cycles.add<system>(300_000_000_000);
     let { canister_id } = await IC_MANAGEMENT.ic.create_canister({
       settings = ?{
-        controllers;
+        controllers = switch(controllers) {
+          case(null) null;
+          case(?value) {
+            let currentControllers = Buffer.fromArray<Principal>(value);
+            currentControllers.add(Principal.fromActor(this));
+            ?Buffer.toArray<Principal>(currentControllers);
+          };
+        };
         compute_allocation = null;
         memory_allocation = null;
         freezing_threshold = null;
