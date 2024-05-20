@@ -26,7 +26,6 @@ module {
   public type TxIndex = Nat;
   public type TokenAmount = Nat;
   public type Price = { e8s: Nat64 };
-  public type AccountIdentifier = Blob.Blob;
   
   //
   // UsersAgent
@@ -47,7 +46,6 @@ module {
     companyLogo: ?CompanyLogo;
     vaultToken: Text;
     principal: Principal;
-    ledger: AccountIdentifier;
     portfolio: [TokenId];
     transactions: [TransactionId];
     beneficiaries: [Beneficiary];

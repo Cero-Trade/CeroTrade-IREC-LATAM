@@ -20,6 +20,5 @@ module UsersInterface {
     getBeneficiaries: query (uid: T.UID) -> async [T.Beneficiary];
     getUserToken: query (uid: T.UID) -> async Text;
     validateToken: query (uid: T.UID, token: Text) -> async Bool;
-    getLedger: query (uid: T.UID) -> async Blob;
   };
 }
