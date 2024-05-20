@@ -81,10 +81,7 @@ actor class Agent() = this {
 
 
   /// register token on platform
-  public shared({ caller }) func registerToken(tokenId: Text, name: Text, symbol: Text, logo: Text): async {
-    canisterId : T.CanisterId;
-    assetMetadata : T.AssetInfo;
-  } {
+  public shared({ caller }) func registerToken(tokenId: Text, name: Text, symbol: Text, logo: Text): async T.CanisterId {
     IC_MANAGEMENT.adminValidation(caller, controllers);
     await TokenIndex.registerToken(tokenId, name, symbol, logo);
   };
@@ -98,7 +95,7 @@ actor class Agent() = this {
     if (not (await UserIndex.checkPrincipal(recipent))) throw Error.reject(notExists);
 
     // mint token to user token collection
-    let txIndex = await TokenIndex.mintTokenToUser(recipent, tokenId, tokenAmount);
+    let txIndex = await TokenIndex.mintTokenToUser(caller, recipent, tokenId, tokenAmount);
 
     // update user portfolio
     await UserIndex.updatePorfolio(recipent, tokenId);

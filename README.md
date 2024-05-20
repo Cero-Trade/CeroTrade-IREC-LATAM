@@ -52,7 +52,7 @@ dfx canister call agent registerWasmModule '(variant { "transactions" = "transac
 
 ### Deploying token canisters
 `
-npm run deploy-token <token_id> <name> <symbol> "<logo>"
+dfx canister call agent registerToken '("<token_id>" "<name>" "<symbol>" "<logo>")'
 `
 
 ### Minting tokens to users

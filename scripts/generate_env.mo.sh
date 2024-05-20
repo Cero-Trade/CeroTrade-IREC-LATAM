@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Define the name of the output file
 outputFile="src/cero_trade_project_backend/env.mo"
 

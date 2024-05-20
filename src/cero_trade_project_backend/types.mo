@@ -193,6 +193,12 @@ module {
 
   public let LOW_MEMORY_LIMIT: Nat = 50000;
 
+  public type MintToUserArgs = {
+    funder: UID;
+    to: ICPTypes.Account;
+    amount: ICPTypes.Balance;
+  };
+
   public type SellInMarketplaceArgs = {
     seller: Principal;
     seller_subaccount: ?ICPTypes.Subaccount;
@@ -204,7 +210,7 @@ module {
     marketplace: CanisterId;
     seller: ICPTypes.Account;
     buyer: ICPTypes.Account;
-    amount: Nat;
+    amount: ICPTypes.Balance;
     priceE8S: Price;
   };
 

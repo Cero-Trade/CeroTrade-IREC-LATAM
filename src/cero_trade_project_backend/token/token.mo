@@ -548,6 +548,32 @@ shared ({ caller = _owner }) actor class Token(
     };
   };
 
+  public shared ({ caller }) func mintTokenToUser(args : T.MintToUserArgs) : async ICRC1.TransferResult {
+    _callValidation(caller);
+
+    switch (await* icrc1().transfer_tokens(args.funder, {
+      from_subaccount = null;
+      to = {
+        owner = args.to.owner;
+        subaccount = switch (args.to.subaccount) {
+          case (null) null;
+          case (?value) ?Blob.fromArray(value);
+        };
+      };
+      amount = args.amount;
+      fee = null;
+      memo = null;
+      /// The time at which the transaction was created.
+      /// If this is set, the canister will check for duplicate transactions and reject them.
+      created_at_time = ?time64();
+    }, false, null)) {
+      case (#trappable(val)) val;
+      case (#awaited(val)) val;
+      case (#err(#trappable(err))) D.trap(err);
+      case (#err(#awaited(err))) D.trap(err);
+    };
+  };
+
   public shared ({ caller }) func mint(args : ICRC1.Mint) : async ICRC1.TransferResult {
     if (caller != owner) { D.trap("Unauthorized") };
 

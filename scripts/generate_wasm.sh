@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Define module name
 moduleName=$1
 

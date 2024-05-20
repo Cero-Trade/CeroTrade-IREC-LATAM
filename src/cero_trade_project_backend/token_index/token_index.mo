@@ -96,10 +96,7 @@ actor class TokenIndex() = this {
   };
 
   /// register [tokenDirectory] collection
-  public shared({ caller }) func registerToken<system>(tokenId: Text, name: Text, symbol: Text, logo: Text): async {
-    canisterId : T.CanisterId;
-    assetMetadata : T.AssetInfo;
-  } {
+  public shared({ caller }) func registerToken<system>(tokenId: Text, name: Text, symbol: Text, logo: Text): async T.CanisterId {
     _callValidation(caller);
 
     if (tokenId == "") throw Error.reject("Must to provide a tokenId");
@@ -179,17 +176,10 @@ actor class TokenIndex() = this {
 
           Debug.print(debug_show ("later install_canister: " # Nat.toText(Cycles.balance())));
 
-          try {
-            await Token.canister(canister_id).admin_init();
-          } catch (error) {
-            Debug.print(Error.message(error));
-          };
+          await Token.canister(canister_id).admin_init();
 
           tokenDirectory.put(tokenId, canister_id);
-          return {
-            canisterId = canister_id;
-            assetMetadata;
-          }
+          return canister_id;
         } catch (error) {
           await IC_MANAGEMENT.ic.stop_canister({ canister_id });
           await IC_MANAGEMENT.ic.delete_canister({ canister_id });
@@ -291,23 +281,19 @@ actor class TokenIndex() = this {
     };
   };
 
-  ///////////////////////////////////////////////
 
-  public shared({ caller }) func mintTokenToUser(uid: T.UID, tokenId: T.TokenId, amount: T.TokenAmount): async T.TxIndex {
+  public shared({ caller }) func mintTokenToUser(funder: T.UID, recipent: T.Beneficiary, tokenId: T.TokenId, amount: T.TokenAmount): async T.TxIndex {
     _callValidation(caller);
 
     let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
-      case (?cid) await Token.canister(cid).icrc1_transfer({
-        memo = null;
-        created_at_time=null;
-        from_subaccount = null;
+      case (?cid) await Token.canister(cid).mintTokenToUser({
+        funder;
         amount;
         to = {
-          owner = uid;
+          owner = recipent;
           subaccount = null;
         };
-        fee = null
       });
     };
 
