@@ -37,9 +37,16 @@ cp src/declarations/http_service/* .dfx/local/canisters/http_service/
 Generate env.mo and deploy canisters
 
 ```
-dfx deploy cero_trade_project_frontend
+dfx canister create --all
+dfx build cero_trade_project_frontend
+dfx canister install cero_trade_project_frontend
 dfx deploy agent
 ```
+
+Update canister controllers
+`
+npm run upgrade-controllers $(dfx identity get-principal)
+`
 
 ### Register wasm modules
 

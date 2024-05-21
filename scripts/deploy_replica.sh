@@ -29,6 +29,7 @@ dfx build cero_trade_project_frontend
 dfx canister install cero_trade_project_frontend
 dfx deploy agent
 
+# Update canister controllers
 npm run upgrade-controllers $(dfx identity get-principal)
 
 if [ "$modulesArg" = "modules" ]; then
