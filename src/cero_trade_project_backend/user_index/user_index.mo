@@ -489,15 +489,4 @@ actor class UserIndex() = this {
       case(?cid) await Users.canister(cid).getTransactionIds(uid);
     };
   };
-
-
-  /// get user account ledger
-  public shared({ caller }) func getUserLedger(uid: T.UID): async Blob {
-    _callValidation(caller);
-
-    switch(usersDirectory.get(uid)) {
-      case (null) throw Error.reject(notExists);
-      case(?cid) await Users.canister(cid).getLedger(uid);
-    };
-  };
 }
