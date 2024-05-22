@@ -3,12 +3,13 @@ import { getLedgerCanister as ledger } from "@/services/icp-provider";
 import moment from "moment";
 import { Account, ApproveResult, Icrc1BlockIndex } from "src/declarations/nns-ledger/nns-ledger.did";
 import { AgentCanister } from "./agent-canister";
+import variables from "@/mixins/variables";
 
 export class LedgerCanister {
   static async approveICP({ spender, amount }: { spender: Account, amount: Tokens }): Promise<Icrc1BlockIndex> {
     try {
       const result = await ledger().icrc2_approve({
-        fee: [10_000],
+        fee: [],
         memo: [],
         from_subaccount: [],
         created_at_time: [moment().milliseconds()],
@@ -36,12 +37,13 @@ export class LedgerCanister {
   }): Promise<Icrc1BlockIndex> {
     try {
       const tokenCanister = await AgentCanister.getTokenCanister(tokenId),
+      fee = 10_000,
       result = await ledger().icrc2_approve({
-        fee: [10_000],
+        fee: [fee],
         memo: [],
         from_subaccount: [],
         created_at_time: [],
-        amount: amount.e8s,
+        amount: amount.e8s + variables.ceroComisison + fee,
         expected_allowance: [],
         expires_at: [moment().add(7, 'days').milliseconds()],
         spender: {
