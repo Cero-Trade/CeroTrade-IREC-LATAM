@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # Define optional modules argument
-modulesArg=$1
-nnsArg=$2
+firstArg=$1
+secondArg=$2
 
 # Deploy nns canisters
-if [ "$nnsArg" = "nns" ]; then
+if [ "$firstArg" = "nns" ] || [ "$secondArg" = "nns" ]; then
   dfx nns install
   dfx nns import
 fi
@@ -32,7 +32,7 @@ dfx deploy agent
 # Update canister controllers
 npm run upgrade-controllers $(dfx identity get-principal)
 
-if [ "$modulesArg" = "modules" ]; then
+if [ "$firstArg" = "modules" ] || [ "$secondArg" = "modules" ]; then
   # Register wasm modules
   dfx canister create token
   dfx build token

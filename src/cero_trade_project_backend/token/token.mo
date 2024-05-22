@@ -23,31 +23,33 @@ import T "../types";
 import ICPTypes "../ICPTypes";
 
 shared ({ caller = _owner }) actor class Token(
-  args : {
+  init_args : {
     name : Text;
     symbol : Text;
     logo : Text;
     assetMetadata : T.AssetInfo;
+    comission : ICRC1.Balance;
+    comissionHolder : ICPTypes.Account;
   }
 ) = this {
   private func _callValidation(caller : Principal) { assert _owner == caller };
 
   /// ICRC 1 args
   let icrc1_args : ICRC1.InitArgs = {
-    name = ?args.name;
-    symbol = ?args.symbol;
-    logo = ?args.logo;
+    name = ?init_args.name;
+    symbol = ?init_args.symbol;
+    logo = ?init_args.logo;
     decimals = 8;
     fee = ? #Fixed(0);
     minting_account = ?{
       owner = _owner;
       subaccount = null;
     };
-    max_supply = ?args.assetMetadata.volumeProduced;
+    max_supply = ?init_args.assetMetadata.volumeProduced;
     min_burn_amount = ?1;
     max_memo = ?64;
     advanced_settings = null;
-    metadata = ? #Map([("assetMetadata", #Map([("assetId", #Text(args.assetMetadata.tokenId)), ("assetType", #Text(switch (args.assetMetadata.assetType) { case (#hydro(hydro)) hydro; case (#ocean(ocean)) ocean; case (#geothermal(geothermal)) geothermal; case (#biome(biome)) biome; case (#wind(wind)) wind; case (#sun(sun)) sun; case (#other(other)) other })), ("startDate", #Text(args.assetMetadata.startDate)), ("endDate", #Text(args.assetMetadata.endDate)), ("co2Emission", #Text(args.assetMetadata.co2Emission)), ("radioactivityEmnission", #Text(args.assetMetadata.radioactivityEmnission)), ("volumeProduced", #Nat(args.assetMetadata.volumeProduced)), ("deviceDetails", #Map([("name", #Text(args.assetMetadata.deviceDetails.name)), ("deviceType", #Text(args.assetMetadata.deviceDetails.deviceType)), ("group", #Text(switch (args.assetMetadata.deviceDetails.group) { case (#hydro(hydro)) hydro; case (#ocean(ocean)) ocean; case (#geothermal(geothermal)) geothermal; case (#biome(biome)) biome; case (#wind(wind)) wind; case (#sun(sun)) sun; case (#other(other)) other })), ("description", #Text(args.assetMetadata.deviceDetails.description))])), ("specifications", #Map([("deviceCode", #Text(args.assetMetadata.specifications.deviceCode)), ("capacity", #Nat(args.assetMetadata.specifications.capacity)), ("location", #Text(args.assetMetadata.specifications.location)), ("latitude", #Text(args.assetMetadata.specifications.latitude)), ("longitude", #Text(args.assetMetadata.specifications.longitude)), ("address", #Text(args.assetMetadata.specifications.address)), ("stateProvince", #Text(args.assetMetadata.specifications.stateProvince)), ("country", #Text(args.assetMetadata.specifications.country))])), ("dates", #Array(Array.map<Text, { #Text : Text }>(args.assetMetadata.dates, func x = #Text(x))))]))]);
+    metadata = ? #Map([("assetMetadata", #Map([("assetId", #Text(init_args.assetMetadata.tokenId)), ("assetType", #Text(switch (init_args.assetMetadata.assetType) { case (#hydro(hydro)) hydro; case (#ocean(ocean)) ocean; case (#geothermal(geothermal)) geothermal; case (#biome(biome)) biome; case (#wind(wind)) wind; case (#sun(sun)) sun; case (#other(other)) other })), ("startDate", #Text(init_args.assetMetadata.startDate)), ("endDate", #Text(init_args.assetMetadata.endDate)), ("co2Emission", #Text(init_args.assetMetadata.co2Emission)), ("radioactivityEmnission", #Text(init_args.assetMetadata.radioactivityEmnission)), ("volumeProduced", #Nat(init_args.assetMetadata.volumeProduced)), ("deviceDetails", #Map([("name", #Text(init_args.assetMetadata.deviceDetails.name)), ("deviceType", #Text(init_args.assetMetadata.deviceDetails.deviceType)), ("group", #Text(switch (init_args.assetMetadata.deviceDetails.group) { case (#hydro(hydro)) hydro; case (#ocean(ocean)) ocean; case (#geothermal(geothermal)) geothermal; case (#biome(biome)) biome; case (#wind(wind)) wind; case (#sun(sun)) sun; case (#other(other)) other })), ("description", #Text(init_args.assetMetadata.deviceDetails.description))])), ("specifications", #Map([("deviceCode", #Text(init_args.assetMetadata.specifications.deviceCode)), ("capacity", #Nat(init_args.assetMetadata.specifications.capacity)), ("location", #Text(init_args.assetMetadata.specifications.location)), ("latitude", #Text(init_args.assetMetadata.specifications.latitude)), ("longitude", #Text(init_args.assetMetadata.specifications.longitude)), ("address", #Text(init_args.assetMetadata.specifications.address)), ("stateProvince", #Text(init_args.assetMetadata.specifications.stateProvince)), ("country", #Text(init_args.assetMetadata.specifications.country))])), ("dates", #Array(Array.map<Text, { #Text : Text }>(init_args.assetMetadata.dates, func x = #Text(x))))]))]);
     fee_collector = null;
     transaction_window = null;
     permitted_drift = null;
@@ -297,6 +299,14 @@ shared ({ caller = _owner }) actor class Token(
     return cert_store;
   };
 
+  public shared query func icrc1_logo() : async Text {
+    init_args.logo;
+  };
+
+  public shared query func tx_comission() : async ICRC1.Balance {
+    init_args.comission;
+  };
+
   /// Functions for the ICRC1 token standard
   public shared query func icrc1_name() : async Text {
     icrc1().name();
@@ -304,10 +314,6 @@ shared ({ caller = _owner }) actor class Token(
 
   public shared query func icrc1_symbol() : async Text {
     icrc1().symbol();
-  };
-
-  public shared query func icrc1_logo() : async Text {
-    args.logo;
   };
 
   public shared query func icrc1_decimals() : async Nat8 {
@@ -544,8 +550,15 @@ shared ({ caller = _owner }) actor class Token(
   };
 
   public shared ({ caller }) func icrc1_transfer(args : ICRC1.TransferArgs) : async ICRC1.TransferResult {
-    // TODO implements cero trade comission here
+    // performe comission
+    let _comisison_block = switch (await ICPTypes.ICPLedger.icrc2_transfer_from({ from = { owner = caller; subaccount = null }; to = init_args.comissionHolder; fee = null; spender_subaccount = null; memo = null; created_at_time = ?time64(); amount = init_args.comission })) {
+      case (#Ok(block)) block;
+      case (#Err(err)) {
+        D.trap("cannot performe comission from failed" # debug_show (err));
+      };
+    };
 
+    // transfer tokens
     switch (await* icrc1().transfer_tokens(caller, args, false, null)) {
       case (#trappable(val)) val;
       case (#awaited(val)) val;
@@ -572,25 +585,32 @@ shared ({ caller = _owner }) actor class Token(
   public shared ({ caller }) func transferInMarketplace(args : T.TransferInMarketplaceArgs) : async ICRC1.TransferResult {
     _callValidation(caller);
 
-    switch (await* icrc1().transfer_tokens(args.from.owner, {
-      from_subaccount = switch (args.from.subaccount) {
-        case (null) null;
-        case (?value) ?Blob.fromArray(value);
-      };
-      to = {
-        owner = args.to.owner;
-        subaccount = switch (args.to.subaccount) {
-          case (null) null;
-          case (?value) ?Blob.fromArray(value);
-        };
-      };
-      amount = args.amount;
-      fee = null;
-      memo = null;
-      /// The time at which the transaction was created.
-      /// If this is set, the canister will check for duplicate transactions and reject them.
-      created_at_time = ?time64();
-    }, false, null)) {
+    switch (
+      await* icrc1().transfer_tokens(
+        args.from.owner,
+        {
+          from_subaccount = switch (args.from.subaccount) {
+            case (null) null;
+            case (?value) ?Blob.fromArray(value);
+          };
+          to = {
+            owner = args.to.owner;
+            subaccount = switch (args.to.subaccount) {
+              case (null) null;
+              case (?value) ?Blob.fromArray(value);
+            };
+          };
+          amount = args.amount;
+          fee = null;
+          memo = null;
+          /// The time at which the transaction was created.
+          /// If this is set, the canister will check for duplicate transactions and reject them.
+          created_at_time = ?time64();
+        },
+        false,
+        null,
+      )
+    ) {
       case (#trappable(val)) val;
       case (#awaited(val)) val;
       case (#err(#trappable(err))) D.trap(err);
@@ -601,15 +621,29 @@ shared ({ caller = _owner }) actor class Token(
   public shared ({ caller }) func redeem(args : T.RedeemArgs) : async ICRC1.TransferResult {
     _callValidation(caller);
 
-    switch (await* icrc1().burn_tokens(args.owner.owner, {
-        from_subaccount = switch (args.owner.subaccount) {
-          case (null) null;
-          case (?value) ?Blob.fromArray(value);
-        };
-        amount = args.amount;
-        memo = null;
-        created_at_time = ?time64();
-      }, false)) {
+    // performe comission
+    let _comisison_block = switch (await ICPTypes.ICPLedger.icrc2_transfer_from({ from = args.owner; to = init_args.comissionHolder; fee = null; spender_subaccount = null; memo = null; created_at_time = ?time64(); amount = init_args.comission })) {
+      case (#Ok(block)) block;
+      case (#Err(err)) {
+        D.trap("cannot performe comission from failed" # debug_show (err));
+      };
+    };
+
+    switch (
+      await* icrc1().burn_tokens(
+        args.owner.owner,
+        {
+          from_subaccount = switch (args.owner.subaccount) {
+            case (null) null;
+            case (?value) ?Blob.fromArray(value);
+          };
+          amount = args.amount;
+          memo = null;
+          created_at_time = ?time64();
+        },
+        false,
+      )
+    ) {
       case (#trappable(val)) val;
       case (#awaited(val)) val;
       case (#err(#trappable(err))) D.trap(err);
@@ -620,7 +654,13 @@ shared ({ caller = _owner }) actor class Token(
   public shared ({ caller }) func purchaseInMarketplace(args : T.PurchaseInMarketplaceArgs) : async ICRC1.TransferResult {
     _callValidation(caller);
 
-    // TODO implements cero trade comission here
+    // performe comission
+    let _comisison_block = switch (await ICPTypes.ICPLedger.icrc2_transfer_from({ from = args.buyer; to = init_args.comissionHolder; fee = null; spender_subaccount = null; memo = null; created_at_time = ?time64(); amount = init_args.comission })) {
+      case (#Ok(block)) block;
+      case (#Err(err)) {
+        D.trap("cannot performe comission from failed" # debug_show (err));
+      };
+    };
 
     // transfer icp token
     let result = try {
@@ -644,27 +684,33 @@ shared ({ caller = _owner }) actor class Token(
       };
     };
 
-
     // transfer canister token
-    switch (await* icrc1().transfer_tokens(args.marketplace.owner, {
-      from_subaccount = switch (args.marketplace.subaccount) {
-        case (null) null;
-        case (?value) ?Blob.fromArray(value);
-      };
-      to = {
-        owner = args.buyer.owner;
-        subaccount = switch (args.buyer.subaccount) {
-          case (null) null;
-          case (?value) ?Blob.fromArray(value);
-        };
-      };
-      amount = args.amount;
-      fee = null;
-      memo = null;
-      /// The time at which the transaction was created.
-      /// If this is set, the canister will check for duplicate transactions and reject them.
-      created_at_time = ?time64();
-    }, false, null)) {
+    switch (
+      await* icrc1().transfer_tokens(
+        args.marketplace.owner,
+        {
+          from_subaccount = switch (args.marketplace.subaccount) {
+            case (null) null;
+            case (?value) ?Blob.fromArray(value);
+          };
+          to = {
+            owner = args.buyer.owner;
+            subaccount = switch (args.buyer.subaccount) {
+              case (null) null;
+              case (?value) ?Blob.fromArray(value);
+            };
+          };
+          amount = args.amount;
+          fee = null;
+          memo = null;
+          /// The time at which the transaction was created.
+          /// If this is set, the canister will check for duplicate transactions and reject them.
+          created_at_time = ?time64();
+        },
+        false,
+        null,
+      )
+    ) {
       case (#trappable(val)) val;
       case (#awaited(val)) val;
       case (#err(#trappable(err))) D.trap(err);

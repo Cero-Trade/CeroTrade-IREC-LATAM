@@ -22,16 +22,19 @@ import HttpService "canister:http_service";
 // interfaces
 import IC_MANAGEMENT "../ic_management_canister_interface";
 import Token "../token/token_interface";
+import ICPTypes "../ICPTypes";
 
 // types
 import T "../types";
 // import HT "../http_service/http_service_types";
 import ENV "../env";
 
-actor class TokenIndex() = this {
+shared({ caller = owner }) actor class TokenIndex() = this {
   stable var wasm_module: Blob = "";
 
   stable var controllers: ?[Principal] = null;
+
+  stable var comissionHolder: ICPTypes.Account = { owner; subaccount = null };
 
   var tokenDirectory: HM.HashMap<T.TokenId, T.CanisterId> = HM.HashMap(16, Text.equal, Text.hash);
   stable var tokenDirectoryEntries : [(T.TokenId, T.CanisterId)] = [];
@@ -53,6 +56,18 @@ actor class TokenIndex() = this {
   public shared({ caller }) func getControllers(): async ?[Principal] {
     IC_MANAGEMENT.adminValidation(caller, controllers);
     await IC_MANAGEMENT.getControllers(Principal.fromActor(this));
+  };
+
+  /// get comisison holder
+  public shared({ caller }) func getComisisonHolder(): async ICPTypes.Account {
+    IC_MANAGEMENT.adminValidation(caller, controllers);
+    comissionHolder
+  };
+
+  /// set comisison holder
+  public shared({ caller }) func setComisisonHolder(holder: ICPTypes.Account): async () {
+    IC_MANAGEMENT.adminValidation(caller, controllers);
+    comissionHolder := holder
   };
 
   /// register canister controllers
@@ -93,6 +108,8 @@ actor class TokenIndex() = this {
           symbol = await Token.canister(canister_id).icrc1_symbol();
           logo = await Token.canister(canister_id).icrc1_logo();
           assetMetadata = await Token.canister(canister_id).assetMetadata();
+          comission = Nat64.toNat(T.ceroComission);
+          comissionHolder;
         });
         wasm_module;
         mode = #upgrade;
@@ -174,7 +191,7 @@ actor class TokenIndex() = this {
 
           // install canister code
           await IC_MANAGEMENT.ic.install_code({
-            arg = to_candid({ name; symbol; logo; assetMetadata });
+            arg = to_candid({ name; symbol; logo; assetMetadata; comission = Nat64.toNat(T.ceroComission); comissionHolder });
             wasm_module;
             mode = #install;
             canister_id;

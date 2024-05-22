@@ -49,5 +49,6 @@ module TokenInterface {
     admin_update_icrc4: (requests: [ICRC4.UpdateLedgerInfoRequest]) -> async [Bool];
     admin_init: () -> async ();
     deposit_cycles: () -> async ();
+    tx_comission: () -> async ICRC1.Balance;
   };
 }

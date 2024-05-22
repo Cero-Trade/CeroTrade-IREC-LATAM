@@ -18,6 +18,7 @@ module {
 
   // amount in e8s equal to 1 ICP
   public let e8sEquivalence: Nat64 = 1_00_000_000;
+  public let ceroComission: Nat64 = 10_000;
 
   public type UID = Principal;
   public type CanisterId = Principal;
