@@ -50,7 +50,7 @@ export default defineConfig((userConfig) => {
       uniqueEnv[upperKey] = env[key];
   }
 
-  let declarations = 'module {\n';
+  let declarations = 'module ENV {\n';
   for (let key in uniqueEnv) declarations += `  public let ${key}: Text = "${uniqueEnv[key]}";\n`;
   declarations += '}';
   fs.writeFile('src/cero_trade_project_backend/env.mo', declarations, () => {});
@@ -74,6 +74,9 @@ export default defineConfig((userConfig) => {
       'process.env': {
         BASE_URL: env.VITE_BASE_URL,
         SECURE_STORAGE_NAME_SPACE: env.VITE_SECURE_STORAGE_NAME_SPACE,
+        SECURE_STORAGE_KEY: env.VITE_SECURE_STORAGE_KEY,
+        E8S_EQUIVALENCE: env.VITE_E8S_EQUIVALENCE,
+        CERO_COMISSION: env.VITE_CERO_COMISSION,
         DFX_NETWORK: env.DFX_NETWORK,
         ...canisterDefinitions,
       },

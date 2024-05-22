@@ -8,8 +8,11 @@ import Text "mo:base/Text";
 import Error "mo:base/Error";
 import Array "mo:base/Array";
 
-// types
+// interfaces
 import ICPTypes "./ICPTypes";
+
+// types
+import ENV "./env";
 
 module {
   // TODO try to change to simplest format to better filtering
@@ -17,8 +20,18 @@ module {
   public let dateFormat: Text = "YYYY-MM-DDTHH:mm:ss.sssssssssZ";
 
   // amount in e8s equal to 1 ICP
-  public let e8sEquivalence: Nat64 = 1_00_000_000;
-  public let ceroComission: Nat64 = 10_000;
+  public func getE8sEquivalence(): Nat64 {
+    Nat64.fromNat(switch(Nat.fromText(ENV.VITE_E8S_EQUIVALENCE)) {
+      case(null) 0;
+      case(?value) value;
+    });
+  };
+  public func getCeroComission(): Nat64 {
+    Nat64.fromNat(switch(Nat.fromText(ENV.VITE_CERO_COMISSION)) {
+      case(null) 0;
+      case(?value) value;
+    });
+  };
 
   public type UID = Principal;
   public type CanisterId = Principal;

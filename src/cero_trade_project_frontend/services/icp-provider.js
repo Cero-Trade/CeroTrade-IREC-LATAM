@@ -1,10 +1,12 @@
+// TODO implements ledger declaration
+
 import { Actor, HttpAgent } from "@dfinity/agent";
 import { AuthClient } from "@dfinity/auth-client";
 import { app as vueApp } from "@/main";
 
 // canisters
 import * as agentCanister from "../../../.dfx/local/canisters/agent"
-import * as ledgerCanister from 'dfx-generated/ledger';
+// import * as ledgerCanister from 'dfx-generated/ledger';
 
 
 export const canisterImpl = { canisterId: process.env.CANISTER_ID_CERO_TRADE_PROJECT_FRONTEND }
@@ -60,7 +62,7 @@ export const getErrorMessage = (error) => {
   return message.split(httpBody)[1].trim()
 }
 
-export const getLedgerCanister = () => createActor(ledgerCanister.canisterId, ledgerCanister.idlFactory)
+// export const getLedgerCanister = () => createActor(ledgerCanister.canisterId, ledgerCanister.idlFactory)
 
 
 export const useAgentCanister = () => createActor(agentCanister.canisterId, agentCanister.idlFactory)

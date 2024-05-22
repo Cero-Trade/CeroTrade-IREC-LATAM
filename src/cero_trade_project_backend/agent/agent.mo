@@ -425,7 +425,7 @@ actor class Agent() = this {
     let txIndex = await TokenIndex.sellInMarketplace(caller, tokenId, quantity);
 
     // transform icp to e8s
-    let priceE8S = { e8s: Nat64 = Int64.toNat64(Float.toInt64(priceICP)) * T.e8sEquivalence };
+    let priceE8S = { e8s: Nat64 = Int64.toNat64(Float.toInt64(priceICP)) * T.getE8sEquivalence() };
 
     // build transaction
     let txInfo: T.TransactionInfo = {

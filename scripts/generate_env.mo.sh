@@ -15,7 +15,7 @@ if [ ! -f "$envFile" ]; then
 fi
 
 # Initialize the declarations string
-declarations="module {\n"
+declarations="module ENV {\n"
 
 # Read the .env file line by line
 while IFS='=' read -r key value; do

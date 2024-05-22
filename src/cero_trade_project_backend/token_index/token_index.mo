@@ -108,7 +108,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
           symbol = await Token.canister(canister_id).icrc1_symbol();
           logo = await Token.canister(canister_id).icrc1_logo();
           assetMetadata = await Token.canister(canister_id).assetMetadata();
-          comission = Nat64.toNat(T.ceroComission);
+          comission = Nat64.toNat(T.getCeroComission());
           comissionHolder;
         });
         wasm_module;
@@ -191,7 +191,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
 
           // install canister code
           await IC_MANAGEMENT.ic.install_code({
-            arg = to_candid({ name; symbol; logo; assetMetadata; comission = Nat64.toNat(T.ceroComission); comissionHolder });
+            arg = to_candid({ name; symbol; logo; assetMetadata; comission = Nat64.toNat(T.getCeroComission()); comissionHolder });
             wasm_module;
             mode = #install;
             canister_id;
