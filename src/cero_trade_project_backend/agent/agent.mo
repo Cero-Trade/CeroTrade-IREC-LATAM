@@ -359,6 +359,10 @@ actor class Agent() = this {
     { data = filteredMarketplace; totalPages }
   };
 
+  /// get canister id that allow current token
+  public func getTokenCanister(tokenId: T.TokenId): async T.CanisterId {
+    await TokenIndex.getTokenCanister(tokenId);
+  };
 
   /// performe token purchase
   public shared({ caller }) func purchaseToken(tokenId: T.TokenId, recipent: T.Beneficiary, tokenAmount: T.TokenAmount): async T.TransactionInfo {

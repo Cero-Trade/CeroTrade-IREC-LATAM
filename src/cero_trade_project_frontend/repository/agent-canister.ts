@@ -198,6 +198,16 @@ export class AgentCanister {
   }
 
 
+  static async getTokenCanister(tokenId: string): Promise<Principal> {
+    try {
+      return await agent().getTokenCanister(tokenId) as Principal
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+
   static async getMarketplace({ page, length, assetTypes, country, priceRange }: {
     page?: number,
     length?: number,

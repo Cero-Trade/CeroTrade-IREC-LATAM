@@ -46,7 +46,7 @@ export default defineConfig((userConfig) => {
   const uniqueEnv = {};
   for (let key in env) {
     let upperKey = key.toUpperCase();
-    if (upperKey.includes('DFX') || upperKey.includes('CANISTER') || upperKey.includes('VITE'))
+    if (upperKey.includes('DFX') || upperKey.includes('CANISTER_ID') || upperKey.includes('VITE'))
       uniqueEnv[upperKey] = env[key];
   }
 

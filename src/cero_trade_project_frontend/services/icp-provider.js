@@ -1,12 +1,10 @@
-// TODO implements ledger declaration
-
 import { Actor, HttpAgent } from "@dfinity/agent";
 import { AuthClient } from "@dfinity/auth-client";
 import { app as vueApp } from "@/main";
 
 // canisters
 import * as agentCanister from "../../../.dfx/local/canisters/agent"
-// import * as ledgerCanister from 'dfx-generated/ledger';
+import * as ledgerCanister from "../../declarations/nns-ledger"
 
 
 export const canisterImpl = { canisterId: process.env.CANISTER_ID_CERO_TRADE_PROJECT_FRONTEND }
@@ -18,7 +16,7 @@ export const createActor = (canisterId, idlFactory, options) => {
 
   // Fetch root key for certificate validation during development
   if (isDevelopment) {
-    agent.fetchRootKey().catch(err=>{
+    agent.fetchRootKey().catch(err => {
       console.warn("Unable to fetch root key. Check to ensure that your local replica is running");
       console.error(err);
     });
@@ -62,8 +60,7 @@ export const getErrorMessage = (error) => {
   return message.split(httpBody)[1].trim()
 }
 
-// export const getLedgerCanister = () => createActor(ledgerCanister.canisterId, ledgerCanister.idlFactory)
-
+export const getLedgerCanister = () => createActor('ryjl3-tyaaa-aaaaa-aaaba-cai', ledgerCanister.idlFactory)
 
 export const useAgentCanister = () => createActor(agentCanister.canisterId, agentCanister.idlFactory)
 
