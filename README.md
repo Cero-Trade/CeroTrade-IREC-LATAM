@@ -5,6 +5,13 @@ Public frontend url: https://z2mgf-dqaaa-aaaak-qihbq-cai.icp0.io?canisterId=z2mg
 Public candid url: https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=<canister_id>
 
 ## Project setup
+
+* You can run this proyect locally by run below script:
+`npm run deploy modules nns`
+
+
+* Also can try manually following these steps:
+
 Init ic background replica
 
 `dfx start`
@@ -44,8 +51,9 @@ dfx deploy agent
 ```
 
 Update canister controllers
+
 `
-npm run upgrade-controllers $(dfx identity get-principal)
+npm run upgrade-controllers <[principal]>
 `
 
 ### Register wasm modules
@@ -139,7 +147,9 @@ https://mops.one/
 2vxsx-fae
 
 ### ICRC Standard Implementation
-https://github.com/PanIndustrial-Org/ICRC_fungible
+* ICRC Fungible: https://github.com/PanIndustrial-Org/ICRC_fungible
+
+* ICRC Types: https://github.com/NatLabs/icrc1/blob/main/src/ICRC1/Types.mo
 
 ### NNS local deployment
 https://internetcomputer.org/docs/current/developer-docs/developer-tools/cli-tools/cli-reference/dfx-nns

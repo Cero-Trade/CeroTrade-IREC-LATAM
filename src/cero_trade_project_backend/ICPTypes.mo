@@ -2,6 +2,8 @@
 // Please use `import service "ic:canister_id"` instead to call canisters on the IC if possible.
 
 module {
+  public let ICPLedger : Service = actor ("ryjl3-tyaaa-aaaaa-aaaba-cai");
+
   public type Account = { owner : Principal; subaccount : ?[Nat8] };
   public type Subaccount = Blob;
   public type AccountBalanceArgs = { account : Text };

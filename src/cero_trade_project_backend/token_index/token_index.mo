@@ -152,7 +152,7 @@ actor class TokenIndex() = this {
               endDate = "2024-05-29T19:48:31.000Z";
               co2Emission = "11.22";
               radioactivityEmnission = "10.20";
-              volumeProduced: T.TokenAmount = 1000;
+              volumeProduced: T.TokenAmount = 20_000;
               deviceDetails = {
                 name = "machine";
                 deviceType = "type";
@@ -161,7 +161,7 @@ actor class TokenIndex() = this {
               };
               specifications = {
                 deviceCode = "200";
-                capacity: T.TokenAmount = 1000;
+                capacity: T.TokenAmount = 1_000;
                 location = "location";
                 latitude = "0";
                 longitude = "1";
@@ -293,16 +293,14 @@ actor class TokenIndex() = this {
 
     let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
-      case (?cid) await Token.canister(cid).icrc1_transfer({
-        from_subaccount = null;
+      case (?cid) await Token.canister(cid).mint({
         to = {
           owner = recipent;
           subaccount = null;
         };
         amount;
-        fee = null;
-        memo = null;
         created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
+        memo = null;
       });
     };
 
@@ -463,10 +461,12 @@ actor class TokenIndex() = this {
 
     let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
-      case (?cid) await Token.canister(cid).sellInMarketplace({
-        seller;
-        seller_subaccount = null;
-        marketplace = {
+      case (?cid) await Token.canister(cid).transferInMarketplace({
+        from = {
+          owner = seller;
+          subaccount = null;
+        };
+        to = {
           owner = Principal.fromText(ENV.CANISTER_ID_MARKETPLACE);
           subaccount = null;
         };
@@ -495,11 +495,13 @@ actor class TokenIndex() = this {
 
     let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
-      case (?cid) await Token.canister(cid).takeOffMarketplace({
-        seller;
-        seller_subaccount = null;
-        marketplace = {
+      case (?cid) await Token.canister(cid).transferInMarketplace({
+        from = {
           owner = Principal.fromText(ENV.CANISTER_ID_MARKETPLACE);
+          subaccount = null;
+        };
+        to = {
+          owner = seller;
           subaccount = null;
         };
         amount;
@@ -528,7 +530,7 @@ actor class TokenIndex() = this {
     let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
       case (?cid) await Token.canister(cid).purchaseInMarketplace({
-        marketplace = Principal.fromText(ENV.CANISTER_ID_MARKETPLACE);
+        marketplace = { owner = Principal.fromText(ENV.CANISTER_ID_MARKETPLACE); subaccount = null };
         seller = { owner = seller; subaccount = null };
         buyer = { owner = buyer; subaccount = null };
         amount;

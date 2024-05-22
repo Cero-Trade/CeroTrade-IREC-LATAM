@@ -361,12 +361,16 @@ actor class Agent() = this {
 
 
   /// performe token purchase
-  public shared({ caller }) func purchaseToken(tokenId: T.TokenId, recipent: T.Beneficiary, tokenAmount: T.TokenAmount, priceICP: Float): async T.TransactionInfo {
+  public shared({ caller }) func purchaseToken(tokenId: T.TokenId, recipent: T.Beneficiary, tokenAmount: T.TokenAmount): async T.TransactionInfo {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
-    // transform icp to e8s
-    let priceE8S = { e8s: Nat64 = Int64.toNat64(Float.toInt64(priceICP)) * 1_000_000_000 };
+    // validate if recipent have enough tokens
+    let tokensOnSale = await Marketplace.getUserTokensOnSale(recipent, tokenId);
+    if (tokensOnSale < tokenAmount) throw Error.reject("Seller have not enough tokens on sell");
+
+    // get seller token price in marketplace
+    let priceE8S = await Marketplace.getTokenPrice(tokenId, recipent);
 
     // performe ICP transfer and update token canister
     let txIndex = await TokenIndex.purchaseToken(caller, recipent, tokenId, tokenAmount, priceE8S);
@@ -395,9 +399,9 @@ actor class Agent() = this {
     // await UserIndex.updateTransactions(Principal.fromText(recipent), txId);
 
     // take token off marketplace reference
-    await Marketplace.takeOffSale(tokenId, tokenAmount, caller);
+    await Marketplace.takeOffSale(tokenId, tokenAmount, recipent);
 
-    txInfo
+    { txInfo with transactionId = txId }
   };
 
 
@@ -421,7 +425,7 @@ actor class Agent() = this {
     let txIndex = await TokenIndex.sellInMarketplace(caller, tokenId, quantity);
 
     // transform icp to e8s
-    let priceE8S = { e8s: Nat64 = Int64.toNat64(Float.toInt64(priceICP)) * 1_000_000_000 };
+    let priceE8S = { e8s: Nat64 = Int64.toNat64(Float.toInt64(priceICP)) * T.e8sEquivalence };
 
     // build transaction
     let txInfo: T.TransactionInfo = {
@@ -444,7 +448,7 @@ actor class Agent() = this {
     // put tokens on marketplace reference
     await Marketplace.putOnSale(tokenId, quantity, caller, priceE8S);
 
-    txInfo
+    { txInfo with transactionId = txId }
   };
 
 
@@ -485,7 +489,7 @@ actor class Agent() = this {
     // take off tokens on marketplace reference
     await Marketplace.takeOffSale(tokenId, quantity, caller);
 
-    txInfo
+    { txInfo with transactionId = txId }
   };
 
 
@@ -524,7 +528,7 @@ actor class Agent() = this {
     let txId = await TransactionIndex.registerTransaction(txInfo);
     await UserIndex.updateTransactions(caller, txId);
 
-    txInfo
+    { txInfo with transactionId = txId }
   };
 
 

@@ -16,6 +16,9 @@ module {
   // global date format variable
   public let dateFormat: Text = "YYYY-MM-DDTHH:mm:ss.sssssssssZ";
 
+  // amount in e8s equal to 1 ICP
+  public let e8sEquivalence: Nat64 = 1_00_000_000;
+
   public type UID = Principal;
   public type CanisterId = Principal;
   public type TokenId = Text;
@@ -191,15 +194,14 @@ module {
 
   public let LOW_MEMORY_LIMIT: Nat = 50000;
 
-  public type SellInMarketplaceArgs = {
-    seller: Principal;
-    seller_subaccount: ?ICPTypes.Subaccount;
-    marketplace: ICPTypes.Account;
+  public type TransferInMarketplaceArgs = {
+    from: ICPTypes.Account;
+    to: ICPTypes.Account;
     amount: ICPTypes.Balance;
   };
 
   public type PurchaseInMarketplaceArgs = {
-    marketplace: CanisterId;
+    marketplace: ICPTypes.Account;
     seller: ICPTypes.Account;
     buyer: ICPTypes.Account;
     amount: ICPTypes.Balance;

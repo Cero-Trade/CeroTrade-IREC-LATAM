@@ -38,13 +38,13 @@ shared ({ caller = _owner }) actor class Token(
     symbol = ?args.symbol;
     logo = ?args.logo;
     decimals = 8;
-    fee = ? #Fixed(10000);
+    fee = ? #Fixed(0);
     minting_account = ?{
       owner = _owner;
       subaccount = null;
     };
     max_supply = ?args.assetMetadata.volumeProduced;
-    min_burn_amount = ?10000;
+    min_burn_amount = ?1;
     max_memo = ?64;
     advanced_settings = null;
     metadata = ? #Map([("assetMetadata", #Map([("assetId", #Text(args.assetMetadata.tokenId)), ("assetType", #Text(switch (args.assetMetadata.assetType) { case (#hydro(hydro)) hydro; case (#ocean(ocean)) ocean; case (#geothermal(geothermal)) geothermal; case (#biome(biome)) biome; case (#wind(wind)) wind; case (#sun(sun)) sun; case (#other(other)) other })), ("startDate", #Text(args.assetMetadata.startDate)), ("endDate", #Text(args.assetMetadata.endDate)), ("co2Emission", #Text(args.assetMetadata.co2Emission)), ("radioactivityEmnission", #Text(args.assetMetadata.radioactivityEmnission)), ("volumeProduced", #Nat(args.assetMetadata.volumeProduced)), ("deviceDetails", #Map([("name", #Text(args.assetMetadata.deviceDetails.name)), ("deviceType", #Text(args.assetMetadata.deviceDetails.deviceType)), ("group", #Text(switch (args.assetMetadata.deviceDetails.group) { case (#hydro(hydro)) hydro; case (#ocean(ocean)) ocean; case (#geothermal(geothermal)) geothermal; case (#biome(biome)) biome; case (#wind(wind)) wind; case (#sun(sun)) sun; case (#other(other)) other })), ("description", #Text(args.assetMetadata.deviceDetails.description))])), ("specifications", #Map([("deviceCode", #Text(args.assetMetadata.specifications.deviceCode)), ("capacity", #Nat(args.assetMetadata.specifications.capacity)), ("location", #Text(args.assetMetadata.specifications.location)), ("latitude", #Text(args.assetMetadata.specifications.latitude)), ("longitude", #Text(args.assetMetadata.specifications.longitude)), ("address", #Text(args.assetMetadata.specifications.address)), ("stateProvince", #Text(args.assetMetadata.specifications.stateProvince)), ("country", #Text(args.assetMetadata.specifications.country))])), ("dates", #Array(Array.map<Text, { #Text : Text }>(args.assetMetadata.dates, func x = #Text(x))))]))]);
@@ -569,33 +569,28 @@ shared ({ caller = _owner }) actor class Token(
     Nat64.fromNat(Int.abs(Time.now()));
   };
 
-  // TODO review this function
-  public shared ({ caller }) func sellInMarketplace(args : T.SellInMarketplaceArgs) : async ICRC1.TransferResult {
+  public shared ({ caller }) func transferInMarketplace(args : T.TransferInMarketplaceArgs) : async ICRC1.TransferResult {
     _callValidation(caller);
 
-    switch (
-      await* icrc1().transfer_tokens(
-        args.seller,
-        {
-          from_subaccount = args.seller_subaccount;
-          to = {
-            owner = args.marketplace.owner;
-            subaccount = switch (args.marketplace.subaccount) {
-              case (null) null;
-              case (?value) ?Blob.fromArray(value);
-            };
-          };
-          amount = args.amount;
-          fee = null;
-          memo = null;
-          /// The time at which the transaction was created.
-          /// If this is set, the canister will check for duplicate transactions and reject them.
-          created_at_time = ?time64();
-        },
-        false,
-        null,
-      )
-    ) {
+    switch (await* icrc1().transfer_tokens(args.from.owner, {
+      from_subaccount = switch (args.from.subaccount) {
+        case (null) null;
+        case (?value) ?Blob.fromArray(value);
+      };
+      to = {
+        owner = args.to.owner;
+        subaccount = switch (args.to.subaccount) {
+          case (null) null;
+          case (?value) ?Blob.fromArray(value);
+        };
+      };
+      amount = args.amount;
+      fee = null;
+      memo = null;
+      /// The time at which the transaction was created.
+      /// If this is set, the canister will check for duplicate transactions and reject them.
+      created_at_time = ?time64();
+    }, false, null)) {
       case (#trappable(val)) val;
       case (#awaited(val)) val;
       case (#err(#trappable(err))) D.trap(err);
@@ -603,59 +598,18 @@ shared ({ caller = _owner }) actor class Token(
     };
   };
 
-  // TODO review this function
-  public shared ({ caller }) func takeOffMarketplace(args : T.SellInMarketplaceArgs) : async ICRC1.TransferResult {
-    _callValidation(caller);
-
-    switch (
-      await* icrc1().transfer_tokens(
-        args.marketplace.owner,
-        {
-          from_subaccount = switch (args.marketplace.subaccount) {
-            case (null) null;
-            case (?value) ?Blob.fromArray(value);
-          };
-          to = {
-            owner = args.seller;
-            subaccount = args.seller_subaccount;
-          };
-          amount = args.amount;
-          fee = null;
-          memo = null;
-          /// The time at which the transaction was created.
-          /// If this is set, the canister will check for duplicate transactions and reject them.
-          created_at_time = ?time64();
-        },
-        false,
-        null,
-      )
-    ) {
-      case (#trappable(val)) val;
-      case (#awaited(val)) val;
-      case (#err(#trappable(err))) D.trap(err);
-      case (#err(#awaited(err))) D.trap(err);
-    };
-  };
-
-  // TODO review this function
   public shared ({ caller }) func redeem(args : T.RedeemArgs) : async ICRC1.TransferResult {
     _callValidation(caller);
 
-    switch (
-      await* icrc1().burn_tokens(
-        args.owner.owner,
-        {
-          from_subaccount = switch (args.owner.subaccount) {
-            case (null) null;
-            case (?value) ?Blob.fromArray(value);
-          };
-          amount = args.amount;
-          memo = null;
-          created_at_time = ?time64();
-        },
-        false,
-      )
-    ) {
+    switch (await* icrc1().burn_tokens(args.owner.owner, {
+        from_subaccount = switch (args.owner.subaccount) {
+          case (null) null;
+          case (?value) ?Blob.fromArray(value);
+        };
+        amount = args.amount;
+        memo = null;
+        created_at_time = ?time64();
+      }, false)) {
       case (#trappable(val)) val;
       case (#awaited(val)) val;
       case (#err(#trappable(err))) D.trap(err);
@@ -663,14 +617,14 @@ shared ({ caller = _owner }) actor class Token(
     };
   };
 
-  // TODO review this function
   public shared ({ caller }) func purchaseInMarketplace(args : T.PurchaseInMarketplaceArgs) : async ICRC1.TransferResult {
     _callValidation(caller);
 
-    let ICPLedger : ICPTypes.Service = actor ("ryjl3-tyaaa-aaaaa-aaaba-cai");
+    // TODO implements cero trade comission here
 
+    // transfer icp token
     let result = try {
-      await ICPLedger.icrc2_transfer_from({
+      await ICPTypes.ICPLedger.icrc2_transfer_from({
         to = args.seller;
         from = args.buyer;
         fee = null;
@@ -690,23 +644,27 @@ shared ({ caller = _owner }) actor class Token(
       };
     };
 
-    let newtokens = await* icrc1().mint_tokens(
-      args.marketplace,
-      {
-        to = {
-          owner = args.buyer.owner;
-          subaccount = switch (args.buyer.subaccount) {
-            case (null) null;
-            case (?val) ?Blob.fromArray(val);
-          };
-        }; // The account receiving the newly minted tokens.
-        amount = args.amount; // The number of tokens to mint.
-        created_at_time = ?time64();
-        memo = null;
-      },
-    );
 
-    return switch (newtokens) {
+    // transfer canister token
+    switch (await* icrc1().transfer_tokens(args.marketplace.owner, {
+      from_subaccount = switch (args.marketplace.subaccount) {
+        case (null) null;
+        case (?value) ?Blob.fromArray(value);
+      };
+      to = {
+        owner = args.buyer.owner;
+        subaccount = switch (args.buyer.subaccount) {
+          case (null) null;
+          case (?value) ?Blob.fromArray(value);
+        };
+      };
+      amount = args.amount;
+      fee = null;
+      memo = null;
+      /// The time at which the transaction was created.
+      /// If this is set, the canister will check for duplicate transactions and reject them.
+      created_at_time = ?time64();
+    }, false, null)) {
       case (#trappable(val)) val;
       case (#awaited(val)) val;
       case (#err(#trappable(err))) D.trap(err);
