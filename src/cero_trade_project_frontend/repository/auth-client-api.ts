@@ -1,3 +1,4 @@
+import variables from "@/mixins/variables";
 import { storageSecureCollection } from "@/plugins/vue3-storage-secure";
 import { useAuthClient as client } from "@/services/icp-provider";
 import { AnonymousIdentity } from "@dfinity/agent";
@@ -11,8 +12,15 @@ export class AuthClientApi {
   }
 
   static async signIn(onComplete: Function): Promise<void> {
+    const identityProvider = process.env.DFX_NETWORK === "ic"
+      ? "https://identity.ic0.app/#authorize"
+      : variables.isSafari ? 
+        `http://localhost:8080/?canisterId=${process.env.CANISTER_ID_INTERNET_IDENTITY}`
+          :`http://${process.env.CANISTER_ID_INTERNET_IDENTITY}.localhost:8080/`;
+
     await client().login({
       // 7 days in nanoseconds
+      identityProvider,
       maxTimeToLive: BigInt(7 * 24 * 60 * 60 * 1000 * 1000 * 1000),
       onSuccess: () => this.onSignedIdentity(onComplete),
     });

@@ -25,6 +25,7 @@ cp src/declarations/http_service/* .dfx/local/canisters/http_service/
 
 # Generate env.mo and deploy canisters
 dfx canister create --all
+dfx deploy internet_identity
 dfx build cero_trade_project_frontend
 dfx canister install cero_trade_project_frontend
 dfx deploy agent

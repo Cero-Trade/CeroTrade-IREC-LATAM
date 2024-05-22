@@ -131,6 +131,9 @@ or convert ICP balance to Cycles (TC) by run:
 
 * import: `dfx identity import <new_identity_name> <exported_identity_root_file.pem>`
 
+### How to setup Internet Identity locally to development
+https://github.com/dfinity/internet-identity/blob/main/demos/using-dev-build/README.md
+
 #### How to add canister controllers
 https://internetcomputer.org/docs/current/developer-docs/smart-contracts/maintain/control#setting-the-controllers-of-a-canister
 

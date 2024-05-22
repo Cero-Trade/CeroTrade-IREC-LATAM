@@ -30,6 +30,7 @@ export default {
   ceroComisison: Number(process.env.CERO_COMISSION),
   isProduction: process.env.NODE_ENV === 'production',
 
+  isSafari: /^((?!chrome|android).)*safari/i.test(navigator.userAgent),
   isLogged() {
     return !!useStorage().getStorageSync('tokenAuth')
   },
