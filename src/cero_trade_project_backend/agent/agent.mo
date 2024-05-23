@@ -16,6 +16,9 @@ import TokenIndex "canister:token_index";
 import TransactionIndex "canister:transaction_index";
 import Marketplace "canister:marketplace";
 
+// interfaces
+import IC_MANAGEMENT "../ic_management_canister_interface";
+
 // types
 import T "../types";
 
@@ -47,12 +50,17 @@ actor class Agent() = this {
   /// delete user into cero trade
   public shared({ caller }) func deleteUser(): async() { await UserIndex.deleteUser(caller) };
 
+  /// get canister controllers
+  public shared({ caller }) func getControllers(): async ?[Principal] {
+    IC_MANAGEMENT.adminValidation(caller, controllers);
+    await IC_MANAGEMENT.getControllers(Principal.fromActor(this));
+  };
 
   /// register canister controllers
   public shared({ caller }) func registerControllers(): async () {
-    T.adminValidation(caller, controllers);
+    IC_MANAGEMENT.adminValidation(caller, controllers);
 
-    controllers := await T.getControllers(Principal.fromActor(this));
+    controllers := await IC_MANAGEMENT.getControllers(Principal.fromActor(this));
 
     await UserIndex.registerControllers();
     await TokenIndex.registerControllers();
@@ -61,7 +69,7 @@ actor class Agent() = this {
 
   /// register a canister wasm module
   public shared({ caller }) func registerWasmModule(moduleName: T.WasmModuleName): async() {
-    T.adminValidation(caller, controllers);
+    IC_MANAGEMENT.adminValidation(caller, controllers);
 
     switch(moduleName) {
       case(#token("token")) await TokenIndex.registerWasmArray();
@@ -73,39 +81,26 @@ actor class Agent() = this {
 
 
   /// register token on platform
-  public shared({ caller }) func registerToken(tokenId: T.TokenId): async Principal {
-    T.adminValidation(caller, controllers);
-    await TokenIndex.registerToken(tokenId);
+  public shared({ caller }) func registerToken(tokenId: Text, name: Text, symbol: Text, logo: Text): async T.CanisterId {
+    IC_MANAGEMENT.adminValidation(caller, controllers);
+    await TokenIndex.registerToken(tokenId, name, symbol, logo);
   };
 
 
   /// performe mint with tokenId and amount requested
-  public shared({ caller }) func mintTokenToUser(recipent: T.Beneficiary, tokenId: T.TokenId, tokenAmount: T.TokenAmount): async() {
-    T.adminValidation(caller, controllers);
+  public shared({ caller }) func mintTokenToUser(recipent: T.Beneficiary, tokenId: T.TokenId, tokenAmount: T.TokenAmount): async T.TxIndex {
+    IC_MANAGEMENT.adminValidation(caller, controllers);
 
     // check if user exists
     if (not (await UserIndex.checkPrincipal(recipent))) throw Error.reject(notExists);
 
     // mint token to user token collection
-    let tokensInMarket = await Marketplace.getUserTokensOnSale(recipent, tokenId);
-    await TokenIndex.mintTokenToUser(recipent, tokenId, tokenAmount, tokensInMarket);
+    let txIndex = await TokenIndex.mintTokenToUser(recipent, tokenId, tokenAmount);
 
     // update user portfolio
     await UserIndex.updatePorfolio(recipent, tokenId);
-  };
 
-
-  /// performe mint with tokenId and amount requested
-  private func _burnToken(caller: T.UID, tokenId: T.TokenId, tokenAmount: T.TokenAmount): async() {
-    // check if user exists
-    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
-
-    // burn token to user token collection
-    let tokensInMarket = await Marketplace.getUserTokensOnSale(caller, tokenId);
-    await TokenIndex.burnToken(caller, tokenId, tokenAmount, tokensInMarket);
-
-    // update user portfolio
-    await UserIndex.updatePorfolio(caller, tokenId);
+    txIndex
   };
 
 
@@ -118,8 +113,8 @@ actor class Agent() = this {
   };
 
 
-  /// function to know if user have current token
-  public shared({ caller }) func checkUserToken(tokenId: T.TokenId): async Bool { await TokenIndex.checkUserToken(caller, tokenId) };
+  /// function to know user token balance
+  public shared({ caller }) func balanceOf(tokenId: T.TokenId): async Nat { await TokenIndex.balanceOf(caller, tokenId) };
 
   /// get user portfolio information
   public shared({ caller }) func getPortfolio(page: ?Nat, length: ?Nat, assetTypes: ?[T.AssetType], country: ?Text, mwhRange: ?[T.TokenAmount]): async {
@@ -163,7 +158,7 @@ actor class Agent() = this {
 
       { tokenInfo with inMarket }
     } catch (error) {
-      let assetInfo: T.AssetInfo = await TokenIndex.getSingleTokenInfo(tokenId);
+      let assetInfo: T.AssetInfo = await TokenIndex.getAssetInfo(tokenId);
       let inMarket = await Marketplace.getAvailableTokens(tokenId);
 
       {
@@ -190,8 +185,8 @@ actor class Agent() = this {
       data: [{
         tokenId: T.TokenId;
         mwh: T.TokenAmount;
-        lowerPriceICP: T.Price;
-        higherPriceICP: T.Price;
+        lowerPriceE8S: T.Price;
+        higherPriceE8S: T.Price;
       }] = marketInfo;
       totalPages: Nat;
     } = await Marketplace.getMarketplace(page, length, priceRange);
@@ -199,16 +194,16 @@ actor class Agent() = this {
     let tokensInfo: [T.AssetInfo] = await TokenIndex.getTokensInfo(Array.map<{
       tokenId: T.TokenId;
       mwh: T.TokenAmount;
-      lowerPriceICP: T.Price;
-      higherPriceICP: T.Price;
+      lowerPriceE8S: T.Price;
+      higherPriceE8S: T.Price;
     }, Text>(marketInfo, func x = x.tokenId));
 
     // map market and asset values to marketplace info
     let marketplace: [T.MarketplaceInfo] = Array.map<{
       tokenId: T.TokenId;
       mwh: T.TokenAmount;
-      lowerPriceICP: T.Price;
-      higherPriceICP: T.Price;
+      lowerPriceE8S: T.Price;
+      higherPriceE8S: T.Price;
     }, T.MarketplaceInfo>(marketInfo, func (item) {
       let assetInfo = Array.find<T.AssetInfo>(tokensInfo, func (info) { info.tokenId == item.tokenId });
 
@@ -218,15 +213,15 @@ actor class Agent() = this {
           {
             tokenId = item.tokenId;
             mwh = item.mwh;
-            lowerPriceICP = item.lowerPriceICP;
-            higherPriceICP = item.higherPriceICP;
+            lowerPriceE8S = item.lowerPriceE8S;
+            higherPriceE8S = item.higherPriceE8S;
             assetInfo = {
               tokenId = item.tokenId;
               assetType = #hydro("hydro");
               startDate = "2024-04-29T19:43:34.000Z";
               endDate = "2024-05-29T19:48:31.000Z";
-              co2Emission: Float = 11.22;
-              radioactivityEmnission: Float = 10.20;
+              co2Emission = "11.22";
+              radioactivityEmnission = "10.20";
               volumeProduced: T.TokenAmount = 1000;
               deviceDetails = {
                 name = "machine";
@@ -238,8 +233,8 @@ actor class Agent() = this {
                 deviceCode = "200";
                 capacity: T.TokenAmount = 1000;
                 location = "location";
-                latitude: Float = 0;
-                longitude: Float = 1;
+                latitude = "0";
+                longitude = "1";
                 address = "address anywhere";
                 stateProvince = "chile";
                 country = "chile";
@@ -254,8 +249,8 @@ actor class Agent() = this {
           {
             tokenId = item.tokenId;
             mwh = item.mwh;
-            lowerPriceICP = item.lowerPriceICP;
-            higherPriceICP = item.higherPriceICP;
+            lowerPriceE8S = item.lowerPriceE8S;
+            higherPriceE8S = item.higherPriceE8S;
             assetInfo = asset;
           }
         };
@@ -307,7 +302,7 @@ actor class Agent() = this {
         tokenId: T.TokenId;
         userId: T.UID;
         mwh: T.TokenAmount;
-        priceICP: T.Price;
+        priceE8S: T.Price;
       }] = marketInfo;
       totalPages: Nat;
     } = await Marketplace.getMarketplaceSellers(page, length, tokenId, priceRange, excludedCaller);
@@ -317,7 +312,7 @@ actor class Agent() = this {
       tokenId: T.TokenId;
       userId: T.UID;
       mwh: T.TokenAmount;
-      priceICP: T.Price;
+      priceE8S: T.Price;
     }, Text>(marketInfo, func x = x.tokenId));
 
 
@@ -326,7 +321,7 @@ actor class Agent() = this {
       tokenId: T.TokenId;
       userId: T.UID;
       mwh: T.TokenAmount;
-      priceICP: T.Price;
+      priceE8S: T.Price;
     }, T.MarketplaceSellersInfo>(marketInfo, func (item) {
 
       let assetInfo: ?T.AssetInfo = Array.find<T.AssetInfo>(tokensInfo, func (info) { info.tokenId == item.tokenId });
@@ -337,7 +332,7 @@ actor class Agent() = this {
         sellerId = item.userId;
         tokenId = item.tokenId;
         mwh = item.mwh;
-        priceICP = item.priceICP;
+        priceE8S = item.priceE8S;
         assetInfo;
       }
     });
@@ -364,87 +359,146 @@ actor class Agent() = this {
     { data = filteredMarketplace; totalPages }
   };
 
+  /// get canister id that allow current token
+  public func getTokenCanister(tokenId: T.TokenId): async T.CanisterId {
+    await TokenIndex.getTokenCanister(tokenId);
+  };
 
   /// performe token purchase
-  public shared({ caller }) func purchaseToken(tokenId: T.TokenId, recipent: T.Beneficiary, tokenAmount: T.TokenAmount, priceICP: Float): async T.TransactionInfo {
+  public shared({ caller }) func purchaseToken(tokenId: T.TokenId, recipent: T.Beneficiary, tokenAmount: T.TokenAmount): async T.TransactionInfo {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
-    let recipentLedger = await UserIndex.getUserLedger(recipent);
+    // validate if recipent have enough tokens
+    let tokensOnSale = await Marketplace.getUserTokensOnSale(recipent, tokenId);
+    if (tokensOnSale < tokenAmount) throw Error.reject("Seller have not enough tokens on sell");
+
+    // get seller token price in marketplace
+    let priceE8S = await Marketplace.getTokenPrice(tokenId, recipent);
 
     // performe ICP transfer and update token canister
-    let tokensInMarket = await Marketplace.getUserTokensOnSale(caller, tokenId);
-    let blockHash: T.BlockHash = await TokenIndex.purchaseToken(caller, { uid = recipent; ledger = recipentLedger }, tokenId, tokenAmount, tokensInMarket);
+    let txIndex = await TokenIndex.purchaseToken(caller, recipent, tokenId, tokenAmount, priceE8S);
 
     // build transaction
     let txInfo: T.TransactionInfo = {
       transactionId = "0";
-      blockHash;
+      txIndex;
       from = caller;
-      to = recipent;
+      to = ?recipent;
       tokenId;
-      txType = #transfer("transfer");
+      txType = #purchase("purchase");
       tokenAmount;
-      priceICP = { e8s = Int64.toNat64(Float.toInt64(priceICP)) };
+      priceE8S = ?priceE8S;
       date = DateTime.now().toText();
       method = #blockchainTransfer("blockchainTransfer");
     };
+
+    // store token register on profile
+    await UserIndex.updatePorfolio(caller, tokenId);
 
     // register transaction
     let txId = await TransactionIndex.registerTransaction(txInfo);
     // store to caller
     await UserIndex.updateTransactions(caller, txId);
 
-    // ----> Warn commented while beneficiary flow is builded <----
-    // // store to recipent
-    // await UserIndex.updateTransactions(Principal.fromText(recipent), txId);
+    // store to recipent
+    await UserIndex.updateTransactions(recipent, txId);
 
-    // take token off marketplace
-    await Marketplace.takeOffSale(tokenId, tokenAmount, caller);
+    // take token off marketplace reference
+    await Marketplace.takeOffSale(tokenId, tokenAmount, recipent);
 
-    txInfo
+    { txInfo with transactionId = txId }
   };
 
 
   /// ask market to put on sale token
-  public shared({ caller }) func sellToken(tokenId: T.TokenId, quantity: T.TokenAmount, priceICP: Float): async() {
+  public shared({ caller }) func sellToken(tokenId: T.TokenId, quantity: T.TokenAmount, priceICP: Float): async T.TransactionInfo {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
-    // check if token exists
-    let tokenPortofolio = await TokenIndex.getTokenPortfolio(caller, tokenId);
+    // check price higher than 0
+    if (priceICP < 0) throw Error.reject("Price Must be higher than 0");
+
+    // check balance
+    let balance = await TokenIndex.balanceOf(caller, tokenId);
 
 
     // check if user is already selling
     let tokensInSale = await Marketplace.getUserTokensOnSale(caller, tokenId);
-    let availableTokens: T.TokenAmount = tokenPortofolio.totalAmount - tokensInSale;
+    let availableTokens: T.TokenAmount = balance - tokensInSale;
 
     // check if user has enough tokens
-    if (availableTokens < quantity) throw Error.reject("Not enough tokens");
+    if (availableTokens < quantity or quantity < 0) throw Error.reject("Not enough tokens to sell");
 
-    await Marketplace.putOnSale(tokenId, quantity, caller, { e8s = Int64.toNat64(Float.toInt64(priceICP)) });
+    // transfer tokens from user to marketplace
+    let txIndex = await TokenIndex.sellInMarketplace(caller, tokenId, quantity);
+
+    // transform icp to e8s
+    let priceE8S = { e8s: Nat64 = Int64.toNat64(Float.toInt64(priceICP)) * T.getE8sEquivalence() };
+
+    // build transaction
+    let txInfo: T.TransactionInfo = {
+      transactionId = "0";
+      txIndex;
+      from = caller;
+      to = null;
+      tokenId;
+      txType = #putOnSale("putOnSale");
+      tokenAmount = quantity;
+      priceE8S = ?priceE8S;
+      date = DateTime.now().toText();
+      method = #blockchainTransfer("blockchainTransfer");
+    };
+
+    // register transaction
+    let txId = await TransactionIndex.registerTransaction(txInfo);
+    await UserIndex.updateTransactions(caller, txId);
+
+    // put tokens on marketplace reference
+    await Marketplace.putOnSale(tokenId, quantity, caller, priceE8S);
+
+    { txInfo with transactionId = txId }
   };
 
 
   // ask market to take off market
-  public shared ({ caller }) func takeTokenOffMarket(tokenId: T.TokenId, quantity: T.TokenAmount): async() {
+  public shared ({ caller }) func takeTokenOffMarket(tokenId: T.TokenId, quantity: T.TokenAmount): async T.TransactionInfo {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
-    // check if token exists
-    let _ = await TokenIndex.getTokenPortfolio(caller, tokenId);
-
     // check if user is already selling
     let isSelling = await Marketplace.isSellingToken(caller, tokenId);
-    if (isSelling == false) throw Error.reject("User is not selling this token");
+    if (not isSelling) throw Error.reject("User is not selling this token");
 
     // check if user has enough tokens
     let tokenInSale = await Marketplace.getUserTokensOnSale(caller, tokenId);
     if (tokenInSale < quantity) throw Error.reject("Not enough tokens");
 
+    // transfer tokens from marketplace to user
+    let txIndex = await TokenIndex.takeOffMarketplace(caller, tokenId, quantity);
+
+    // build transaction
+    let txInfo: T.TransactionInfo = {
+      transactionId = "0";
+      txIndex;
+      from = caller;
+      to = null;
+      tokenId;
+      txType = #takeOffMarketplace("takeOffMarketplace");
+      tokenAmount = quantity;
+      priceE8S = null;
+      date = DateTime.now().toText();
+      method = #blockchainTransfer("blockchainTransfer");
+    };
+
+    // register transaction
+    let txId = await TransactionIndex.registerTransaction(txInfo);
+    await UserIndex.updateTransactions(caller, txId);
+
+    // take off tokens on marketplace reference
     await Marketplace.takeOffSale(tokenId, quantity, caller);
 
-    return ();
+    { txInfo with transactionId = txId }
   };
 
 
@@ -463,20 +517,18 @@ actor class Agent() = this {
     if (availableTokens < quantity) throw Error.reject("Not enough tokens");
 
     // ask token to burn the tokens
-    await _burnToken(caller, tokenId, quantity);
+    let txIndex = await TokenIndex.redeem(caller, tokenId, quantity);
 
     // build transaction
-    let priceICP: T.Price = { e8s = 10_000 };
-
     let txInfo: T.TransactionInfo = {
       transactionId = "0";
-      blockHash = 12345678901234567890; // TODO replace with real blockhash
+      txIndex;
       from = caller;
-      to = beneficiary;
+      to = ?beneficiary;
       tokenId;
       txType = #redemption("redemption");
       tokenAmount = quantity;
-      priceICP;
+      priceE8S = null;
       date = DateTime.now().toText();
       method = #blockchainTransfer("blockchainTransfer");
     };
@@ -485,7 +537,7 @@ actor class Agent() = this {
     let txId = await TransactionIndex.registerTransaction(txInfo);
     await UserIndex.updateTransactions(caller, txId);
 
-    txInfo
+    { txInfo with transactionId = txId }
   };
 
 
@@ -540,10 +592,10 @@ actor class Agent() = this {
       // build MarketplaceSellersInfo object
       {
         transactionId = item.transactionId;
-        blockHash = item.blockHash;
+        txIndex = item.txIndex;
         txType = item.txType;
         tokenAmount = item.tokenAmount;
-        priceICP = item.priceICP;
+        priceE8S = item.priceE8S;
         date = item.date;
         method = item.method;
         from = item.from;

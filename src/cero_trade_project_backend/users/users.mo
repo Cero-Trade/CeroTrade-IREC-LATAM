@@ -6,7 +6,6 @@ import Error "mo:base/Error";
 import Bool "mo:base/Bool";
 import Buffer "mo:base/Buffer";
 import Iter "mo:base/Iter";
-import AccountIdentifier "mo:account-identifier";
 
 
 // types
@@ -41,7 +40,6 @@ shared({ caller = userIndexCaller }) actor class Users() {
     let userInfo = {
       vaultToken = token;
       principal = uid;
-      ledger = AccountIdentifier.accountIdentifier(uid, AccountIdentifier.defaultSubaccount());
       companyLogo = null;
       portfolio = [];
       transactions = [];
@@ -211,16 +209,6 @@ shared({ caller = userIndexCaller }) actor class Users() {
     switch (users.get(uid)) {
       case (null) { throw Error.reject(userNotFound); };
       case (?info) { return info.vaultToken == token; };
-    };
-  };
-
-  /// obtain user ledger
-  public shared({ caller }) func getLedger(uid: T.UID): async Blob {
-    _callValidation(caller);
-
-    switch (users.get(uid)) {
-      case (null) { throw Error.reject(userNotFound); };
-      case (?info) { return info.ledger };
     };
   };
 }

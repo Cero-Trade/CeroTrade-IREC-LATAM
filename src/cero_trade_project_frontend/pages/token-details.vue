@@ -1,4 +1,17 @@
 <template>
+  <modal-approve
+    ref="modalApprove"
+    :token-id="tokenId"
+    :amount-in-icp="dialogPurchaseReview ? Number(tokenPrice) : null"
+    :fee-in-e8s="dialogPurchaseReview ? 30_000 : null"
+    @approve="() => {
+      if (dialogPurchaseReview)
+        purchaseToken()
+      else if (dialogRedeem || dialogRedeemCertificates)
+        redeemToken()
+    }"
+  ></modal-approve>
+
   <div id="token-details">
     <span class="mb-10 acenter" style="color: #475467; font-size: 16px; font-weight: 700;">
       <img src="@/assets/sources/icons/home-layout.svg" alt="Home Icon" style="width: 20px;">
@@ -221,31 +234,31 @@
             >
               <template #[`item.seller`]="{ item }">
                 <v-menu :close-on-content-click="false" @update:model-value="(value) => getSellerProfile(value, item.seller)">
-                    <template #activator="{ props }">
-                      <a v-bind="props" class="text-capitalize pointer flex-acenter" style="gap: 5px; text-wrap: nowrap">{{ item.seller }}</a>
-                    </template>
+                  <template #activator="{ props }">
+                    <a v-bind="props" class="pointer flex-acenter" style="gap: 5px; max-width: 200px">{{ item.seller }}</a>
+                  </template>
 
-                    <v-card class="px-4 py-2 bg-secondary d-flex">
-                      <v-progress-circular
-                        v-if="!previewSeller"
-                        indeterminate
-                        color="rgb(var(--v-theme-primary))"
-                        class="mx-auto"
-                      ></v-progress-circular>
+                  <v-card class="px-4 py-2 bg-secondary d-flex flex-column">
+                    <v-progress-circular
+                      v-if="!previewSeller"
+                      indeterminate
+                      color="rgb(var(--v-theme-primary))"
+                      class="mx-auto"
+                    ></v-progress-circular>
 
-                      <span v-else class="flex-acenter" style="gap: 10px; text-wrap: nowrap">
-                        <v-img-load
-                          :src="previewSeller.companyLogo"
-                          :alt="`${previewSeller.companyName} logo`"
-                          cover
-                          sizes="30px"
-                          rounded="50%"
-                          class="flex-grow-0"
-                        />
-                        {{ previewSeller.companyName }}
-                      </span>
-                    </v-card>
-                  </v-menu>
+                    <span v-else class="flex-acenter" style="gap: 10px; text-wrap: nowrap">
+                      <v-img-load
+                        :src="previewSeller.companyLogo"
+                        :alt="`${previewSeller.companyName} logo`"
+                        cover
+                        sizes="30px"
+                        rounded="50%"
+                        class="flex-grow-0"
+                      />
+                      {{ previewSeller.companyName }}
+                    </span>
+                  </v-card>
+                </v-menu>
               </template>
 
               <template #[`item.price`]="{ item }">
@@ -624,8 +637,7 @@
             <v-btn class="btn" @click="async () => {
               if (!(await formRedeem.validate()).valid) return
 
-              dialogRedeem = false;
-              redeemToken()
+              modalApprove.model = true
             }" style="border: none!important;">Redeem</v-btn>
           </div>
         </v-card>
@@ -804,7 +816,32 @@
           @update:options="getMarketPlace"
           >
             <template #[`item.seller`]="{ item }">
-              <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">{{ item.seller }}</span>
+              <v-menu :close-on-content-click="false" @update:model-value="(value) => getSellerProfile(value, item.seller)">
+                <template #activator="{ props }">
+                  <a v-bind="props" class="pointer flex-acenter" style="gap: 5px; max-width: 200px">{{ item.seller }}</a>
+                </template>
+
+                <v-card class="px-4 py-2 bg-secondary d-flex flex-column">
+                  <v-progress-circular
+                    v-if="!previewSeller"
+                    indeterminate
+                    color="rgb(var(--v-theme-primary))"
+                    class="mx-auto"
+                  ></v-progress-circular>
+
+                  <span v-else class="flex-acenter" style="gap: 10px; text-wrap: nowrap">
+                    <v-img-load
+                      :src="previewSeller.companyLogo"
+                      :alt="`${previewSeller.companyName} logo`"
+                      cover
+                      sizes="30px"
+                      rounded="50%"
+                      class="flex-grow-0"
+                    />
+                    {{ previewSeller.companyName }}
+                  </span>
+                </v-card>
+              </v-menu>
             </template>
 
             <template #[`item.price`]="{ item }">
@@ -933,7 +970,7 @@
 
         <div class="divrow center mt-6" style="gap: 10px;">
           <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogPurchaseReview = false">Cancel</v-btn>
-          <v-btn class="btn" @click="purchaseToken()" style="border: none!important;">Proceed with payment</v-btn>
+          <v-btn class="btn" @click="modalApprove.model = true" style="border: none!important;">Proceed with payment</v-btn>
         </div>
       </v-card>
     </v-dialog>
@@ -1031,7 +1068,7 @@
 
         <div class="divrow center mt-6" style="gap: 10px;">
           <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogRedeemCertificates = false">Not Now</v-btn>
-          <v-btn class="btn" @click="redeemToken()" style="border: none!important;">Yes, redeem</v-btn>
+          <v-btn class="btn" @click="modalApprove.model = true" style="border: none!important;">Yes, redeem</v-btn>
         </div>
       </v-card>
     </v-dialog>
@@ -1103,6 +1140,7 @@
 
 <script setup>
 import '@/assets/styles/pages/token-details.scss'
+import ModalApprove from '@/components/modals/modal-approve.vue'
 import countries from '@/assets/sources/json/countries-all.json'
 import Apexchart from "vue3-apexcharts"
 import SphereIcon from '@/assets/sources/companies/sphere.svg'
@@ -1323,6 +1361,8 @@ filters = ref({
 
 previewSeller = ref(null),
 
+modalApprove = ref(),
+
 
 tokenId = computed(() => route.query.tokenId),
 prevRoutePatch  = computed(() => {
@@ -1434,7 +1474,7 @@ async function getMarketPlace() {
       list.push({
         seller: item.sellerId,
         country: item.assetInfo.specifications.country,
-        price: item.priceICP.e8s,
+        price: item.priceE8S,
         mwh: item.mwh,
       })
     }
@@ -1455,7 +1495,7 @@ function selectSeller(item) {
   dialogPurchaseReview.value = true
   dialogChooseSeller.value = false;
 
-  sellerSelected.value = item.userProfile.principalId;
+  sellerSelected.value = item.seller;
   tokenPrice.value = item.price;
 }
 
@@ -1477,7 +1517,7 @@ function showDialog(input) {
 async function purchaseToken() {
   try {
     showLoader()
-    const tx = await AgentCanister.purchaseToken(tokenId.value, sellerSelected.value.toString(), Number(tokenAmount.value), Number(tokenPrice.value))
+    const tx = await AgentCanister.purchaseToken(tokenId.value, sellerSelected.value, Number(tokenAmount.value))
     await getData()
 
     closeLoader()
@@ -1535,6 +1575,7 @@ async function redeemToken() {
     await getData()
 
     closeLoader()
+    dialogRedeem.value = false;
     dialogRedeemCertificates.value = false;
 
     console.log("redeem token", tx);

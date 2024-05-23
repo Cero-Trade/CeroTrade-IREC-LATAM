@@ -1,3 +1,4 @@
+import variables from '@/mixins/variables';
 import store from '@/store'
 import imageCompression from 'browser-image-compression';
 
@@ -185,3 +186,7 @@ export async function fileCompression(file, options) {
 
   return new File([blob], blob.name)
 }
+
+export function convertE8SToICP(e8s) { return e8s / variables.e8sEquivalence }
+
+export function convertICPToE8S(icp) { return icp * variables.e8sEquivalence }

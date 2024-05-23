@@ -13,11 +13,17 @@
     <v-row>
       <v-col xl="4" lg="4" md="4" sm="6" cols="12">
         <v-card class="card" style="background-color: #F9FAFB!important;">
-          <img src="@/assets/sources/icons/info-circle.svg" alt="info-circle icon" class="mb-7">
+          <div class="flex-space-center mb-7" style="gap: 20px">
+            <img src="@/assets/sources/icons/info-circle.svg" alt="info-circle icon">
+
+            <v-btn class="btn" @click="getUserId">Copy User ID</v-btn>
+          </div>
+
           <h5 class="mb-6">Company information</h5>
           <span class="tertiary" style="font-weight: 300;">
             Update your company details to ensure accurate representation in all transactions and communications. Keep your profile current for seamless business operations.
           </span>
+
           <v-btn class="btn mt-6" @click="dialogCompany = true">
             Edit personal information
             <img src="@/assets/sources/icons/user-edit.svg" alt="user-edit icon">
@@ -66,7 +72,7 @@
           </v-btn>
         </v-card>
       </v-col>
-      
+
       <v-col xl="4" lg="4" md="4" sm="6" cols="12">
         <v-card class="card flex-column" style="background-color: #F9FAFB!important; --h: 100%">
           <img src="@/assets/sources/icons/wallet.svg" alt="wallet icon" class="mb-10" style="width: 20px">
@@ -77,6 +83,20 @@
           <v-btn class="btn mt-auto mr-auto" @click="dialogSelectPayment = true">
             Connect
             <img src="@/assets/sources/icons/plus.svg" alt="plus icon">
+          </v-btn>
+        </v-card>
+      </v-col>
+
+      <v-col xl="4" lg="4" md="4" sm="6" cols="12">
+        <v-card class="card flex-column" style="background-color: #F9FAFB!important; --h: 100%">
+          <img src="@/assets/sources/icons/trash.svg" alt="trash icon" class="mb-10" style="width: 20px">
+          <h5 class="mb-6">Delete account</h5>
+          <span class="tertiary" style="font-weight: 300;">
+            Delete acocunt from cero trade registration.
+          </span>
+          <v-btn class="btn mt-auto mr-auto" @click="dialogDeleteAccount = true">
+            Delete
+            <img src="@/assets/sources/icons/trash.svg" alt="trash icon">
           </v-btn>
         </v-card>
       </v-col>
@@ -480,6 +500,33 @@
             <img src="@/assets/sources/icons/close.svg" alt="close" style="width: 15px">
           </v-btn>
           <v-btn class="btn" @click="dialogBankTransferDetails = false;" style="border: none!important;">
+            Confirm
+            <img src="@/assets/sources/icons/check-simple.svg" alt="check icon">
+          </v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+
+    
+    <!-- Dialog delete account -->
+    <v-dialog v-model="dialogDeleteAccount" persistent>
+      <v-card class="card card-dialog-company" style="width: min(100%, 350px) !important">
+        <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="dialogDeleteAccount = false">
+        <v-sheet class="mb-10 double-sheet">
+          <v-sheet>
+            <img src="@/assets/sources/icons/trash.svg" alt="trash icon">
+          </v-sheet>
+        </v-sheet>
+        <h5>Delete account</h5>
+
+        <p>Are you sure that wanna delete your account</p>
+
+        <div class="divrow mt-6" style="gap: 10px;">
+          <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogDeleteAccount = false">
+            Cancel
+            <img src="@/assets/sources/icons/close.svg" alt="close" style="width: 15px">
+          </v-btn>
+          <v-btn class="btn" @click="deleteAccount()" style="border: none!important;">
             Confirm
             <img src="@/assets/sources/icons/check-simple.svg" alt="check icon">
           </v-btn>
@@ -922,9 +969,14 @@ import '@/assets/styles/pages/settings.scss'
 import icpIcon from '@/assets/sources/icons/internet-computer-icon.svg'
 import bankIcon from '@/assets/sources/icons/bank.svg'
 import { ref } from 'vue'
+import { AgentCanister } from '@/repository/agent-canister'
+import { AuthClientApi } from '@/repository/auth-client-api'
+import { closeLoader, showLoader } from '@/plugins/functions'
+import { useToast } from 'vue-toastification'
 
 export default{
   setup(){
+      const toast = useToast();
       const tabsWindow = ref(1);
       const dialogNotification = ref(false);
       const show_password= ref(false);
@@ -946,6 +998,7 @@ export default{
       const dialog2fa= ref(false);
       const dialogBeneficiary= ref(false);
       const dialogNewBeneficiary= ref(false);
+      const dialogDeleteAccount = ref(false);
 
       const dataBanks = ref([]);
       const address_bank = ref('');
@@ -966,6 +1019,7 @@ export default{
       ]
 
     return{
+      toast,
       tabsWindow,
       dialogNotification,
       show_password,
@@ -987,6 +1041,7 @@ export default{
       dialog2fa,
       dialogBeneficiary,
       dialogNewBeneficiary,
+      dialogDeleteAccount,
       dataBanks,
       address_bank,
       account_name,
@@ -1026,6 +1081,27 @@ export default{
         this.dialog
       } else {
         console.error('Ambos campos deben ser llenados.');
+      }
+    },
+    async getUserId() {
+      try {
+        const principal = await AuthClientApi.getPrincipal()
+        principal.toString().copyToClipboard(`User ID ${principal.toString()} copied to clipboard`)
+      } catch (error) {
+        this.toast.error(error);
+      }
+    },
+    async deleteAccount() {
+      showLoader()
+
+      try {
+        await AgentCanister.deleteUser()
+        closeLoader()
+        this.$router.push('/auth/login')
+        this.toast.success("Account deleted");
+      } catch (error) {
+        closeLoader()
+        this.toast.error(error);
       }
     }
   }

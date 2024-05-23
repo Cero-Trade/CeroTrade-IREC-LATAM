@@ -331,7 +331,7 @@ async function getData() {
         token_id: item.tokenId,
         energy_source: item.assetInfo.assetType,
         country: item.assetInfo.specifications.country,
-        price: item.lowerPriceICP.e8s === item.higherPriceICP.e8s ? item.higherPriceICP.e8s : `${item.lowerPriceICP.e8s} - ${item.higherPriceICP.e8s}`,
+        price: item.lowerPriceE8S === item.higherPriceE8S ? item.higherPriceE8S : `${item.lowerPriceE8S} - ${item.higherPriceE8S}`,
         mwh: item.mwh,
         volume: item.assetInfo.volumeProduced,
       })

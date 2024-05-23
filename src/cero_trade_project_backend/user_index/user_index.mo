@@ -15,13 +15,16 @@ import Debug "mo:base/Debug";
 // canisters
 import HttpService "canister:http_service";
 
+// interfaces
+import IC_MANAGEMENT "../ic_management_canister_interface";
+import Users "../users/users_interface";
+
 // types
 import T "../types";
 import HT "../http_service/http_service_types";
 import ENV "../env";
 
 actor class UserIndex() = this {
-  private func UsersCanister(cid: T.CanisterId): T.UsersInterface { actor (Principal.toText(cid)) };
   stable var wasm_module: Blob = "";
 
   stable var controllers: ?[Principal] = null;
@@ -49,11 +52,17 @@ actor class UserIndex() = this {
   /// get size of usersDirectory collection
   public query func length(): async Nat { usersDirectory.size() };
 
+  /// get canister controllers
+  public shared({ caller }) func getControllers(): async ?[Principal] {
+    IC_MANAGEMENT.adminValidation(caller, controllers);
+    await IC_MANAGEMENT.getControllers(Principal.fromActor(this));
+  };
+
   /// register canister controllers
   public shared({ caller }) func registerControllers(): async () {
     _callValidation(caller);
 
-    controllers := await T.getControllers(Principal.fromActor(this));
+    controllers := await IC_MANAGEMENT.getControllers(Principal.fromActor(this));
   };
 
   /// register wasm module to dynamic users canister, only admin can run it
@@ -96,7 +105,7 @@ actor class UserIndex() = this {
     };
 
     for (canister_id in deployedCanisters.vals()) {
-      await T.ic.install_code({
+      await IC_MANAGEMENT.ic.install_code({
         arg = to_candid();
         wasm_module;
         mode = #upgrade;
@@ -109,37 +118,57 @@ actor class UserIndex() = this {
   public query func checkPrincipal(uid: T.UID) : async Bool { usersDirectory.get(uid) != null };
 
 
-  /// resume all deployed canisters
-  public shared({ caller }) func startAllDeployedCanisters<system>(): async () {
-    T.adminValidation(caller, controllers);
+  /// resume all deployed canisters.
+  ///
+  /// only resume one if provide canister id
+  public shared({ caller }) func startAllDeployedCanisters<system>(cid: ?T.CanisterId): async () {
+    IC_MANAGEMENT.adminValidation(caller, controllers);
 
-    let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
-    for (cid in usersDirectory.vals()) {
-      if (not(Buffer.contains<T.CanisterId>(deployedCanisters, cid, Principal.equal))) {
-        deployedCanisters.append(Buffer.fromArray<T.CanisterId>([cid]));
+    switch(cid) {
+      case(?canister_id) {
+        Cycles.add<system>(20_949_972_000);
+        await IC_MANAGEMENT.ic.start_canister({ canister_id });
       };
-    };
+      case(null) {
+        let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
+          for (cid in usersDirectory.vals()) {
+            if (not(Buffer.contains<T.CanisterId>(deployedCanisters, cid, Principal.equal))) {
+              deployedCanisters.append(Buffer.fromArray<T.CanisterId>([cid]));
+            };
+          };
 
-    for(canister_id in deployedCanisters.vals()) {
-      Cycles.add<system>(20_949_972_000);
-      await T.ic.start_canister({ canister_id });
+          for(canister_id in deployedCanisters.vals()) {
+            Cycles.add<system>(20_949_972_000);
+            await IC_MANAGEMENT.ic.start_canister({ canister_id });
+          };
+      };
     };
   };
 
-  /// stop all deployed canisters
-  public shared({ caller }) func stopAllDeployedCanisters<system>(): async () {
-    T.adminValidation(caller, controllers);
+  /// stop all deployed canisters.
+  ///
+  /// only stop one if provide canister id
+  public shared({ caller }) func stopAllDeployedCanisters<system>(cid: ?T.CanisterId): async () {
+    IC_MANAGEMENT.adminValidation(caller, controllers);
 
-    let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
-    for (cid in usersDirectory.vals()) {
-      if (not(Buffer.contains<T.CanisterId>(deployedCanisters, cid, Principal.equal))) {
-        deployedCanisters.append(Buffer.fromArray<T.CanisterId>([cid]));
+    switch(cid) {
+      case(?canister_id) {
+        Cycles.add<system>(20_949_972_000);
+        await IC_MANAGEMENT.ic.stop_canister({ canister_id });
       };
-    };
+      case(null) {
+        let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
+        for (cid in usersDirectory.vals()) {
+          if (not(Buffer.contains<T.CanisterId>(deployedCanisters, cid, Principal.equal))) {
+            deployedCanisters.append(Buffer.fromArray<T.CanisterId>([cid]));
+          };
+        };
 
-    for(canister_id in deployedCanisters.vals()) {
-      Cycles.add<system>(20_949_972_000);
-      await T.ic.stop_canister({ canister_id });
+        for(canister_id in deployedCanisters.vals()) {
+          Cycles.add<system>(20_949_972_000);
+          await IC_MANAGEMENT.ic.stop_canister({ canister_id });
+        };
+      };
     };
   };
 
@@ -148,7 +177,7 @@ actor class UserIndex() = this {
   public func checkMemoryStatus() : async Bool {
     let status = switch(currentCanisterid) {
       case(null) throw Error.reject("Cant find users canisters registered");
-      case(?cid) await T.ic.canister_status({ canister_id = cid });
+      case(?cid) await IC_MANAGEMENT.ic.canister_status({ canister_id = cid });
     };
 
     status.memory_size > T.LOW_MEMORY_LIMIT
@@ -159,9 +188,16 @@ actor class UserIndex() = this {
     Debug.print(debug_show ("before create_canister: " # Nat.toText(Cycles.balance())));
 
     Cycles.add<system>(300_000_000_000);
-    let { canister_id } = await T.ic.create_canister({
+    let { canister_id } = await IC_MANAGEMENT.ic.create_canister({
       settings = ?{
-        controllers;
+        controllers = switch(controllers) {
+          case(null) null;
+          case(?value) {
+            let currentControllers = Buffer.fromArray<Principal>(value);
+            currentControllers.add(Principal.fromActor(this));
+            ?Buffer.toArray<Principal>(currentControllers);
+          };
+        };
         compute_allocation = null;
         memory_allocation = null;
         freezing_threshold = null;
@@ -170,7 +206,7 @@ actor class UserIndex() = this {
 
     Debug.print(debug_show ("later create_canister: " # Nat.toText(Cycles.balance())));
 
-    await T.ic.install_code({
+    await IC_MANAGEMENT.ic.install_code({
       arg = to_candid();
       wasm_module;
       mode = #install;
@@ -259,7 +295,7 @@ actor class UserIndex() = this {
       };
 
       // register user
-      await UsersCanister(cid).registerUser(uid, trimmedToken);
+      await Users.canister(cid).registerUser(uid, trimmedToken);
 
       usersDirectory.put(uid, cid);
     } catch (error) {
@@ -275,7 +311,7 @@ actor class UserIndex() = this {
 
     switch(usersDirectory.get(uid)) {
       case(null) throw Error.reject(notExists);
-      case(?cid) await UsersCanister(cid).storeCompanyLogo(uid, avatar);
+      case(?cid) await Users.canister(cid).storeCompanyLogo(uid, avatar);
     };
   };
 
@@ -288,11 +324,11 @@ actor class UserIndex() = this {
       case(?cid) cid;
     };
 
-    let token = await UsersCanister(cid).getUserToken(uid);
+    let token = await Users.canister(cid).getUserToken(uid);
 
     await _deleteUserWeb2(token);
 
-    await UsersCanister(cid).deleteUser(uid);
+    await Users.canister(cid).deleteUser(uid);
 
     let _ = usersDirectory.remove(uid);
   };
@@ -313,7 +349,7 @@ actor class UserIndex() = this {
 
     switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
-      case(?cid) await UsersCanister(cid).updatePorfolio(uid, token);
+      case(?cid) await Users.canister(cid).updatePorfolio(uid, token);
     };
   };
 
@@ -323,7 +359,7 @@ actor class UserIndex() = this {
 
     switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
-      case(?cid) await UsersCanister(cid).updateTransactions(uid, txId);
+      case(?cid) await Users.canister(cid).updateTransactions(uid, txId);
     };
   };
 
@@ -337,9 +373,9 @@ actor class UserIndex() = this {
       case(?cid) cid;
     };
 
-    let token = await UsersCanister(cid).getUserToken(uid);
+    let token = await Users.canister(cid).getUserToken(uid);
     let profileJson = await HttpService.get(HT.apiUrl # "users/retrieve/" # token, { headers = [] });
-    let companyLogo = await UsersCanister(cid).getCompanyLogo(uid);
+    let companyLogo = await Users.canister(cid).getCompanyLogo(uid);
 
     switch(Serde.JSON.fromText(profileJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize profile data");
@@ -390,9 +426,9 @@ actor class UserIndex() = this {
         case(?cid) cid;
       };
 
-      let token = await UsersCanister(cid).getUserToken(uid);
+      let token = await Users.canister(cid).getUserToken(uid);
       let profileJson = await HttpService.get(HT.apiUrl # "users/retrieve/" # token, { headers = [] });
-      let companyLogo = await UsersCanister(cid).getCompanyLogo(uid);
+      let companyLogo = await Users.canister(cid).getCompanyLogo(uid);
 
       switch(Serde.JSON.fromText(profileJson, null)) {
         case(#err(_)) throw Error.reject("cannot serialize profile data");
@@ -439,7 +475,7 @@ actor class UserIndex() = this {
 
     switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
-      case(?cid) await UsersCanister(cid).getPortfolioTokenIds(uid);
+      case(?cid) await Users.canister(cid).getPortfolioTokenIds(uid);
     };
   };
 
@@ -450,18 +486,7 @@ actor class UserIndex() = this {
 
     switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
-      case(?cid) await UsersCanister(cid).getTransactionIds(uid);
-    };
-  };
-
-
-  /// get user account ledger
-  public shared({ caller }) func getUserLedger(uid: T.UID): async Blob {
-    _callValidation(caller);
-
-    switch(usersDirectory.get(uid)) {
-      case (null) throw Error.reject(notExists);
-      case(?cid) await UsersCanister(cid).getLedger(uid);
+      case(?cid) await Users.canister(cid).getTransactionIds(uid);
     };
   };
 }

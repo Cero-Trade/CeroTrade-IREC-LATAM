@@ -1,10 +1,10 @@
-import { fileCompression, getUrlFromArrayBuffer, getImageArrayBuffer } from "@/plugins/functions";
+import { fileCompression, getUrlFromArrayBuffer, getImageArrayBuffer, convertE8SToICP } from "@/plugins/functions";
 import { useAgentCanister as agent, getErrorMessage } from "@/services/icp-provider";
 import avatar from '@/assets/sources/images/avatar-online.svg'
 import store from "@/store";
 import { UserProfileModel } from "@/models/user-profile-model";
 import { AssetType, TokenModel } from "@/models/token-model";
-import { TokensICP, TransactionHistoryInfo, TransactionInfo, TxMethodDef, TxTypeDef } from "@/models/transaction-model";
+import { Tokens, TokensICP, TransactionHistoryInfo, TransactionInfo, TxMethodDef, TxTypeDef } from "@/models/transaction-model";
 import { MarketplaceInfo, MarketplaceSellersInfo } from "@/models/marketplace-model";
 import { Principal } from "@dfinity/principal";
 import moment from "moment";
@@ -198,6 +198,16 @@ export class AgentCanister {
   }
 
 
+  static async getTokenCanister(tokenId: string): Promise<Principal> {
+    try {
+      return await agent().getTokenCanister(tokenId) as Principal
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+
   static async getMarketplace({ page, length, assetTypes, country, priceRange }: {
     page?: number,
     length?: number,
@@ -223,6 +233,10 @@ export class AgentCanister {
         item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
         item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
         item.mwh = Number(item.mwh)
+
+        // convert e8s to icp
+        item.lowerPriceE8S = convertE8SToICP(Number(item.lowerPriceE8S['e8s']))
+        item.higherPriceE8S = convertE8SToICP(Number(item.higherPriceE8S['e8s']))
       }
 
       response.totalPages = Number(response.totalPages)
@@ -265,6 +279,9 @@ export class AgentCanister {
         item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
         item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
         item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
+
+        // convert e8s to icp
+        item.priceE8S = convertE8SToICP(Number(item.priceE8S['e8s']))
       }
 
       response.totalPages = Number(response.totalPages)
@@ -277,12 +294,9 @@ export class AgentCanister {
   }
 
 
-  static async purchaseToken(tokenId: string, recipent: string, amount: number, price: number): Promise<TransactionInfo> {
+  static async purchaseToken(tokenId: string, recipent: Principal, amount: number): Promise<TransactionInfo> {
     try {
-      /* TODO replace in future for recipent */
-      const testingRecipent = Principal.fromText("2vxsx-fae");
-
-      const tx = await agent().purchaseToken(tokenId, testingRecipent, amount, price) as TransactionInfo
+      const tx = await agent().purchaseToken(tokenId, recipent, amount) as TransactionInfo
       tx.txType = Object.values(tx.txType)[0] as TxTypeDef
       tx.to = Object.values(tx.to)[0] as string
 
@@ -294,7 +308,7 @@ export class AgentCanister {
   }
 
 
-  static async putOnSale(tokenId: string, quantity: number, price: number): Promise<void> {
+  static async putOnSale(tokenId: string, quantity: number, price: TokensICP): Promise<void> {
     try {
       const res = await agent().sellToken(tokenId, quantity, price)
       console.log(res);
@@ -337,7 +351,7 @@ export class AgentCanister {
     length?: number,
     txType?: TxTypeDef,
     country?: string,
-    priceRange?: TokensICP[],
+    priceRange?: Tokens[],
     mwhRange?: number[],
     assetTypes?: AssetType[],
     method?: TxMethodDef,
@@ -373,6 +387,9 @@ export class AgentCanister {
         item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
         item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
         item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
+
+        // convert e8s to icp
+        item.priceE8S = convertE8SToICP(Number(item.priceE8S['e8s']))
       }
 
       response.totalPages = Number(response.totalPages)

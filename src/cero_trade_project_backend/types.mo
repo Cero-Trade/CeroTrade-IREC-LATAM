@@ -8,29 +8,30 @@ import Text "mo:base/Text";
 import Error "mo:base/Error";
 import Array "mo:base/Array";
 
-// Types
-import IC_MANAGEMENT "./ic_management_canister_interface";
-import ICRC "./ICRC";
+// interfaces
+import ICPTypes "./ICPTypes";
+
+// types
+import ENV "./env";
 
 module {
-  public let ic : IC_MANAGEMENT.IC = actor ("aaaaa-aa");
-
-  public func getControllers(canister_id: CanisterId): async ?[Principal] {
-    let status = await ic.canister_status({ canister_id });
-    status.settings.controllers
-  };
-
-  // global admin assert validation
-  public func adminValidation(caller: Principal, controllers: ?[Principal]) {
-    assert switch(controllers) {
-      case(null) true;
-      case(?value) Array.find<Principal>(value, func x = x == caller) != null;
-    };
-  };
-
   // TODO try to change to simplest format to better filtering
   // global date format variable
   public let dateFormat: Text = "YYYY-MM-DDTHH:mm:ss.sssssssssZ";
+
+  // amount in e8s equal to 1 ICP
+  public func getE8sEquivalence(): Nat64 {
+    Nat64.fromNat(switch(Nat.fromText(ENV.VITE_E8S_EQUIVALENCE)) {
+      case(null) 0;
+      case(?value) value;
+    });
+  };
+  public func getCeroComission(): Nat64 {
+    Nat64.fromNat(switch(Nat.fromText(ENV.VITE_CERO_COMISSION)) {
+      case(null) 0;
+      case(?value) value;
+    });
+  };
 
   public type UID = Principal;
   public type CanisterId = Principal;
@@ -39,9 +40,9 @@ module {
   public type RedemId = Text;
   public type CompanyLogo = [Nat8];
   public type Beneficiary = UID;
-  public type BlockHash = Nat64;
+  public type TxIndex = Nat;
   public type TokenAmount = Nat;
-  public type Price = ICRC.Tokens;
+  public type Price = { e8s: Nat64 };
   
   //
   // UsersAgent
@@ -62,7 +63,7 @@ module {
     companyLogo: ?CompanyLogo;
     vaultToken: Text;
     principal: Principal;
-    ledger: ICRC.AccountIdentifier;
+    // TODO want to delete this variable and fetch data directly token canisters
     portfolio: [TokenId];
     transactions: [TransactionId];
     beneficiaries: [Beneficiary];
@@ -95,32 +96,34 @@ module {
 
   public type TransactionInfo = {
     transactionId: TransactionId;
-    blockHash: BlockHash;
+    txIndex: TxIndex;
     from: UID;
-    to: Beneficiary;
+    to: ?Beneficiary;
     tokenId: TokenId;
     txType: TxType;
     tokenAmount: TokenAmount;
-    priceICP: Price;
+    priceE8S: ?Price;
     date: Text;
     method: TxMethod;
   };
 
   public type TransactionHistoryInfo = {
     transactionId: TransactionId;
-    blockHash: BlockHash;
+    txIndex: TxIndex;
     from: UID;
-    to: Beneficiary;
+    to: ?Beneficiary;
     assetInfo: ?AssetInfo;
     txType: TxType;
     tokenAmount: TokenAmount;
-    priceICP: Price;
+    priceE8S: ?Price;
     date: Text;
     method: TxMethod;
   };
 
   public type TxType = {
-    #transfer: Text;
+    #purchase: Text;
+    #putOnSale: Text;
+    #takeOffMarketplace: Text;
     #redemption: Text;
   };
 
@@ -148,8 +151,8 @@ module {
     deviceCode: Text;
     capacity: TokenAmount;
     location: Text;
-    latitude: Float;
-    longitude: Float;
+    latitude: Text;
+    longitude: Text;
     address: Text;
     stateProvince: Text;
     country: Text;
@@ -160,8 +163,8 @@ module {
     assetType: AssetType;
     startDate: Text;
     endDate: Text;
-    co2Emission: Float;
-    radioactivityEmnission: Float;
+    co2Emission: Text;
+    radioactivityEmnission: Text;
     volumeProduced: TokenAmount;
     deviceDetails: DeviceDetails;
     specifications: Specifications;
@@ -174,8 +177,8 @@ module {
 
   public type MarketplaceInfo = {
     tokenId: Text;
-    lowerPriceICP: Price;
-    higherPriceICP: Price;
+    lowerPriceE8S: Price;
+    higherPriceE8S: Price;
     assetInfo: AssetInfo;
     mwh: TokenAmount;
   };
@@ -183,7 +186,7 @@ module {
   public type MarketplaceSellersInfo = {
     tokenId: Text;
     sellerId: UID;
-    priceICP: Price;
+    priceE8S: Price;
     assetInfo: ?AssetInfo;
     mwh: TokenAmount;
   };
@@ -195,12 +198,8 @@ module {
 
   public type UserTokenInfo = {
     quantity: TokenAmount;
-    priceICP: Price;
+    priceE8S: Price;
   };
-
-  public type CanisterSettings = IC_MANAGEMENT.CanisterSettings;
-
-  public type WasmModule = IC_MANAGEMENT.WasmModule;
 
   public type WasmModuleName = {
     #token: Text;
@@ -210,38 +209,22 @@ module {
 
   public let LOW_MEMORY_LIMIT: Nat = 50000;
 
-  public type UsersInterface = actor {
-    length: query () -> async Nat;
-    registerUser: (uid: UID, token: Text) -> async();
-    deleteUser: (uid: UID) -> async();
-    storeCompanyLogo: (uid: UID, avatar: CompanyLogo) -> async();
-    getCompanyLogo: query (uid: UID) -> async CompanyLogo;
-    updatePorfolio: (uid: UID, tokenId: TokenId) -> async();
-    deletePorfolio: (uid: UID, tokenId: TokenId) -> async();
-    updateTransactions: (uid: UID, tx: TransactionId) -> async();
-    getPortfolioTokenIds: query (uid: UID) -> async [TokenId];
-    getTransactionIds: query (uid: UID) -> async [TransactionId];
-    getBeneficiaries: query (uid: UID) -> async [Beneficiary];
-    getUserToken: query (uid: UID) -> async Text;
-    validateToken: query (uid: UID, token: Text) -> async Bool;
-    getLedger: query (uid: UID) -> async Blob;
+  public type TransferInMarketplaceArgs = {
+    from: ICPTypes.Account;
+    to: ICPTypes.Account;
+    amount: ICPTypes.Balance;
   };
 
-  public type TokenInterface = actor {
-    init: (assetMetadata: AssetInfo) -> async();
-    mintToken: (uid: UID, amount: TokenAmount, inMarket: TokenAmount) -> async ();
-    burnToken: (uid: UID, amount: TokenAmount, inMarket: TokenAmount) -> async ();
-    getUserMinted: query (uid: UID) -> async TokenInfo;
-    getAssetInfo: query () -> async AssetInfo;
-    getRemainingAmount: query () -> async TokenAmount;
-    getTokenId: query () -> async TokenId;
-    getCanisterId: query () -> async CanisterId;
-    purchaseToken: (uid: UID, recipent: UID, amount: TokenAmount, inMarket: TokenAmount) -> async();
+  public type PurchaseInMarketplaceArgs = {
+    marketplace: ICPTypes.Account;
+    seller: ICPTypes.Account;
+    buyer: ICPTypes.Account;
+    amount: ICPTypes.Balance;
+    priceE8S: Price;
   };
 
-  public type TransactionsInterface = actor {
-    length: query () -> async Nat;
-    registerTransaction: (tx: TransactionInfo) -> async TransactionId;
-    getTransactionsById: query (txIds: [TransactionId], txType: ?TxType, priceRange: ?[Price], mwhRange: ?[TokenAmount], method: ?TxMethod, rangeDates: ?[Text]) -> async [TransactionInfo];
+  public type RedeemArgs = {
+    owner: ICPTypes.Account;
+    amount: ICPTypes.Balance;
   };
 }
