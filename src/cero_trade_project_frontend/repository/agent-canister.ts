@@ -1,4 +1,4 @@
-import { fileCompression, getUrlFromArrayBuffer, getImageArrayBuffer } from "@/plugins/functions";
+import { fileCompression, getUrlFromArrayBuffer, getImageArrayBuffer, convertE8SToICP } from "@/plugins/functions";
 import { useAgentCanister as agent, getErrorMessage } from "@/services/icp-provider";
 import avatar from '@/assets/sources/images/avatar-online.svg'
 import store from "@/store";
@@ -235,8 +235,8 @@ export class AgentCanister {
         item.mwh = Number(item.mwh)
 
         // convert e8s to icp
-        item.lowerPriceE8S = Number(item.lowerPriceE8S['e8s']) / variables.e8sEquivalence
-        item.higherPriceE8S = Number(item.higherPriceE8S['e8s']) / variables.e8sEquivalence
+        item.lowerPriceE8S = convertE8SToICP(Number(item.lowerPriceE8S['e8s']))
+        item.higherPriceE8S = convertE8SToICP(Number(item.higherPriceE8S['e8s']))
       }
 
       response.totalPages = Number(response.totalPages)
@@ -281,7 +281,7 @@ export class AgentCanister {
         item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
 
         // convert e8s to icp
-        item.priceE8S = Number(item.priceE8S['e8s']) / variables.e8sEquivalence
+        item.priceE8S = convertE8SToICP(Number(item.priceE8S['e8s']))
       }
 
       response.totalPages = Number(response.totalPages)
@@ -294,12 +294,9 @@ export class AgentCanister {
   }
 
 
-  static async purchaseToken(tokenId: string, recipent: string, amount: number, price: TokensICP): Promise<TransactionInfo> {
+  static async purchaseToken(tokenId: string, recipent: Principal, amount: number, price: TokensICP): Promise<TransactionInfo> {
     try {
-      /* TODO replace in future for recipent */
-      const testingRecipent = Principal.fromText("2vxsx-fae");
-
-      const tx = await agent().purchaseToken(tokenId, testingRecipent, amount, price) as TransactionInfo
+      const tx = await agent().purchaseToken(tokenId, recipent, amount, price) as TransactionInfo
       tx.txType = Object.values(tx.txType)[0] as TxTypeDef
       tx.to = Object.values(tx.to)[0] as string
 
@@ -392,7 +389,7 @@ export class AgentCanister {
         item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
 
         // convert e8s to icp
-        item.priceE8S = Number(item.priceE8S['e8s']) / variables.e8sEquivalence
+        item.priceE8S = convertE8SToICP(Number(item.priceE8S['e8s']))
       }
 
       response.totalPages = Number(response.totalPages)

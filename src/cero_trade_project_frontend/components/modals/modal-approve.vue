@@ -42,6 +42,7 @@ import { ref, computed, watch, getCurrentInstance } from 'vue'
 import { useToast } from 'vue-toastification';
 import variables from '@/mixins/variables'
 import { LedgerCanister } from '@/repository/ledger-canister';
+import { convertE8SToICP, convertICPToE8S } from '@/plugins/functions'
 
 const
   props = defineProps({
@@ -73,20 +74,15 @@ loading = ref(false),
 hasCancelEmit = !!instance?.vnode.props?.onCancel,
 
 tokenId = computed(() => props.tokenId),
-totalInICP = computed(() => convertToICP(convertToE8S(props.amountInIcp) + props.feeTxInE8s + ceroComisison)),
-totalInE8S = computed(() => convertToE8S(props.amountInIcp) + props.feeTxInE8s + ceroComisison)
+totalInICP = computed(() => convertE8SToICP(convertICPToE8S(props.amountInIcp) + props.feeTxInE8s + ceroComisison)),
+totalInE8S = computed(() => convertICPToE8S(props.amountInIcp) + props.feeTxInE8s + ceroComisison)
 
 
 defineExpose({ model })
 
-
 watch(model, (value) => {
   if (!value) emit('close')
 })
-
-
-const convertToE8S = (value) => value * e8sEquivalence
-const convertToICP = (value) => value / e8sEquivalence
 
 
 async function approve() {

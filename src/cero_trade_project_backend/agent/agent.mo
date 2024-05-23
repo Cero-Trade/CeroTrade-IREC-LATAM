@@ -398,9 +398,8 @@ actor class Agent() = this {
     // store to caller
     await UserIndex.updateTransactions(caller, txId);
 
-    // ----> Warn commented while beneficiary flow is builded <----
-    // // store to recipent
-    // await UserIndex.updateTransactions(Principal.fromText(recipent), txId);
+    // store to recipent
+    await UserIndex.updateTransactions(recipent, txId);
 
     // take token off marketplace reference
     await Marketplace.takeOffSale(tokenId, tokenAmount, recipent);

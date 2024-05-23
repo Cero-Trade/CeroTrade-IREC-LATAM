@@ -234,31 +234,31 @@
             >
               <template #[`item.seller`]="{ item }">
                 <v-menu :close-on-content-click="false" @update:model-value="(value) => getSellerProfile(value, item.seller)">
-                    <template #activator="{ props }">
-                      <a v-bind="props" class="text-capitalize pointer flex-acenter" style="gap: 5px; text-wrap: nowrap">{{ item.seller }}</a>
-                    </template>
+                  <template #activator="{ props }">
+                    <a v-bind="props" class="pointer flex-acenter" style="gap: 5px; max-width: 200px">{{ item.seller }}</a>
+                  </template>
 
-                    <v-card class="px-4 py-2 bg-secondary d-flex">
-                      <v-progress-circular
-                        v-if="!previewSeller"
-                        indeterminate
-                        color="rgb(var(--v-theme-primary))"
-                        class="mx-auto"
-                      ></v-progress-circular>
+                  <v-card class="px-4 py-2 bg-secondary d-flex flex-column">
+                    <v-progress-circular
+                      v-if="!previewSeller"
+                      indeterminate
+                      color="rgb(var(--v-theme-primary))"
+                      class="mx-auto"
+                    ></v-progress-circular>
 
-                      <span v-else class="flex-acenter" style="gap: 10px; text-wrap: nowrap">
-                        <v-img-load
-                          :src="previewSeller.companyLogo"
-                          :alt="`${previewSeller.companyName} logo`"
-                          cover
-                          sizes="30px"
-                          rounded="50%"
-                          class="flex-grow-0"
-                        />
-                        {{ previewSeller.companyName }}
-                      </span>
-                    </v-card>
-                  </v-menu>
+                    <span v-else class="flex-acenter" style="gap: 10px; text-wrap: nowrap">
+                      <v-img-load
+                        :src="previewSeller.companyLogo"
+                        :alt="`${previewSeller.companyName} logo`"
+                        cover
+                        sizes="30px"
+                        rounded="50%"
+                        class="flex-grow-0"
+                      />
+                      {{ previewSeller.companyName }}
+                    </span>
+                  </v-card>
+                </v-menu>
               </template>
 
               <template #[`item.price`]="{ item }">
@@ -816,7 +816,32 @@
           @update:options="getMarketPlace"
           >
             <template #[`item.seller`]="{ item }">
-              <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">{{ item.seller }}</span>
+              <v-menu :close-on-content-click="false" @update:model-value="(value) => getSellerProfile(value, item.seller)">
+                <template #activator="{ props }">
+                  <a v-bind="props" class="pointer flex-acenter" style="gap: 5px; max-width: 200px">{{ item.seller }}</a>
+                </template>
+
+                <v-card class="px-4 py-2 bg-secondary d-flex flex-column">
+                  <v-progress-circular
+                    v-if="!previewSeller"
+                    indeterminate
+                    color="rgb(var(--v-theme-primary))"
+                    class="mx-auto"
+                  ></v-progress-circular>
+
+                  <span v-else class="flex-acenter" style="gap: 10px; text-wrap: nowrap">
+                    <v-img-load
+                      :src="previewSeller.companyLogo"
+                      :alt="`${previewSeller.companyName} logo`"
+                      cover
+                      sizes="30px"
+                      rounded="50%"
+                      class="flex-grow-0"
+                    />
+                    {{ previewSeller.companyName }}
+                  </span>
+                </v-card>
+              </v-menu>
             </template>
 
             <template #[`item.price`]="{ item }">
@@ -1449,7 +1474,7 @@ async function getMarketPlace() {
       list.push({
         seller: item.sellerId,
         country: item.assetInfo.specifications.country,
-        price: item.priceE8S.e8s,
+        price: item.priceE8S,
         mwh: item.mwh,
       })
     }
@@ -1470,7 +1495,7 @@ function selectSeller(item) {
   dialogPurchaseReview.value = true
   dialogChooseSeller.value = false;
 
-  sellerSelected.value = item.userProfile.principalId;
+  sellerSelected.value = item.seller;
   tokenPrice.value = item.price;
 }
 
@@ -1492,7 +1517,7 @@ function showDialog(input) {
 async function purchaseToken() {
   try {
     showLoader()
-    const tx = await AgentCanister.purchaseToken(tokenId.value, sellerSelected.value.toString(), Number(tokenAmount.value), Number(tokenPrice.value))
+    const tx = await AgentCanister.purchaseToken(tokenId.value, sellerSelected.value, Number(tokenAmount.value), Number(tokenPrice.value))
     await getData()
 
     closeLoader()

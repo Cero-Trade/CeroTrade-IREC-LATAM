@@ -152,4 +152,6 @@ https://mops.one/
 * ICRC Types: https://github.com/NatLabs/icrc1/blob/main/src/ICRC1/Types.mo
 
 ### NNS local deployment
-https://internetcomputer.org/docs/current/developer-docs/developer-tools/cli-tools/cli-reference/dfx-nns
+* url: https://internetcomputer.org/docs/current/developer-docs/developer-tools/cli-tools/cli-reference/dfx-nns
+
+* convert principal to account-id: https://k7gat-daaaa-aaaae-qaahq-cai.raw.ic0.app/docs/
