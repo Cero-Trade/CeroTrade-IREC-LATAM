@@ -133,6 +133,7 @@ actor class Marketplace() = this {
     };
   };
 
+  // TODO troubles here setting token on marketplace
   // handles new token information on market
   public shared({ caller }) func putOnSale(tokenId : T.TokenId, quantity : T.TokenAmount, user : T.UID, priceE8S: T.Price) : async () {
     _callValidation(caller);
