@@ -146,9 +146,6 @@ https://internetcomputer.org/docs/current/references/ic-interface-spec#ic-manage
 ### Mops site url
 https://mops.one/
 
-### Anonymous principal
-2vxsx-fae
-
 ### ICRC Standard Implementation
 * ICRC Fungible: https://github.com/PanIndustrial-Org/ICRC_fungible
 

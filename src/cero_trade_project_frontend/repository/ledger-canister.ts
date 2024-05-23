@@ -37,13 +37,12 @@ export class LedgerCanister {
   }): Promise<Icrc1BlockIndex> {
     try {
       const tokenCanister = await AgentCanister.getTokenCanister(tokenId),
-      fee = 10_000,
       result = await ledger().icrc2_approve({
-        fee: [fee],
+        fee: [10_000],
         memo: [],
         from_subaccount: [],
         created_at_time: [],
-        amount: amount.e8s + variables.ceroComisison + fee,
+        amount: amount.e8s,
         expected_allowance: [],
         expires_at: [moment().add(7, 'days').milliseconds()],
         spender: {
@@ -55,8 +54,12 @@ export class LedgerCanister {
 
       return result['Ok'];
     } catch (error) {
-      console.error(error);
-      throw error.toString()
+      const newError = Object.entries(error)[0],
+      message = Object.entries(newError[1])[0],
+      errorMessage = `${newError[0]}: ${message[0]} - ${message[1]}`
+
+      console.error(errorMessage);
+      throw errorMessage
     }
   }
 }

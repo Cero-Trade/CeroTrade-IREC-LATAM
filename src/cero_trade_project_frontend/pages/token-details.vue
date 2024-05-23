@@ -1,4 +1,17 @@
 <template>
+  <modal-approve
+    ref="modalApprove"
+    :token-id="tokenId"
+    :amount-in-icp="dialogRedeemCertificates ? Number(tokenPrice) : null"
+    :fee-in-e8s="dialogRedeemCertificates ? 30_000 : null"
+    @confirm="() => {
+      if (dialogRedeemCertificates)
+        purchaseToken()
+      else if (dialogRedeem)
+        redeemToken()
+    }"
+  ></modal-approve>
+
   <div id="token-details">
     <span class="mb-10 acenter" style="color: #475467; font-size: 16px; font-weight: 700;">
       <img src="@/assets/sources/icons/home-layout.svg" alt="Home Icon" style="width: 20px;">
@@ -624,8 +637,7 @@
             <v-btn class="btn" @click="async () => {
               if (!(await formRedeem.validate()).valid) return
 
-              dialogRedeem = false;
-              redeemToken()
+              modalApprove.model = true
             }" style="border: none!important;">Redeem</v-btn>
           </div>
         </v-card>
@@ -933,7 +945,7 @@
 
         <div class="divrow center mt-6" style="gap: 10px;">
           <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogPurchaseReview = false">Cancel</v-btn>
-          <v-btn class="btn" @click="purchaseToken()" style="border: none!important;">Proceed with payment</v-btn>
+          <v-btn class="btn" @click="modalApprove.model = true" style="border: none!important;">Proceed with payment</v-btn>
         </div>
       </v-card>
     </v-dialog>
@@ -1031,7 +1043,7 @@
 
         <div class="divrow center mt-6" style="gap: 10px;">
           <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogRedeemCertificates = false">Not Now</v-btn>
-          <v-btn class="btn" @click="redeemToken()" style="border: none!important;">Yes, redeem</v-btn>
+          <v-btn class="btn" @click="modalApprove.model = true" style="border: none!important;">Yes, redeem</v-btn>
         </div>
       </v-card>
     </v-dialog>
@@ -1103,6 +1115,7 @@
 
 <script setup>
 import '@/assets/styles/pages/token-details.scss'
+import ModalApprove from '@/components/modals/modal-approve.vue'
 import countries from '@/assets/sources/json/countries-all.json'
 import Apexchart from "vue3-apexcharts"
 import SphereIcon from '@/assets/sources/companies/sphere.svg'
@@ -1323,6 +1336,8 @@ filters = ref({
 
 previewSeller = ref(null),
 
+modalApprove = ref(),
+
 
 tokenId = computed(() => route.query.tokenId),
 prevRoutePatch  = computed(() => {
@@ -1535,6 +1550,7 @@ async function redeemToken() {
     await getData()
 
     closeLoader()
+    dialogRedeem.value = false;
     dialogRedeemCertificates.value = false;
 
     console.log("redeem token", tx);
