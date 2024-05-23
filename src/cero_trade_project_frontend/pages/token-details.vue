@@ -2,12 +2,12 @@
   <modal-approve
     ref="modalApprove"
     :token-id="tokenId"
-    :amount-in-icp="dialogRedeemCertificates ? Number(tokenPrice) : null"
-    :fee-in-e8s="dialogRedeemCertificates ? 30_000 : null"
+    :amount-in-icp="dialogPurchaseReview ? Number(tokenPrice) : null"
+    :fee-in-e8s="dialogPurchaseReview ? 30_000 : null"
     @confirm="() => {
-      if (dialogRedeemCertificates)
+      if (dialogPurchaseReview)
         purchaseToken()
-      else if (dialogRedeem)
+      else if (dialogRedeem || dialogRedeemCertificates)
         redeemToken()
     }"
   ></modal-approve>
