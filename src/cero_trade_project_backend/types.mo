@@ -63,6 +63,7 @@ module {
     companyLogo: ?CompanyLogo;
     vaultToken: Text;
     principal: Principal;
+    // TODO want to delete this variable and fetch data directly token canisters
     portfolio: [TokenId];
     transactions: [TransactionId];
     beneficiaries: [Beneficiary];
