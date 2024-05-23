@@ -26,8 +26,8 @@ export default {
   },
   dateFormat: 'YYYY-MM-DDTHH:mm:ss.sssssssssZ',
   // amount in e8s equal to 1 ICP
-  e8sEquivalence: Number(process.env.E8S_EQUIVALENCE.split('_').join('')),
-  ceroComisison: Number(process.env.CERO_COMISSION.split('_').join('')),
+  e8sEquivalence: Number(process.env.E8S_EQUIVALENCE),
+  ceroComisison: Number(process.env.CERO_COMISSION),
   isProduction: process.env.NODE_ENV === 'production',
 
   isSafari: /^((?!chrome|android).)*safari/i.test(navigator.userAgent),
