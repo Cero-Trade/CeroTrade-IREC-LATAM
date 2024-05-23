@@ -393,6 +393,9 @@ actor class Agent() = this {
       method = #blockchainTransfer("blockchainTransfer");
     };
 
+    // store token register on profile
+    await UserIndex.updatePorfolio(caller, tokenId);
+
     // register transaction
     let txId = await TransactionIndex.registerTransaction(txInfo);
     // store to caller

@@ -294,9 +294,9 @@ export class AgentCanister {
   }
 
 
-  static async purchaseToken(tokenId: string, recipent: Principal, amount: number, price: TokensICP): Promise<TransactionInfo> {
+  static async purchaseToken(tokenId: string, recipent: Principal, amount: number): Promise<TransactionInfo> {
     try {
-      const tx = await agent().purchaseToken(tokenId, recipent, amount, price) as TransactionInfo
+      const tx = await agent().purchaseToken(tokenId, recipent, amount) as TransactionInfo
       tx.txType = Object.values(tx.txType)[0] as TxTypeDef
       tx.to = Object.values(tx.to)[0] as string
 

@@ -24,7 +24,7 @@
         <v-btn
           class="bg-tertiary text-white flex-grow-1"
           :disabled="loading"
-          @click="hasCancelEmit ? emit('cancel') : model = false"
+          @click="hasCancelEmit ? emit('decline') : model = false"
         >Decline</v-btn>
 
         <v-btn
@@ -64,10 +64,10 @@ const
       default: "350"
     },
   }),
-  emit = defineEmits(['accept', 'close', 'cancel']),
+  emit = defineEmits(['approve', 'close', 'decline']),
   instance = getCurrentInstance(),
   toast = useToast(),
-  { e8sEquivalence, ceroComisison } = variables,
+  { ceroComisison } = variables,
 
 model = ref(false),
 loading = ref(false),
@@ -97,9 +97,9 @@ async function approve() {
 
     loading.value = false
     model.value = false
-    toast.info(`You has approved to spend ${totalInICP} ICP`)
+    toast.info(`You has approved to spend ${totalInICP.value} ICP`)
 
-    emit('accept')
+    emit('approve')
   } catch (error) {
     loading.value = false
     toast.error(error)

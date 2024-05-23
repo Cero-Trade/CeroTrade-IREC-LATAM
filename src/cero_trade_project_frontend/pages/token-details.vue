@@ -4,7 +4,7 @@
     :token-id="tokenId"
     :amount-in-icp="dialogPurchaseReview ? Number(tokenPrice) : null"
     :fee-in-e8s="dialogPurchaseReview ? 30_000 : null"
-    @confirm="() => {
+    @approve="() => {
       if (dialogPurchaseReview)
         purchaseToken()
       else if (dialogRedeem || dialogRedeemCertificates)
@@ -1517,7 +1517,7 @@ function showDialog(input) {
 async function purchaseToken() {
   try {
     showLoader()
-    const tx = await AgentCanister.purchaseToken(tokenId.value, sellerSelected.value, Number(tokenAmount.value), Number(tokenPrice.value))
+    const tx = await AgentCanister.purchaseToken(tokenId.value, sellerSelected.value, Number(tokenAmount.value))
     await getData()
 
     closeLoader()
