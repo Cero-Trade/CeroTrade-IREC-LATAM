@@ -413,6 +413,9 @@ actor class Agent() = this {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
+    // check price higher than 0
+    if (priceICP < 0) throw Error.reject("Price Must be higher than 0");
+
     // check balance
     let balance = await TokenIndex.balanceOf(caller, tokenId);
 
@@ -422,7 +425,7 @@ actor class Agent() = this {
     let availableTokens: T.TokenAmount = balance - tokensInSale;
 
     // check if user has enough tokens
-    if (availableTokens < quantity) throw Error.reject("Not enough tokens");
+    if (availableTokens < quantity or quantity < 0) throw Error.reject("Not enough tokens to sell");
 
     // transfer tokens from user to marketplace
     let txIndex = await TokenIndex.sellInMarketplace(caller, tokenId, quantity);
