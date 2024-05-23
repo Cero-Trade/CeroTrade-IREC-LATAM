@@ -73,8 +73,8 @@ loading = ref(false),
 hasCancelEmit = !!instance?.vnode.props?.onCancel,
 
 tokenId = computed(() => props.tokenId),
-totalInICP = computed(() => convertToICP(convertToE8s(props.amountInIcp) + props.feeTxInE8s + ceroComisison)),
-totalInE8s = computed(() => convertToE8s(props.amountInIcp) + props.feeTxInE8s + ceroComisison)
+totalInICP = computed(() => convertToICP(convertToE8S(props.amountInIcp) + props.feeTxInE8s + ceroComisison)),
+totalInE8S = computed(() => convertToE8S(props.amountInIcp) + props.feeTxInE8s + ceroComisison)
 
 
 defineExpose({ model })
@@ -85,7 +85,7 @@ watch(model, (value) => {
 })
 
 
-const convertToE8s = (value) => value * e8sEquivalence
+const convertToE8S = (value) => value * e8sEquivalence
 const convertToICP = (value) => value / e8sEquivalence
 
 
@@ -95,7 +95,7 @@ async function approve() {
   try {
     const txBlock = await LedgerCanister.approveICPFromToken({
       tokenId: tokenId.value,
-      amount: { e8s: totalInE8s.value },
+      amount: { e8s: totalInE8S.value },
     })
     console.log(txBlock);
 
