@@ -4,7 +4,6 @@ import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import Int "mo:base/Int";
 import Buffer "mo:base/Buffer";
-import Debug "mo:base/Debug";
 
 // types
 import T "../types";
@@ -305,20 +304,6 @@ actor class Marketplace() = this {
     }];
     totalPages: Nat;
   } {
-    let marketplaceTest = Buffer.Buffer<(T.TokenId, T.TokenAmount, [(T.UID, T.UserTokenInfo)])>(50);
-
-    for ((tokenId, tokenMarketInfo) in tokensInMarket.entries()) {
-      let usersxToken = Buffer.Buffer<((T.UID, T.UserTokenInfo))>(50);
-
-      for ((userId, userTokenInfo) in tokenMarketInfo.usersxToken.entries()) {
-        usersxToken.add( (userId, userTokenInfo) )
-      };
-
-      marketplaceTest.add( (tokenId, tokenMarketInfo.totalQuantity, Buffer.toArray<(T.UID, T.UserTokenInfo)>(usersxToken)) );
-    };
-
-    Debug.print("marketplace: " # debug_show(Buffer.toArray<(T.TokenId, T.TokenAmount, [(T.UID, T.UserTokenInfo)])>(marketplaceTest)));
-
     // define page based on statement
     let startPage = switch(page) {
       case(null) 1;
