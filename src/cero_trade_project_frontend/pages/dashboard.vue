@@ -33,7 +33,11 @@
             <v-col xl="8" lg="8" md="6" cols="12">
               <v-card class="card" style="min-height: 100%!important;">
                 <h6>Renewable sources</h6>
-                <renewable-chart height="200" :series="seriesRenewable" />
+                <renewable-chart
+                  height="200"
+                  :series="seriesRenewable"
+                  :categories="categoriesRenewable"
+                />
               </v-card>
             </v-col>
   
@@ -381,6 +385,9 @@
   import MwhChart from '@/components/mwh-chart.vue'
   // import IrecChart from '@/components/irec-chart.vue'
   import { UserProfileModel } from '@/models/user-profile-model'
+  import { AgentCanister } from '@/repository/agent-canister'
+  import { useToast } from 'vue-toastification'
+  import { ref } from 'vue'
   
   export default {
     components: {
@@ -389,8 +396,11 @@
       MwhChart,
       // IrecChart
     },
-    data(){
+    setup(){
+      const toast = useToast()
+
       return{
+        toast,
         profile: UserProfileModel.get(),
         walletStatus: false,
         status2fa: false,
@@ -450,10 +460,9 @@
           name: 'PRODUCT C',
           data: [111, 187, 165, 115, 821, 814, 411, 173, 315, 115, 261, 314]
         },],
-        seriesRenewable: [{
-          name: 'PRODUCT A',
-          data: [24, 55, 31, 67, 12, 43]
-        },],
+        
+        seriesRenewable: ref(undefined),
+        categoriesRenewable: ref(undefined),
         seriesMwh: [{
             name: 'Series 1',
             data: [31, 40, 28, 51, 42, 109, 100, 31, 40, 28, 51, 42, 109, 100 ]
@@ -461,5 +470,26 @@
         ],
       }
     },
+    beforeMount() {
+      this.getData()
+    },
+    methods: {
+      async getData() {
+        try {
+          const response = await AgentCanister.getAssetStatistics(),
+          categories = [], renewable = []
+
+          for (const [energy, mwh] of response) {
+            renewable.push(energy)
+            categories.push(mwh)
+          }
+
+          this.seriesRenewable = [{ name: 'MWh in Cero Trade', data: categories }]
+          this.categoriesRenewable = renewable
+        } catch (error) {
+          this.toast.error(error)
+        }
+      }
+    }
   }
   </script>

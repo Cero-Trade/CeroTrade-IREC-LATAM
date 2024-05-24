@@ -13,14 +13,14 @@ import DateTime "mo:datetime/DateTime";
 import T "../types";
 
 shared({ caller = transactionIndexCaller }) actor class Transactions() {
-  var transactions: HM.HashMap<T.TransactionId, T.TransactionInfo> = HM.HashMap(16, Text.equal, Text.hash);
+  var transactions: HM.HashMap<T.TransactionId, T.TransactionInfo> = HM.HashMap(50, Text.equal, Text.hash);
   stable var transactionsEntries : [(T.TransactionId, T.TransactionInfo)] = [];
 
 
   /// funcs to persistent collection state
   system func preupgrade() { transactionsEntries := Iter.toArray(transactions.entries()) };
   system func postupgrade() {
-    transactions := HM.fromIter<T.TransactionId, T.TransactionInfo>(transactionsEntries.vals(), 16, Text.equal, Text.hash);
+    transactions := HM.fromIter<T.TransactionId, T.TransactionInfo>(transactionsEntries.vals(), 50, Text.equal, Text.hash);
     transactionsEntries := [];
   };
 

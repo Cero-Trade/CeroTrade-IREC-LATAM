@@ -12,6 +12,7 @@ module ENV {
   public let CANISTER_ID_TRANSACTION_INDEX: Text = "avqkn-guaaa-aaaaa-qaaea-cai";
   public let CANISTER_ID_TOKEN_INDEX: Text = "by6od-j4aaa-aaaaa-qaadq-cai";
   public let CANISTER_ID_TOKEN: Text = "b77ix-eeaaa-aaaaa-qaada-cai";
+  public let CANISTER_ID_STATISTICS: Text = "c2lt4-zmaaa-aaaaa-qaaiq-cai";
   public let CANISTER_ID_NNS_SNS_WASM: Text = "qaa6y-5yaaa-aaaaa-aaafa-cai";
   public let CANISTER_ID_NNS_ROOT: Text = "r7inp-6aaaa-aaaaa-aaabq-cai";
   public let CANISTER_ID_NNS_REGISTRY: Text = "rwlgt-iiaaa-aaaaa-aaaaa-cai";

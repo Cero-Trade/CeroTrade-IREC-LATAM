@@ -401,4 +401,18 @@ export class AgentCanister {
       throw getErrorMessage(error)
     }
   }
+
+
+  static async getAssetStatistics(): Promise<[string, number][]> {
+    try {
+      const res = await agent().getAssetStatistics() as [string, number][]
+      for (const item of res)
+        item[1] = Number(item[1])
+
+      return res
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
 }

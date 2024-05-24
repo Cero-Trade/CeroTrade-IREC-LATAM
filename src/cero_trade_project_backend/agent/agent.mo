@@ -16,6 +16,7 @@ import UserIndex "canister:user_index";
 import TokenIndex "canister:token_index";
 import TransactionIndex "canister:transaction_index";
 import Marketplace "canister:marketplace";
+import Statistics "canister:statistics";
 
 // interfaces
 import IC_MANAGEMENT "../ic_management_canister_interface";
@@ -82,9 +83,11 @@ actor class Agent() = this {
 
 
   /// register token on platform
-  public shared({ caller }) func registerToken(tokenId: Text, name: Text, symbol: Text, logo: Text): async T.CanisterId {
+  public shared({ caller }) func registerToken(tokenId: Text, name: Text, symbol: Text, logo: Text): async (T.CanisterId, T.AssetInfo) {
     IC_MANAGEMENT.adminValidation(caller, controllers);
-    await TokenIndex.registerToken(tokenId, name, symbol, logo);
+    let tokenStats = await TokenIndex.registerToken(tokenId, name, symbol, logo);
+    await Statistics.registerAssetStatistic(tokenStats.1.assetType, tokenStats.1.volumeProduced);
+    tokenStats
   };
 
 
@@ -655,4 +658,8 @@ actor class Agent() = this {
       totalPages
     }
   };
+
+
+  // get asset registrations
+  public func getAssetStatistics(): async [(Text, T.TokenAmount)] { await Statistics.getAssetStatistics() };
 }

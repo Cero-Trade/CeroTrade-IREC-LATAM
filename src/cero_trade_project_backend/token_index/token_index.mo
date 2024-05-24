@@ -119,7 +119,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   };
 
   /// register [tokenDirectory] collection
-  public shared({ caller }) func registerToken<system>(tokenId: Text, name: Text, symbol: Text, logo: Text): async T.CanisterId {
+  public shared({ caller }) func registerToken<system>(tokenId: Text, name: Text, symbol: Text, logo: Text): async (T.CanisterId, T.AssetInfo) {
     _callValidation(caller);
 
     if (tokenId == "") throw Error.reject("Must to provide a tokenId");
@@ -202,7 +202,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
           await Token.canister(canister_id).admin_init();
 
           tokenDirectory.put(tokenId, canister_id);
-          return canister_id;
+          return (canister_id, assetMetadata);
         } catch (error) {
           await IC_MANAGEMENT.ic.stop_canister({ canister_id });
           await IC_MANAGEMENT.ic.delete_canister({ canister_id });
