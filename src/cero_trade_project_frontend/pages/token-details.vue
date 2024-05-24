@@ -2,7 +2,7 @@
   <modal-approve
     ref="modalApprove"
     :token-id="tokenId"
-    :amount-in-icp="dialogPurchaseReview ? Number(tokenPrice) : null"
+    :amount-in-icp="dialogPurchaseReview ? Number(tokenPrice) * Number(tokenAmount) : null"
     :fee-in-e8s="dialogPurchaseReview ? 30_000 : null"
     @approve="() => {
       if (dialogPurchaseReview)
@@ -1465,7 +1465,7 @@ async function getMarketPlace() {
       country: filters.value.country?.toLowerCase(),
       priceRange: filters.value.priceRange,
       page: currentPage.value,
-      excludeCaller: false,
+      excludeCaller: true,
     }),
     list = []
 

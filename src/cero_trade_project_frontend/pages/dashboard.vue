@@ -37,12 +37,12 @@
               </v-card>
             </v-col>
   
-            <v-col cols="12">
+            <!-- <v-col cols="12">
               <v-card class="card">
                 <h6>Tokenized I-RECs</h6>
                 <irec-chart height="250" :series="series" />
               </v-card>
-            </v-col>
+            </v-col> -->
           </v-row>
         </v-col>
   
@@ -379,7 +379,7 @@
   import VueApexCharts from "vue3-apexcharts"
   import RenewableChart from '@/components/renewable-chart.vue'
   import MwhChart from '@/components/mwh-chart.vue'
-  import IrecChart from '@/components/irec-chart.vue'
+  // import IrecChart from '@/components/irec-chart.vue'
   import { UserProfileModel } from '@/models/user-profile-model'
   
   export default {
@@ -387,7 +387,7 @@
       apexchart: VueApexCharts,
       RenewableChart,
       MwhChart,
-      IrecChart
+      // IrecChart
     },
     data(){
       return{

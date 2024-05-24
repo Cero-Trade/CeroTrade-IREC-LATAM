@@ -4,6 +4,7 @@ import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import Int "mo:base/Int";
 import Buffer "mo:base/Buffer";
+import Debug "mo:base/Debug";
 
 // types
 import T "../types";
@@ -57,95 +58,29 @@ actor class Marketplace() = this {
     };
   };
 
-  // check if user is already selling a token
-  public shared({ caller }) func isSellingToken(user : T.UID, tokenId : T.TokenId): async Bool {
-    _callValidation(caller);
-
-    switch (tokensInMarket.get(tokenId)) {
-      case (null) { return false };
-      case (?info) {
-        switch (info.usersxToken.get(user)) {
-          case (null) {
-            return false;
-          };
-          case (?info) {
-            return true;
-          };
-        };
-      };
-    };
-  };
-
-  // new token in market
-  private func _newTokensInMarket(tokenId : T.TokenId, user : T.UID, quantity : T.TokenAmount, priceE8S: T.Price): async () {
-    // user is selling a new token
-    let usersxToken = HM.HashMap<T.UID, T.UserTokenInfo>(4, Principal.equal, Principal.hash);
-
-    let userxTokenInfo = {
-      quantity;
-      priceE8S;
-    };
-
-    usersxToken.put(user, userxTokenInfo);
-
-    // update the market info for the token
-    let tokenMarketInfo = {
-      totalQuantity = quantity;
-      usersxToken = usersxToken;
-    };
-
-    // add new information to the token market info
-    tokensInMarket.put(tokenId, tokenMarketInfo);
-  };
-
-  // update token information
-  private func _updatetokenMarketInfo(user : T.UID, tokenId : T.TokenId, quantity : T.TokenAmount, priceE8S: T.Price): async () {
-    switch (tokensInMarket.get(tokenId)) {
-      case (null) {
-        throw Error.reject("Token not found in the market");
-      };
-      case (?info) {
-        // Update the existing sale
-        switch (info.usersxToken.get(user)) {
-          case (null) {
-            throw Error.reject("User is not selling this token");
-          };
-          case (?usersxTokenInfo) {
-            // update the quantity
-            let newQuantity = usersxTokenInfo.quantity + quantity;
-
-            let updatedUserxToken = {
-              quantity = newQuantity;
-              priceE8S;
-            };
-
-            info.usersxToken.put(user, updatedUserxToken);
-            // update tokens in market quantity
-            let updatedQuantity = info.totalQuantity + quantity;
-            let updatedInfo = {
-              totalQuantity = updatedQuantity;
-              usersxToken = info.usersxToken;
-            };
-            tokensInMarket.put(tokenId, updatedInfo);
-          };
-        };
-      };
-    };
-  };
-
   // TODO troubles here setting token on marketplace
   // handles new token information on market
   public shared({ caller }) func putOnSale(tokenId : T.TokenId, quantity : T.TokenAmount, user : T.UID, priceE8S: T.Price) : async () {
     _callValidation(caller);
 
-    // Check if the user is already selling the token
-    let isSelling = await isSellingToken(user, tokenId);
-    if (isSelling != false) {
-      // update the existing sale
-      await _updatetokenMarketInfo(user, tokenId, quantity, priceE8S);
-    } else {
-      // add the new sale
-      await _newTokensInMarket(tokenId, user, quantity, priceE8S);
+    switch(tokensInMarket.get(tokenId)) {
+      // token doesnt exists
+      case(null) {
+        let usersxToken = HM.HashMap<T.UID, T.UserTokenInfo>(100, Principal.equal, Principal.hash);
+        usersxToken.put(user, { quantity; priceE8S });
+        tokensInMarket.put(tokenId, { totalQuantity = quantity; usersxToken; });
+      };
+
+      // token exists
+      case(?tokenMarketInfo) {
+        let usersxToken = tokenMarketInfo.usersxToken;
+        usersxToken.put(user, { quantity; priceE8S });
+
+        tokensInMarket.put(tokenId, {
+          tokenMarketInfo with totalQuantity = tokenMarketInfo.totalQuantity + quantity;
+          usersxToken
+        });
+      };
     };
   };
 
@@ -159,6 +94,23 @@ actor class Marketplace() = this {
       };
       case (?info) {
         return info.totalQuantity;
+      };
+    };
+  };
+
+  // check if user is already selling a token
+  public query func isSellingToken(user : T.UID, tokenId : T.TokenId): async Bool {
+    switch (tokensInMarket.get(tokenId)) {
+      case (null) { return false };
+      case (?info) {
+        switch (info.usersxToken.get(user)) {
+          case (null) {
+            return false;
+          };
+          case (?info) {
+            return true;
+          };
+        };
       };
     };
   };
@@ -353,6 +305,20 @@ actor class Marketplace() = this {
     }];
     totalPages: Nat;
   } {
+    let marketplaceTest = Buffer.Buffer<(T.TokenId, T.TokenAmount, [(T.UID, T.UserTokenInfo)])>(50);
+
+    for ((tokenId, tokenMarketInfo) in tokensInMarket.entries()) {
+      let usersxToken = Buffer.Buffer<((T.UID, T.UserTokenInfo))>(50);
+
+      for ((userId, userTokenInfo) in tokenMarketInfo.usersxToken.entries()) {
+        usersxToken.add( (userId, userTokenInfo) )
+      };
+
+      marketplaceTest.add( (tokenId, tokenMarketInfo.totalQuantity, Buffer.toArray<(T.UID, T.UserTokenInfo)>(usersxToken)) );
+    };
+
+    Debug.print("marketplace: " # debug_show(Buffer.toArray<(T.TokenId, T.TokenAmount, [(T.UID, T.UserTokenInfo)])>(marketplaceTest)));
+
     // define page based on statement
     let startPage = switch(page) {
       case(null) 1;
@@ -454,46 +420,34 @@ actor class Marketplace() = this {
 
     for ((currentTokenId, tokenMarketInfo) in tokensInMarket.entries()) {
 
-      // rule to exclude caller
-      let excludeCallerRule = switch(excludedCaller) {
-        case(null) true;
-        case(?caller) tokenMarketInfo.usersxToken.get(caller) == null;
-      };
-
-
-      if (i >= startIndex and i < startIndex + maxLength and excludeCallerRule) {
+      if (i >= startIndex and i < startIndex + maxLength) {
 
         for((userId, userToken) in tokenMarketInfo.usersxToken.entries()) {
-          switch(tokenId) {
+          // rule to exclude caller
+          let excludeCallerRule: Bool = switch(excludedCaller) {
+            case(null) true;
+            case(?caller) userId != caller;
+          };
 
-            // return default values
-            case(null) {
-              marketplace.add({
-                userId;
-                tokenId = currentTokenId;
-                mwh = userToken.quantity;
-                priceE8S = userToken.priceE8S;
-              });
-            };
+          // filter by tokenId
+          let filterTokenId: Bool = switch(tokenId) {
+            case(null) true;
+            case(?token) currentTokenId == token;
+          };
 
-            // filter by tokenId
-            case(?token) {
+          // filter by filterRange
+          let filterRange: Bool = switch(priceRange) {
+            case(null) true;
+            case(?range) userToken.priceE8S.e8s >= range[0].e8s and userToken.priceE8S.e8s <= range[1].e8s;
+          };
 
-              // filter by tokenId
-              let filterRange: Bool = switch(priceRange) {
-                case(null) true;
-                case(?range) userToken.priceE8S.e8s >= range[0].e8s and userToken.priceE8S.e8s <= range[1].e8s;
-              };
-
-              if (currentTokenId == token and filterRange) {
-                marketplace.add({
-                  userId;
-                  tokenId = currentTokenId;
-                  mwh = userToken.quantity;
-                  priceE8S = userToken.priceE8S;
-                });
-              };
-            };
+          if (filterTokenId and filterRange and excludeCallerRule) {
+            marketplace.add({
+              userId;
+              tokenId = currentTokenId;
+              mwh = userToken.quantity;
+              priceE8S = userToken.priceE8S;
+            });
           };
         };
       };

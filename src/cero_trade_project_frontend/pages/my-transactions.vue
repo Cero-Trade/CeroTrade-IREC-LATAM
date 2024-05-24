@@ -492,13 +492,13 @@ async function getData() {
       list.push({
         transaction_id: item.transactionId,
         type: item.txType,
-        recipent: item.to,
+        recipent: item.to?.toString(),
         energy_source: item.assetInfo.assetType,
         country: item.assetInfo.specifications.country,
         mwh: item.tokenAmount,
         asset_id: item.assetInfo.tokenId,
         date: item.date.toDateString(),
-        price: item.priceE8S.e8s,
+        price: item.priceE8S,
         via: item.method,
       })
     }

@@ -344,12 +344,12 @@ actor class UserIndex() = this {
   };
 
   /// update user portfolio
-  public shared({ caller }) func updatePorfolio(uid: T.UID, token: T.TokenId) : async() {
+  public shared({ caller }) func updatePorfolio(uid: T.UID, token: T.TokenId, delete: Bool) : async() {
     _callValidation(caller);
 
     switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
-      case(?cid) await Users.canister(cid).updatePorfolio(uid, token);
+      case(?cid) await Users.canister(cid).updatePorfolio(uid, token, delete);
     };
   };
 

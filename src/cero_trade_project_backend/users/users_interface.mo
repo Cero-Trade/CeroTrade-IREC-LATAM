@@ -12,7 +12,7 @@ module UsersInterface {
     deleteUser: (uid: T.UID) -> async();
     storeCompanyLogo: (uid: T.UID, avatar: T.CompanyLogo) -> async();
     getCompanyLogo: query (uid: T.UID) -> async T.CompanyLogo;
-    updatePorfolio: (uid: T.UID, tokenId: T.TokenId) -> async();
+    updatePorfolio: (uid: T.UID, tokenId: T.TokenId, delete: Bool) -> async();
     deletePorfolio: (uid: T.UID, tokenId: T.TokenId) -> async();
     updateTransactions: (uid: T.UID, tx: T.TransactionId) -> async();
     getPortfolioTokenIds: query (uid: T.UID) -> async [T.TokenId];

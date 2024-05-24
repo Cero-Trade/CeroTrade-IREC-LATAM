@@ -77,7 +77,7 @@ export class AgentCanister {
       const userProfile = await agent().getProfile(uid ? [uid] : []) as UserProfileModel
       userProfile.companyLogo = getUrlFromArrayBuffer(userProfile.companyLogo) || avatar
 
-      store.commit('setProfile', userProfile)
+      if (!uid) store.commit('setProfile', userProfile)
       return userProfile
     } catch (error) {
       console.error(error);
@@ -383,6 +383,7 @@ export class AgentCanister {
         item.date = new Date(item.date)
 
         // get nullable object
+        item.to = item.to[0]
         item.assetInfo = item.assetInfo[0]
         item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
         item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)

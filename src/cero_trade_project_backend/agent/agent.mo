@@ -5,6 +5,7 @@ import Cycles "mo:base/ExperimentalCycles";
 import Text "mo:base/Text";
 import Array "mo:base/Array";
 import Nat "mo:base/Nat";
+import Nat64 "mo:base/Nat64";
 import Float "mo:base/Float";
 import Int64 "mo:base/Int64";
 import Buffer "mo:base/Buffer";
@@ -98,7 +99,7 @@ actor class Agent() = this {
     let txIndex = await TokenIndex.mintTokenToUser(recipent, tokenId, tokenAmount);
 
     // update user portfolio
-    await UserIndex.updatePorfolio(recipent, tokenId);
+    await UserIndex.updatePorfolio(recipent, tokenId, false);
 
     txIndex
   };
@@ -122,10 +123,26 @@ actor class Agent() = this {
     tokensRedemption: [T.TransactionInfo]
   } {
     let tokenIds = await UserIndex.getPortfolioTokenIds(caller);
-    let tokensInfo: {
+    var tokensInfo: {
       data: [T.TokenInfo];
       totalPages: Nat;
     } = await TokenIndex.getPortfolio(caller, tokenIds, page, length, assetTypes, country, mwhRange);
+
+    for(token in tokensInfo.data.vals()) {
+      if (token.totalAmount <= 0) {
+        await UserIndex.updatePorfolio(caller, token.tokenId, true);
+
+        let tokens = Buffer.fromArray<T.TokenInfo>(tokensInfo.data);
+
+        switch (Buffer.indexOf<Text>(token.tokenId, Buffer.map<T.TokenInfo, Text>(tokens, func x =  x.tokenId ), Text.equal)) {
+          case(null) {};
+          case(?index) {
+            let _ = tokens.remove(index);
+            tokensInfo := { tokensInfo with data = Buffer.toArray<T.TokenInfo>(tokens) };
+          };
+        };
+      }
+    };
 
     let txIds = await UserIndex.getTransactionIds(caller);
     let tokensRedemption: [T.TransactionInfo] = await TransactionIndex.getTransactionsById(txIds, ?#redemption("redemption"), null, null, null, null);
@@ -374,10 +391,11 @@ actor class Agent() = this {
     if (tokensOnSale < tokenAmount) throw Error.reject("Seller have not enough tokens on sell");
 
     // get seller token price in marketplace
-    let priceE8S = await Marketplace.getTokenPrice(tokenId, recipent);
+    let priceE8S: T.Price = await Marketplace.getTokenPrice(tokenId, recipent);
+    let totalPriceE8S = { priceE8S with e8s = priceE8S.e8s * Nat64.fromNat(tokenAmount) };
 
     // performe ICP transfer and update token canister
-    let txIndex = await TokenIndex.purchaseToken(caller, recipent, tokenId, tokenAmount, priceE8S);
+    let txIndex = await TokenIndex.purchaseToken(caller, recipent, tokenId, tokenAmount, totalPriceE8S);
 
     // build transaction
     let txInfo: T.TransactionInfo = {
@@ -388,13 +406,13 @@ actor class Agent() = this {
       tokenId;
       txType = #purchase("purchase");
       tokenAmount;
-      priceE8S = ?priceE8S;
+      priceE8S = ?totalPriceE8S;
       date = DateTime.now().toText();
       method = #blockchainTransfer("blockchainTransfer");
     };
 
     // store token register on profile
-    await UserIndex.updatePorfolio(caller, tokenId);
+    await UserIndex.updatePorfolio(caller, tokenId, false);
 
     // register transaction
     let txId = await TransactionIndex.registerTransaction(txInfo);

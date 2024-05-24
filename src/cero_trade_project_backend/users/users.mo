@@ -89,7 +89,7 @@ shared({ caller = userIndexCaller }) actor class Users() {
 
 
   /// update user portfolio
-  public shared({ caller }) func updatePorfolio(uid: T.UID, tokenId: T.TokenId) : async() {
+  public shared({ caller }) func updatePorfolio(uid: T.UID, tokenId: T.TokenId, delete: Bool) : async() {
     _callValidation(caller);
 
     let userInfo = switch (users.get(uid)) {
@@ -106,7 +106,11 @@ shared({ caller = userIndexCaller }) actor class Users() {
         users.put(uid, { userInfo with portfolio = Buffer.toArray(portfolio) })
       };
       case(?index) {
-        portfolio.put(index, tokenId);
+        if (delete) {
+          let _ = portfolio.remove(index);
+        } else {
+          portfolio.put(index, tokenId);
+        };
 
         users.put(uid, { userInfo with portfolio = Buffer.toArray(portfolio) })
       };
