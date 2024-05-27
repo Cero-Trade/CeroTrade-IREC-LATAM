@@ -2,23 +2,19 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <link rel="icon" href="/src/cero_trade_project_frontend/assets/sources/favicon.ico" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cero Trade</title>
 </head>
 
 <body>
+  <noscript>
+    <strong>We're sorry but this application doesn't work properly without
+      JavaScript enabled. Please enable it to continue.</strong>
+  </noscript>
   <div id="app"></div>
-  <script type="module">
-    /**
-     * @dfinity/agent requires this. Can be removed once it's fixed
-     */
-    import { Buffer } from "buffer"
-  
-    window.global = window
-    window.Buffer = Buffer
-  </script>
   <script type="module" src="/src/cero_trade_project_frontend/main.js"></script>
 </body>
 
