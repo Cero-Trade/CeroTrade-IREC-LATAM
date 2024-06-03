@@ -18,13 +18,28 @@ const
       default: []
     }
   }),
-  series = computed(() => props.series),
+  totalLength = 6,
+  series = computed(() => {
+    const series = props.series
+
+    series.forEach(({ data }) => {
+      for (let index = 0; index < totalLength - data.length; index++) {
+        if (index / 2 === 0) data.push(0)
+        else data.unshift(0)
+      }
+    });
+
+    return series
+  }),
   categories = computed(() => {
     const categories = props.categories
-    for (let index = 0; index < 6 - categories.length; index++)
-      categories.push('')
 
-    return categories
+    for (let index = 0; index < totalLength - categories.length; index++) {
+      if (index / 2 === 0) categories.push('')
+      else categories.unshift('')
+    }
+
+    return categories;
   }),
 
 options = computed(() => ({
