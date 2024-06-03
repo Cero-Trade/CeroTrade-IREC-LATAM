@@ -19,7 +19,13 @@ const
     }
   }),
   series = computed(() => props.series),
-  categories = computed(() => props.categories),
+  categories = computed(() => {
+    const categories = props.categories
+    for (let index = 0; index < 6 - categories.length; index++)
+      categories.push('')
+
+    return categories
+  }),
 
 options = computed(() => ({
   chart: {
