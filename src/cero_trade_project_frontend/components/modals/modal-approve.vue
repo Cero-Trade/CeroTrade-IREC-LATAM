@@ -97,7 +97,7 @@ async function approve() {
 
     loading.value = false
     model.value = false
-    toast.info(`You has approved to spend ${totalInICP.value} ICP`)
+    toast.info(`You have approved to spend ${totalInICP.value} ICP`)
 
     emit('approve')
   } catch (error) {
