@@ -81,6 +81,18 @@ export function toCssVal(value, unit = 'px') {
   }
 }
 
+export function maxDecimals(value, max = 3) {
+  if (!value || value === '0') return 0
+  else if (Number(value) % 1 == 0) return value
+
+  const splitted = value.toString().split("."),
+    decimalsFiltered = splitted[1].substring(0, splitted[1].length > max ? max : splitted[1].length);
+
+  splitted.pop();
+  splitted.push(decimalsFiltered);
+  return parseFloat(splitted.join("."));
+}
+
 export function getUrlFromFile(file) {
   if (!file) return null
   return URL.createObjectURL(file)
