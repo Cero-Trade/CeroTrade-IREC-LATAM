@@ -28,9 +28,9 @@ Otherwise install mops proyect dependencies
 
 Generate declarations
 ```
-mkdir -p .dfx/local/canisters/cero_trade_project_frontend && cp assetstorage.did .dfx/local/canisters/cero_trade_project_frontend/assetstorage.did
-dfx generate
+mkdir -p .dfx/local/canisters/cero_trade_project_frontend && cp assetstorage.did .dfx/local/canisters/cero_trade_project_frontend/assetstorage.diddfx generate internet_identity
 cp src/declarations/internet_identity/* .dfx/local/canisters/internet_identity/
+dfx generate
 cp src/declarations/users/* .dfx/local/canisters/users/
 cp src/declarations/user_index/* .dfx/local/canisters/user_index/
 cp src/declarations/token/* .dfx/local/canisters/token/
