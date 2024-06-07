@@ -5,12 +5,20 @@ import Nat8 "mo:base/Nat8";
 import Text "mo:base/Text";
 import Iter "mo:base/Iter";
 import Buffer "mo:base/Buffer";
+import Source "mo:uuid/async/SourceV4";
+import UUID "mo:uuid/UUID";
 
 // types
 import HT "./http_service_types";
 
 //Actor
 actor HttpService {
+
+  // Generate idempotency Key
+  private func generateUUID() : async Text {
+    let g = Source.Source();
+    UUID.toText(await g.new());
+  };
 
   private func _extractHost(url: Text): Text {
     let partsIter = Text.split(url, #char '/');
@@ -46,12 +54,16 @@ actor HttpService {
     transformed;
   };
 
-  private func _generateHeaders(url: Text, customHeaders: [HT.HttpHeader]) : [HT.HttpHeader] {
+  private func _generateHeaders(url: Text, customHeaders: [HT.HttpHeader]) : async [HT.HttpHeader] {
+    //idempotency keys should be unique so create a function that generates them.
+    let idempotency_key: Text = await generateUUID();
+
     // prepare headers for the system http_request call
     let default_headers  = Buffer.fromArray<HT.HttpHeader>([
       { name = "Host"; value = _extractHost(url) # HT.port },
       { name = "User-Agent"; value = HT.headerName },
       { name = "Content-Type"; value = "application/json" },
+      { name= "Idempotency-Key"; value = idempotency_key }
     ]);
 
     default_headers.append(Buffer.fromArray<HT.HttpHeader>(customHeaders));
@@ -122,7 +134,7 @@ actor HttpService {
     let http_request : HT.HttpRequestArgs = {
       url = url;
       max_response_bytes = null; //optional for request
-      headers = _generateHeaders(url, args.headers);
+      headers = await _generateHeaders(url, args.headers);
       body = null; //optional for request
       method = #get;
       transform = ?transform_context;
@@ -148,7 +160,7 @@ actor HttpService {
     let http_request : HT.HttpRequestArgs = {
       url = url;
       max_response_bytes = null; //optional for request
-      headers = _generateHeaders(url, args.headers);
+      headers = await _generateHeaders(url, args.headers);
       body = ?request_body_as_nat8; //provide body for POST request
       method = #post;
       transform = ?transform_context;

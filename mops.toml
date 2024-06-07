@@ -7,6 +7,7 @@ icrc1-mo = "0.0.15"
 icrc2-mo = "0.0.13"
 icrc3-mo = "0.2.4"
 icrc4-mo = "0.0.5"
+uuid = "1.0.0"
 
 [dev-dependencies]
 test = "1.2.0"
