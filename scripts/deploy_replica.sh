@@ -8,12 +8,13 @@ secondArg=$2
 if [ "$firstArg" = "nns" ] || [ "$secondArg" = "nns" ]; then
   dfx nns install
   dfx nns import
+
+  # deploy internet identity canister
+  dfx deploy internet_identity
 fi
 
 # Generate declarations
 mkdir -p .dfx/local/canisters/cero_trade_project_frontend && cp assetstorage.did .dfx/local/canisters/cero_trade_project_frontend/assetstorage.did
-dfx generate internet_identity
-cp src/declarations/internet_identity/* .dfx/local/canisters/internet_identity/
 dfx generate
 cp src/declarations/users/* .dfx/local/canisters/users/
 cp src/declarations/user_index/* .dfx/local/canisters/user_index/
@@ -28,7 +29,6 @@ cp src/declarations/statistics/* .dfx/local/canisters/statistics/
 
 # Generate env.mo and deploy canisters
 dfx canister create --all
-dfx deploy internet_identity
 dfx build cero_trade_project_frontend
 dfx canister install cero_trade_project_frontend
 dfx deploy agent

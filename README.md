@@ -26,10 +26,14 @@ Install mops dependencies globally if havent
 Otherwise install mops proyect dependencies
 `mops install`
 
+
+deploy internet identity canister
+
+`dfx deploy internet_identity`
+
 Generate declarations
 ```
-mkdir -p .dfx/local/canisters/cero_trade_project_frontend && cp assetstorage.did .dfx/local/canisters/cero_trade_project_frontend/assetstorage.diddfx generate internet_identity
-cp src/declarations/internet_identity/* .dfx/local/canisters/internet_identity/
+mkdir -p .dfx/local/canisters/cero_trade_project_frontend && cp assetstorage.did .dfx/local/canisters/cero_trade_project_frontend/assetstorage.did
 dfx generate
 cp src/declarations/users/* .dfx/local/canisters/users/
 cp src/declarations/user_index/* .dfx/local/canisters/user_index/
