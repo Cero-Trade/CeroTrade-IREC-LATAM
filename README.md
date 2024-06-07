@@ -30,6 +30,7 @@ Generate declarations
 ```
 mkdir -p .dfx/local/canisters/cero_trade_project_frontend && cp assetstorage.did .dfx/local/canisters/cero_trade_project_frontend/assetstorage.did
 dfx generate
+cp src/declarations/internet_identity/* .dfx/local/canisters/internet_identity/
 cp src/declarations/users/* .dfx/local/canisters/users/
 cp src/declarations/user_index/* .dfx/local/canisters/user_index/
 cp src/declarations/token/* .dfx/local/canisters/token/
@@ -156,3 +157,6 @@ https://mops.one/
 * url: https://internetcomputer.org/docs/current/developer-docs/developer-tools/cli-tools/cli-reference/dfx-nns
 
 * convert principal to account-id: https://k7gat-daaaa-aaaae-qaahq-cai.raw.ic0.app/docs/
+
+### Custom domain configuration
+https://internetcomputer.org/docs/current/developer-docs/web-apps/custom-domains/using-custom-domains#custom-domains-on-the-boundary-nodes
