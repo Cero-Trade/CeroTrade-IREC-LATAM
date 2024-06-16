@@ -2,6 +2,7 @@ import Blob "mo:base/Blob";
 import Cycles "mo:base/ExperimentalCycles";
 import Array "mo:base/Array";
 import Nat8 "mo:base/Nat8";
+import Nat64 "mo:base/Nat64";
 import Text "mo:base/Text";
 import Iter "mo:base/Iter";
 import Buffer "mo:base/Buffer";
@@ -159,7 +160,8 @@ actor HttpService {
     // The HTTP request
     let http_request : HT.HttpRequestArgs = {
       url = url;
-      max_response_bytes = null; //optional for request
+      // TODO under testing, this could be null or Nat64.fromNat(1024 * 1024)
+      max_response_bytes = ?Nat64.fromNat(1024 * 1024); //optional for request
       headers = await _generateHeaders(url, args.headers);
       body = ?request_body_as_nat8; //provide body for POST request
       method = #post;
