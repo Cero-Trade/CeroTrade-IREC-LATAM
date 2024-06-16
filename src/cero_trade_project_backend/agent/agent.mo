@@ -92,7 +92,7 @@ actor class Agent() = this {
 
 
   /// performe mint with tokenId and amount requested
-  public shared({ caller }) func mintTokenToUser(recipent: T.Beneficiary, tokenId: T.TokenId, tokenAmount: T.TokenAmount): async T.TxIndex {
+  public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, tokenAmount: T.TokenAmount): async T.TxIndex {
     IC_MANAGEMENT.adminValidation(caller, controllers);
 
     // check if user exists
@@ -102,9 +102,21 @@ actor class Agent() = this {
     let txIndex = await TokenIndex.mintTokenToUser(recipent, tokenId, tokenAmount);
 
     // update user portfolio
-    await UserIndex.updatePorfolio(recipent, tokenId, false);
+    await UserIndex.updatePortfolio(recipent, tokenId, { delete = false });
 
     txIndex
+  };
+
+
+  /// get beneficiaries
+  public shared({ caller }) func getBeneficiaries(): async [T.UserProfile] {
+    await UserIndex.getBeneficiaries(caller);
+  };
+
+
+  /// update beneficiaries
+  public shared({ caller }) func updateBeneficiaries(beneficiaryId: T.BID, deleteBeneficiary: { delete: Bool }): async() {
+    await UserIndex.updateBeneficiaries(caller, beneficiaryId, deleteBeneficiary);
   };
 
 
@@ -133,7 +145,7 @@ actor class Agent() = this {
 
     for(token in tokensInfo.data.vals()) {
       if (token.totalAmount <= 0) {
-        await UserIndex.updatePorfolio(caller, token.tokenId, true);
+        await UserIndex.updatePortfolio(caller, token.tokenId, { delete = true });
 
         let tokens = Buffer.fromArray<T.TokenInfo>(tokensInfo.data);
 
@@ -385,7 +397,7 @@ actor class Agent() = this {
   };
 
   /// performe token purchase
-  public shared({ caller }) func purchaseToken(tokenId: T.TokenId, recipent: T.Beneficiary, tokenAmount: T.TokenAmount): async T.TransactionInfo {
+  public shared({ caller }) func purchaseToken(tokenId: T.TokenId, recipent: T.BID, tokenAmount: T.TokenAmount): async T.TransactionInfo {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
@@ -415,7 +427,7 @@ actor class Agent() = this {
     };
 
     // store token register on profile
-    await UserIndex.updatePorfolio(caller, tokenId, false);
+    await UserIndex.updatePortfolio(caller, tokenId, { delete = false });
 
     // register transaction
     let txId = await TransactionIndex.registerTransaction(txInfo);
@@ -524,7 +536,7 @@ actor class Agent() = this {
 
 
   // redeem certificate by burning user tokens
-  public shared({ caller }) func redeemToken(tokenId: T.TokenId, beneficiary: T.Beneficiary, quantity: T.TokenAmount): async T.TransactionInfo {
+  public shared({ caller }) func redeemToken(tokenId: T.TokenId, beneficiary: T.BID, quantity: T.TokenAmount): async T.TransactionInfo {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 

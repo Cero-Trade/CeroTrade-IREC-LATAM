@@ -171,6 +171,27 @@ export class AgentCanister {
     }
   }
 
+  static async getBeneficiaries(): Promise<UserProfileModel[]> {
+    try {
+      const users = await agent().getBeneficiaries() as UserProfileModel[]
+
+      for (const user of users) user.companyLogo = getUrlFromArrayBuffer(user.companyLogo) || avatar
+
+      return users
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+  static async updateBeneficiaries(beneficiaryId: Principal, { remove }: { remove: boolean }): Promise<void> {
+    try {
+      await agent().updateBeneficiaries(beneficiaryId, { "delete": remove } )
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
 
   static async getTokenDetails(tokenId: string): Promise<TokenModel> {
     try {

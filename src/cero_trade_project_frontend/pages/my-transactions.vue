@@ -3,7 +3,7 @@
     <span class="mb-4 acenter" style="color:#475467 ;font-size: 16px; font-weight: 700;">
       <img src="@/assets/sources/icons/home-layout.svg" alt="Home Icon" style="width: 20px;">
       <img src="@/assets/sources/icons/chevron-right-light.svg" alt="arrow right icon" class="mx-1">
-      <span>My porfolio</span>
+      <span>My portfolio</span>
       <img src="@/assets/sources/icons/chevron-right-light.svg" alt="arrow right icon" class="mx-1">
       <span style="color: #00555B;">Transactions</span>
     </span>

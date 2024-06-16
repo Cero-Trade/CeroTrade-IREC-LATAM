@@ -39,7 +39,7 @@ module {
   public type TransactionId = Text;
   public type RedemId = Text;
   public type CompanyLogo = [Nat8];
-  public type Beneficiary = UID;
+  public type BID = UID;
   public type TxIndex = Nat;
   public type TokenAmount = Nat;
   public type Price = { e8s: Nat64 };
@@ -66,7 +66,7 @@ module {
     // TODO want to delete this variable and fetch data directly token canisters
     portfolio: [TokenId];
     transactions: [TransactionId];
-    beneficiaries: [Beneficiary];
+    beneficiaries: [BID];
   };
 
   public type UserProfile = {
@@ -98,7 +98,7 @@ module {
     transactionId: TransactionId;
     txIndex: TxIndex;
     from: UID;
-    to: ?Beneficiary;
+    to: ?BID;
     tokenId: TokenId;
     txType: TxType;
     tokenAmount: TokenAmount;
@@ -111,7 +111,7 @@ module {
     transactionId: TransactionId;
     txIndex: TxIndex;
     from: UID;
-    to: ?Beneficiary;
+    to: ?BID;
     assetInfo: ?AssetInfo;
     txType: TxType;
     tokenAmount: TokenAmount;
