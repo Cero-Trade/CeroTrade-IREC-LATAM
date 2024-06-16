@@ -108,6 +108,15 @@ actor class Agent() = this {
   };
 
 
+  /// get profile information
+  public shared({ caller }) func getProfile(uid: ?T.UID): async T.UserProfile {
+    switch(uid) {
+      case(null) await UserIndex.getProfile(caller);
+      case(?value) await UserIndex.getProfile(value);
+    };
+  };
+
+
   /// get beneficiaries
   public shared({ caller }) func getBeneficiaries(): async [T.UserProfile] {
     await UserIndex.getBeneficiaries(caller);
@@ -120,12 +129,9 @@ actor class Agent() = this {
   };
 
 
-  /// get profile information
-  public shared({ caller }) func getProfile(uid: ?T.UID): async T.UserProfile {
-    switch(uid) {
-      case(null) await UserIndex.getProfile(caller);
-      case(?value) await UserIndex.getProfile(value);
-    };
+  /// filter users on cero trade by name or principal id
+  public shared({ caller }) func filterUsers(user: Text): async [T.UserProfile] {
+    await UserIndex.filterUsers(caller, user);
   };
 
 

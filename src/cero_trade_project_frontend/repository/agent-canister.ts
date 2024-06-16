@@ -171,6 +171,19 @@ export class AgentCanister {
     }
   }
 
+  static async filterUsers(user: string): Promise<UserProfileModel[]> {
+    try {
+      const users = await agent().filterUsers(user) as UserProfileModel[]
+
+      for (const user of users) user.companyLogo = getUrlFromArrayBuffer(user.companyLogo) || avatar
+
+      return users
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
   static async getBeneficiaries(): Promise<UserProfileModel[]> {
     try {
       const users = await agent().getBeneficiaries() as UserProfileModel[]

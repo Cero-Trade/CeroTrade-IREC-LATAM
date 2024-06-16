@@ -419,6 +419,9 @@ actor class UserIndex() = this {
   public shared({ caller }) func getUsers(uids: [T.UID]): async [T.UserProfile] {
     _callValidation(caller);
 
+    // check if user exists
+    if (not (await checkPrincipal(caller))) throw Error.reject(notExists);
+
     let users = await HttpService.post(HT.apiUrl # "users/retrieve-list", {
         headers = [];
         bodyJson = switch(Serde.JSON.toText(to_candid(uids), ["tokenIds"], null)) {
@@ -562,6 +565,36 @@ actor class UserIndex() = this {
     switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
       case(?cid) await Users.canister(cid).updateBeneficiaries(uid, beneficiaryId, deleteBeneficiary);
+    };
+  };
+
+
+  /// filter users on cero trade by name or principal id
+  public shared({ caller }) func filterUsers(uid: T.UID, user: Text): async [T.UserProfile] {
+    _callValidation(caller);
+
+    // check if user exists
+    if (not (await checkPrincipal(caller))) throw Error.reject(notExists);
+
+    let users = await HttpService.post(HT.apiUrl # "users/filter", {
+        headers = [];
+        bodyJson = switch(Serde.JSON.toText(to_candid(user), ["user"], null)) {
+          case(#err(error)) throw Error.reject("Cannot serialize data");
+          case(#ok(value)) value;
+        };
+      });
+
+    switch(Serde.JSON.fromText(users, null)) {
+      case(#err(_)) throw Error.reject("cannot serialize profile data");
+
+      case(#ok(blob)) {
+        let profileParts: ?[ProfilePart] = from_candid(blob);
+
+        switch(profileParts) {
+          case(null) throw Error.reject("cannot serialize profile data");
+          case(?profiles) await buildUserProfiles(profiles);
+        };
+      };
     };
   };
 }
