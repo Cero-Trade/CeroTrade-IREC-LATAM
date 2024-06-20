@@ -599,11 +599,11 @@ actor class UserIndex() = this {
 
 
   /// filter users on cero trade by name or principal id
-  public shared({ caller }) func filterUsers(user: Text): async [T.UserProfile] {
+  public shared({ caller }) func filterUsers(uid: T.UID, user: Text): async [T.UserProfile] {
     _callValidation(caller);
 
     // check if user exists
-    if (not (await checkPrincipal(caller))) throw Error.reject(notExists);
+    if (not (await checkPrincipal(uid))) throw Error.reject(notExists);
 
     let users = await HttpService.post(HT.apiUrl # "users/filter", {
         headers = [];

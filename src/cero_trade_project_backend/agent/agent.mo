@@ -153,7 +153,7 @@ actor class Agent() = this {
 
 
   /// filter users on cero trade by name or principal id
-  public func filterUsers(user: Text): async [T.UserProfile] { await UserIndex.filterUsers(user) };
+  public shared({ caller }) func filterUsers(user: Text): async [T.UserProfile] { await UserIndex.filterUsers(caller, user) };
 
 
   /// function to know user token balance
