@@ -452,11 +452,12 @@ export class AgentCanister {
   }
 
 
-  static async getNotifications(page?: number, length?: number): Promise<NotificationInfo[]> {
+  static async getNotifications(page?: number, length?: number, notificationType?: NotificationTypeDef): Promise<NotificationInfo[]> {
     try {
       const res = await agent().getNotifications(
         page ? [page] : [],
-        length ? [length] : []
+        length ? [length] : [],
+        notificationType ? [{[notificationType]: notificationType}] : [],
       ) as NotificationInfo[]
 
       for (const item of res) {
@@ -484,9 +485,9 @@ export class AgentCanister {
   }
 
 
-  static async removeNotificationsByType(notificationType: NotificationTypeDef): Promise<void> {
+  static async clearNotificationsByType(notificationType: NotificationTypeDef): Promise<void> {
     try {
-      await agent().removeNotificationsByType(notificationType)
+      await agent().clearNotificationsByType({[notificationType]: notificationType})
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)
