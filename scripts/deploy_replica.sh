@@ -6,14 +6,17 @@ secondArg=$2
 
 # Deploy nns canisters
 if [ "$firstArg" = "nns" ] || [ "$secondArg" = "nns" ]; then
+  echo "====-Deploy nns canisters-===="
   dfx nns install
   dfx nns import
 
-  # deploy internet identity canister
+  # Deploy internet identity canister
+  echo "====-Deploy internet identity canister-===="
   dfx deploy internet_identity
 fi
 
 # Generate declarations
+echo "====-Generate declarations-===="
 mkdir -p .dfx/local/canisters/cero_trade_project_frontend && cp assetstorage.did .dfx/local/canisters/cero_trade_project_frontend/assetstorage.did
 dfx generate
 cp src/declarations/users/* .dfx/local/canisters/users/
@@ -30,16 +33,19 @@ cp src/declarations/notifications/* .dfx/local/canisters/notifications/
 cp src/declarations/notification_index/* .dfx/local/canisters/notification_index/
 
 # Generate env.mo and deploy canisters
+echo "====-Generate env.mo and deploy canisters-===="
 dfx canister create --all
 dfx build cero_trade_project_frontend
 dfx canister install cero_trade_project_frontend
 dfx deploy agent
 
 # Update canister controllers
+echo "====-Update canister controllers-===="
 npm run upgrade-controllers $(dfx identity get-principal)
 
 if [ "$firstArg" = "modules" ] || [ "$secondArg" = "modules" ]; then
   # Register wasm modules
+  echo "====-Register wasm modules-===="
   dfx canister create token
   dfx build token
   dfx canister create users
@@ -50,12 +56,14 @@ if [ "$firstArg" = "modules" ] || [ "$secondArg" = "modules" ]; then
   dfx build notifications
 
   # Generate the wasm module like array
+  echo "====-Generate the wasm module like array-===="
   npm run generate-wasm token
   npm run generate-wasm users
   npm run generate-wasm transactions
   npm run generate-wasm notifications
 
   # Push the current ./wasm_modules commit folder to github
+  echo "====-Push the current ./wasm_modules commit folder to github-===="
   git pull
   git add ./wasm_modules
   git commit -m "config/new-wasm-modules"
@@ -63,6 +71,7 @@ if [ "$firstArg" = "modules" ] || [ "$secondArg" = "modules" ]; then
 fi
 
 # Register wasm module into backend canisters
+echo "====-Register wasm module into backend canisters-===="
 dfx canister call agent registerWasmModule '(variant { "token" = "token" })'
 dfx canister call agent registerWasmModule '(variant { "users" = "users" })'
 dfx canister call agent registerWasmModule '(variant { "transactions" = "transactions" })'
