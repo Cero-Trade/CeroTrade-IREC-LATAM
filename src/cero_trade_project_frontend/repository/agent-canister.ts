@@ -9,6 +9,7 @@ import { MarketplaceInfo, MarketplaceSellersInfo } from "@/models/marketplace-mo
 import { Principal } from "@dfinity/principal";
 import moment from "moment";
 import variables from "@/mixins/variables";
+import { NotificationInfo, NotificationTypeDef } from "@/models/notifications-model";
 
 export class AgentCanister {
   static async register(data: {
@@ -444,6 +445,48 @@ export class AgentCanister {
         item[1] = Number(item[1])
 
       return res
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+
+  static async getNotifications(page?: number, length?: number): Promise<NotificationInfo[]> {
+    try {
+      const res = await agent().getNotifications(
+        page ? [page] : [],
+        length ? [length] : []
+      ) as NotificationInfo[]
+
+      for (const item of res) {
+        item.notificationType = Object.values(item.notificationType)[0] as string
+        item.callerBeneficiaryId = item.callerBeneficiaryId[0]
+        item.tokenId = item.tokenId[0]
+        item.quantity = item.quantity[0] ? Number(item.quantity[0]) : null
+      }
+
+      return res
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+
+  static async removeNotification(notificationId: string): Promise<void> {
+    try {
+      await agent().getNotifications(notificationId)
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+
+  static async removeNotificationsByType(notificationType: NotificationTypeDef): Promise<void> {
+    try {
+      await agent().removeNotificationsByType(notificationType)
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)

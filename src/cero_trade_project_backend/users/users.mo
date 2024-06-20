@@ -1,5 +1,3 @@
-// TODO implements function to add and remove beneficiary
-
 import HM = "mo:base/HashMap";
 import Principal "mo:base/Principal";
 import Text "mo:base/Text";
@@ -210,7 +208,7 @@ shared({ caller = userIndexCaller }) actor class Users() {
   };
 
   /// get vaultToken from user
-  public shared({ caller }) func getUserToken(uid: T.UID) : async Text {
+  public shared({ caller }) func getUserToken(uid: T.UID) : async T.UserToken {
     _callValidation(caller);
 
     switch (users.get(uid)) {

@@ -43,9 +43,11 @@ module {
   public type TxIndex = Nat;
   public type TokenAmount = Nat;
   public type Price = { e8s: Nat64 };
+  public type UserToken = Text;
   
+
   //
-  // UsersAgent
+  // Users
   //
   public type RegisterForm = {
     companyId: Text;
@@ -56,9 +58,6 @@ module {
     email: Text;
   };
 
-  //
-  // Users
-  //
   public type UserInfo = {
     companyLogo: ?CompanyLogo;
     vaultToken: Text;
@@ -201,14 +200,42 @@ module {
     priceE8S: Price;
   };
 
+  //
+  // Notifications types
+  //
+  public type NotificationId = Text;
+
+  public type NotificationInfo = {
+    id: NotificationId;
+    title: Text;
+    content: Text;
+    notificationType: NotificationType;
+    tokenId: ?TokenId;
+    callerBeneficiaryId: ?BID;
+    quantity: ?TokenAmount;
+  };
+
+  public type NotificationType = {
+    #general: Text;
+    #redeem: Text;
+    #beneficiary: Text;
+  };
+
+  //
+  // ic management types
+  //
   public type WasmModuleName = {
     #token: Text;
     #users: Text;
     #transactions: Text;
+    #notifications: Text;
   };
 
   public let LOW_MEMORY_LIMIT: Nat = 50000;
 
+  //
+  // ICP Types
+  //
   public type TransferInMarketplaceArgs = {
     from: ICPTypes.Account;
     to: ICPTypes.Account;

@@ -47,6 +47,8 @@ cp src/declarations/agent/* .dfx/local/canisters/agent/
 cp src/declarations/marketplace/* .dfx/local/canisters/marketplace/
 cp src/declarations/http_service/* .dfx/local/canisters/http_service/
 cp src/declarations/statistics/* .dfx/local/canisters/statistics/
+cp src/declarations/notifications/* .dfx/local/canisters/notifications/
+cp src/declarations/notification_index/* .dfx/local/canisters/notification_index/
 ```
 
 Generate env.mo and deploy canisters
@@ -71,6 +73,7 @@ Register wasm module into backend canisters by run:
 dfx canister call agent registerWasmModule '(variant { "token" = "token" })'
 dfx canister call agent registerWasmModule '(variant { "users" = "users" })'
 dfx canister call agent registerWasmModule '(variant { "transactions" = "transactions" })'
+dfx canister call agent registerWasmModule '(variant { "notifications" = "notifications" })'
 ```
 
 ### Deploying token canisters
@@ -99,6 +102,7 @@ Generate the wasm module like array run command below
 npm run generate-wasm token
 npm run generate-wasm users
 npm run generate-wasm transactions
+npm run generate-wasm notifications
 ```
 
 Push the current ./wasm_modules commit folder to github

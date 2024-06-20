@@ -344,6 +344,18 @@ actor class UserIndex() = this {
 
     let _ = usersDirectory.remove(uid);
   };
+  
+  /// get user token
+  public shared({ caller }) func getUserToken(uid: T.UID): async T.UserToken {
+    _callValidation(caller);
+
+    let cid: T.CanisterId = switch(usersDirectory.get(uid)) {
+      case(null) throw Error.reject(notExists);
+      case(?cid) cid;
+    };
+
+    await Users.canister(cid).getUserToken(uid);
+  };
 
   /// get canister id that allow current user
   public shared({ caller }) func getUserCanister(uid: T.UID) : async T.CanisterId {

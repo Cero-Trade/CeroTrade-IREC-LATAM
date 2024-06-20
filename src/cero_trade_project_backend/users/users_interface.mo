@@ -19,7 +19,7 @@ module UsersInterface {
     getPortfolioTokenIds: query (uid: T.UID) -> async [T.TokenId];
     getTransactionIds: query (uid: T.UID) -> async [T.TransactionId];
     getBeneficiaries: query (uid: T.UID) -> async [T.BID];
-    getUserToken: query (uid: T.UID) -> async Text;
+    getUserToken: query (uid: T.UID) -> async T.UserToken;
     validateToken: query (uid: T.UID, token: Text) -> async Bool;
   };
 }

@@ -8,7 +8,8 @@
         "token_index",
         "transaction_index",
         "marketplace",
-        "statistics"
+        "statistics",
+        "notification_index"
       ],
       "main": "src/cero_trade_project_backend/agent/agent.mo",
       "type": "motoko"
@@ -140,6 +141,19 @@
       },
       "type": "custom",
       "wasm": ""
+    },
+    "notification_index": {
+      "dependencies": [
+        "http_service"
+      ],
+      "main": "src/cero_trade_project_backend/notification_index/notification_index.mo",
+      "type": "motoko"
+    },
+    "notifications": {
+      "args": "-v --incremental-gc",
+      "gzip": true,
+      "main": "src/cero_trade_project_backend/notifications/notifications.mo",
+      "type": "motoko"
     },
     "statistics": {
       "main": "src/cero_trade_project_backend/statistics/statistics.mo",

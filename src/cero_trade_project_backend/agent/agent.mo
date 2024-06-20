@@ -17,6 +17,7 @@ import TokenIndex "canister:token_index";
 import TransactionIndex "canister:transaction_index";
 import Marketplace "canister:marketplace";
 import Statistics "canister:statistics";
+import NotificationIndex "canister:notification_index";
 
 // interfaces
 import IC_MANAGEMENT "../ic_management_canister_interface";
@@ -67,6 +68,7 @@ actor class Agent() = this {
     await UserIndex.registerControllers();
     await TokenIndex.registerControllers();
     await TransactionIndex.registerControllers();
+    await NotificationIndex.registerControllers();
   };
 
   /// register a canister wasm module
@@ -77,6 +79,7 @@ actor class Agent() = this {
       case(#token("token")) await TokenIndex.registerWasmArray();
       case(#users("users")) await UserIndex.registerWasmArray();
       case(#transactions("transactions")) await TransactionIndex.registerWasmArray();
+      case(#notifications("notifications")) await NotificationIndex.registerWasmArray();
       case _ throw Error.reject("Module name doesn't exists");
     };
   };
@@ -680,4 +683,45 @@ actor class Agent() = this {
 
   // get asset registrations
   public func getAssetStatistics(): async [(Text, T.TokenAmount)] { await Statistics.getAssetStatistics() };
+
+
+  // get notification
+  public shared({ caller }) func getNotifications(page: ?Nat, length: ?Nat, notificationType: ?T.NotificationType): async [T.NotificationInfo] {
+    let token = await UserIndex.getUserToken(caller);
+    await NotificationIndex.getNotifications(token, page, length, notificationType);
+  };
+
+
+  // add notification
+  private func _addNotification({ uid: ?T.UID; token: ?T.UserToken }, notification: T.NotificationInfo): async() {
+    switch(token) {
+
+      // fetch user token if not provided
+      case(null) {
+        switch(uid) {
+          case(null) {};
+
+          case(?value) {
+            let token = await UserIndex.getUserToken(value);
+            await NotificationIndex.addNotification(token, notification);
+          };
+        };
+      };
+
+      case(?value) await NotificationIndex.addNotification(value, notification);
+    };
+  };
+
+
+  // remove notification
+  public shared({ caller }) func removeNotification(notification: T.NotificationId): async() {
+    let token = await UserIndex.getUserToken(caller);
+    await NotificationIndex.removeNotification(token, notification);
+  };
+
+  // clear all notifications by type
+  public shared({ caller }) func clearNotificationsByType(notificationType: T.NotificationType): async() {
+    let token = await UserIndex.getUserToken(caller);
+    await NotificationIndex.clearNotificationsByType(token, notificationType);
+  };
 }
