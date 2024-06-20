@@ -77,6 +77,8 @@ export class AgentCanister {
     try {
       const userProfile = await agent().getProfile(uid ? [uid] : []) as UserProfileModel
       userProfile.companyLogo = getUrlFromArrayBuffer(userProfile.companyLogo) || avatar
+      userProfile.createdAt = new Date(userProfile.createdAt)
+      userProfile.updatedAt = new Date(userProfile.updatedAt)
 
       if (!uid) store.commit('setProfile', userProfile)
       return userProfile
@@ -200,7 +202,16 @@ export class AgentCanister {
 
   static async updateBeneficiaries(beneficiaryId: Principal, { remove }: { remove: boolean }): Promise<void> {
     try {
-      await agent().updateBeneficiaries(beneficiaryId, { "delete": remove } )
+      await agent().updateBeneficiaries(beneficiaryId, { "delete": remove })
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+  static async requestBeneficiary(beneficiaryId: Principal): Promise<void> {
+    try {
+      await agent().requestBeneficiary(beneficiaryId)
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)
@@ -362,14 +373,21 @@ export class AgentCanister {
       throw getErrorMessage(error)
     }
   }
+  
 
-
-  static async redeemToken(tokenId: string, beneficiary: string, amount: number): Promise<TransactionInfo> {
+  static async requestRedeemToken(tokenId: string, amount: number, beneficiary: Principal): Promise<void> {
     try {
-      /* TODO replace in future for beneficiary */
-      const testingBeneficiary = Principal.fromText("2vxsx-fae");
+      await agent().requestRedeemToken(tokenId, amount, beneficiary)
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
 
-      const tx = await agent().redeemToken(tokenId, testingBeneficiary, amount) as TransactionInfo
+
+  static async redeemToken(tokenId: string, amount: number, beneficiary?: Principal): Promise<TransactionInfo> {
+    try {
+      const tx = await agent().redeemToken(tokenId, amount, beneficiary ? [beneficiary] : []) as TransactionInfo
       tx.txType = Object.values(tx.txType)[0] as TxTypeDef
       tx.to = Object.values(tx.to)[0] as string
 
@@ -465,6 +483,7 @@ export class AgentCanister {
         item.callerBeneficiaryId = item.callerBeneficiaryId[0]
         item.tokenId = item.tokenId[0]
         item.quantity = item.quantity[0] ? Number(item.quantity[0]) : null
+        item.createdAt = new Date(item.createdAt)
       }
 
       return res

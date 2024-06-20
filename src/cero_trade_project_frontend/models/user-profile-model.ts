@@ -9,8 +9,8 @@ export class UserProfileModel {
   country: string;
   address: string;
   email: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
 
   static get(): UserProfileModel  {
     return store.state.profile;

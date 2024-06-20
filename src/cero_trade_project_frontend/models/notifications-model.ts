@@ -15,4 +15,5 @@ export interface NotificationInfo {
   tokenId?: string;
   callerBeneficiaryId?: Principal;
   quantity?: number;
+  createdAt: Date;
 }

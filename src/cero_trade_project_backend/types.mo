@@ -213,6 +213,7 @@ module {
     tokenId: ?TokenId;
     callerBeneficiaryId: ?BID;
     quantity: ?TokenAmount;
+    createdAt: Text;
   };
 
   public type NotificationType = {

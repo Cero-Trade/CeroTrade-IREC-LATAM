@@ -132,6 +132,24 @@ actor class Agent() = this {
   };
 
 
+  /// send beneficiary notification
+  public shared({ caller }) func requestBeneficiary(beneficiaryId: T.BID): async() {
+    // check if user exists
+    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
+
+    await _addNotification({ uid = ?beneficiaryId; token = null }, {
+      id = "0";
+      title = "Beneficiary request";
+      content = "You have received a beneficiary request from user " # Principal.toText(caller);
+      notificationType = #beneficiary("beneficiary");
+      tokenId = null;
+      callerBeneficiaryId = ?caller;
+      quantity = null;
+      createdAt = DateTime.now().toText();
+    });
+  };
+
+
   /// filter users on cero trade by name or principal id
   public shared({ caller }) func filterUsers(user: Text): async [T.UserProfile] {
     await UserIndex.filterUsers(caller, user);
@@ -544,8 +562,25 @@ actor class Agent() = this {
   };
 
 
+  public shared({ caller }) func requestRedeemToken(tokenId: T.TokenId, quantity: T.TokenAmount, beneficiary: T.BID): async() {
+    // check if user exists
+    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
+
+    await _addNotification({ uid = ?beneficiary; token = null }, {
+      id = "0";
+      title = "Redemption request";
+      content = "You have received a redemption request from user " # Principal.toText(caller);
+      notificationType = #redeem("redeem");
+      tokenId = ?tokenId;
+      callerBeneficiaryId = ?caller;
+      quantity = ?quantity;
+      createdAt = DateTime.now().toText();
+    });
+  };
+
+
   // redeem certificate by burning user tokens
-  public shared({ caller }) func redeemToken(tokenId: T.TokenId, beneficiary: T.BID, quantity: T.TokenAmount): async T.TransactionInfo {
+  public shared({ caller }) func redeemToken(tokenId: T.TokenId, quantity: T.TokenAmount, beneficiary: ?T.BID): async T.TransactionInfo {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
@@ -566,7 +601,7 @@ actor class Agent() = this {
       transactionId = "0";
       txIndex;
       from = caller;
-      to = ?beneficiary;
+      to = beneficiary;
       tokenId;
       txType = #redemption("redemption");
       tokenAmount = quantity;
