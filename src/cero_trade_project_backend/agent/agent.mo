@@ -43,7 +43,9 @@ actor class Agent() = this {
 
 
   /// register user into cero trade
-  public shared({ caller }) func register(form: T.RegisterForm): async() { await UserIndex.registerUser(caller, form) };
+  public shared({ caller }) func register(form: T.RegisterForm, beneficiary: ?T.BID): async() {
+    await UserIndex.registerUser(caller, form, beneficiary)
+  };
 
 
   /// store user avatar into users collection
@@ -151,9 +153,7 @@ actor class Agent() = this {
 
 
   /// filter users on cero trade by name or principal id
-  public shared({ caller }) func filterUsers(user: Text): async [T.UserProfile] {
-    await UserIndex.filterUsers(caller, user);
-  };
+  public func filterUsers(user: Text): async [T.UserProfile] { await UserIndex.filterUsers(user) };
 
 
   /// function to know user token balance

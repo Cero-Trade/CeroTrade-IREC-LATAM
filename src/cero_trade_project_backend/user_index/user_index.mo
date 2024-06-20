@@ -245,7 +245,7 @@ actor class UserIndex() = this {
   };
 
   /// register [usersDirectory] collection
-  public shared({ caller }) func registerUser(uid: T.UID, form: T.RegisterForm) : async() {
+  public shared({ caller }) func registerUser(uid: T.UID, form: T.RegisterForm, beneficiary: ?T.BID) : async() {
     _callValidation(caller);
 
     // WARN just for debug
@@ -310,6 +310,13 @@ actor class UserIndex() = this {
       await Users.canister(cid).registerUser(uid, trimmedToken);
 
       usersDirectory.put(uid, cid);
+
+      switch(beneficiary) {
+        case(null) {};
+        case(?value) {
+          await updateBeneficiaries(uid, value, { delete = false });
+        };
+      };
     } catch (error) {
       await _deleteUserWeb2(trimmedToken);
 
@@ -574,15 +581,22 @@ actor class UserIndex() = this {
   public shared({ caller }) func updateBeneficiaries(uid: T.UID, beneficiaryId: T.BID, deleteBeneficiary: { delete: Bool }): async() {
     _callValidation(caller);
 
+    // update caller collection
     switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
       case(?cid) await Users.canister(cid).updateBeneficiaries(uid, beneficiaryId, deleteBeneficiary);
+    };
+
+    // update beneficiary collection
+    switch(usersDirectory.get(beneficiaryId)) {
+      case (null) throw Error.reject(notExists);
+      case(?cid) await Users.canister(cid).updateBeneficiaries(beneficiaryId, uid, deleteBeneficiary);
     };
   };
 
 
   /// filter users on cero trade by name or principal id
-  public shared({ caller }) func filterUsers(uid: T.UID, user: Text): async [T.UserProfile] {
+  public shared({ caller }) func filterUsers(user: Text): async [T.UserProfile] {
     _callValidation(caller);
 
     // check if user exists

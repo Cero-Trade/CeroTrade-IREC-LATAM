@@ -20,7 +20,7 @@ export class AgentCanister {
     city: string,
     address: string,
     email: string,
-  }): Promise<void> {
+  }, beneficiary?: Principal): Promise<void> {
     try {
       // store user
       await agent().register({
@@ -30,7 +30,7 @@ export class AgentCanister {
         city: data.city,
         address: data.address,
         email: data.email,
-      })
+      }, beneficiary ? [beneficiary] : [])
 
       // store user company logo
       const fileCompressed = await fileCompression(data.companyLogo[0]),
