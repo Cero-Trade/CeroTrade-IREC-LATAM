@@ -11,6 +11,7 @@ import UUID "mo:uuid/UUID";
 
 // types
 import HT "./http_service_types";
+import ENV "../env"
 
 //Actor
 actor HttpService {
@@ -50,6 +51,7 @@ actor HttpService {
         },
         { name = "X-Frame-Options"; value = "DENY" },
         { name = "X-Content-Type-Options"; value = "nosniff" },
+        { name = "Access-Control-Allow-Origin"; value = ENV.VITE_API_URL }
       ];
     };
     transformed;
