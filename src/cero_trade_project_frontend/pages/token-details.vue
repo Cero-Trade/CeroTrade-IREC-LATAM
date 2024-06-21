@@ -1,4 +1,5 @@
 <template>
+  <!-- TODO validate flow about icp spend -->
   <modal-approve
     ref="modalApprove"
     :token-id="tokenId"
@@ -404,7 +405,7 @@
                 Buy
               </v-btn>
 
-              <v-btn v-if="haveToken" class="btn" @click="showDialog('redeem')" style="flex: 1 1 calc(50% - 10px)">
+              <v-btn v-if="haveToken" :loading="!beneficiaries" class="btn" @click="showDialog('redeem')" style="flex: 1 1 calc(50% - 10px)">
                 Redeem Token
               </v-btn>
             </div>
@@ -546,16 +547,18 @@
 
           <div class="flex-column mt-4" style="gap: 5px">
             <label for="beneficiary">Beneficiary account (company)</label>
-            <v-text-field
+            <v-select
               v-model="redeemBeneficiary"
               id="beneficiary"
-              variant="solo"
-              flat
+              variant="solo" flat
+              :items="beneficiaries"
+              item-text="companyName"
+              item-value="principalId"
               class="select mb-8"
               bg-color="transparent"
-              placeholder="beneficiary account"
-              :rules="[globalRules.required]"
-            ></v-text-field>
+              placeholder="beneficiary account (optional)"
+              :rules="[true]"
+            ></v-select>
           </div>
 
           <!-- <v-btn class="btn2" style="width: max-content !important">Add beneficiary</v-btn> -->
@@ -1169,6 +1172,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import variables from '@/mixins/variables'
 import { closeLoader, convertE8SToICP, showLoader, maxDecimals } from '@/plugins/functions'
+import { Principal } from '@dfinity/principal'
 
 const
   route = useRoute(),
@@ -1342,6 +1346,8 @@ chartOptions = {
   },
   labels: ['Available'],
 },
+beneficiaries = ref(null),
+
 haveToken = ref(false),
 amountSelected = ref(),
 sellerSelected = ref(undefined),
@@ -1437,6 +1443,8 @@ onBeforeMount(() => {
 
 
 async function getData() {
+  getBeneficiaries()
+
   try {
     const [checkToken, token, _] = await Promise.allSettled([
       AgentCanister.checkUserToken(tokenId.value),
@@ -1448,6 +1456,16 @@ async function getData() {
     tokenDetail.value = token.value
     seriesOwnedVsProduced.value = [token.value.totalAmount / token.value.assetInfo.volumeProduced || 0]
   } catch (error) {
+    console.error(error);
+    toast.error(error)
+  }
+}
+
+async function getBeneficiaries() {
+  try {
+    beneficiaries.value = await AgentCanister.getBeneficiaries()
+  } catch (error) {
+    beneficiaries.value = []
     console.error(error);
     toast.error(error)
   }
@@ -1567,18 +1585,33 @@ async function takeOffMarket() {
   }
 }
 
+// TODO validate flow about icp spend
 async function redeemToken() {
+  showLoader()
+
   try {
-    showLoader()
-    const tx = await AgentCanister.redeemToken(tokenId.value, redeemBeneficiary.value, Number(tokenAmount.value))
-    await getData()
+    // if beneficiary provided
+    if (redeemBeneficiary.value) {
+      await AgentCanister.requestRedeemToken(tokenId.value, Number(tokenAmount.value), Principal.fromText(redeemBeneficiary.value))
 
-    closeLoader()
-    dialogRedeem.value = false;
-    dialogRedeemCertificates.value = false;
+      closeLoader()
+      dialogRedeem.value = false;
+      dialogRedeemCertificates.value = false;
 
-    console.log("redeem token", tx);
-    toast.success(`you have redeemed ${tokenAmount.value} tokens`)
+      toast.success(`you have send redemption request to beneficiary ${redeemBeneficiary.value.companyName}`)
+    } else {
+      // if beneficiary not provided
+      const tx = await AgentCanister.redeemToken(tokenId.value, Number(tokenAmount.value), null)
+
+      await getData()
+
+      closeLoader()
+      dialogRedeem.value = false;
+      dialogRedeemCertificates.value = false;
+
+      console.log("redeem token", tx);
+      toast.success(`you have redeemed ${tokenAmount.value} tokens`)
+    }
   } catch (error) {
     closeLoader()
     console.error(error);

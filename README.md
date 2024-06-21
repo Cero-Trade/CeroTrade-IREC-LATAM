@@ -1,4 +1,5 @@
 <!-- TODO subdomain integration with `cerotrade.cl/alfa` -->
+<!-- TODO make notification screens .. later integrate with canisters beneficiary and notificaitons flow -->
 
 # Cero Trade
 

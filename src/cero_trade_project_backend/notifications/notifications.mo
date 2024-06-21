@@ -6,6 +6,7 @@ import Buffer "mo:base/Buffer";
 import Iter "mo:base/Iter";
 import Source "mo:uuid/async/SourceV4";
 import UUID "mo:uuid/UUID";
+import Error "mo:base/Error";
 
 
 // types
@@ -60,10 +61,38 @@ shared({ caller = notificationIndexCaller }) actor class Notifications() {
     id
   };
 
-  /// remove notification from cero trade
-  public shared({ caller }) func removeNotification(notification: T.NotificationId): async() {
+  /// update general notification statuses
+  public shared({ caller }) func updateGeneral(notificationIds: [T.NotificationId]): async() {
     _callValidation(caller);
-    let _ = notifications.remove(notification)
+
+    for(notificationId in notificationIds.vals()) {
+      var notification = switch(notifications.get(notificationId)) {
+        case(null) throw Error.reject("Notification not found");
+        case(?value) value;
+      };
+
+      if (notification.notificationType == #general("general")) {
+        notification := { notification with status = ?#seen("seen") };
+      };
+
+      notifications.put(notificationId, notification);
+    };
+  };
+
+  /// update event notification statuses
+  public shared({ caller }) func updateEvent(notificationId: T.NotificationId, eventStatus: T.NotificationEventStatus): async() {
+    _callValidation(caller);
+
+    var notification = switch(notifications.get(notificationId)) {
+      case(null) throw Error.reject("Notification not found");
+      case(?value) value;
+    };
+
+    if (notification.notificationType != #general("general")) {
+      notification := { notification with eventStatus = ?eventStatus };
+    };
+
+    notifications.put(notificationId, notification);
   };
 
   /// clear notifications from cero trade
@@ -73,5 +102,12 @@ shared({ caller = notificationIndexCaller }) actor class Notifications() {
     for(notification in notificationIds.vals()) {
       let _ = notifications.remove(notification);
     };
+  };
+
+  /// clear notification from cero trade
+  public shared({ caller }) func clearNotification(notificationId: T.NotificationId): async() {
+    _callValidation(caller);
+
+    let _ = notifications.remove(notificationId);
   };
 }

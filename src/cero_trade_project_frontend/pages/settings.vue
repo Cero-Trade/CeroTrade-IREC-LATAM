@@ -1,3 +1,5 @@
+<!-- TODO review searching antyhing missing -->
+
 <template>
   <div id="settings">
     <span class="mb-10 acenter" style="color:#475467 ;font-size: 16px; font-weight: 700;">
@@ -66,7 +68,7 @@
           <span class="tertiary" style="font-weight: 300;">
             Securely manage and edit your beneficiary accounts to streamline your redemptions.
           </span>
-          <v-btn class="btn mt-6" @click="dialogBeneficiary = true">
+          <v-btn :loading="!beneficiaries" class="btn mt-6" @click="dialogBeneficiary = true">
             Edit accounts
             <img src="@/assets/sources/icons/pencil.svg" alt="pencil icon">
           </v-btn>
@@ -861,15 +863,14 @@
         <h5 class="bold">Beneficiary accounts</h5>
         <span class="tertiary">These are all companies you can redeem certificates in the name of.</span>
 
-        <div class="div-radio-sell mb-0" v-for="(item, index) in dataBanks" :key="index">
+        <div class="div-radio-sell mb-0" v-for="(item, index) in beneficiaries" :key="index">
           <v-sheet class="double-sheet">
             <v-sheet>
-              <img src="@/assets/sources/icons/bank-big.svg" alt="bank icon" style="width: 20px">
+              <img :src="item.companyLogo" alt="avatar image" style="width: 20px">
             </v-sheet>
           </v-sheet>
           <div class="divcol ml-6">
-            <span class="bold">{{ item.account_name }}</span>
-            <span>{{ item.address_bank }}</span>
+            <span class="bold">{{ item.companyName }}</span>
           </div>
         </div>
 
@@ -882,6 +883,18 @@
           <div class="divcol ml-6">
             <span class="bold">Add an account</span>
             <span>Lorem ipsum dolor sit amet consectetur. Aliquet porttitor bibendum ultrices.</span>
+          </div>
+        </div>
+
+        <div class="div-radio-sell" @click="beneficiaryUrl.copyToClipboard('beneficiary link copied to clipboard')">
+          <v-sheet class="double-sheet">
+            <v-sheet>
+              <img src="@/assets/sources/icons/plus-square.svg" alt="plus-square icon" style="width: 20px">
+            </v-sheet>
+          </v-sheet>
+          <div class="divcol ml-6">
+            <span class="bold">Share beneficiary link</span>
+            <span>Share a link with your beneficiary to register it linked to you</span>
           </div>
         </div>
       </v-card>
@@ -899,63 +912,66 @@
         <h5 class="bold">New beneficiary account</h5>
         <span class="tertiary mb-4">Adding a new beneficiary will allow you to redeem certificates to their name.</span>
 
-        <v-row>
-          <v-col cols="12">
-            <label for="account-name">Account name</label>
-            <v-text-field 
-            v-model="account_name"
-            id="account-name" class="input" 
-            variant="solo" flat elevation="0" placeholder="Insert account name"
-            ></v-text-field>
-          </v-col>
+        <v-form ref="formBeneficiaryRef" v-model="formBeneficiaryValid" @submit.prevent>
+          <v-row>
+            <v-col cols="12">
+              <label for="beneficiary-account">Beneficiary account</label>
+              <v-text-field 
+              v-model="formBeneficiary.search"
+              id="beneficiary-account" class="input" 
+              variant="solo" flat elevation="0" placeholder="Search by account name or account id"
+              @keyup="({ key }) => {
+                if (key !== 'Enter') return
+                searchBeneficiaries()
+              }"
+              >
+                <template #append>
+                  <v-btn
+                    variant="icon"
+                    :loading="loadingSearchBeneficiary"
+                    @click="searchBeneficiaries"
+                  >
+                    <img src="@/assets/sources/icons/search.png" alt="search icon" style="width: 20px">
+                  </v-btn>
+                </template>
+              </v-text-field>
 
-          <v-col cols="12">
-            <label for="address">Address</label>
-            <v-text-field 
-            v-model="address_bank"
-            id="address" class="input" variant="solo" flat 
-            elevation="0" placeholder="Insert address"
-            ></v-text-field>
-          </v-col>
+              <v-text-field v-model="formBeneficiary.beneficiary" :rules="[globalRules.required]" class="d-none" />
+            </v-col>
 
-          <v-col cols="12">
-            <label for="country">Country</label>
-            <v-select
-            id="country" class="input" variant="solo" flat elevation="0" 
-            placeholder="Choose country"
-            menu-icon=""
-            >
-              <template #append-inner="{ isFocused }">
-                <img
-                  src="@/assets/sources/icons/chevron-down.svg"
-                  alt="chevron-down icon"
-                  :style="`transform: ${isFocused.value ? 'rotate(180deg)' : 'none'};`"
+            <v-col cols="12">
+              <v-card height="400" class="px-3 py-4 mt-0 d-flex flex-column align-center justify-start" style="overflow-y: auto; overflow-x: hidden;">
+                <span v-if="!formBeneficiary.beneficiaries">Waiting for search...</span>
+                <span v-else-if="!formBeneficiary.beneficiaries.length">No matches found</span>
+
+                <div
+                  v-for="(item, i) in formBeneficiary.beneficiaries" :key="i"
+                  class="div-radio-sell mt-0 mb-4"
+                  :class="{ active: formBeneficiary.beneficiary?.principalId === item.principalId }"
+                  style="width: 100% !important"
+                  @click="formBeneficiary.beneficiary = item"
                 >
-              </template>
-            </v-select>
-          </v-col>
-
-          <v-col cols="12">
-            <label for="location">Location</label>
-            <v-text-field 
-            id="location" class="input" variant="solo" flat 
-            elevation="0" placeholder="Enter location"
-            ></v-text-field>
-          </v-col>
-
-          <v-col cols="12">
-            <label for="address">Company address</label>
-            <v-text-field id="address" class="input" variant="solo" flat elevation="0" placeholder="office@abccompany.com"></v-text-field>
-          </v-col>
-        </v-row>
+                  <v-sheet class="double-sheet">
+                    <v-sheet>
+                      <img :src="item.companyLogo" alt="avatar image" style="width: 20px">
+                    </v-sheet>
+                  </v-sheet>
+                  <div class="divcol ml-6">
+                    <span class="bold">{{ item.companyName }}</span>
+                  </div>
+                </div>
+              </v-card>
+            </v-col>
+          </v-row>
+        </v-form>
 
         <div class="divrow mt-6" style="gap: 10px;">
           <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogNewBeneficiary = false">
             Cancel
             <img src="@/assets/sources/icons/close.svg" alt="close" style="width: 15px">
           </v-btn>
-          <v-btn class="btn" @click="pushBanks()" style="border: none!important;">
-            Create account
+          <v-btn :disabled="!formBeneficiaryValid" class="btn" @click="addBeneficiary" style="border: none!important;">
+            Add beneficiary
             <img src="@/assets/sources/icons/plus-square.svg" alt="plust-square icon">
           </v-btn>
         </div>
@@ -973,37 +989,37 @@ import { AgentCanister } from '@/repository/agent-canister'
 import { AuthClientApi } from '@/repository/auth-client-api'
 import { closeLoader, showLoader } from '@/plugins/functions'
 import { useToast } from 'vue-toastification'
+import variables from '@/mixins/variables'
 
 export default{
   setup(){
-      const toast = useToast();
-      const tabsWindow = ref(1);
-      const dialogNotification = ref(false);
-      const show_password= ref(false);
-      const dialogResetPassword= ref(false);
-      const dialogCompany= ref(false);
-      const dialogBankTransferDetails= ref(false);
-      const dialogSelectPayment= ref(false);
-      const walletStatus= ref(false);
-      const status2fa= ref(false);
-      const verifyStatus= ref(false);
-      const dialogParticipantForm= ref(false);
-      const dialogPending= ref(false);
-      const dialogParticipant= ref(false);
-      const dialogPhone= ref(false);
-      const items= ["US", "UK"];
-      const selectedLang= ref('USA');
-      const dialogConect= ref(false);
-      const dialogCreditCrad= ref(false);
-      const dialog2fa= ref(false);
-      const dialogBeneficiary= ref(false);
-      const dialogNewBeneficiary= ref(false);
-      const dialogDeleteAccount = ref(false);
+      const toast = useToast(),
+      { globalRules, beneficiaryUrl } = variables,
+      tabsWindow = ref(1),
+      dialogNotification = ref(false),
+      show_password= ref(false),
+      dialogResetPassword= ref(false),
+      dialogCompany= ref(false),
+      dialogBankTransferDetails= ref(false),
+      dialogSelectPayment= ref(false),
+      walletStatus= ref(false),
+      status2fa= ref(false),
+      verifyStatus= ref(false),
+      dialogParticipantForm= ref(false),
+      dialogPending= ref(false),
+      dialogParticipant= ref(false),
+      dialogPhone= ref(false),
+      items= ["US", "UK"],
+      selectedLang= ref('USA'),
+      dialogConect= ref(false),
+      dialogCreditCrad= ref(false),
+      dialog2fa= ref(false),
+      dialogBeneficiary= ref(false),
+      dialogNewBeneficiary= ref(false),
+      dialogDeleteAccount = ref(false),
 
-      const dataBanks = ref([]);
-      const address_bank = ref('');
-      const account_name = ref('');
-      const payments = [
+      dataBanks = ref([]),
+      payments = [
         {
           key: 'bank',
           icon: bankIcon,
@@ -1016,9 +1032,20 @@ export default{
           name: "Payment with ICP",
           width: 40
         },
-      ]
+      ],
+      formBeneficiaryRef = ref(),
+      formBeneficiaryValid = ref(false),
+      formBeneficiary = ref({
+        search: null,
+        beneficiary: null,
+        beneficiaries: null,
+      }),
+      beneficiaries = ref(null),
+      loadingSearchBeneficiary = ref(false)
 
     return{
+      beneficiaryUrl,
+      globalRules,
       toast,
       tabsWindow,
       dialogNotification,
@@ -1043,9 +1070,12 @@ export default{
       dialogNewBeneficiary,
       dialogDeleteAccount,
       dataBanks,
-      address_bank,
-      account_name,
       payments,
+      formBeneficiaryRef,
+      formBeneficiaryValid,
+      formBeneficiary,
+      beneficiaries,
+      loadingSearchBeneficiary
     }
   },
   mounted() {
@@ -1056,6 +1086,38 @@ export default{
   },
 
   methods:{
+    async searchBeneficiaries() {
+      if (!this.formBeneficiary.search || this.loadingSearchBeneficiary) return
+      this.loadingSearchBeneficiary = true
+
+      try {
+        this.formBeneficiary.beneficiaries = await AgentCanister.filterUsers(this.formBeneficiary.search)
+      } catch (error) {
+        this.toast.error(error)
+      }
+
+      this.loadingSearchBeneficiary = false
+    },
+    async addBeneficiary() {
+      if (!(await this.formBeneficiaryRef.validate()).valid) return
+
+      try {
+        await AgentCanister.updateBeneficiaries(this.formBeneficiary.beneficiary.principalId, { remove: false })
+        this.dialogNewBeneficiary = false
+        for (const key of Object.keys(this.formBeneficiary)) this.formBeneficiary[key] = null
+        await getBeneficiaries()
+      } catch (error) {
+        this.toast.error(error)
+      }
+    },
+    async getBeneficiaries() {
+      try {
+        this.beneficiaries = await AgentCanister.getBeneficiaries()
+      } catch (error) {
+        this.beneficiaries = []
+        this.toast.error(error)
+      }
+    },
     onConnectPayment(item) {
       switch (item.key) {
         case 'bank': {
@@ -1065,22 +1127,6 @@ export default{
         case 'icp': {
           this.dialogSelectPayment = false;
         } break;
-      }
-    },
-    pushBanks() {
-      if (this.address_bank && this.account_name) {
-        this.dataBanks.push({
-          address_bank: this.address_bank,
-          account_name: this.account_name
-        });
-
-        this.address_bank = '';
-        this.account_name = '';
-        this.dialogNewBeneficiary = false;
-        this.dialogBeneficiary = true;
-        this.dialog
-      } else {
-        console.error('Ambos campos deben ser llenados.');
       }
     },
     async getUserId() {

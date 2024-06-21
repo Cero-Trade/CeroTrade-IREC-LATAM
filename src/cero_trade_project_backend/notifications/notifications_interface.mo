@@ -10,7 +10,9 @@ module NotificationsInterface {
     length: query () -> async Nat;
     getNotifications: ([T.NotificationId]) -> async [T.NotificationInfo];
     addNotification: (notification: T.NotificationInfo) -> async T.NotificationId;
-    removeNotification: (notification: T.NotificationId) -> async();
+    updateGeneral: (notificationIds: [T.NotificationId]) -> async();
+    updateEvent: (notificationId: T.NotificationId, eventStatus: T.NotificationEventStatus) -> async();
     clearNotifications: (notificationIds: [T.NotificationId]) -> async();
+    clearNotification: (notificationId: T.NotificationId) -> async();
   };
 }

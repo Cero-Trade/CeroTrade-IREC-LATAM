@@ -139,15 +139,18 @@ actor class Agent() = this {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
-    await _addNotification({ uid = ?beneficiaryId; token = null }, {
+    await _addNotification({
       id = "0";
       title = "Beneficiary request";
-      content = "You have received a beneficiary request from user " # Principal.toText(caller);
+      content = null;
       notificationType = #beneficiary("beneficiary");
       tokenId = null;
-      callerBeneficiaryId = ?caller;
+      receivedBy = beneficiaryId;
+      triggeredBy = ?caller;
       quantity = null;
       createdAt = DateTime.now().toText();
+      status = null;
+      eventStatus = ?#pending("pending");
     });
   };
 
@@ -566,15 +569,18 @@ actor class Agent() = this {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
-    await _addNotification({ uid = ?beneficiary; token = null }, {
+    await _addNotification( {
       id = "0";
       title = "Redemption request";
-      content = "You have received a redemption request from user " # Principal.toText(caller);
+      content = null;
       notificationType = #redeem("redeem");
       tokenId = ?tokenId;
-      callerBeneficiaryId = ?caller;
+      receivedBy = beneficiary;
+      triggeredBy = ?caller;
       quantity = ?quantity;
       createdAt = DateTime.now().toText();
+      status = null;
+      eventStatus = ?#pending("pending");
     });
   };
 
@@ -720,43 +726,63 @@ actor class Agent() = this {
   public func getAssetStatistics(): async [(Text, T.TokenAmount)] { await Statistics.getAssetStatistics() };
 
 
-  // get notification
-  public shared({ caller }) func getNotifications(page: ?Nat, length: ?Nat, notificationType: ?T.NotificationType): async [T.NotificationInfo] {
+  // get notifications
+  public shared({ caller }) func getNotifications(page: ?Nat, length: ?Nat, notificationTypes: [T.NotificationType]): async [T.NotificationInfo] {
     let token = await UserIndex.getUserToken(caller);
-    await NotificationIndex.getNotifications(token, page, length, notificationType);
+    await NotificationIndex.getNotifications(token, page, length, notificationTypes);
   };
 
 
   // add notification
-  private func _addNotification({ uid: ?T.UID; token: ?T.UserToken }, notification: T.NotificationInfo): async() {
-    switch(token) {
+  private func _addNotification(notification: T.NotificationInfo): async() {
+    let receiverToken = await UserIndex.getUserToken(notification.receivedBy);
 
-      // fetch user token if not provided
-      case(null) {
-        switch(uid) {
-          case(null) {};
-
-          case(?value) {
-            let token = await UserIndex.getUserToken(value);
-            await NotificationIndex.addNotification(token, notification);
-          };
-        };
+    let triggerToken: ?T.UserToken = switch(notification.triggeredBy) {
+      case(null) null;
+      case(?triggerUser) {
+        if (notification.notificationType == #general("general")) { null } else {
+          let token = await UserIndex.getUserToken(triggerUser);
+          ?token
+        }
       };
-
-      case(?value) await NotificationIndex.addNotification(value, notification);
     };
+
+    await NotificationIndex.addNotification(receiverToken, triggerToken, notification);
   };
 
 
-  // remove notification
-  public shared({ caller }) func removeNotification(notification: T.NotificationId): async() {
+  // update general notifications
+  public shared({ caller }) func updateGeneralNotifications(notificationIds: [T.NotificationId]) : async() {
     let token = await UserIndex.getUserToken(caller);
-    await NotificationIndex.removeNotification(token, notification);
+    await NotificationIndex.updateGeneralNotifications(token, notificationIds);
   };
 
-  // clear all notifications by type
-  public shared({ caller }) func clearNotificationsByType(notificationType: T.NotificationType): async() {
+  // update event notification
+  public shared({ caller }) func updateEventNotification(notificationId: T.NotificationId, eventStatus: T.NotificationEventStatus) : async() {
     let token = await UserIndex.getUserToken(caller);
-    await NotificationIndex.clearNotificationsByType(token, notificationType);
+    await NotificationIndex.updateEventNotification(token, notificationId, eventStatus);
+  };
+
+  // clear general notifications
+  public shared({ caller }) func clearGeneralNotifications(notificationIds: [T.NotificationId]): async() {
+    let token = await UserIndex.getUserToken(caller);
+    await NotificationIndex.clearGeneralNotifications(token, notificationIds);
+  };
+
+  // clear event notification
+  public shared({ caller }) func clearEventNotification(notification: T.NotificationInfo): async() {
+    let receiverToken = await UserIndex.getUserToken(caller);
+
+    let triggerToken: ?T.UserToken = switch(notification.triggeredBy) {
+      case(null) null;
+      case(?triggerUser) {
+        if (notification.notificationType == #general("general")) { null } else {
+          let token = await UserIndex.getUserToken(triggerUser);
+          ?token
+        }
+      };
+    };
+
+    await NotificationIndex.clearEventNotification(receiverToken, triggerToken, notification.id);
   };
 }

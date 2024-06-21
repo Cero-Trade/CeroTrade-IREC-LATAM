@@ -3,6 +3,7 @@ import store from "@/store"
 import { useStorage } from "vue3-storage-secure"
 import { useTheme } from "vuetify/lib/framework.mjs"
 import { formatBytes } from "@/plugins/functions"
+import { computed } from "vue"
 
 export default {
   // ? custom defines
@@ -23,12 +24,14 @@ export default {
 
       return true
     },
+    principalId: (v) => /^[a-zA-Z0-9]{3,5}(-[a-zA-Z0-9]{3,5}){10}$/.test(v) || 'Invalid principal id'
   },
   dateFormat: 'YYYY-MM-DDTHH:mm:ss.sssssssssZ',
   // amount in e8s equal to 1 ICP
   e8sEquivalence: Number(process.env.E8S_EQUIVALENCE),
   ceroComisison: Number(process.env.CERO_COMISSION),
   isProduction: process.env.NODE_ENV === 'production',
+  beneficiaryUrl: computed(() => `${process.env.NODE_ENV === 'production' ? 'https://z2mgf-dqaaa-aaaak-qihbq-cai.icp0.io' : 'http://localhost:5173'}/auth/register?canisterId=z2mgf-dqaaa-aaaak-qihbq-cai&beneficiary=${store.state.profile?.principalId.toString()}`),
 
   isSafari: /^((?!chrome|android).)*safari/i.test(navigator.userAgent),
   isLogged() {

@@ -315,9 +315,7 @@ actor class UserIndex() = this {
         case(null) {};
         case(?value) {
           // check if user exists
-          if (await checkPrincipal(value)) {
-            await updateBeneficiaries(uid, value, { delete = false });
-          }
+          if (await checkPrincipal(value)) await updateBeneficiaries(uid, value, { delete = false });
         };
       };
     } catch (error) {

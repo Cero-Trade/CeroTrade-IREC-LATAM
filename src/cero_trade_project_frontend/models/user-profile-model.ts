@@ -1,8 +1,9 @@
 import store from "@/store";
+import { Principal } from "@dfinity/principal";
 
 export class UserProfileModel {
   companyLogo: string;
-  principalId: string;
+  principalId: Principal;
   companyId: string;
   companyName: string;
   city: string;

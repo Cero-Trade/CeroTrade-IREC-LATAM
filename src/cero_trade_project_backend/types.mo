@@ -208,12 +208,27 @@ module {
   public type NotificationInfo = {
     id: NotificationId;
     title: Text;
-    content: Text;
+    content: ?Text;
     notificationType: NotificationType;
-    tokenId: ?TokenId;
-    callerBeneficiaryId: ?BID;
-    quantity: ?TokenAmount;
     createdAt: Text;
+    status: ?NotificationStatus;
+
+    eventStatus: ?NotificationEventStatus;
+    tokenId: ?TokenId;
+    receivedBy: BID;
+    triggeredBy: ?UID;
+    quantity: ?TokenAmount;
+  };
+
+  public type NotificationStatus = {
+    #sent: Text;
+    #seen: Text;
+  };
+
+  public type NotificationEventStatus = {
+    #pending: Text;
+    #declined: Text;
+    #accepted: Text;
   };
 
   public type NotificationType = {

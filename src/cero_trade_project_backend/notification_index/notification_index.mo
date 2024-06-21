@@ -45,15 +45,6 @@ actor class NotificationIndex() = this {
   /// get size of notificationsDirectory collection
   public query func length(): async Nat { notificationsDirectory.size() };
 
-  // helper function to get canister by [NotificationId]
-  private func _findCanister(notification: T.NotificationId): ?(T.CanisterId, [T.NotificationId]){
-    for((cid, notifications) in notificationsDirectory.entries()) {
-      if (Array.find<T.NotificationId>(notifications, func x = x == notification) != null) return ?(cid, notifications);
-    };
-
-    return null;
-  };
-
 
   /// get canister controllers
   public shared({ caller }) func getControllers(): async ?[Principal] {
@@ -205,16 +196,31 @@ actor class NotificationIndex() = this {
   };
 
   /// add notification to [notificationsDirectory] collection
-  public shared({ caller }) func addNotification(token: T.UserToken, notification: T.NotificationInfo) : async() {
+  public shared({ caller }) func addNotification(receiverToken: T.UserToken, triggerToken: ?T.UserToken, notification: T.NotificationInfo) : async() {
     _callValidation(caller);
 
+    // add notification to receiver user
     let _ = await HttpService.post(HT.apiUrl # "users/add-notification", {
         headers = [];
-        bodyJson = switch(Serde.JSON.toText(to_candid({ token; notification = notification.id }), ["token", "notification"], null)) {
+        bodyJson = switch(Serde.JSON.toText(to_candid({ token = receiverToken; notification = notification.id }), ["token", "notification"], null)) {
           case(#err(error)) throw Error.reject("Cannot serialize data");
           case(#ok(value)) value;
         };
       });
+
+    switch(triggerToken) {
+      case(null) {};
+      case(?token) {
+        // add notification to trigger user
+        let _ = await HttpService.post(HT.apiUrl # "users/add-notification", {
+          headers = [];
+          bodyJson = switch(Serde.JSON.toText(to_candid({ token; notification = notification.id }), ["token", "notification"], null)) {
+            case(#err(error)) throw Error.reject("Cannot serialize data");
+            case(#ok(value)) value;
+          };
+        });
+      };
+    };
 
     try {
       var selectedCanister: ?(T.CanisterId, [T.NotificationId]) = null;
@@ -260,44 +266,13 @@ actor class NotificationIndex() = this {
   };
 
 
-  /// remove notification from [notificationsDirectory] collection
-  public shared({ caller }) func removeNotification(token: T.UserToken, notification: T.NotificationId) : async() {
-    _callValidation(caller);
-
-    let (cid, notifications) = switch(_findCanister(notification)) {
-      case(null) throw Error.reject("Notifications canister not found");
-      case(?value) value;
-    };
-
-    let _ = await HttpService.post(HT.apiUrl # "users/remove-notification", {
-        headers = [];
-        bodyJson = switch(Serde.JSON.toText(to_candid({ token; notification }), ["token", "notification"], null)) {
-          case(#err(error)) throw Error.reject("Cannot serialize data");
-          case(#ok(value)) value;
-        };
-      });
-
-    // remove notification
-    await Notifications.canister(cid).removeNotification(notification);
-
-    let notificationsCopy = Buffer.fromArray<T.NotificationId>(notifications);
-    let index = switch(Buffer.indexOf<T.NotificationId>(notification, notificationsCopy, Text.equal)) {
-      case(null) throw Error.reject("Notification not found");
-      case(?value) value;
-    };
-    let _ = notificationsCopy.remove(index);
-
-    notificationsDirectory.put(cid, Buffer.toArray<T.NotificationId>(notificationsCopy));
-  };
-
-
-  /// clear notifications by type from [notificationsDirectory] collection
-  public shared({ caller }) func clearNotificationsByType(token: T.UserToken, notificationType: T.NotificationType) : async() {
+  /// mark general notifications status as seen
+  public shared({ caller }) func updateGeneralNotifications(token: T.UserToken, notificationIds: [T.NotificationId]) : async() {
     _callValidation(caller);
 
     let notificationIdsJson = await HttpService.get(HT.apiUrl # "users/notifications/" # token, { headers = []; });
 
-    let notificationIds: [T.NotificationId] = switch(Serde.JSON.fromText(notificationIdsJson, null)) {
+    let userNotificationIds: [T.NotificationId] = switch(Serde.JSON.fromText(notificationIdsJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize profile data");
       case(#ok(blob)) {
         let notifications: ?[T.NotificationId] = from_candid(blob);
@@ -310,37 +285,180 @@ actor class NotificationIndex() = this {
 
     // iterate notifications on directory
     for((cid, canisterNotifications) in notificationsDirectory.entries()) {
-      let notificationsIdsPerCanister = Buffer.fromArray<T.NotificationId>(canisterNotifications);
+      // filter user notifications to verify if providing own notifications
+      let verifiedNotificationIds = Array.filter<T.NotificationId>(notificationIds, func (x) {
+        Array.find<T.NotificationId>(userNotificationIds, func y = x == y) != null
+      });
 
       // filter notification ids by present on current canister iterated
-      let filteredIds = Array.filter<T.NotificationId>(notificationIds, func id = Buffer.contains<T.NotificationId>(notificationsIdsPerCanister, id, Text.equal));
+      let filteredIds = Array.filter<T.NotificationId>(canisterNotifications, func (id) {
+        Array.find<T.NotificationId>(verifiedNotificationIds, func x = x == id) != null;
+      });
 
-      // filter notification ids by notificationType
-      let notificationsInfo = await Notifications.canister(cid).getNotifications(filteredIds);
-      let notificationsInfoFiltered = Array.filter<T.NotificationInfo>(notificationsInfo, func item = item.notificationType == notificationType);
-      let notificationsMapped = Array.map<T.NotificationInfo, T.NotificationId>(notificationsInfoFiltered, func x = x.id);
 
-      // clear notifications on canister
-      await Notifications.canister(cid).clearNotifications(notificationsMapped);
+      if (filteredIds.size() > 0) {
+        // update notifications on canister
+        await Notifications.canister(cid).updateGeneral(filteredIds);
+      }
+    };
+  };
 
-      let notifications = Buffer.fromArray<T.NotificationId>(notificationsMapped);
 
-      // clear notifications on directory
-      for(notification in notificationsMapped.vals()) {
-        let index = switch(Array.indexOf<T.NotificationId>(notification, notificationsMapped, Text.equal)) {
-          case(null) throw Error.reject("Notification not found");
+  /// update event notification status
+  public shared({ caller }) func updateEventNotification(token: T.UserToken, notificationId: T.NotificationId, eventStatus: T.NotificationEventStatus) : async() {
+    _callValidation(caller);
+
+    let queryParameter = "?id=" # notificationId;
+    let jsonResponse = await HttpService.get(HT.apiUrl # "users/notification/" # token # queryParameter, { headers = []; });
+
+    let exists: Bool = switch(Serde.JSON.fromText(jsonResponse, null)) {
+      case(#err(_)) false;
+      case(#ok(blob)) {
+        let exists: ?Text = from_candid(blob);
+        switch(exists) {
+          case(null) false;
+          case(?value) Text.contains(value, #text "true");
+        };
+      };
+    };
+
+    if (not exists) throw Error.reject("notification id provided not match with user notifications");
+
+    // iterate notifications on directory
+    for((cid, canisterNotifications) in notificationsDirectory.entries()) {
+      switch(Array.find<T.NotificationId>(canisterNotifications, func x = notificationId == x)) {
+        case(null) throw Error.reject("notification id provided not found in records");
+        case(?value) {
+          // update notifications on canister
+          return await Notifications.canister(cid).updateEvent(value, eventStatus);
+        };
+      };
+    };
+  };
+
+
+  /// clear general notifications from [notificationsDirectory] collection
+  public shared({ caller }) func clearGeneralNotifications(token: T.UserToken, notificationIds: [T.NotificationId]) : async() {
+    _callValidation(caller);
+
+    let notificationIdsJson = await HttpService.get(HT.apiUrl # "users/notifications/" # token, { headers = []; });
+
+    let userNotificationIds: [T.NotificationId] = switch(Serde.JSON.fromText(notificationIdsJson, null)) {
+      case(#err(_)) throw Error.reject("cannot serialize profile data");
+      case(#ok(blob)) {
+        let notifications: ?[T.NotificationId] = from_candid(blob);
+        switch(notifications) {
+          case(null) throw Error.reject("cannot serialize profile data");
           case(?value) value;
         };
-        let _ = notifications.remove(index);
       };
+    };
 
-      notificationsDirectory.put(cid, Buffer.toArray<T.NotificationId>(notifications));
+    // iterate notifications on directory
+    for((cid, canisterNotifications) in notificationsDirectory.entries()) {
+      // filter user notifications to verify if providing own notifications
+      let verifiedNotificationIds = Array.filter<T.NotificationId>(notificationIds, func (x) {
+        Array.find<T.NotificationId>(userNotificationIds, func y = x == y) != null
+      });
+
+      // filter notification ids by present on current canister iterated
+      let filteredIds = Array.filter<T.NotificationId>(canisterNotifications, func (id) {
+        Array.find<T.NotificationId>(verifiedNotificationIds, func x = x == id) != null;
+      });
+
+
+      if (filteredIds.size() > 0) {
+        // clear notifications from records
+        let _ = await HttpService.post(HT.apiUrl # "users/clear-notifications", {
+            headers = [];
+            bodyJson = switch(Serde.JSON.toText(to_candid({ token; notifications = filteredIds }), ["token", "notifications"], null)) {
+              case(#err(error)) throw Error.reject("Cannot serialize data");
+              case(#ok(value)) value;
+            };
+          });
+
+        // clear notifications on canister
+        await Notifications.canister(cid).clearNotifications(filteredIds);
+
+        let notifications = Buffer.fromArray<T.NotificationId>(canisterNotifications);
+
+        // clear notifications on directory
+        for(notificationId in filteredIds.vals()) {
+          let index = switch(Buffer.indexOf<T.NotificationId>(notificationId, notifications, Text.equal)) {
+            case(null) throw Error.reject("Notification not found");
+            case(?value) value;
+          };
+          let _ = notifications.remove(index);
+        };
+
+        notificationsDirectory.put(cid, Buffer.toArray<T.NotificationId>(notifications));
+      }
+    };
+  };
+
+
+  /// clear event notification from [notificationsDirectory] collection
+  public shared({ caller }) func clearEventNotification(receiverToken: T.UserToken, triggerToken: ?T.UserToken, notificationId: T.NotificationId) : async() {
+    _callValidation(caller);
+
+    let queryParameter = "?id=" # notificationId;
+    let jsonResponse = await HttpService.get(HT.apiUrl # "users/notification/" # receiverToken # queryParameter, { headers = []; });
+
+    let receiverExists: Bool = switch(Serde.JSON.fromText(jsonResponse, null)) {
+      case(#err(_)) false;
+      case(#ok(blob)) {
+        let exists: ?Text = from_candid(blob);
+        switch(exists) {
+          case(null) false;
+          case(?value) Text.contains(value, #text "true");
+        };
+      };
+    };
+
+    let triggerExists: Bool = switch(triggerToken) {
+      case(null) false;
+      case(?token) {
+        let jsonResponse = await HttpService.get(HT.apiUrl # "users/notification/" # token # queryParameter, { headers = []; });
+        switch(Serde.JSON.fromText(jsonResponse, null)) {
+          case(#err(_)) false;
+          case(#ok(blob)) {
+            let exists: ?Text = from_candid(blob);
+            switch(exists) {
+              case(null) false;
+              case(?value) Text.contains(value, #text "true");
+            };
+          };
+        };
+      };
+    };
+
+    if (not receiverExists) throw Error.reject("notification id provided not match with user notifications");
+
+    // iterate notifications on directory
+    for((cid, canisterNotifications) in notificationsDirectory.entries()) {
+      switch(Array.find<T.NotificationId>(canisterNotifications, func x = notificationId == x)) {
+        case(null) throw Error.reject("notification id provided not found in records");
+        case(?id) {
+          // clear notification from records
+          let _ = await HttpService.post(HT.apiUrl # "users/clear-notifications", {
+              headers = [];
+              bodyJson = switch(Serde.JSON.toText(to_candid({ token = receiverToken; notifications = [id] }), ["token", "notifications"], null)) {
+                case(#err(error)) throw Error.reject("Cannot serialize data");
+                case(#ok(value)) value;
+              };
+            });
+
+          // clear notification if all users has been cleaned
+          if (not triggerExists) await Notifications.canister(cid).clearNotification(id);
+          return;
+        };
+      };
     };
   };
 
 
   // get user notifications
-  public shared({ caller }) func getNotifications(token: T.UserToken, page: ?Nat, length: ?Nat, notificationType: ?T.NotificationType): async [T.NotificationInfo] {
+  public shared({ caller }) func getNotifications(token: T.UserToken, page: ?Nat, length: ?Nat, notificationTypes: [T.NotificationType]): async [T.NotificationInfo] {
     _callValidation(caller);
 
     let pageParam = switch(page) {
@@ -371,23 +489,23 @@ actor class NotificationIndex() = this {
 
     // iterate notifications on directory
     for((cid, canisterNotifications) in notificationsDirectory.entries()) {
-      let notificationsIdsPerCanister = Buffer.fromArray<T.NotificationId>(canisterNotifications);
-
       // filter notification ids by present on current canister iterated
-      let filteredIds = Array.filter<T.NotificationId>(notificationIds, func id = Buffer.contains<T.NotificationId>(notificationsIdsPerCanister, id, Text.equal));
-
-      let notificationsInfo = await Notifications.canister(cid).getNotifications(filteredIds);
-      let notificationsInfoFiltered = Array.filter<T.NotificationInfo>(notificationsInfo, func (item) {
-        switch(notificationType) {
-          case(null) true;
-          case(?value) item.notificationType == value;
-        };
+      let filteredIds = Array.filter<T.NotificationId>(canisterNotifications, func (id) {
+        Array.find<T.NotificationId>(notificationIds, func x = x == id) != null;
       });
 
-      // add notifications to buffer
-      for(notification in notificationsInfoFiltered.vals()) {
-        notifications.add(notification)
-      };
+
+      if (filteredIds.size() > 0) {
+        let notificationsInfo = await Notifications.canister(cid).getNotifications(filteredIds);
+        let notificationsInfoFiltered = Array.filter<T.NotificationInfo>(notificationsInfo, func (item) {
+          notificationTypes.size() < 1 or Array.find<T.NotificationType>(notificationTypes, func x = item.notificationType == x) != null
+        });
+
+        // add notifications to buffer
+        for(notification in notificationsInfoFiltered.vals()) {
+          notifications.add(notification)
+        };
+      }
     };
 
     Buffer.toArray<T.NotificationInfo>(notifications);

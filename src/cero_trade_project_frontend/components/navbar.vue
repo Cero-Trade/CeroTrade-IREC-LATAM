@@ -35,7 +35,8 @@
       </div>
 
       <div class="center divrow displaynone" style="gap: 20px;">
-        <img src="@/assets/sources/icons/bell.svg" alt="bell icon">
+        <notifications-button />
+
         <v-sheet class="center divrow pointer" style="gap: 10px; background-color: transparent;" @click="$router.push('/profile')">
           <v-img-load :src="UserProfileModel.get().companyLogo" alt="Avatar" cover rounded="50%" sizes="35px" />
           <div class="divcol">
@@ -124,6 +125,7 @@ import { useRouter } from 'vue-router'
 import { closeLoader, showLoader } from '@/plugins/functions'
 import { ref } from 'vue'
 import { UserProfileModel } from '@/models/user-profile-model'
+import NotificationsButton from '@/components/notifications-button.vue'
 
 const
   router = useRouter(),

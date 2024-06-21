@@ -9,7 +9,7 @@ import { MarketplaceInfo, MarketplaceSellersInfo } from "@/models/marketplace-mo
 import { Principal } from "@dfinity/principal";
 import moment from "moment";
 import variables from "@/mixins/variables";
-import { NotificationInfo, NotificationTypeDef } from "@/models/notifications-model";
+import { NotificationEventStatusDef, NotificationInfo, NotificationStatusDef, NotificationTypeDef } from "@/models/notifications-model";
 
 export class AgentCanister {
   static async register(data: {
@@ -20,7 +20,7 @@ export class AgentCanister {
     city: string,
     address: string,
     email: string,
-  }, beneficiary?: Principal): Promise<void> {
+  }, beneficiary?: string): Promise<void> {
     try {
       // store user
       await agent().register({
@@ -30,7 +30,7 @@ export class AgentCanister {
         city: data.city,
         address: data.address,
         email: data.email,
-      }, beneficiary ? [beneficiary] : [])
+      }, beneficiary ? [Principal.fromText(beneficiary)] : [])
 
       // store user company logo
       const fileCompressed = await fileCompression(data.companyLogo[0]),
@@ -76,6 +76,7 @@ export class AgentCanister {
   static async getProfile(uid?: Principal): Promise<UserProfileModel> {
     try {
       const userProfile = await agent().getProfile(uid ? [uid] : []) as UserProfileModel
+      userProfile.principalId = Principal.fromText(userProfile.principalId.toString())
       userProfile.companyLogo = getUrlFromArrayBuffer(userProfile.companyLogo) || avatar
       userProfile.createdAt = new Date(userProfile.createdAt)
       userProfile.updatedAt = new Date(userProfile.updatedAt)
@@ -178,7 +179,12 @@ export class AgentCanister {
     try {
       const users = await agent().filterUsers(user) as UserProfileModel[]
 
-      for (const user of users) user.companyLogo = getUrlFromArrayBuffer(user.companyLogo) || avatar
+      for (const user of users) {
+        user.principalId = Principal.fromText(user.principalId.toString())
+        user.companyLogo = getUrlFromArrayBuffer(user.companyLogo) || avatar
+        user.createdAt = new Date(user.createdAt)
+        user.updatedAt = new Date(user.updatedAt)
+      }
 
       return users
     } catch (error) {
@@ -188,10 +194,25 @@ export class AgentCanister {
   }
 
   static async getBeneficiaries(): Promise<UserProfileModel[]> {
+    // // TODO just for testing
+    // return [{
+    //   companyLogo: avatar,
+    //   principalId: Principal.fromText("Principal"),
+    //   companyId: "123123",
+    //   companyName: "detextre4",
+    //   city: "string",
+    //   country: "string",
+    //   address: "string",
+    //   email: "string",
+    //   createdAt: new Date(),
+    //   updatedAt: new Date(),
+    // }]
+
     try {
       const users = await agent().getBeneficiaries() as UserProfileModel[]
 
       for (const user of users) user.companyLogo = getUrlFromArrayBuffer(user.companyLogo) || avatar
+      console.log(users);
 
       return users
     } catch (error) {
@@ -470,19 +491,22 @@ export class AgentCanister {
   }
 
 
-  static async getNotifications(page?: number, length?: number, notificationType?: NotificationTypeDef): Promise<NotificationInfo[]> {
+  static async getNotifications(page?: number, length?: number, notificationTypes?: NotificationTypeDef[]): Promise<NotificationInfo[]> {
     try {
       const res = await agent().getNotifications(
         page ? [page] : [],
         length ? [length] : [],
-        notificationType ? [{[notificationType]: notificationType}] : [],
+        notificationTypes?.map(e => ({[e]: e})) ?? [],
       ) as NotificationInfo[]
 
       for (const item of res) {
-        item.notificationType = Object.values(item.notificationType)[0] as string
-        item.callerBeneficiaryId = item.callerBeneficiaryId[0]
+        item.notificationType = Object.values(item.notificationType)[0] as NotificationTypeDef
+        item.eventStatus = item.eventStatus[0] ? Object.values(item.eventStatus[0])[0] as NotificationEventStatusDef : null
+        item.status = item.status[0] ? Object.values(item.status[0])[0] as NotificationStatusDef : null
+        item.content = item.content[0]
+        item.triggeredBy = item.triggeredBy[0]
         item.tokenId = item.tokenId[0]
-        item.quantity = item.quantity[0] ? Number(item.quantity[0]) : null
+        item.quantity = Number(item.quantity[0]) || null
         item.createdAt = new Date(item.createdAt)
       }
 
@@ -493,20 +517,53 @@ export class AgentCanister {
     }
   }
 
-
-  static async removeNotification(notificationId: string): Promise<void> {
+  // update general notifications
+  static async updateGeneralNotifications(notificationIds: [string]): Promise<void> {
     try {
-      await agent().getNotifications(notificationId)
+      await agent().updateGeneralNotifications(notificationIds);
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)
     }
-  }
+  };
 
-
-  static async clearNotificationsByType(notificationType: NotificationTypeDef): Promise<void> {
+  // update event notification
+  static async updateEventNotification(notificationId: string, eventStatus: NotificationEventStatusDef): Promise<void> {
     try {
-      await agent().clearNotificationsByType({[notificationType]: notificationType})
+      await agent().updateEventNotification(notificationId, eventStatus);
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  };
+
+  // clear general notifications
+  static async clearGeneralNotifications(notificationIds: [Text]): Promise<void> {
+    try {
+      await agent().clearGeneralNotifications(notificationIds);
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  };
+
+  // clear event notification
+  static async clearEventNotification(notification: NotificationInfo): Promise<void> {
+    try {
+      await agent().clearNotifications({
+        id: notification.id,
+        title: notification.title,
+        content: notification.content ? [notification.content] : [],
+        notificationType: notification.notificationType,
+        createdAt: notification.createdAt,
+        status: notification.status ? [notification.status] : notification.status,
+      
+        eventStatus: notification.eventStatus ? [notification.eventStatus] : notification.eventStatus,
+        tokenId: notification.tokenId ? [notification.tokenId] : [],
+        receivedBy: notification.receivedBy,
+        triggeredBy: notification.triggeredBy ? [notification.triggeredBy] : [],
+        quantity: notification.quantity ? [notification.quantity] : [],
+      })
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)
