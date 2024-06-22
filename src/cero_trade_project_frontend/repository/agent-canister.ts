@@ -527,16 +527,6 @@ export class AgentCanister {
     }
   };
 
-  // update event notification
-  static async updateEventNotification(notificationId: string, eventStatus: NotificationEventStatusDef): Promise<void> {
-    try {
-      await agent().updateEventNotification(notificationId, eventStatus);
-    } catch (error) {
-      console.error(error);
-      throw getErrorMessage(error)
-    }
-  };
-
   // clear general notifications
   static async clearGeneralNotifications(notificationIds: [Text]): Promise<void> {
     try {
@@ -547,10 +537,10 @@ export class AgentCanister {
     }
   };
 
-  // clear event notification
-  static async clearEventNotification(notification: NotificationInfo): Promise<void> {
+  // update event notification
+  static async updateEventNotification(notification: NotificationInfo, beneficiaryEventStatus?: NotificationEventStatusDef): Promise<void> {
     try {
-      await agent().clearNotifications({
+      await agent().updateEventNotification({
         id: notification.id,
         title: notification.title,
         content: notification.content ? [notification.content] : [],
@@ -563,7 +553,7 @@ export class AgentCanister {
         receivedBy: notification.receivedBy,
         triggeredBy: notification.triggeredBy ? [notification.triggeredBy] : [],
         quantity: notification.quantity ? [notification.quantity] : [],
-      })
+      }, beneficiaryEventStatus ? [beneficiaryEventStatus] : [])
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)

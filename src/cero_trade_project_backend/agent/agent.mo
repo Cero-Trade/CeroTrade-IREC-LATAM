@@ -757,20 +757,14 @@ actor class Agent() = this {
     await NotificationIndex.updateGeneralNotifications(token, notificationIds);
   };
 
-  // update event notification
-  public shared({ caller }) func updateEventNotification(notificationId: T.NotificationId, eventStatus: T.NotificationEventStatus) : async() {
-    let token = await UserIndex.getUserToken(caller);
-    await NotificationIndex.updateEventNotification(token, notificationId, eventStatus);
-  };
-
   // clear general notifications
   public shared({ caller }) func clearGeneralNotifications(notificationIds: [T.NotificationId]): async() {
     let token = await UserIndex.getUserToken(caller);
     await NotificationIndex.clearGeneralNotifications(token, notificationIds);
   };
 
-  // clear event notification
-  public shared({ caller }) func clearEventNotification(notification: T.NotificationInfo): async() {
+  // update event notification
+  public shared({ caller }) func updateEventNotification(notification: T.NotificationInfo, eventStatus: ?T.NotificationEventStatus): async() {
     let receiverToken = await UserIndex.getUserToken(caller);
 
     let triggerToken: ?T.UserToken = switch(notification.triggeredBy) {
@@ -783,6 +777,6 @@ actor class Agent() = this {
       };
     };
 
-    await NotificationIndex.clearEventNotification(receiverToken, triggerToken, notification.id);
+    await NotificationIndex.updateEventNotification(receiverToken, triggerToken, notification.id, eventStatus);
   };
 }

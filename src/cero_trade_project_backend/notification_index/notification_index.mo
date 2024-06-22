@@ -304,39 +304,6 @@ actor class NotificationIndex() = this {
   };
 
 
-  /// update event notification status
-  public shared({ caller }) func updateEventNotification(token: T.UserToken, notificationId: T.NotificationId, eventStatus: T.NotificationEventStatus) : async() {
-    _callValidation(caller);
-
-    let queryParameter = "?id=" # notificationId;
-    let jsonResponse = await HttpService.get(HT.apiUrl # "users/notification/" # token # queryParameter, { headers = []; });
-
-    let exists: Bool = switch(Serde.JSON.fromText(jsonResponse, null)) {
-      case(#err(_)) false;
-      case(#ok(blob)) {
-        let exists: ?Text = from_candid(blob);
-        switch(exists) {
-          case(null) false;
-          case(?value) Text.contains(value, #text "true");
-        };
-      };
-    };
-
-    if (not exists) throw Error.reject("notification id provided not match with user notifications");
-
-    // iterate notifications on directory
-    for((cid, canisterNotifications) in notificationsDirectory.entries()) {
-      switch(Array.find<T.NotificationId>(canisterNotifications, func x = notificationId == x)) {
-        case(null) throw Error.reject("notification id provided not found in records");
-        case(?value) {
-          // update notifications on canister
-          return await Notifications.canister(cid).updateEvent(value, eventStatus);
-        };
-      };
-    };
-  };
-
-
   /// clear general notifications from [notificationsDirectory] collection
   public shared({ caller }) func clearGeneralNotifications(token: T.UserToken, notificationIds: [T.NotificationId]) : async() {
     _callValidation(caller);
@@ -397,8 +364,8 @@ actor class NotificationIndex() = this {
   };
 
 
-  /// clear event notification from [notificationsDirectory] collection
-  public shared({ caller }) func clearEventNotification(receiverToken: T.UserToken, triggerToken: ?T.UserToken, notificationId: T.NotificationId) : async() {
+  /// update event notification from [notificationsDirectory] collection
+  public shared({ caller }) func updateEventNotification(receiverToken: T.UserToken, triggerToken: ?T.UserToken, notificationId: T.NotificationId, eventStatus: ?T.NotificationEventStatus) : async() {
     _callValidation(caller);
 
     let queryParameter = "?id=" # notificationId;
@@ -447,6 +414,12 @@ actor class NotificationIndex() = this {
                 case(#ok(value)) value;
               };
             });
+
+          // change event notification status
+          switch(eventStatus) {
+            case(null) {};
+            case(?value) await Notifications.canister(cid).updateEvent(id, value)
+          };
 
           // clear notification if all users has been cleaned
           if (not triggerExists) await Notifications.canister(cid).clearNotification(id);
