@@ -1083,6 +1083,8 @@ export default{
       this.$router.replace('/settings')
       this.dialogCompany = true
     }
+
+    this.getBeneficiaries()
   },
 
   methods:{
