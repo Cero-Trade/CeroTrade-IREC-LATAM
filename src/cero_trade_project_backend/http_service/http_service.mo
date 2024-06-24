@@ -11,7 +11,6 @@ import UUID "mo:uuid/UUID";
 
 // types
 import HT "./http_service_types";
-import ENV "../env"
 
 //Actor
 actor HttpService {
@@ -51,7 +50,7 @@ actor HttpService {
         },
         { name = "X-Frame-Options"; value = "DENY" },
         { name = "X-Content-Type-Options"; value = "nosniff" },
-        { name = "Access-Control-Allow-Origin"; value = ENV.VITE_API_URL }
+        { name = "Access-Control-Allow-Origin"; value = HT.apiUrl }
       ];
     };
     transformed;
@@ -63,7 +62,7 @@ actor HttpService {
 
     // prepare headers for the system http_request call
     let default_headers  = Buffer.fromArray<HT.HttpHeader>([
-      { name = "Host"; value = _extractHost(url) # HT.port },
+      { name = "Host"; value = HT.apiHost # HT.port },
       { name = "User-Agent"; value = HT.headerName },
       { name = "Content-Type"; value = "application/json" },
       { name= "Idempotency-Key"; value = idempotency_key }
