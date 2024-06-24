@@ -2,6 +2,7 @@ import Error "mo:base/Error";
 import Nat "mo:base/Nat";
 
 module {
+  public let apiHost = "api.cerotrade.cl";
   public let apiUrl = "https://api.cerotrade.cl/";
   public let headerName = "http_service_canister";
   public let port = ":443";
