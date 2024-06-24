@@ -50,13 +50,13 @@ actor HttpService {
         },
         { name = "X-Frame-Options"; value = "DENY" },
         { name = "X-Content-Type-Options"; value = "nosniff" },
-        { name = "Access-Control-Allow-Origin"; value = HT.apiUrl }
+        { name = "Access-Control-Allow-Origin"; value = HT.apiUrl() }
       ];
     };
     transformed;
   };
 
-  private func _generateHeaders(url: Text, customHeaders: [HT.HttpHeader]) : async [HT.HttpHeader] {
+  private func _generateHeaders(customHeaders: [HT.HttpHeader]) : async [HT.HttpHeader] {
     //idempotency keys should be unique so create a function that generates them.
     let idempotency_key: Text = await generateUUID();
 
@@ -136,7 +136,7 @@ actor HttpService {
     let http_request : HT.HttpRequestArgs = {
       url = url;
       max_response_bytes = null; //optional for request
-      headers = await _generateHeaders(url, args.headers);
+      headers = await _generateHeaders(args.headers);
       body = null; //optional for request
       method = #get;
       transform = ?transform_context;
@@ -163,7 +163,7 @@ actor HttpService {
       url = url;
       // TODO under testing, this could be null or Nat64.fromNat(1024 * 1024)
       max_response_bytes = ?Nat64.fromNat(1024 * 1024); //optional for request
-      headers = await _generateHeaders(url, args.headers);
+      headers = await _generateHeaders(args.headers);
       body = ?request_body_as_nat8; //provide body for POST request
       method = #post;
       transform = ?transform_context;
