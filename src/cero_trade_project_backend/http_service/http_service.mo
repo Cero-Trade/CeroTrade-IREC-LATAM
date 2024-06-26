@@ -8,6 +8,7 @@ import Iter "mo:base/Iter";
 import Buffer "mo:base/Buffer";
 import Source "mo:uuid/async/SourceV4";
 import UUID "mo:uuid/UUID";
+import Debug "mo:base/Debug";
 
 // types
 import HT "./http_service_types";
@@ -59,6 +60,9 @@ actor HttpService {
   private func _generateHeaders(customHeaders: [HT.HttpHeader]) : async [HT.HttpHeader] {
     //idempotency keys should be unique so create a function that generates them.
     let idempotency_key: Text = await generateUUID();
+
+    // TODO just for testing
+    Debug.print("idempotency canister: ----->  " # idempotency_key);
 
     // prepare headers for the system http_request call
     let default_headers  = Buffer.fromArray<HT.HttpHeader>([
