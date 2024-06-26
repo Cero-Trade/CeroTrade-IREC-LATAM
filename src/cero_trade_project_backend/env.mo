@@ -1,6 +1,6 @@
 module ENV {
   public let VITE_BASE_URL: Text = "/";
-  public let VITE_API_URL: Text = "http://localhost:3000/";
+  public let VITE_API_URL: Text = "https://api.cerotrade.cl/";
   public let VITE_SECURE_STORAGE_NAME_SPACE: Text = "cero_trade__";
   public let VITE_SECURE_STORAGE_KEY: Text = "246810";
   public let VITE_E8S_EQUIVALENCE: Text = "100000000";
