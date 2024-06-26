@@ -3,10 +3,8 @@ import Nat "mo:base/Nat";
 import ENV "../env";
 
 module {
-  public let apiHost: Text = ENV.VITE_API_HOST;
-  public func apiUrl(): Text { "https://" # apiHost # "/"; };
+  public let apiUrl: Text = ENV.VITE_API_URL;
   public let headerName = "http_service_canister";
-  public let port = ":443";
 
   public type HttpError = {
     status : Nat;

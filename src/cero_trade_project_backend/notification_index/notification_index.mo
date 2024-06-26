@@ -200,7 +200,7 @@ actor class NotificationIndex() = this {
     _callValidation(caller);
 
     // add notification to receiver user
-    let _ = await HttpService.post(HT.apiUrl() # "users/add-notification", {
+    let _ = await HttpService.post(HT.apiUrl # "users/add-notification", {
         headers = [];
         bodyJson = switch(Serde.JSON.toText(to_candid({ token = receiverToken; notification = notification.id }), ["token", "notification"], null)) {
           case(#err(error)) throw Error.reject("Cannot serialize data");
@@ -212,7 +212,7 @@ actor class NotificationIndex() = this {
       case(null) {};
       case(?token) {
         // add notification to trigger user
-        let _ = await HttpService.post(HT.apiUrl() # "users/add-notification", {
+        let _ = await HttpService.post(HT.apiUrl # "users/add-notification", {
           headers = [];
           bodyJson = switch(Serde.JSON.toText(to_candid({ token; notification = notification.id }), ["token", "notification"], null)) {
             case(#err(error)) throw Error.reject("Cannot serialize data");
@@ -270,7 +270,7 @@ actor class NotificationIndex() = this {
   public shared({ caller }) func updateGeneralNotifications(token: T.UserToken, notificationIds: [T.NotificationId]) : async() {
     _callValidation(caller);
 
-    let notificationIdsJson = await HttpService.get(HT.apiUrl() # "users/notifications/" # token, { headers = []; });
+    let notificationIdsJson = await HttpService.get(HT.apiUrl # "users/notifications/" # token, { headers = []; });
 
     let userNotificationIds: [T.NotificationId] = switch(Serde.JSON.fromText(notificationIdsJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize profile data");
@@ -308,7 +308,7 @@ actor class NotificationIndex() = this {
   public shared({ caller }) func clearGeneralNotifications(token: T.UserToken, notificationIds: [T.NotificationId]) : async() {
     _callValidation(caller);
 
-    let notificationIdsJson = await HttpService.get(HT.apiUrl() # "users/notifications/" # token, { headers = []; });
+    let notificationIdsJson = await HttpService.get(HT.apiUrl # "users/notifications/" # token, { headers = []; });
 
     let userNotificationIds: [T.NotificationId] = switch(Serde.JSON.fromText(notificationIdsJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize profile data");
@@ -336,7 +336,7 @@ actor class NotificationIndex() = this {
 
       if (filteredIds.size() > 0) {
         // clear notifications from records
-        let _ = await HttpService.post(HT.apiUrl() # "users/clear-notifications", {
+        let _ = await HttpService.post(HT.apiUrl # "users/clear-notifications", {
             headers = [];
             bodyJson = switch(Serde.JSON.toText(to_candid({ token; notifications = filteredIds }), ["token", "notifications"], null)) {
               case(#err(error)) throw Error.reject("Cannot serialize data");
@@ -369,7 +369,7 @@ actor class NotificationIndex() = this {
     _callValidation(caller);
 
     let queryParameter = "?id=" # notificationId;
-    let jsonResponse = await HttpService.get(HT.apiUrl() # "users/notification/" # receiverToken # queryParameter, { headers = []; });
+    let jsonResponse = await HttpService.get(HT.apiUrl # "users/notification/" # receiverToken # queryParameter, { headers = []; });
 
     let receiverExists: Bool = switch(Serde.JSON.fromText(jsonResponse, null)) {
       case(#err(_)) false;
@@ -385,7 +385,7 @@ actor class NotificationIndex() = this {
     let triggerExists: Bool = switch(triggerToken) {
       case(null) false;
       case(?token) {
-        let jsonResponse = await HttpService.get(HT.apiUrl() # "users/notification/" # token # queryParameter, { headers = []; });
+        let jsonResponse = await HttpService.get(HT.apiUrl # "users/notification/" # token # queryParameter, { headers = []; });
         switch(Serde.JSON.fromText(jsonResponse, null)) {
           case(#err(_)) false;
           case(#ok(blob)) {
@@ -407,7 +407,7 @@ actor class NotificationIndex() = this {
         case(null) throw Error.reject("notification id provided not found in records");
         case(?id) {
           // clear notification from records
-          let _ = await HttpService.post(HT.apiUrl() # "users/clear-notifications", {
+          let _ = await HttpService.post(HT.apiUrl # "users/clear-notifications", {
               headers = [];
               bodyJson = switch(Serde.JSON.toText(to_candid({ token = receiverToken; notifications = [id] }), ["token", "notifications"], null)) {
                 case(#err(error)) throw Error.reject("Cannot serialize data");
@@ -444,7 +444,7 @@ actor class NotificationIndex() = this {
     };
 
     let queryParameters = "?page=" # pageParam # "&length=" # lengthParam;
-    let notificationIdsJson = await HttpService.get(HT.apiUrl() # "users/notifications/" # token # queryParameters, { headers = []; });
+    let notificationIdsJson = await HttpService.get(HT.apiUrl # "users/notifications/" # token # queryParameters, { headers = []; });
 
     let notificationIds: [T.NotificationId] = switch(Serde.JSON.fromText(notificationIdsJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize profile data");

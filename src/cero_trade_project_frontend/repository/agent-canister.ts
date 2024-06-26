@@ -194,20 +194,6 @@ export class AgentCanister {
   }
 
   static async getBeneficiaries(): Promise<UserProfileModel[]> {
-    // // TODO just for testing
-    // return [{
-    //   companyLogo: avatar,
-    //   principalId: Principal.fromText("Principal"),
-    //   companyId: "123123",
-    //   companyName: "detextre4",
-    //   city: "string",
-    //   country: "string",
-    //   address: "string",
-    //   email: "string",
-    //   createdAt: new Date(),
-    //   updatedAt: new Date(),
-    // }]
-
     try {
       const users = await agent().getBeneficiaries() as UserProfileModel[]
 

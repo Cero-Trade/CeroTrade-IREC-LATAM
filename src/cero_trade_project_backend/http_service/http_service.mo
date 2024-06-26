@@ -22,6 +22,21 @@ actor HttpService {
     UUID.toText(await g.new());
   };
 
+  // get url host
+  private func getHost(url: Text): Text {
+    let urlParts = Text.split(url, #char '/');
+    let urlPartsList = Iter.toArray(urlParts);
+
+    let scheme: Text = urlPartsList[0];
+    let host: Text = urlPartsList[2];
+
+    var port: Text = "";
+    if (scheme == "https:") { port := ":443" }
+    else if (scheme == "http:") { port := ":80" };
+
+    host # port
+  };
+
   private func _extractHost(url: Text): Text {
     let partsIter = Text.split(url, #char '/');
     let parts = Iter.toArray(partsIter);
@@ -51,22 +66,19 @@ actor HttpService {
         },
         { name = "X-Frame-Options"; value = "DENY" },
         { name = "X-Content-Type-Options"; value = "nosniff" },
-        { name = "Access-Control-Allow-Origin"; value = HT.apiUrl() }
+        { name = "Access-Control-Allow-Origin"; value = HT.apiUrl }
       ];
     };
     transformed;
   };
 
-  private func _generateHeaders(customHeaders: [HT.HttpHeader]) : async [HT.HttpHeader] {
+  private func _generateHeaders(url: Text, customHeaders: [HT.HttpHeader]) : async [HT.HttpHeader] {
     //idempotency keys should be unique so create a function that generates them.
     let idempotency_key: Text = await generateUUID();
 
-    // TODO just for testing
-    Debug.print("idempotency canister: ----->  " # idempotency_key);
-
     // prepare headers for the system http_request call
     let default_headers  = Buffer.fromArray<HT.HttpHeader>([
-      { name = "Host"; value = HT.apiHost # HT.port },
+      { name = "Host"; value = getHost(url) },
       { name = "User-Agent"; value = HT.headerName },
       { name = "Content-Type"; value = "application/json" },
       { name= "Idempotency-Key"; value = idempotency_key }
@@ -140,7 +152,7 @@ actor HttpService {
     let http_request : HT.HttpRequestArgs = {
       url = url;
       max_response_bytes = null; //optional for request
-      headers = await _generateHeaders(args.headers);
+      headers = await _generateHeaders(url, args.headers);
       body = null; //optional for request
       method = #get;
       transform = ?transform_context;
@@ -167,7 +179,7 @@ actor HttpService {
       url = url;
       // TODO under testing, this could be null or Nat64.fromNat(1024 * 1024)
       max_response_bytes = ?Nat64.fromNat(1024 * 1024); //optional for request
-      headers = await _generateHeaders(args.headers);
+      headers = await _generateHeaders(url, args.headers);
       body = ?request_body_as_nat8; //provide body for POST request
       method = #post;
       transform = ?transform_context;
