@@ -23,18 +23,18 @@ actor HttpService {
   };
 
   // get url host
-  private func getHost(url: Text): Text {
+  private func getHost(url: Text, port: ?Text): Text {
     let urlParts = Text.split(url, #char '/');
     let urlPartsList = Iter.toArray(urlParts);
 
-    let scheme: Text = urlPartsList[0];
     let host: Text = urlPartsList[2];
 
-    var port: Text = "";
-    if (scheme == "https:") { port := ":443" }
-    else if (scheme == "http:") { port := ":80" };
+    let hostingPort = switch(port) {
+      case(null) ":443";
+      case(?value) value;
+    };
 
-    host # port
+    host # hostingPort
   };
 
   private func _extractHost(url: Text): Text {
@@ -72,19 +72,19 @@ actor HttpService {
     transformed;
   };
 
-  private func _generateHeaders(url: Text, customHeaders: [HT.HttpHeader]) : async [HT.HttpHeader] {
+  private func _generateHeaders({ url: Text; port: ?Text; headers: [HT.HttpHeader] }) : async [HT.HttpHeader] {
     //idempotency keys should be unique so create a function that generates them.
     let idempotency_key: Text = await generateUUID();
 
     // prepare headers for the system http_request call
     let default_headers  = Buffer.fromArray<HT.HttpHeader>([
-      { name = "Host"; value = getHost(url) },
+      { name = "Host"; value = getHost(url, port) },
       { name = "User-Agent"; value = HT.headerName },
       { name = "Content-Type"; value = "application/json" },
       { name= "Idempotency-Key"; value = idempotency_key }
     ]);
 
-    default_headers.append(Buffer.fromArray<HT.HttpHeader>(customHeaders));
+    default_headers.append(Buffer.fromArray<HT.HttpHeader>(headers));
     Buffer.toArray<HT.HttpHeader>(default_headers);
   };
 
@@ -139,7 +139,7 @@ actor HttpService {
   };
 
 
-  public func get(url: Text, args: { headers: [HT.HttpHeader]; }) : async Text {
+  public func get({ url: Text; port: ?Text; headers: [HT.HttpHeader]; }) : async Text {
     // SETUP ARGUMENTS FOR HTTP GET request
 
     // Transform context
@@ -150,9 +150,9 @@ actor HttpService {
 
     // The HTTP request
     let http_request : HT.HttpRequestArgs = {
-      url = url;
+      url;
       max_response_bytes = null; //optional for request
-      headers = await _generateHeaders(url, args.headers);
+      headers = await _generateHeaders({ url; port; headers });
       body = null; //optional for request
       method = #get;
       transform = ?transform_context;
@@ -162,7 +162,7 @@ actor HttpService {
   };
 
 
-  public func post(url: Text, args: { headers: [HT.HttpHeader]; bodyJson: Text }) : async Text {
+  public func post({ url: Text; port: ?Text; headers: [HT.HttpHeader]; bodyJson: Text }) : async Text {
     // SETUP ARGUMENTS FOR HTTP POST request
 
     // Transform context
@@ -171,15 +171,15 @@ actor HttpService {
       context = Blob.fromArray([]);
     };
 
-    let request_body_as_Blob: Blob = Text.encodeUtf8(args.bodyJson);
+    let request_body_as_Blob: Blob = Text.encodeUtf8(bodyJson);
     let request_body_as_nat8: [Nat8] = Blob.toArray(request_body_as_Blob);
 
     // The HTTP request
     let http_request : HT.HttpRequestArgs = {
-      url = url;
+      url;
       // TODO under testing, this could be null or Nat64.fromNat(1024 * 1024)
       max_response_bytes = ?Nat64.fromNat(1024 * 1024); //optional for request
-      headers = await _generateHeaders(url, args.headers);
+      headers = await _generateHeaders({ url; port; headers });
       body = ?request_body_as_nat8; //provide body for POST request
       method = #post;
       transform = ?transform_context;

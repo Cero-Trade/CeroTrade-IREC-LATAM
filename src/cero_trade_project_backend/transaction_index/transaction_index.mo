@@ -68,7 +68,11 @@ actor class TransactionIndex() = this {
       case("local") "develop";
       case _ throw Error.reject("No DFX_NETWORK provided");
     };
-    let wasmModule = await HttpService.get("https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # branch # "/wasm_modules/transactions.json", { headers = [] });
+    let wasmModule = await HttpService.get({
+      url = "https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # branch # "/wasm_modules/transactions.json";
+      port = null;
+      headers = []
+    });
 
     let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
     let wasm_array = Array.map<Text, Nat>(Iter.toArray(parts), func(part) {

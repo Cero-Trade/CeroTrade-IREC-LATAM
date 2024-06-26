@@ -86,7 +86,11 @@ actor class UserIndex() = this {
       case("local") "develop";
       case _ throw Error.reject("No DFX_NETWORK provided");
     };
-    let wasmModule = await HttpService.get("https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # branch # "/wasm_modules/users.json", { headers = [] });
+    let wasmModule = await HttpService.get({
+      url = "https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # branch # "/wasm_modules/users.json";
+      port = null;
+      headers = []
+    });
 
     let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
     let wasm_array = Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
@@ -235,7 +239,9 @@ actor class UserIndex() = this {
     let formBlob = to_candid(formData);
     let formKeys = ["token"];
 
-    let _ = await HttpService.post(HT.apiUrl # "users/delete", {
+    let _ = await HttpService.post({
+        url = HT.apiUrl # "users/delete";
+        port = null;
         headers = [];
         bodyJson = switch(Serde.JSON.toText(formBlob, formKeys, null)) {
           case(#err(error)) throw Error.reject("Cannot serialize data");
@@ -267,7 +273,9 @@ actor class UserIndex() = this {
     Debug.print(Principal.toText(uid));
 
     // tokenize userInfo in web2 backend
-    let token = await HttpService.post(HT.apiUrl # "users/store", {
+    let token = await HttpService.post({
+        url = HT.apiUrl # "users/store";
+        port = null;
         headers = [];
         bodyJson = switch(Serde.JSON.toText(formBlob, formKeys, null)) {
           case(#err(error)) throw Error.reject("Cannot serialize data");
@@ -408,7 +416,11 @@ actor class UserIndex() = this {
     };
 
     let token = await Users.canister(cid).getUserToken(uid);
-    let profileJson = await HttpService.get(HT.apiUrl # "users/retrieve/" # token, { headers = [] });
+    let profileJson = await HttpService.get({
+      url = HT.apiUrl # "users/retrieve/" # token;
+      port = null;
+      headers = []
+    });
     let companyLogo = await Users.canister(cid).getCompanyLogo(uid);
 
     switch(Serde.JSON.fromText(profileJson, null)) {
@@ -444,7 +456,9 @@ actor class UserIndex() = this {
     // check if user exists
     if (not (await checkPrincipal(caller))) throw Error.reject(notExists);
 
-    let users = await HttpService.post(HT.apiUrl # "users/retrieve-list", {
+    let users = await HttpService.post({
+        url = HT.apiUrl # "users/retrieve-list";
+        port = null;
         headers = [];
         bodyJson = switch(Serde.JSON.toText(to_candid(uids), ["tokenIds"], null)) {
           case(#err(error)) throw Error.reject("Cannot serialize data");
@@ -498,7 +512,9 @@ actor class UserIndex() = this {
       case(?cid) await Users.canister(cid).getBeneficiaries(uid);
     };
 
-    let beneficiaries = await HttpService.post(HT.apiUrl # "users/retrieve-list", {
+    let beneficiaries = await HttpService.post({
+        url = HT.apiUrl # "users/retrieve-list";
+        port = null;
         headers = [];
         bodyJson = switch(Serde.JSON.toText(to_candid(beneficiaryIds), ["tokenIds"], null)) {
           case(#err(error)) throw Error.reject("Cannot serialize data");
@@ -605,7 +621,9 @@ actor class UserIndex() = this {
     // check if user exists
     if (not (await checkPrincipal(uid))) throw Error.reject(notExists);
 
-    let users = await HttpService.post(HT.apiUrl # "users/filter", {
+    let users = await HttpService.post({
+        url = HT.apiUrl # "users/filter";
+        port = null;
         headers = [];
         bodyJson = switch(Serde.JSON.toText(to_candid(user), ["user"], null)) {
           case(#err(error)) throw Error.reject("Cannot serialize data");
