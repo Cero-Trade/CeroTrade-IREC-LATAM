@@ -8,6 +8,9 @@ Public candid url: https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=<canister
 
 ## Project setup
 
+If you havent nns extension installed run:
+`dfx extension install nns`
+
 * You can run this proyect locally by run below script:
 `npm run deploy modules nns`
 
