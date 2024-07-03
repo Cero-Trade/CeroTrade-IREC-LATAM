@@ -73,14 +73,23 @@
 
               <p v-if="item.content">{{ item.content }}</p>
               <p v-else>status: 
-                <span :class="[
-                  item.eventStatus === NotificationEventStatus.accepted
-                    ? 'text-success'
+                <v-chip
+                  density="compact"
+                  :style="`--color: rgb(var(--v-theme-${item.eventStatus === NotificationEventStatus.accepted
+                    ? 'success'
                     : item.eventStatus === NotificationEventStatus.declined 
-                      ? 'text-error'
-                      : 'text-warning'
-                ]" style="font-weight: 500 !important;"
-                >{{ item.eventStatus }}</span>
+                      ? 'error'
+                      : 'warning'}))`
+                  "
+                  color="var(--color)"
+                  style="
+                    font-weight: 500 !important;
+                    border: 1.5px solid var(--color);
+                    border-radius: 60px !important;
+                    text-transform: capitalize !important;
+                    font-size: 13px !important;
+                  "
+                >{{ item.eventStatus }}</v-chip>
               </p>
 
               <v-btn
