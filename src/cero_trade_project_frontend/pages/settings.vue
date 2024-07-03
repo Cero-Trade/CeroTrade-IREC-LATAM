@@ -970,7 +970,7 @@
             Cancel
             <img src="@/assets/sources/icons/close.svg" alt="close" style="width: 15px">
           </v-btn>
-          <v-btn :disabled="!formBeneficiaryValid" class="btn" @click="addBeneficiary" style="border: none!important;">
+          <v-btn :loading="loadingAddBeneficiary" :disabled="!formBeneficiaryValid" class="btn" @click="addBeneficiary" style="border: none!important;">
             Add beneficiary
             <img src="@/assets/sources/icons/plus-square.svg" alt="plust-square icon">
           </v-btn>
@@ -1041,7 +1041,8 @@ export default{
         beneficiaries: null,
       }),
       beneficiaries = ref(null),
-      loadingSearchBeneficiary = ref(false)
+      loadingSearchBeneficiary = ref(false),
+      loadingAddBeneficiary = ref(false)
 
     return{
       beneficiaryUrl,
@@ -1075,7 +1076,8 @@ export default{
       formBeneficiaryValid,
       formBeneficiary,
       beneficiaries,
-      loadingSearchBeneficiary
+      loadingSearchBeneficiary,
+      loadingAddBeneficiary
     }
   },
   mounted() {
@@ -1101,16 +1103,19 @@ export default{
       this.loadingSearchBeneficiary = false
     },
     async addBeneficiary() {
-      if (!(await this.formBeneficiaryRef.validate()).valid) return
+      if (!(await this.formBeneficiaryRef.validate()).valid || this.loadingAddBeneficiary) return
+      this.loadingAddBeneficiary = true
 
       try {
-        await AgentCanister.updateBeneficiaries(this.formBeneficiary.beneficiary.principalId, { remove: false })
+        await AgentCanister.requestBeneficiary(this.formBeneficiary.beneficiary.principalId)
         this.dialogNewBeneficiary = false
         for (const key of Object.keys(this.formBeneficiary)) this.formBeneficiary[key] = null
-        await getBeneficiaries()
+        this.toast.success("Beneficiary request sended")
       } catch (error) {
         this.toast.error(error)
       }
+
+      this.loadingAddBeneficiary = false
     },
     async getBeneficiaries() {
       try {

@@ -198,7 +198,8 @@ async function getData(tab) {
 
     markNotificationsAsSeen()
   } catch (error) {
-    tabs.value[tab].data = []
+    for (let i = 0; i < tabs.value.length; i++)
+      tabs.value[i].data = []
     toast.error(error)
   }
 

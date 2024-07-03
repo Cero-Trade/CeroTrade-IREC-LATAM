@@ -203,33 +203,6 @@ actor class NotificationIndex() = this {
   public shared({ caller }) func addNotification(receiverToken: T.UserToken, triggerToken: ?T.UserToken, notification: T.NotificationInfo) : async() {
     _callValidation(caller);
 
-    // add notification to receiver user
-    let _ = await HttpService.post({
-      url = HT.apiUrl # "users/add-notification";
-      port = null;
-      headers = [];
-      bodyJson = switch(Serde.JSON.toText(to_candid({ token = receiverToken; notification = notification.id }), ["token", "notification"], null)) {
-        case(#err(error)) throw Error.reject("Cannot serialize data");
-        case(#ok(value)) value;
-      };
-    });
-
-    switch(triggerToken) {
-      case(null) {};
-      case(?token) {
-        // add notification to trigger user
-        let _ = await HttpService.post({
-          url = HT.apiUrl # "users/add-notification";
-          port = null;
-          headers = [];
-          bodyJson = switch(Serde.JSON.toText(to_candid({ token; notification = notification.id }), ["token", "notification"], null)) {
-            case(#err(error)) throw Error.reject("Cannot serialize data");
-            case(#ok(value)) value;
-          };
-        });
-      };
-    };
-
     try {
       var selectedCanister: ?(T.CanisterId, [T.NotificationId]) = null;
 
@@ -263,6 +236,34 @@ actor class NotificationIndex() = this {
 
       // add notification
       let notificationId = await Notifications.canister(cid).addNotification(notification);
+
+      // add notification to receiver user
+      let _ = await HttpService.post({
+        url = HT.apiUrl # "users/add-notification";
+        port = null;
+        headers = [];
+        bodyJson = switch(Serde.JSON.toText(to_candid({ token = receiverToken; notification = notificationId }), ["token", "notification"], null)) {
+          case(#err(error)) throw Error.reject("Cannot serialize data");
+          case(#ok(value)) value;
+        };
+      });
+
+      switch(triggerToken) {
+        case(null) {};
+        case(?token) {
+          // add notification to trigger user
+          let _ = await HttpService.post({
+            url = HT.apiUrl # "users/add-notification";
+            port = null;
+            headers = [];
+            bodyJson = switch(Serde.JSON.toText(to_candid({ token; notification = notificationId }), ["token", "notification"], null)) {
+              case(#err(error)) throw Error.reject("Cannot serialize data");
+              case(#ok(value)) value;
+            };
+          });
+        };
+      };
+
       let notificationsCopy = Buffer.fromArray<T.NotificationId>(notifications);
 
       notificationsCopy.add(notificationId);
@@ -285,12 +286,12 @@ actor class NotificationIndex() = this {
     });
 
     let userNotificationIds: [T.NotificationId] = switch(Serde.JSON.fromText(notificationIdsJson, null)) {
-      case(#err(_)) throw Error.reject("cannot serialize profile data");
+      case(#err(_)) throw Error.reject("cannot serialize notification data");
       case(#ok(blob)) {
-        let notifications: ?[T.NotificationId] = from_candid(blob);
+        let notifications: ?{notifications: [T.NotificationId]} = from_candid(blob);
         switch(notifications) {
-          case(null) throw Error.reject("cannot serialize profile data");
-          case(?value) value;
+          case(null) throw Error.reject("cannot serialize notification data");
+          case(?value) value.notifications;
         };
       };
     };
@@ -327,12 +328,12 @@ actor class NotificationIndex() = this {
     });
 
     let userNotificationIds: [T.NotificationId] = switch(Serde.JSON.fromText(notificationIdsJson, null)) {
-      case(#err(_)) throw Error.reject("cannot serialize profile data");
+      case(#err(_)) throw Error.reject("cannot serialize notification data");
       case(#ok(blob)) {
-        let notifications: ?[T.NotificationId] = from_candid(blob);
+        let notifications: ?{notifications: [T.NotificationId]} = from_candid(blob);
         switch(notifications) {
-          case(null) throw Error.reject("cannot serialize profile data");
-          case(?value) value;
+          case(null) throw Error.reject("cannot serialize notification data");
+          case(?value) value.notifications;
         };
       };
     };
@@ -393,16 +394,7 @@ actor class NotificationIndex() = this {
       headers = [];
     });
 
-    let receiverExists: Bool = switch(Serde.JSON.fromText(jsonResponse, null)) {
-      case(#err(_)) false;
-      case(#ok(blob)) {
-        let exists: ?Text = from_candid(blob);
-        switch(exists) {
-          case(null) false;
-          case(?value) Text.contains(value, #text "true");
-        };
-      };
-    };
+    let receiverExists: Bool = Text.contains(jsonResponse, #text "true");
 
     let triggerExists: Bool = switch(triggerToken) {
       case(null) false;
@@ -412,16 +404,8 @@ actor class NotificationIndex() = this {
           port = null;
           headers = [];
         });
-        switch(Serde.JSON.fromText(jsonResponse, null)) {
-          case(#err(_)) false;
-          case(#ok(blob)) {
-            let exists: ?Text = from_candid(blob);
-            switch(exists) {
-              case(null) false;
-              case(?value) Text.contains(value, #text "true");
-            };
-          };
-        };
+
+        Text.contains(jsonResponse, #text "true")
       };
     };
 
@@ -479,12 +463,12 @@ actor class NotificationIndex() = this {
     });
 
     let notificationIds: [T.NotificationId] = switch(Serde.JSON.fromText(notificationIdsJson, null)) {
-      case(#err(_)) throw Error.reject("cannot serialize profile data");
+      case(#err(_)) throw Error.reject("cannot serialize notification data");
       case(#ok(blob)) {
-        let notifications: ?[T.NotificationId] = from_candid(blob);
+        let notifications: ?{notifications: [T.NotificationId]} = from_candid(blob);
         switch(notifications) {
-          case(null) throw Error.reject("cannot serialize profile data");
-          case(?value) value;
+          case(null) throw Error.reject("cannot serialize notification data");
+          case(?value) value.notifications;
         };
       };
     };

@@ -503,6 +503,8 @@ actor class UserIndex() = this {
   };
 
 
+  // TODO performe fix to replace beneficiary ids storage from web3 to web2
+
   /// get beneficiaries
   public shared({ caller }) func getBeneficiaries(uid: T.UID): async [T.UserProfile] {
     _callValidation(caller);
@@ -512,11 +514,16 @@ actor class UserIndex() = this {
       case(?cid) await Users.canister(cid).getBeneficiaries(uid);
     };
 
+    if (beneficiaryIds.size() == 0) return [];
+
+    // TODO this endpoint is temporary
     let beneficiaries = await HttpService.post({
         url = HT.apiUrl # "users/retrieve-list";
         port = null;
         headers = [];
-        bodyJson = switch(Serde.JSON.toText(to_candid(beneficiaryIds), ["tokenIds"], null)) {
+        bodyJson = switch(Serde.JSON.toText(to_candid({
+          principalIds = Array.map<T.BID, Text>(beneficiaryIds, func x = Principal.toText(x))
+        }), ["principalIds"], null)) {
           case(#err(error)) throw Error.reject("Cannot serialize data");
           case(#ok(value)) value;
         };
@@ -621,25 +628,22 @@ actor class UserIndex() = this {
     // check if user exists
     if (not (await checkPrincipal(uid))) throw Error.reject(notExists);
 
-    let users = await HttpService.post({
+    let usersJson = await HttpService.post({
         url = HT.apiUrl # "users/filter";
         port = null;
         headers = [];
-        bodyJson = switch(Serde.JSON.toText(to_candid(user), ["user"], null)) {
-          case(#err(error)) throw Error.reject("Cannot serialize data");
-          case(#ok(value)) value;
-        };
+        bodyJson = "{\"user\": \"" # user # "\"}";
       });
 
-    switch(Serde.JSON.fromText(users, null)) {
+    switch(Serde.JSON.fromText(usersJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize profile data");
 
       case(#ok(blob)) {
-        let profileParts: ?[ProfilePart] = from_candid(blob);
+        let profileParts: ?{ users: [ProfilePart] } = from_candid(blob);
 
         switch(profileParts) {
           case(null) throw Error.reject("cannot serialize profile data");
-          case(?profiles) await buildUserProfiles(profiles);
+          case(?value) await buildUserProfiles(value.users);
         };
       };
     };

@@ -1,4 +1,8 @@
 <!-- TODO subdomain integration with `cerotrade.cl/alfa` -->
+<!-- TODO test api with beneficiary flow -->
+<!-- TODO delete beneficiary id from register -->
+<!-- TODO import irecs in dashboard -->
+<!-- TODO profile view -->
 
 # Cero Trade
 
@@ -173,3 +177,6 @@ https://mops.one/
 
 ### Custom domain configuration
 https://internetcomputer.org/docs/current/developer-docs/web-apps/custom-domains/using-custom-domains#custom-domains-on-the-boundary-nodes
+
+### found canister
+dfx canister deposit-cycles 400000000000 --network ic user_index

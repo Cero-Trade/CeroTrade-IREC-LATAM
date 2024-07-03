@@ -129,9 +129,9 @@ actor class Agent() = this {
 
 
   /// update beneficiaries
-  public shared({ caller }) func updateBeneficiaries(beneficiaryId: T.BID, deleteBeneficiary: { delete: Bool }): async() {
-    await UserIndex.updateBeneficiaries(caller, beneficiaryId, deleteBeneficiary);
-  };
+  // public shared({ caller }) func updateBeneficiaries(beneficiaryId: T.BID, deleteBeneficiary: { delete: Bool }): async() {
+  //   await UserIndex.updateBeneficiaries(caller, beneficiaryId, deleteBeneficiary);
+  // };
 
 
   /// send beneficiary notification

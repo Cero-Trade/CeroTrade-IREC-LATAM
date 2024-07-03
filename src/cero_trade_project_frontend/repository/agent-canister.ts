@@ -179,6 +179,10 @@ export class AgentCanister {
     try {
       const users = await agent().filterUsers(user) as UserProfileModel[]
 
+      const profile = UserProfileModel.get(),
+      profileIndex = users.findIndex(e => e.principalId.toString() == profile.principalId.toString())
+      if (profileIndex != -1) users.splice(profileIndex, 1)
+
       for (const user of users) {
         user.principalId = Principal.fromText(user.principalId.toString())
         user.companyLogo = getUrlFromArrayBuffer(user.companyLogo) || avatar
@@ -198,7 +202,6 @@ export class AgentCanister {
       const users = await agent().getBeneficiaries() as UserProfileModel[]
 
       for (const user of users) user.companyLogo = getUrlFromArrayBuffer(user.companyLogo) || avatar
-      console.log(users);
 
       return users
     } catch (error) {
@@ -207,14 +210,14 @@ export class AgentCanister {
     }
   }
 
-  static async updateBeneficiaries(beneficiaryId: Principal, { remove }: { remove: boolean }): Promise<void> {
-    try {
-      await agent().updateBeneficiaries(beneficiaryId, { "delete": remove })
-    } catch (error) {
-      console.error(error);
-      throw getErrorMessage(error)
-    }
-  }
+  // static async updateBeneficiaries(beneficiaryId: Principal, { remove }: { remove: boolean }): Promise<void> {
+  //   try {
+  //     await agent().updateBeneficiaries(beneficiaryId, { "delete": remove })
+  //   } catch (error) {
+  //     console.error(error);
+  //     throw getErrorMessage(error)
+  //   }
+  // }
 
   static async requestBeneficiary(beneficiaryId: Principal): Promise<void> {
     try {
@@ -432,7 +435,7 @@ export class AgentCanister {
         mwhRange.length ? [mwhRange] : [],
         assetTypes.length ? [assetTypes.map(energy => ({ [energy]: energy }))] : [],
         method ? [{[method]: method}] : [],
-        rangeDates.length ? [rangeDates.map(e => moment(e).format(variables.dateFormat))] : [],
+        rangeDates.length ? [rangeDates.map(e => moment(e).format(variables.variables.dateFormat))] : [],
       ) as { data: TransactionHistoryInfo[]; totalPages: number; }
 
       for (const item of response.data) {
@@ -524,22 +527,22 @@ export class AgentCanister {
   };
 
   // update event notification
-  static async updateEventNotification(notification: NotificationInfo, beneficiaryEventStatus?: NotificationEventStatusDef): Promise<void> {
+  static async updateEventNotification(notification: NotificationInfo, receiverEventStatus?: NotificationEventStatusDef): Promise<void> {
     try {
       await agent().updateEventNotification({
         id: notification.id,
         title: notification.title,
         content: notification.content ? [notification.content] : [],
-        notificationType: notification.notificationType,
-        createdAt: notification.createdAt,
-        status: notification.status ? [notification.status] : notification.status,
+        notificationType: {[notification.notificationType]: notification.notificationType},
+        createdAt: moment(notification.createdAt).format(variables.dateFormat),
+        status: notification.status ? [{[notification.status]: notification.status}] : [],
       
-        eventStatus: notification.eventStatus ? [notification.eventStatus] : notification.eventStatus,
+        eventStatus: notification.eventStatus ? [{[notification.eventStatus]: notification.eventStatus}] : [],
         tokenId: notification.tokenId ? [notification.tokenId] : [],
         receivedBy: notification.receivedBy,
         triggeredBy: notification.triggeredBy ? [notification.triggeredBy] : [],
         quantity: notification.quantity ? [notification.quantity] : [],
-      }, beneficiaryEventStatus ? [beneficiaryEventStatus] : [])
+      }, receiverEventStatus ? [{[receiverEventStatus]: receiverEventStatus}] : [])
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)
