@@ -552,7 +552,7 @@
               id="beneficiary"
               variant="solo" flat
               :items="beneficiaries"
-              item-text="companyName"
+              item-title="companyName"
               item-value="principalId"
               class="select mb-8"
               bg-color="transparent"
@@ -1443,13 +1443,12 @@ onBeforeMount(() => {
 
 
 async function getData() {
-  getBeneficiaries()
-
   try {
-    const [checkToken, token, _] = await Promise.allSettled([
+    const [checkToken, token, _, __] = await Promise.allSettled([
       AgentCanister.checkUserToken(tokenId.value),
       AgentCanister.getTokenDetails(tokenId.value),
-      getMarketPlace()
+      getMarketPlace(),
+      getBeneficiaries()
     ])
 
     haveToken.value = checkToken
