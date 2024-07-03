@@ -67,7 +67,7 @@
               <div class="mb-1 d-flex align-center">
                 <h6 class="mb-0">{{ item.title }}</h6>
                 <v-badge :model-value="item.status === NotificationStatus.sent" dot :offset-x="-15" color="rgb(var(--v-theme-primary))">
-                  <span class="date-text ml-3">{{ item.createdAt }}</span>
+                  <span class="date-text ml-3">{{ moment(item.createdAt).fromNow() }}</span>
                 </v-badge>
               </div>
               <p>{{ item.content }}</p>
@@ -110,6 +110,7 @@
                     variant="text"
                     class="px-2"
                     style="translate: -8px 0;"
+                    :loading="loadingExecute === item.id"
                     @click="execute(item)"
                   >Accept</v-btn>
                 </div>
@@ -130,6 +131,7 @@ import { UserProfileModel } from '@/models/user-profile-model';
 import { AgentCanister } from '@/repository/agent-canister';
 import { computed, onBeforeMount, ref, watch } from 'vue';
 import { useToast } from 'vue-toastification';
+import moment from 'moment'
 
 const
   toast = useToast(),
@@ -288,6 +290,9 @@ async function execute(item) {
         await AgentCanister.updateEventNotification(item, NotificationEventStatus.accepted)
       } break;
     }
+
+    const index = tabs.value[currentTab.value].data.findIndex(e => e.id === item.id)
+    tabs.value[currentTab.value].data.splice(index, 1)
 
   } catch (error) {
     toast.error(error)

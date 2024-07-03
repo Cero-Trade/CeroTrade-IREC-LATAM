@@ -3,6 +3,7 @@
 <!-- TODO delete beneficiary id from register -->
 <!-- TODO import irecs in dashboard -->
 <!-- TODO profile view -->
+<!-- TODO prevent to add beneficiary request if exists in current register -->
 
 # Cero Trade
 

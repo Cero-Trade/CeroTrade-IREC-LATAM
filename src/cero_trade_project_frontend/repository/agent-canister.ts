@@ -210,14 +210,14 @@ export class AgentCanister {
     }
   }
 
-  // static async updateBeneficiaries(beneficiaryId: Principal, { remove }: { remove: boolean }): Promise<void> {
-  //   try {
-  //     await agent().updateBeneficiaries(beneficiaryId, { "delete": remove })
-  //   } catch (error) {
-  //     console.error(error);
-  //     throw getErrorMessage(error)
-  //   }
-  // }
+  static async updateBeneficiaries(beneficiaryId: Principal, { remove }: { remove: boolean }): Promise<void> {
+    try {
+      await agent().updateBeneficiaries(beneficiaryId, { "delete": remove })
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
 
   static async requestBeneficiary(beneficiaryId: Principal): Promise<void> {
     try {
