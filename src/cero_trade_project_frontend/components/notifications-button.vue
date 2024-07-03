@@ -70,7 +70,7 @@
                   <span class="date-text ml-3">{{ moment(item.createdAt).fromNow() }}</span>
                 </v-badge>
               </div>
-              <p>{{ item.content }}</p>
+              <p>{{ item.content || `status: ${item.eventStatus}` }}</p>
 
               <v-btn
                 v-if="item.notificationType === NotificationType.general"
@@ -277,7 +277,7 @@ async function execute(item) {
     switch (item.notificationType) {
 
       case NotificationType.beneficiary: {
-        await AgentCanister.updateBeneficiaries(item.receivedBy, { remove: false })
+        await AgentCanister.updateBeneficiaries(item.triggeredBy, { remove: false })
         await AgentCanister.updateEventNotification(item, NotificationEventStatus.accepted)
       } break;
 
