@@ -1,4 +1,8 @@
 <!-- TODO subdomain integration with `cerotrade.cl/alfa` -->
+<!-- TODO test api with beneficiary flow -->
+<!-- TODO delete beneficiary id from register -->
+<!-- TODO import irecs in dashboard -->
+<!-- TODO profile view -->
 
 # Cero Trade
 
@@ -7,6 +11,9 @@ Public frontend url: https://z2mgf-dqaaa-aaaak-qihbq-cai.icp0.io?canisterId=z2mg
 Public candid url: https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=<canister_id>
 
 ## Project setup
+
+If you havent nns extension installed run:
+`dfx extension install nns`
 
 * You can run this proyect locally by run below script:
 `npm run deploy modules nns`
@@ -47,6 +54,8 @@ cp src/declarations/agent/* .dfx/local/canisters/agent/
 cp src/declarations/marketplace/* .dfx/local/canisters/marketplace/
 cp src/declarations/http_service/* .dfx/local/canisters/http_service/
 cp src/declarations/statistics/* .dfx/local/canisters/statistics/
+cp src/declarations/notifications/* .dfx/local/canisters/notifications/
+cp src/declarations/notification_index/* .dfx/local/canisters/notification_index/
 ```
 
 Generate env.mo and deploy canisters
@@ -71,6 +80,7 @@ Register wasm module into backend canisters by run:
 dfx canister call agent registerWasmModule '(variant { "token" = "token" })'
 dfx canister call agent registerWasmModule '(variant { "users" = "users" })'
 dfx canister call agent registerWasmModule '(variant { "transactions" = "transactions" })'
+dfx canister call agent registerWasmModule '(variant { "notifications" = "notifications" })'
 ```
 
 ### Deploying token canisters
@@ -99,6 +109,7 @@ Generate the wasm module like array run command below
 npm run generate-wasm token
 npm run generate-wasm users
 npm run generate-wasm transactions
+npm run generate-wasm notifications
 ```
 
 Push the current ./wasm_modules commit folder to github
@@ -166,3 +177,6 @@ https://mops.one/
 
 ### Custom domain configuration
 https://internetcomputer.org/docs/current/developer-docs/web-apps/custom-domains/using-custom-domains#custom-domains-on-the-boundary-nodes
+
+### found canister
+dfx canister deposit-cycles 400000000000 --network ic user_index

@@ -115,6 +115,15 @@
                 ></v-text-field>
               </v-col> -->
 
+              <v-col cols="12" class="mt-4">
+                <label for="beneficiary">Beneficiary id</label>
+                <v-text-field
+                  v-model="beneficiary" id="beneficiary" class="input" variant="solo" flat elevation="0" placeholder="Enter beneficiary id (optional)"
+                  :rules="[beneficiary ? globalRules.principalId : true]"
+                ></v-text-field>
+              </v-col>
+
+
               <v-col cols="12">
                 <v-btn class="center btn2" :disabled="loadingBtn" @click="createII">
                   {{ AuthClientApi.isAnonymous() ? 'Create Internet Identity ' : 'Change Internet Identity ' }}
@@ -179,13 +188,15 @@ import '@/assets/styles/pages/home.scss'
 import countries from '@/assets/sources/json/countries-all.json'
 import { ref, onBeforeMount } from 'vue'
 import { AgentCanister } from '@/repository/agent-canister';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import variables from '@/mixins/variables';
 import { useToast } from 'vue-toastification';
 import { AuthClientApi } from '@/repository/auth-client-api';
+import { storageCollection } from '@/plugins/vue3-storage-secure';
 
 const
   router = useRouter(),
+  route = useRoute(),
   toast = useToast(),
   { globalRules } = variables,
 
@@ -200,12 +211,20 @@ companyForm = ref({
   address: null,
   email: null,
 }),
+beneficiary = ref(null),
 otp = ref(''),
 loadingBtn = ref(false)
 
 onBeforeMount(getData)
 
-function getData() {}
+function getData() {
+  // get beneficiary id provided
+  const beneficiaryId = route.query.beneficiary || localStorage.getItem(storageCollection.beneficiaryId)
+  if (beneficiaryId) {
+    localStorage.setItem(storageCollection.beneficiaryId, beneficiaryId)
+    beneficiary.value = beneficiaryId
+  }
+}
 
 function previousStep() {
   otp.value = ''
@@ -235,7 +254,8 @@ async function register() {
   loadingBtn.value = true
 
   try {
-    await AgentCanister.register(companyForm.value)
+    await AgentCanister.register(companyForm.value, beneficiary.value)
+    localStorage.removeItem(storageCollection.beneficiaryId)
 
     router.push('/')
     toast.success("You have registered successfuly")

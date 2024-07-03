@@ -1,11 +1,10 @@
 import Error "mo:base/Error";
 import Nat "mo:base/Nat";
+import ENV "../env";
 
 module {
-  public let apiHost = "api.cerotrade.cl";
-  public let apiUrl = "https://api.cerotrade.cl/";
+  public let apiUrl: Text = ENV.VITE_API_URL;
   public let headerName = "http_service_canister";
-  public let port = ":443";
 
   public type HttpError = {
     status : Nat;

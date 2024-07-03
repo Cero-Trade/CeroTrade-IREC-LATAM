@@ -9,6 +9,7 @@ import { MarketplaceInfo, MarketplaceSellersInfo } from "@/models/marketplace-mo
 import { Principal } from "@dfinity/principal";
 import moment from "moment";
 import variables from "@/mixins/variables";
+import { NotificationEventStatusDef, NotificationInfo, NotificationStatusDef, NotificationTypeDef } from "@/models/notifications-model";
 
 export class AgentCanister {
   static async register(data: {
@@ -19,7 +20,7 @@ export class AgentCanister {
     city: string,
     address: string,
     email: string,
-  }): Promise<void> {
+  }, beneficiary?: string): Promise<void> {
     try {
       // store user
       await agent().register({
@@ -29,7 +30,7 @@ export class AgentCanister {
         city: data.city,
         address: data.address,
         email: data.email,
-      })
+      }, beneficiary ? [Principal.fromText(beneficiary)] : [])
 
       // store user company logo
       const fileCompressed = await fileCompression(data.companyLogo[0]),
@@ -75,7 +76,10 @@ export class AgentCanister {
   static async getProfile(uid?: Principal): Promise<UserProfileModel> {
     try {
       const userProfile = await agent().getProfile(uid ? [uid] : []) as UserProfileModel
+      userProfile.principalId = Principal.fromText(userProfile.principalId.toString())
       userProfile.companyLogo = getUrlFromArrayBuffer(userProfile.companyLogo) || avatar
+      userProfile.createdAt = new Date(userProfile.createdAt)
+      userProfile.updatedAt = new Date(userProfile.updatedAt)
 
       if (!uid) store.commit('setProfile', userProfile)
       return userProfile
@@ -171,6 +175,58 @@ export class AgentCanister {
     }
   }
 
+  static async filterUsers(user: string): Promise<UserProfileModel[]> {
+    try {
+      const users = await agent().filterUsers(user) as UserProfileModel[]
+
+      const profile = UserProfileModel.get(),
+      profileIndex = users.findIndex(e => e.principalId.toString() == profile.principalId.toString())
+      if (profileIndex != -1) users.splice(profileIndex, 1)
+
+      for (const user of users) {
+        user.principalId = Principal.fromText(user.principalId.toString())
+        user.companyLogo = getUrlFromArrayBuffer(user.companyLogo) || avatar
+        user.createdAt = new Date(user.createdAt)
+        user.updatedAt = new Date(user.updatedAt)
+      }
+
+      return users
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+  static async getBeneficiaries(): Promise<UserProfileModel[]> {
+    try {
+      const users = await agent().getBeneficiaries() as UserProfileModel[]
+
+      for (const user of users) user.companyLogo = getUrlFromArrayBuffer(user.companyLogo) || avatar
+
+      return users
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+  // static async updateBeneficiaries(beneficiaryId: Principal, { remove }: { remove: boolean }): Promise<void> {
+  //   try {
+  //     await agent().updateBeneficiaries(beneficiaryId, { "delete": remove })
+  //   } catch (error) {
+  //     console.error(error);
+  //     throw getErrorMessage(error)
+  //   }
+  // }
+
+  static async requestBeneficiary(beneficiaryId: Principal): Promise<void> {
+    try {
+      await agent().requestBeneficiary(beneficiaryId)
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
 
   static async getTokenDetails(tokenId: string): Promise<TokenModel> {
     try {
@@ -327,14 +383,21 @@ export class AgentCanister {
       throw getErrorMessage(error)
     }
   }
+  
 
-
-  static async redeemToken(tokenId: string, beneficiary: string, amount: number): Promise<TransactionInfo> {
+  static async requestRedeemToken(tokenId: string, amount: number, beneficiary: Principal): Promise<void> {
     try {
-      /* TODO replace in future for beneficiary */
-      const testingBeneficiary = Principal.fromText("2vxsx-fae");
+      await agent().requestRedeemToken(tokenId, amount, beneficiary)
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
 
-      const tx = await agent().redeemToken(tokenId, testingBeneficiary, amount) as TransactionInfo
+
+  static async redeemToken(tokenId: string, amount: number, beneficiary?: Principal): Promise<TransactionInfo> {
+    try {
+      const tx = await agent().redeemToken(tokenId, amount, beneficiary ? [beneficiary] : []) as TransactionInfo
       tx.txType = Object.values(tx.txType)[0] as TxTypeDef
       tx.to = Object.values(tx.to)[0] as string
 
@@ -372,7 +435,7 @@ export class AgentCanister {
         mwhRange.length ? [mwhRange] : [],
         assetTypes.length ? [assetTypes.map(energy => ({ [energy]: energy }))] : [],
         method ? [{[method]: method}] : [],
-        rangeDates.length ? [rangeDates.map(e => moment(e).format(variables.dateFormat))] : [],
+        rangeDates.length ? [rangeDates.map(e => moment(e).format(variables.variables.dateFormat))] : [],
       ) as { data: TransactionHistoryInfo[]; totalPages: number; }
 
       for (const item of response.data) {
@@ -410,6 +473,76 @@ export class AgentCanister {
         item[1] = Number(item[1])
 
       return res
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+
+  static async getNotifications(page?: number, length?: number, notificationTypes?: NotificationTypeDef[]): Promise<NotificationInfo[]> {
+    try {
+      const res = await agent().getNotifications(
+        page ? [page] : [],
+        length ? [length] : [],
+        notificationTypes?.map(e => ({[e]: e})) ?? [],
+      ) as NotificationInfo[]
+
+      for (const item of res) {
+        item.notificationType = Object.values(item.notificationType)[0] as NotificationTypeDef
+        item.eventStatus = item.eventStatus[0] ? Object.values(item.eventStatus[0])[0] as NotificationEventStatusDef : null
+        item.status = item.status[0] ? Object.values(item.status[0])[0] as NotificationStatusDef : null
+        item.content = item.content[0]
+        item.triggeredBy = item.triggeredBy[0]
+        item.tokenId = item.tokenId[0]
+        item.quantity = Number(item.quantity[0]) || null
+        item.createdAt = new Date(item.createdAt)
+      }
+
+      return res
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+  // update general notifications
+  static async updateGeneralNotifications(notificationIds: [string]): Promise<void> {
+    try {
+      await agent().updateGeneralNotifications(notificationIds);
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  };
+
+  // clear general notifications
+  static async clearGeneralNotifications(notificationIds: [Text]): Promise<void> {
+    try {
+      await agent().clearGeneralNotifications(notificationIds);
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  };
+
+  // update event notification
+  static async updateEventNotification(notification: NotificationInfo, receiverEventStatus?: NotificationEventStatusDef): Promise<void> {
+    try {
+      await agent().updateEventNotification({
+        id: notification.id,
+        title: notification.title,
+        content: notification.content ? [notification.content] : [],
+        notificationType: {[notification.notificationType]: notification.notificationType},
+        createdAt: moment(notification.createdAt).format(variables.dateFormat),
+        status: notification.status ? [{[notification.status]: notification.status}] : [],
+      
+        eventStatus: notification.eventStatus ? [{[notification.eventStatus]: notification.eventStatus}] : [],
+        tokenId: notification.tokenId ? [notification.tokenId] : [],
+        receivedBy: notification.receivedBy,
+        triggeredBy: notification.triggeredBy ? [notification.triggeredBy] : [],
+        quantity: notification.quantity ? [notification.quantity] : [],
+      }, receiverEventStatus ? [{[receiverEventStatus]: receiverEventStatus}] : [])
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)

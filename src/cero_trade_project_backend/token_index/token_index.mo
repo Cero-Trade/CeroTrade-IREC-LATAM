@@ -86,7 +86,11 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       case("local") "develop";
       case _ throw Error.reject("No DFX_NETWORK provided");
     };
-    let wasmModule = await HttpService.get("https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # branch # "/wasm_modules/token.json", { headers = [] });
+    let wasmModule = await HttpService.get({
+      url = "https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # branch # "/wasm_modules/token.json";
+      port = null;
+      headers = [];
+    });
 
     let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
     let wasm_array = Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
@@ -161,7 +165,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
             case _ #other("other");
           };
 
-          let assetMetadata: T.AssetInfo = /* await HttpService.get("getToken" # tokenId, { headers = [] }) */
+          let assetMetadata: T.AssetInfo = /* await HttpService.get({ url = "getToken" # tokenId; port = null; headers = [] }) */
             {
               tokenId;
               assetType = energy;
@@ -305,7 +309,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   };
 
 
-  public shared({ caller }) func mintTokenToUser(recipent: T.Beneficiary, tokenId: T.TokenId, amount: T.TokenAmount): async T.TxIndex {
+  public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, amount: T.TokenAmount): async T.TxIndex {
     _callValidation(caller);
 
     let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
@@ -541,7 +545,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   };
 
 
-  public shared({ caller }) func purchaseToken(buyer: T.UID, seller: T.Beneficiary, tokenId: T.TokenId, amount: T.TokenAmount, priceE8S: T.Price): async T.TxIndex {
+  public shared({ caller }) func purchaseToken(buyer: T.UID, seller: T.BID, tokenId: T.TokenId, amount: T.TokenAmount, priceE8S: T.Price): async T.TxIndex {
     _callValidation(caller);
 
     let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {

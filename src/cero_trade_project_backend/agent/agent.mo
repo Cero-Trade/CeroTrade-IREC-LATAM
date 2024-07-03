@@ -17,6 +17,7 @@ import TokenIndex "canister:token_index";
 import TransactionIndex "canister:transaction_index";
 import Marketplace "canister:marketplace";
 import Statistics "canister:statistics";
+import NotificationIndex "canister:notification_index";
 
 // interfaces
 import IC_MANAGEMENT "../ic_management_canister_interface";
@@ -42,7 +43,9 @@ actor class Agent() = this {
 
 
   /// register user into cero trade
-  public shared({ caller }) func register(form: T.RegisterForm): async() { await UserIndex.registerUser(caller, form) };
+  public shared({ caller }) func register(form: T.RegisterForm, beneficiary: ?T.BID): async() {
+    await UserIndex.registerUser(caller, form, beneficiary)
+  };
 
 
   /// store user avatar into users collection
@@ -67,6 +70,7 @@ actor class Agent() = this {
     await UserIndex.registerControllers();
     await TokenIndex.registerControllers();
     await TransactionIndex.registerControllers();
+    await NotificationIndex.registerControllers();
   };
 
   /// register a canister wasm module
@@ -77,6 +81,7 @@ actor class Agent() = this {
       case(#token("token")) await TokenIndex.registerWasmArray();
       case(#users("users")) await UserIndex.registerWasmArray();
       case(#transactions("transactions")) await TransactionIndex.registerWasmArray();
+      case(#notifications("notifications")) await NotificationIndex.registerWasmArray();
       case _ throw Error.reject("Module name doesn't exists");
     };
   };
@@ -92,7 +97,7 @@ actor class Agent() = this {
 
 
   /// performe mint with tokenId and amount requested
-  public shared({ caller }) func mintTokenToUser(recipent: T.Beneficiary, tokenId: T.TokenId, tokenAmount: T.TokenAmount): async T.TxIndex {
+  public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, tokenAmount: T.TokenAmount): async T.TxIndex {
     IC_MANAGEMENT.adminValidation(caller, controllers);
 
     // check if user exists
@@ -102,7 +107,7 @@ actor class Agent() = this {
     let txIndex = await TokenIndex.mintTokenToUser(recipent, tokenId, tokenAmount);
 
     // update user portfolio
-    await UserIndex.updatePorfolio(recipent, tokenId, false);
+    await UserIndex.updatePortfolio(recipent, tokenId, { delete = false });
 
     txIndex
   };
@@ -115,6 +120,43 @@ actor class Agent() = this {
       case(?value) await UserIndex.getProfile(value);
     };
   };
+
+
+  /// get beneficiaries
+  public shared({ caller }) func getBeneficiaries(): async [T.UserProfile] {
+    await UserIndex.getBeneficiaries(caller);
+  };
+
+
+  /// update beneficiaries
+  // public shared({ caller }) func updateBeneficiaries(beneficiaryId: T.BID, deleteBeneficiary: { delete: Bool }): async() {
+  //   await UserIndex.updateBeneficiaries(caller, beneficiaryId, deleteBeneficiary);
+  // };
+
+
+  /// send beneficiary notification
+  public shared({ caller }) func requestBeneficiary(beneficiaryId: T.BID): async() {
+    // check if user exists
+    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
+
+    await _addNotification({
+      id = "0";
+      title = "Beneficiary request";
+      content = null;
+      notificationType = #beneficiary("beneficiary");
+      tokenId = null;
+      receivedBy = beneficiaryId;
+      triggeredBy = ?caller;
+      quantity = null;
+      createdAt = DateTime.now().toText();
+      status = null;
+      eventStatus = ?#pending("pending");
+    });
+  };
+
+
+  /// filter users on cero trade by name or principal id
+  public shared({ caller }) func filterUsers(user: Text): async [T.UserProfile] { await UserIndex.filterUsers(caller, user) };
 
 
   /// function to know user token balance
@@ -133,7 +175,7 @@ actor class Agent() = this {
 
     for(token in tokensInfo.data.vals()) {
       if (token.totalAmount <= 0) {
-        await UserIndex.updatePorfolio(caller, token.tokenId, true);
+        await UserIndex.updatePortfolio(caller, token.tokenId, { delete = true });
 
         let tokens = Buffer.fromArray<T.TokenInfo>(tokensInfo.data);
 
@@ -385,7 +427,7 @@ actor class Agent() = this {
   };
 
   /// performe token purchase
-  public shared({ caller }) func purchaseToken(tokenId: T.TokenId, recipent: T.Beneficiary, tokenAmount: T.TokenAmount): async T.TransactionInfo {
+  public shared({ caller }) func purchaseToken(tokenId: T.TokenId, recipent: T.BID, tokenAmount: T.TokenAmount): async T.TransactionInfo {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
@@ -415,7 +457,7 @@ actor class Agent() = this {
     };
 
     // store token register on profile
-    await UserIndex.updatePorfolio(caller, tokenId, false);
+    await UserIndex.updatePortfolio(caller, tokenId, { delete = false });
 
     // register transaction
     let txId = await TransactionIndex.registerTransaction(txInfo);
@@ -523,8 +565,28 @@ actor class Agent() = this {
   };
 
 
+  public shared({ caller }) func requestRedeemToken(tokenId: T.TokenId, quantity: T.TokenAmount, beneficiary: T.BID): async() {
+    // check if user exists
+    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
+
+    await _addNotification( {
+      id = "0";
+      title = "Redemption request";
+      content = null;
+      notificationType = #redeem("redeem");
+      tokenId = ?tokenId;
+      receivedBy = beneficiary;
+      triggeredBy = ?caller;
+      quantity = ?quantity;
+      createdAt = DateTime.now().toText();
+      status = null;
+      eventStatus = ?#pending("pending");
+    });
+  };
+
+
   // redeem certificate by burning user tokens
-  public shared({ caller }) func redeemToken(tokenId: T.TokenId, beneficiary: T.Beneficiary, quantity: T.TokenAmount): async T.TransactionInfo {
+  public shared({ caller }) func redeemToken(tokenId: T.TokenId, quantity: T.TokenAmount, beneficiary: ?T.BID): async T.TransactionInfo {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
@@ -545,7 +607,7 @@ actor class Agent() = this {
       transactionId = "0";
       txIndex;
       from = caller;
-      to = ?beneficiary;
+      to = beneficiary;
       tokenId;
       txType = #redemption("redemption");
       tokenAmount = quantity;
@@ -662,4 +724,59 @@ actor class Agent() = this {
 
   // get asset registrations
   public func getAssetStatistics(): async [(Text, T.TokenAmount)] { await Statistics.getAssetStatistics() };
+
+
+  // get notifications
+  public shared({ caller }) func getNotifications(page: ?Nat, length: ?Nat, notificationTypes: [T.NotificationType]): async [T.NotificationInfo] {
+    let token = await UserIndex.getUserToken(caller);
+    await NotificationIndex.getNotifications(token, page, length, notificationTypes);
+  };
+
+
+  // add notification
+  private func _addNotification(notification: T.NotificationInfo): async() {
+    let receiverToken = await UserIndex.getUserToken(notification.receivedBy);
+
+    let triggerToken: ?T.UserToken = switch(notification.triggeredBy) {
+      case(null) null;
+      case(?triggerUser) {
+        if (notification.notificationType == #general("general")) { null } else {
+          let token = await UserIndex.getUserToken(triggerUser);
+          ?token
+        }
+      };
+    };
+
+    await NotificationIndex.addNotification(receiverToken, triggerToken, notification);
+  };
+
+
+  // update general notifications
+  public shared({ caller }) func updateGeneralNotifications(notificationIds: [T.NotificationId]) : async() {
+    let token = await UserIndex.getUserToken(caller);
+    await NotificationIndex.updateGeneralNotifications(token, notificationIds);
+  };
+
+  // clear general notifications
+  public shared({ caller }) func clearGeneralNotifications(notificationIds: [T.NotificationId]): async() {
+    let token = await UserIndex.getUserToken(caller);
+    await NotificationIndex.clearGeneralNotifications(token, notificationIds);
+  };
+
+  // update event notification
+  public shared({ caller }) func updateEventNotification(notification: T.NotificationInfo, eventStatus: ?T.NotificationEventStatus): async() {
+    let receiverToken = await UserIndex.getUserToken(caller);
+
+    let triggerToken: ?T.UserToken = switch(notification.triggeredBy) {
+      case(null) null;
+      case(?triggerUser) {
+        if (notification.notificationType == #general("general")) { null } else {
+          let token = await UserIndex.getUserToken(triggerUser);
+          ?token
+        }
+      };
+    };
+
+    await NotificationIndex.updateEventNotification(receiverToken, triggerToken, notification.id, eventStatus);
+  };
 }

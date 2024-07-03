@@ -12,13 +12,14 @@ module UsersInterface {
     deleteUser: (uid: T.UID) -> async();
     storeCompanyLogo: (uid: T.UID, avatar: T.CompanyLogo) -> async();
     getCompanyLogo: query (uid: T.UID) -> async T.CompanyLogo;
-    updatePorfolio: (uid: T.UID, tokenId: T.TokenId, delete: Bool) -> async();
-    deletePorfolio: (uid: T.UID, tokenId: T.TokenId) -> async();
+    updatePortfolio: (uid: T.UID, tokenId: T.TokenId, { delete: Bool }) -> async();
+    deletePortfolio: (uid: T.UID, tokenId: T.TokenId) -> async();
     updateTransactions: (uid: T.UID, tx: T.TransactionId) -> async();
+    updateBeneficiaries: (uid: T.UID, beneficiaryId: T.BID, { delete: Bool }) -> async();
     getPortfolioTokenIds: query (uid: T.UID) -> async [T.TokenId];
     getTransactionIds: query (uid: T.UID) -> async [T.TransactionId];
-    getBeneficiaries: query (uid: T.UID) -> async [T.Beneficiary];
-    getUserToken: query (uid: T.UID) -> async Text;
+    getBeneficiaries: query (uid: T.UID) -> async [T.BID];
+    getUserToken: query (uid: T.UID) -> async T.UserToken;
     validateToken: query (uid: T.UID, token: Text) -> async Bool;
   };
 }

@@ -39,13 +39,15 @@ module {
   public type TransactionId = Text;
   public type RedemId = Text;
   public type CompanyLogo = [Nat8];
-  public type Beneficiary = UID;
+  public type BID = UID;
   public type TxIndex = Nat;
   public type TokenAmount = Nat;
   public type Price = { e8s: Nat64 };
+  public type UserToken = Text;
   
+
   //
-  // UsersAgent
+  // Users
   //
   public type RegisterForm = {
     companyId: Text;
@@ -56,9 +58,6 @@ module {
     email: Text;
   };
 
-  //
-  // Users
-  //
   public type UserInfo = {
     companyLogo: ?CompanyLogo;
     vaultToken: Text;
@@ -66,7 +65,7 @@ module {
     // TODO want to delete this variable and fetch data directly token canisters
     portfolio: [TokenId];
     transactions: [TransactionId];
-    beneficiaries: [Beneficiary];
+    beneficiaries: [BID];
   };
 
   public type UserProfile = {
@@ -98,7 +97,7 @@ module {
     transactionId: TransactionId;
     txIndex: TxIndex;
     from: UID;
-    to: ?Beneficiary;
+    to: ?BID;
     tokenId: TokenId;
     txType: TxType;
     tokenAmount: TokenAmount;
@@ -111,7 +110,7 @@ module {
     transactionId: TransactionId;
     txIndex: TxIndex;
     from: UID;
-    to: ?Beneficiary;
+    to: ?BID;
     assetInfo: ?AssetInfo;
     txType: TxType;
     tokenAmount: TokenAmount;
@@ -201,14 +200,58 @@ module {
     priceE8S: Price;
   };
 
+  //
+  // Notifications types
+  //
+  public type NotificationId = Text;
+
+  public type NotificationInfo = {
+    id: NotificationId;
+    title: Text;
+    content: ?Text;
+    notificationType: NotificationType;
+    createdAt: Text;
+    status: ?NotificationStatus;
+
+    eventStatus: ?NotificationEventStatus;
+    tokenId: ?TokenId;
+    receivedBy: BID;
+    triggeredBy: ?UID;
+    quantity: ?TokenAmount;
+  };
+
+  public type NotificationStatus = {
+    #sent: Text;
+    #seen: Text;
+  };
+
+  public type NotificationEventStatus = {
+    #pending: Text;
+    #declined: Text;
+    #accepted: Text;
+  };
+
+  public type NotificationType = {
+    #general: Text;
+    #redeem: Text;
+    #beneficiary: Text;
+  };
+
+  //
+  // ic management types
+  //
   public type WasmModuleName = {
     #token: Text;
     #users: Text;
     #transactions: Text;
+    #notifications: Text;
   };
 
   public let LOW_MEMORY_LIMIT: Nat = 50000;
 
+  //
+  // ICP Types
+  //
   public type TransferInMarketplaceArgs = {
     from: ICPTypes.Account;
     to: ICPTypes.Account;

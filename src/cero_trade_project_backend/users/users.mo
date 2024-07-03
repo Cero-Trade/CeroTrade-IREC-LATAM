@@ -89,7 +89,7 @@ shared({ caller = userIndexCaller }) actor class Users() {
 
 
   /// update user portfolio
-  public shared({ caller }) func updatePorfolio(uid: T.UID, tokenId: T.TokenId, delete: Bool) : async() {
+  public shared({ caller }) func updatePortfolio(uid: T.UID, tokenId: T.TokenId, { delete: Bool }) : async() {
     _callValidation(caller);
 
     let userInfo = switch (users.get(uid)) {
@@ -119,7 +119,7 @@ shared({ caller = userIndexCaller }) actor class Users() {
 
 
   /// delete user portfolio
-  public shared({ caller }) func deletePorfolio(uid: T.UID, tokenId: T.TokenId) : async() {
+  public shared({ caller }) func deletePortfolio(uid: T.UID, tokenId: T.TokenId) : async() {
     _callValidation(caller);
 
     let userInfo = switch (users.get(uid)) {
@@ -153,21 +153,32 @@ shared({ caller = userIndexCaller }) actor class Users() {
 
     transactions.add(txId);
     users.put(uid, { userInfo with transactions = Buffer.toArray(transactions) });
-
-    // switch(Buffer.indexOf<T.TransactionId>(txId, transactions, Text.equal)) {
-    //   case(null) {
-    //     transactions.add(txId);
-
-    //     users.put(uid, { userInfo with transactions = Buffer.toArray(transactions) })
-    //   };
-    //   case(?index) {
-    //     transactions.put(index, txId);
-
-    //     users.put(uid, { userInfo with transactions = Buffer.toArray(transactions) })
-    //   };
-    // };
   };
 
+  /// update user beneficiaries
+  public shared({ caller }) func updateBeneficiaries(uid: T.UID, beneficiaryId: T.BID, { delete: Bool }) : async() {
+    _callValidation(caller);
+
+    let userInfo = switch (users.get(uid)) {
+      case (null) throw Error.reject(userNotFound);
+      case (?info) info;
+    };
+
+    let beneficiaries = Buffer.fromArray<T.BID>(userInfo.beneficiaries);
+
+    if (delete) {
+      let index = switch(Buffer.indexOf<T.BID>(beneficiaryId, beneficiaries, Principal.equal)) {
+        case(null) throw Error.reject("Beneficiary not found");
+        case(?value) value;
+      };
+
+      let _ = beneficiaries.remove(index);
+    } else {
+      beneficiaries.add(beneficiaryId);
+    };
+
+    users.put(uid, { userInfo with beneficiaries = Buffer.toArray(beneficiaries) });
+  };
 
   public shared({ caller }) func getPortfolioTokenIds(uid: T.UID) : async [T.TokenId] {
     _callValidation(caller);
@@ -187,7 +198,7 @@ shared({ caller = userIndexCaller }) actor class Users() {
     };
   };
 
-  public shared({ caller }) func getBeneficiaries(uid: T.UID) : async [T.Beneficiary] {
+  public shared({ caller }) func getBeneficiaries(uid: T.UID) : async [T.BID] {
     _callValidation(caller);
 
     switch (users.get(uid)) {
@@ -197,7 +208,7 @@ shared({ caller = userIndexCaller }) actor class Users() {
   };
 
   /// get vaultToken from user
-  public shared({ caller }) func getUserToken(uid: T.UID) : async Text {
+  public shared({ caller }) func getUserToken(uid: T.UID) : async T.UserToken {
     _callValidation(caller);
 
     switch (users.get(uid)) {
