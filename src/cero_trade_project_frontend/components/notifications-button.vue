@@ -70,7 +70,18 @@
                   <span class="date-text ml-3">{{ moment(item.createdAt).fromNow() }}</span>
                 </v-badge>
               </div>
-              <p>{{ item.content || `status: ${item.eventStatus}` }}</p>
+
+              <p v-if="item.content">{{ item.content }}</p>
+              <p v-else>status: 
+                <span :class="[
+                  item.eventStatus === NotificationEventStatus.accepted
+                    ? 'text-success'
+                    : item.eventStatus === NotificationEventStatus.declined 
+                      ? 'text-error'
+                      : 'text-warning'
+                ]" style="font-weight: 500 !important;"
+                >{{ item.eventStatus }}</span>
+              </p>
 
               <v-btn
                 v-if="item.notificationType === NotificationType.general"
