@@ -53,7 +53,7 @@
               </v-col>
               <v-col xl="6" lg="6" md="6" sm="12" cols="12">
                 <label for="country">Country</label>
-                <v-select
+                <v-autocomplete
                 v-model="companyForm.country"
                 id="country" class="input" variant="solo" flat 
                 :items="countries"
@@ -70,7 +70,7 @@
                       :style="`transform: ${isFocused.value ? 'rotate(180deg)' : 'none'};`"
                     >
                   </template>
-                </v-select>
+                </v-autocomplete>
               </v-col>
               <v-col xl="6" lg="6" md="6" sm="12" cols="12">
                 <label for="city">City</label>
