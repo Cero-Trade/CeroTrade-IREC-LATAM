@@ -202,3 +202,10 @@ export async function fileCompression(file, options) {
 export function convertE8SToICP(e8s) { return e8s / variables.e8sEquivalence }
 
 export function convertICPToE8S(icp) { return icp * variables.e8sEquivalence }
+
+export function shortPrincipalId(principalId) {
+  const splitted = principalId?.split('-');
+  if (!splitted) return ''
+
+  return `${splitted[0]}...${splitted[splitted.length - 1]}`
+}

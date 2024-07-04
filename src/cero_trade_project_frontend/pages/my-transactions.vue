@@ -63,7 +63,7 @@
       <template #[`item.recipent`]="{ item }">
         <v-menu :close-on-content-click="false" @update:model-value="(value) => getRecipentProfile(value, item.recipent)">
           <template #activator="{ props }">
-            <a v-bind="props" class="flex-acenter pointer" style="gap: 5px; text-wrap: nowrap">{{ item.recipent }}</a>
+            <a v-bind="props" class="flex-acenter pointer" style="gap: 5px; text-wrap: nowrap">{{ shortPrincipalId(item.recipent?.toString()) }}</a>
           </template>
 
           <v-card class="px-4 py-2 bg-secondary d-flex">
@@ -318,17 +318,6 @@
 <script setup>
 import '@/assets/styles/pages/my-transactions.scss'
 import countries from '@/assets/sources/json/countries-all.json'
-import SphereIcon from '@/assets/sources/companies/sphere.svg'
-import KapidagIcon from '@/assets/sources/companies/kapidag.svg'
-import SisyphusIcon from '@/assets/sources/companies/sisyphus.svg'
-import FocalPointIcon from '@/assets/sources/companies/focal-point.svg'
-import SilverStoneIcon from '@/assets/sources/companies/silverstone.svg'
-import GeneralElectricIcon from '@/assets/sources/companies/general-electric.svg'
-import BlueSkyIcon from '@/assets/sources/companies/bluesky.svg'
-import ZenithIcon from '@/assets/sources/companies/zenith.svg'
-import LibertyIcon from '@/assets/sources/companies/liberty.svg'
-import SunshineIcon from '@/assets/sources/companies/sunshine.svg'
-import PrimeIcon from '@/assets/sources/companies/prime.svg'
 
 import HydroEnergyIcon from '@/assets/sources/energies/hydro.svg'
 import OceanEnergyIcon from '@/assets/sources/energies/ocean.svg'
@@ -343,6 +332,7 @@ import { TxType, TxMethod } from '@/models/transaction-model'
 import { useToast } from 'vue-toastification'
 import { useRouter } from 'vue-router'
 import moment from "moment";
+import { shortPrincipalId } from '@/plugins/functions'
 
 const
   router = useRouter(),
@@ -364,20 +354,6 @@ tabs = [
   { text: "Take off Marketplace", value: TxType.takeOffMarketplace },
   { text: "Redemption", value: TxType.redemption }
 ],
-
-companies = {
-  'Sphere': SphereIcon,
-  'KAPIDAĞ RES': KapidagIcon,
-  'Sisyphus': SisyphusIcon,
-  'Focal Point': FocalPointIcon,
-  'SIlverstone': SilverStoneIcon,
-  'General Electric': GeneralElectricIcon,
-  'BlueSky': BlueSkyIcon,
-  'Zenith': ZenithIcon,
-  'Liberty': LibertyIcon,
-  'Sunshine': SunshineIcon,
-  'Prime': PrimeIcon,
-},
 energies = {
   hydro: HydroEnergyIcon,
   ocean: OceanEnergyIcon,
@@ -387,7 +363,7 @@ energies = {
   sun: SolarEnergyIcon,
 },
 countriesImg = {
-  chile: ChileIcon
+  CL: ChileIcon
 },
 
   headers = [
@@ -467,7 +443,7 @@ async function getData() {
   // map dates
   let rangeDates
   if (filters.value.fromDate && filters.value.toDate)
-    rangeDates = [filters.value.fromDate, filters.value.toDate]
+    rangeDates = [new Date(filters.value.fromDate), new Date(filters.value.toDate)]
 
   // map asset types
   const assetTypes = []
@@ -492,7 +468,7 @@ async function getData() {
       list.push({
         transaction_id: item.transactionId,
         type: item.txType,
-        recipent: item.to?.toString(),
+        recipent: item.to,
         energy_source: item.assetInfo.assetType,
         country: item.assetInfo.specifications.country,
         mwh: item.tokenAmount,

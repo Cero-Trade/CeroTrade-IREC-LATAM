@@ -383,7 +383,7 @@ export class AgentCanister {
       throw getErrorMessage(error)
     }
   }
-  
+
 
   static async requestRedeemToken(tokenId: string, amount: number, beneficiary: Principal): Promise<void> {
     try {
@@ -435,7 +435,7 @@ export class AgentCanister {
         mwhRange.length ? [mwhRange] : [],
         assetTypes.length ? [assetTypes.map(energy => ({ [energy]: energy }))] : [],
         method ? [{[method]: method}] : [],
-        rangeDates.length ? [rangeDates.map(e => moment(e).format(variables.variables.dateFormat))] : [],
+        rangeDates.length ? [rangeDates.map(e => moment(e).format(variables.dateFormat))] : [],
       ) as { data: TransactionHistoryInfo[]; totalPages: number; }
 
       for (const item of response.data) {
@@ -453,7 +453,7 @@ export class AgentCanister {
         item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
 
         // convert e8s to icp
-        item.priceE8S = convertE8SToICP(Number(item.priceE8S['e8s']))
+        item.priceE8S = item.priceE8S[0] ? convertE8SToICP(Number(item.priceE8S[0]['e8s'])) : null
       }
 
       response.totalPages = Number(response.totalPages)

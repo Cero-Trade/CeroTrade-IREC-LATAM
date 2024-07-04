@@ -608,11 +608,14 @@ actor class Agent() = this {
       transactionId = "0";
       txIndex;
       from = caller;
-      to = beneficiary;
+      to = switch(beneficiary) {
+        case(null) ?caller;
+        case(?value) ?value;
+      };
       tokenId;
       txType = #redemption("redemption");
       tokenAmount = quantity;
-      priceE8S = null;
+      priceE8S = ?{ e8s = T.getCeroComission() + 20_000 };
       date = DateTime.now().toText();
       method = #blockchainTransfer("blockchainTransfer");
     };

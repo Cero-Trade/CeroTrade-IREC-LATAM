@@ -4,6 +4,7 @@
     color="#fff"
     location="bottom right"
     class="company-logo"
+    :style="`--badge-padding: ${badgePadding}`"
     :offset-x="badgeOffset"
     :offset-y="badgeOffset"
   >
@@ -44,7 +45,11 @@ defineProps({
   badgeOffset: {
     type: [Number, String],
     default: 8
-  }
+  },
+  badgePadding: {
+    type: String,
+    default: "5px"
+  },
 })
 </script>
 
@@ -62,7 +67,7 @@ defineProps({
     max-height: var(--energy-badge-sizes) !important;
     height: var(--energy-badge-sizes) !important;
     border-radius: 50% !important;
-    padding: 5px !important
+    padding: var(--badge-padding) !important
   }
 }
 </style>

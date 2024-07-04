@@ -236,7 +236,7 @@
               <template #[`item.seller`]="{ item }">
                 <v-menu :close-on-content-click="false" @update:model-value="(value) => getSellerProfile(value, item.seller)">
                   <template #activator="{ props }">
-                    <a v-bind="props" class="pointer flex-acenter" style="gap: 5px; max-width: 200px">{{ item.seller }}</a>
+                    <a v-bind="props" class="pointer flex-acenter" style="gap: 5px; max-width: 200px">{{ shortPrincipalId(item.seller?.toString()) }}</a>
                   </template>
 
                   <v-card class="px-4 py-2 bg-secondary d-flex flex-column">
@@ -309,7 +309,7 @@
 
                   <v-menu :close-on-content-click="false" @update:model-value="(value) => getSellerProfile(value, item.seller)">
                     <template #activator="{ props }">
-                      <a v-bind="props" style="color: #475467;" class="acenter pointer text-capitalize">{{ item.seller }}</a>
+                      <a v-bind="props" style="color: #475467;" class="acenter pointer text-capitalize">{{ shortPrincipalId(item.seller?.toString()) }}</a>
                     </template>
 
                     <v-card class="px-4 py-2 bg-secondary d-flex">
@@ -821,7 +821,7 @@
             <template #[`item.seller`]="{ item }">
               <v-menu :close-on-content-click="false" @update:model-value="(value) => getSellerProfile(value, item.seller)">
                 <template #activator="{ props }">
-                  <a v-bind="props" class="pointer flex-acenter" style="gap: 5px; max-width: 200px">{{ item.seller }}</a>
+                  <a v-bind="props" class="pointer flex-acenter" style="gap: 5px; max-width: 200px">{{ shortPrincipalId(item.seller?.toString()) }}</a>
                 </template>
 
                 <v-card class="px-4 py-2 bg-secondary d-flex flex-column">
@@ -1171,7 +1171,7 @@ import { computed, onBeforeMount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import variables from '@/mixins/variables'
-import { closeLoader, convertE8SToICP, showLoader, maxDecimals } from '@/plugins/functions'
+import { closeLoader, convertE8SToICP, showLoader, maxDecimals, shortPrincipalId } from '@/plugins/functions'
 import { Principal } from '@dfinity/principal'
 
 const
@@ -1210,7 +1210,7 @@ energies = {
   sun: SolarEnergyIcon,
 },
 countriesImg = {
-  chile: ChileIcon
+  CL: ChileIcon
 },
 tokenDetail = ref(undefined),
 headers = [

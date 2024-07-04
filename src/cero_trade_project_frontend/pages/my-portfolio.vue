@@ -297,7 +297,7 @@ energies = {
   sun: SolarEnergyIcon,
 },
 countriesImg = {
-  chile: ChileIcon
+  CL: ChileIcon
 },
 
 headers = [
@@ -401,7 +401,7 @@ async function getData() {
     }, []);
 
     const groupedRedemptions = tokensRedemption.reduce((acc, item) => {
-      let existenceElement = acc.find(elem => elem.tokenId === item.tokenId);
+      let existenceElement = acc.find(elem => elem.energy_source === item.energy_source);
 
       if (existenceElement) {
         existenceElement.tokenAmount += item.tokenAmount;

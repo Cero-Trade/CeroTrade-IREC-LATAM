@@ -263,7 +263,7 @@ energies = {
   sun: SolarEnergyIcon,
 },
 countriesImg = {
-  chile: ChileIcon
+  CL: ChileIcon
 },
 
 dialogFilters = ref(false),
