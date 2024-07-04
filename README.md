@@ -1,8 +1,6 @@
 <!-- TODO subdomain integration with `cerotrade.cl/alfa` -->
-<!-- TODO test api with beneficiary flow -->
-<!-- TODO delete beneficiary id from register -->
+<!-- TODO delete beneficiary id from web3 register and migrate to web2 -->
 <!-- TODO import irecs in dashboard -->
-<!-- TODO profile view -->
 <!-- TODO prevent to add beneficiary request if exists in current register -->
 
 # Cero Trade
