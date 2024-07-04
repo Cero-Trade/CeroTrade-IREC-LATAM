@@ -1,4 +1,6 @@
 <template>
+  <modal-import-irecs ref="modalImportIrecs" />
+
     <div id="dashboard">
       <h4>Hi {{ profile.companyName }} 👋</h4>
       <span class="mbb16" style="color:#475467; margin-bottom: 64px;">Welcome to Cero Trade platform. Your gateway to a greener and more sustainable future. Manage your energy assets, track your usage, and contribute to a healthier planet.</span>
@@ -53,7 +55,31 @@
         <v-col xl="3" lg="3" cols="12">
           <v-row>
             <v-col cols="12">
-              <v-card class="card divcol mb-4" style="background-color: #F9FAFB!important; min-height: 200px!important;">
+              <v-card class="card divcol mb-4" style="background-color: #F9FAFB!important;">
+                <h5 class="acenter"><img src="@/assets/sources/icons/lightning.svg" alt="Marketplace" class="mr-4" style="width: 20px;">Import IRECs</h5>
+                <p class="p12">Transfered IRECs to our Platform Operator Account? Add them to your portafolio as tokens.</p>
+                <v-btn class="btn btn-max-content"
+                @click="$refs.modalImportIrecs.model = true"
+                >Get them</v-btn>
+              </v-card>
+
+              <v-card class="card divcol mb-4" style="background-color: #F9FAFB!important;">
+                <h5 class="acenter"><img src="@/assets/sources/icons/account-multiple.svg" alt="Account" class="mr-4" style="width: 20px;">Profile</h5>
+                <p class="p12">Access and edit your profile information.</p>
+                <v-btn class="btn btn-max-content" @click="$router.push({ path: '/settings', query: { editProfile: true } })">
+                  Edit profile <img src="@/assets/sources/icons/check-verified.svg" alt="check-verified icon">
+                </v-btn>
+              </v-card>
+  
+              <v-card class="card divcol mb-4" style="background-color: #F9FAFB!important;">
+                <h5 class="acenter"><img src="@/assets/sources/icons/marketplace-black.svg" alt="Marketplace" class="mr-4" style="width: 20px;">Marketplace</h5>
+                <p class="p12">Discover new opportunities in the renewable energy marketplace. Buy, sell, and trade with ease.</p>
+                <v-btn class="btn btn-max-content"
+                @click="$router.push({ path: '/marketplace' })"
+                >Go to marketplace <img src="@/assets/sources/icons/coins.svg" alt="coins icon"></v-btn>
+              </v-card>
+
+              <v-card class="card divcol mb-4" style="background-color: #F9FAFB!important;">
                 <h5>Quick links</h5>
                 <span class="mb-2 d-flex flex-acenter" style="color: #00555B; font-size: 12px; gap: 5px">
                   <img src="@/assets/sources/icons/file.svg" alt="file icon">
@@ -63,22 +89,6 @@
                   <img src="@/assets/sources/icons/headphones.svg" alt="headphones icon">
                   Support
                 </span>
-              </v-card>
-  
-              <v-card class="card divcol mb-4" style="background-color: #F9FAFB!important; min-height: 200px!important;">
-                <h5 class="acenter"><img src="@/assets/sources/icons/account-multiple.svg" alt="Account" class="mr-4" style="width: 20px;">Profile</h5>
-                <p class="p12">Access and edit your profile information.</p>
-                <v-btn class="btn btn-max-content" @click="$router.push({ path: '/settings', query: { editProfile: true } })">
-                  Edit profile <img src="@/assets/sources/icons/check-verified.svg" alt="check-verified icon">
-                </v-btn>
-              </v-card>
-  
-              <v-card class="card divcol mb-4" style="background-color: #F9FAFB!important; min-height: 200px!important;">
-                <h5 class="acenter"><img src="@/assets/sources/icons/marketplace-black.svg" alt="Marketplace" class="mr-4" style="width: 20px;">Marketplace</h5>
-                <p class="p12">Discover new opportunities in the renewable energy marketplace. Buy, sell, and trade with ease.</p>
-                <v-btn class="btn btn-max-content"
-                @click="$router.push({ path: '/marketplace' })"
-                >Go to marketplace <img src="@/assets/sources/icons/coins.svg" alt="coins icon"></v-btn>
               </v-card>
             </v-col>
           </v-row>
@@ -387,6 +397,7 @@
   import { UserProfileModel } from '@/models/user-profile-model'
   import { AgentCanister } from '@/repository/agent-canister'
   import { useToast } from 'vue-toastification'
+  import ModalImportIrecs from '@/components/modals/modal-import-irecs.vue'
   import { ref } from 'vue'
   
   export default {
@@ -394,6 +405,7 @@
       apexchart: VueApexCharts,
       RenewableChart,
       MwhChart,
+      ModalImportIrecs,
       // IrecChart
     },
     setup(){
