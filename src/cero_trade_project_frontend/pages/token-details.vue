@@ -1142,17 +1142,6 @@ import '@/assets/styles/pages/token-details.scss'
 import ModalApprove from '@/components/modals/modal-approve.vue'
 import countries from '@/assets/sources/json/countries-all.json'
 import Apexchart from "vue3-apexcharts"
-import SphereIcon from '@/assets/sources/companies/sphere.svg'
-import KapidagIcon from '@/assets/sources/companies/kapidag.svg'
-import SisyphusIcon from '@/assets/sources/companies/sisyphus.svg'
-import FocalPointIcon from '@/assets/sources/companies/focal-point.svg'
-import SilverStoneIcon from '@/assets/sources/companies/silverstone.svg'
-import GeneralElectricIcon from '@/assets/sources/companies/general-electric.svg'
-import BlueSkyIcon from '@/assets/sources/companies/bluesky.svg'
-import ZenithIcon from '@/assets/sources/companies/zenith.svg'
-import LibertyIcon from '@/assets/sources/companies/liberty.svg'
-import SunshineIcon from '@/assets/sources/companies/sunshine.svg'
-import PrimeIcon from '@/assets/sources/companies/prime.svg'
 
 import HydroEnergyIcon from '@/assets/sources/energies/hydro.svg'
 import OceanEnergyIcon from '@/assets/sources/energies/ocean.svg'
@@ -1173,6 +1162,7 @@ import { useToast } from 'vue-toastification'
 import variables from '@/mixins/variables'
 import { closeLoader, convertE8SToICP, showLoader, maxDecimals, shortPrincipalId } from '@/plugins/functions'
 import { Principal } from '@dfinity/principal'
+import { UserProfileModel } from '@/models/user-profile-model'
 
 const
   route = useRoute(),
@@ -1180,19 +1170,6 @@ const
   toast = useToast(),
   { globalRules, ceroComisison } = variables,
 
-companies = ref({
-  'Sphere': SphereIcon,
-  'KAPIDAĞ RES': KapidagIcon,
-  'Sisyphus': SisyphusIcon,
-  'Focal Point': FocalPointIcon,
-  'SIlverstone': SilverStoneIcon,
-  'General Electric': GeneralElectricIcon,
-  'BlueSky': BlueSkyIcon,
-  'Zenith': ZenithIcon,
-  'Liberty': LibertyIcon,
-  'Sunshine': SunshineIcon,
-  'Prime': PrimeIcon,
-}),
 energiesColored = {
   hydro: HydroEnergyColorIcon,
   ocean: OceanEnergyIcon,
@@ -1422,6 +1399,7 @@ watch(dialogRedeem, (value) => {
 
 
 onBeforeMount(() => {
+  console.log(UserProfileModel.get().country);
   getData()
 
   const input = route.query.input
