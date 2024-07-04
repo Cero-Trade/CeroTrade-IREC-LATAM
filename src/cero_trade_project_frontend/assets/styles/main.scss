@@ -19,3 +19,19 @@
 .v-data-table-footer__pagination {
   display: none !important;
 }
+
+.loader-chip {
+  --loader-color: #B54708;
+  --loader-bg-color: #FEC84B;
+
+  border: 1.5px solid var(--loader-bg-color) !important;
+  min-height: 76px !important;
+
+  div > span {
+    color: var(--loader-color) !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+
+    ~ span { font-weight: 400 !important }
+  }
+}

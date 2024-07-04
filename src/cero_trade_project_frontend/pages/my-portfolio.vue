@@ -255,8 +255,6 @@
 <script setup>
 import '@/assets/styles/pages/my-portfolio.scss'
 import countries from '@/assets/sources/json/countries-all.json'
-import checkboxCheckedIcon from '@/assets/sources/icons/checkbox-checked.svg'
-import checkboxBaseIcon from '@/assets/sources/icons/checkbox-base.svg'
 import RenewableChart from "@/components/renewable-chart.vue"
 import HydroEnergyIcon from '@/assets/sources/energies/hydro-color.svg'
 import OceanEnergyIcon from '@/assets/sources/energies/ocean.svg'
