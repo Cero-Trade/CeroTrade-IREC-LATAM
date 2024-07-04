@@ -175,7 +175,7 @@ const
   toast = useToast(),
   { globalRules } = variables,
 
-model = ref(true),
+model = ref(false),
 windowStep = ref(1),
 formValid = ref(false),
 accountNumber = ref(null),
