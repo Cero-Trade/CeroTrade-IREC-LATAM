@@ -24,7 +24,7 @@
         <v-btn
           class="bg-tertiary text-white flex-grow-1"
           :disabled="loading"
-          @click="hasCancelEmit ? emit('decline') : model = false"
+          @click="hasCancelEmit ? emit('decline', modelParameter) : model = false"
         >Decline</v-btn>
 
         <v-btn
@@ -70,6 +70,7 @@ const
   { ceroComisison } = variables,
 
 model = ref(false),
+modelParameter = ref(null),
 loading = ref(false),
 hasCancelEmit = !!instance?.vnode.props?.onCancel,
 
@@ -77,11 +78,15 @@ tokenId = computed(() => props.tokenId),
 totalInICP = computed(() => convertE8SToICP(convertICPToE8S(props.amountInIcp) + props.feeTxInE8s + ceroComisison)),
 totalInE8S = computed(() => convertICPToE8S(props.amountInIcp) + props.feeTxInE8s + ceroComisison)
 
+function showModal(parameter) {
+  modelParameter.value = parameter
+  model.value = true
+}
 
-defineExpose({ model })
+defineExpose({ model, showModal })
 
 watch(model, (value) => {
-  if (!value) emit('close')
+  if (!value) emit('close', modelParameter.value)
 })
 
 
@@ -99,7 +104,7 @@ async function approve() {
     model.value = false
     toast.info(`You have approved to spend ${totalInICP.value} ICP`)
 
-    emit('approve')
+    emit('approve', modelParameter.value)
   } catch (error) {
     loading.value = false
     toast.error(error)

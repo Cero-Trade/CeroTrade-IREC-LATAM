@@ -128,10 +128,34 @@ actor class Agent() = this {
   };
 
 
-  // TODO checkout security
   /// update beneficiaries
-  public shared({ caller }) func updateBeneficiaries(beneficiaryId: T.BID, deleteBeneficiary: { delete: Bool }): async() {
-    await UserIndex.updateBeneficiaries(caller, beneficiaryId, deleteBeneficiary);
+  public shared({ caller }) func addBeneficiaryRequested(notificationId: T.NotificationId): async() {
+    // check if user exists
+    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
+
+    let (_, notification) = await NotificationIndex.getNotification(notificationId);
+
+    // validate notification provided
+    switch(notification.eventStatus) {
+      case(null) throw Error.reject("notification is not executable");
+      case(?event) {
+        switch(event) {
+          case(#pending(status)) {};
+          case(#declined(status)) throw Error.reject("notification status is " # status);
+          case(#accepted(status)) throw Error.reject("notification status is " # status);
+        };
+      };
+    };
+
+    let triggeredBy = switch(notification.triggeredBy) {
+      case(null) throw Error.reject("triggeredBy field cannot be null");
+      case(?value) value;
+    };
+
+    await UserIndex.updateBeneficiaries(notification.receivedBy, triggeredBy, { delete = false });
+
+    // change notification status
+    let _ = await _updateEventNotification(caller, notificationId, ?#accepted("accepted"));
   };
 
 
@@ -140,6 +164,7 @@ actor class Agent() = this {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
+    // send beneficiary notification
     await _addNotification({
       id = "0";
       title = "Beneficiary request";
@@ -566,11 +591,15 @@ actor class Agent() = this {
   };
 
 
-  public shared({ caller }) func requestRedeemToken(tokenId: T.TokenId, quantity: T.TokenAmount, beneficiary: T.BID): async() {
+  public shared({ caller }) func requestRedeemToken(tokenId: T.TokenId, quantity: T.TokenAmount, beneficiary: T.BID): async T.TxIndex {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
-    await _addNotification( {
+    // hold tokens until beneficiary performe redemption
+    let txIndex = await TokenIndex.requestRedeem(caller, tokenId, quantity, { returns = false });
+
+    // send redemption notification to beneficiary
+    await _addNotification({
       id = "0";
       title = "Redemption request";
       content = null;
@@ -583,11 +612,77 @@ actor class Agent() = this {
       status = null;
       eventStatus = ?#pending("pending");
     });
+
+    txIndex
   };
 
+  // redeem certificate by burning user tokens
+  public shared({ caller }) func redeemTokenRequested(notificationId: T.NotificationId): async T.TransactionInfo {
+    // check if user exists
+    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
+
+    // get redemption notification
+    let (_, notification) = await NotificationIndex.getNotification(notificationId);
+
+    // validate notification provided
+    switch(notification.eventStatus) {
+      case(null) throw Error.reject("notification is not executable");
+      case(?event) {
+        switch(event) {
+          case(#pending(status)) {};
+          case(#declined(status)) throw Error.reject("notification status is " # status);
+          case(#accepted(status)) throw Error.reject("notification status is " # status);
+        };
+      };
+    };
+
+    let tokenId = switch(notification.tokenId) {
+      case(null) throw Error.reject("tokenId not provided");
+      case(?value) value;
+    };
+    let quantity = switch(notification.quantity) {
+      case(null) throw Error.reject("quantity id not provided");
+      case(?value) value;
+    };
+
+    // redeem tokens
+    let txIndex = await TokenIndex.redeemRequested(notification);
+
+    // build transaction
+    let txInfo: T.TransactionInfo = {
+      transactionId = "0";
+      txIndex;
+      from = caller;
+      to = ?caller;
+      tokenId;
+      txType = #redemption("redemption");
+      tokenAmount = quantity;
+      priceE8S = ?{ e8s = T.getCeroComission() + 20_000 };
+      date = DateTime.now().toText();
+      method = #blockchainTransfer("blockchainTransfer");
+    };
+
+    // register transaction
+    let txId = await TransactionIndex.registerTransaction(txInfo);
+
+    // update receiver user transactions
+    await UserIndex.updateTransactions(notification.receivedBy, txId);
+
+    // update trigger user transactions
+    let triggeredBy = switch(notification.triggeredBy) {
+      case(null) throw Error.reject("triggeredBy not provided");
+      case(?value) value;
+    };
+    await UserIndex.updateTransactions(triggeredBy, txId);
+
+    // change notification status
+    let _ = await _updateEventNotification(caller, notificationId, ?#accepted("accepted"));
+
+    { txInfo with transactionId = txId }
+  };
 
   // redeem certificate by burning user tokens
-  public shared({ caller }) func redeemToken(tokenId: T.TokenId, quantity: T.TokenAmount, beneficiary: ?T.BID): async T.TransactionInfo {
+  public shared({ caller }) func redeemToken(tokenId: T.TokenId, quantity: T.TokenAmount): async T.TransactionInfo {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
@@ -608,10 +703,7 @@ actor class Agent() = this {
       transactionId = "0";
       txIndex;
       from = caller;
-      to = switch(beneficiary) {
-        case(null) ?caller;
-        case(?value) ?value;
-      };
+      to = ?caller;
       tokenId;
       txType = #redemption("redemption");
       tokenAmount = quantity;
@@ -768,10 +860,17 @@ actor class Agent() = this {
   };
 
   // update event notification
-  public shared({ caller }) func updateEventNotification(notification: T.NotificationInfo, eventStatus: ?T.NotificationEventStatus): async() {
-    let receiverToken = await UserIndex.getUserToken(caller);
+  public shared({ caller }) func updateEventNotification(notificationId: T.NotificationId, eventStatus: ?T.NotificationEventStatus): async ?T.TxIndex {
+    await _updateEventNotification(caller, notificationId, eventStatus);
+  };
 
-    let triggerToken: ?T.UserToken = switch(notification.triggeredBy) {
+  // helper function to performe updateEventNotification
+  private func _updateEventNotification(caller: T.UID, notificationId: T.NotificationId, eventStatus: ?T.NotificationEventStatus): async ?T.TxIndex {
+    let (cid, notification) = await NotificationIndex.getNotification(notificationId);
+
+    let receiver = await UserIndex.getUserToken(notification.receivedBy);
+
+    let trigger: ?T.UserToken = switch(notification.triggeredBy) {
       case(null) null;
       case(?triggerUser) {
         if (notification.notificationType == #general("general")) { null } else {
@@ -781,6 +880,20 @@ actor class Agent() = this {
       };
     };
 
-    await NotificationIndex.updateEventNotification(receiverToken, triggerToken, notification.id, eventStatus);
+    let triggerHasCancel = await NotificationIndex.updateEventNotification(caller, { receiver; trigger }, (cid, notification), eventStatus);
+    if (not triggerHasCancel) return null;
+
+    let tokenId = switch(notification.tokenId) {
+      case(null) throw Error.reject("tokenId not provided");
+      case(?value) value;
+    };
+    let quantity = switch(notification.quantity) {
+      case(null) throw Error.reject("quantity not provided");
+      case(?value) value;
+    };
+
+    // return tokens holded on token canister if trigger performe cancelation
+    let txIndex = await TokenIndex.requestRedeem(caller, tokenId, quantity, { returns = true });
+    ?txIndex
   };
 }

@@ -574,6 +574,72 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     };
   };
 
+  public shared ({ caller }) func requestRedeem(owner: T.UID, tokenId: T.TokenId, amount: T.TokenAmount, { returns: Bool }) : async T.TxIndex {
+    _callValidation(caller);
+
+    let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
+      case (null) throw Error.reject("Token not found");
+      case (?cid) await Token.canister(cid).requestRedeem({
+        owner = {
+          owner = owner;
+          subaccount = null;
+        };
+        amount;
+      }, { returns });
+    };
+
+    switch(transferResult) {
+      case(#Err(error)) throw Error.reject(switch(error) {
+        case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
+        case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
+        case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
+        case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
+        case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
+        case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
+        case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
+        case (#TooOld) "#TooOld";
+      });
+      case(#Ok(value)) value;
+    };
+  };
+
+  public shared({ caller }) func redeemRequested(notification: T.NotificationInfo): async T.TxIndex {
+    _callValidation(caller);
+
+    let tokenId = switch(notification.tokenId) {
+      case(null) throw Error.reject("tokenId not provided");
+      case(?value) value;
+    };
+    let amount = switch(notification.quantity) {
+      case(null) throw Error.reject("quantity not provided");
+      case(?value) value;
+    };
+
+    let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
+      case (null) throw Error.reject("Token not found");
+      case (?cid) await Token.canister(cid).redeemRequested({
+        owner = {
+          owner = notification.receivedBy;
+          subaccount = null;
+        };
+        amount;
+      });
+    };
+
+    switch(transferResult) {
+      case(#Err(error)) throw Error.reject(switch(error) {
+        case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
+        case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
+        case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
+        case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
+        case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
+        case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
+        case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
+        case (#TooOld) "#TooOld";
+      });
+      case(#Ok(value)) value;
+    };
+  };
 
   public shared({ caller }) func redeem(owner: T.UID, tokenId: T.TokenId, amount: T.TokenAmount): async T.TxIndex {
     _callValidation(caller);

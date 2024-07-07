@@ -35,6 +35,16 @@ shared({ caller = notificationIndexCaller }) actor class Notifications() {
   };
 
   // get notifications on cero trade
+  public shared({ caller }) func getNotification(notificationId: T.NotificationId): async T.NotificationInfo {
+    _callValidation(caller);
+
+    switch(notifications.get(notificationId)) {
+      case(null) throw Error.reject("Notification not found");
+      case(?value) value;
+    };
+  };
+
+  // get notifications on cero trade
   public shared({ caller }) func getNotifications(notificationIds: [T.NotificationId]): async [T.NotificationInfo] {
     _callValidation(caller);
 

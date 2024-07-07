@@ -210,9 +210,9 @@ export class AgentCanister {
     }
   }
 
-  static async updateBeneficiaries(beneficiaryId: Principal, { remove }: { remove: boolean }): Promise<void> {
+  static async addBeneficiaryRequested(notificationId: string): Promise<void> {
     try {
-      await agent().updateBeneficiaries(beneficiaryId, { "delete": remove })
+      await agent().addBeneficiaryRequested(notificationId)
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)
@@ -395,9 +395,19 @@ export class AgentCanister {
   }
 
 
-  static async redeemToken(tokenId: string, amount: number, beneficiary?: Principal): Promise<TransactionInfo> {
+  static async redeemTokenRequested(notificationId: string): Promise<void> {
     try {
-      const tx = await agent().redeemToken(tokenId, amount, beneficiary ? [beneficiary] : []) as TransactionInfo
+      await agent().redeemTokenRequested(notificationId)
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+
+  static async redeemToken(tokenId: string, amount: number): Promise<TransactionInfo> {
+    try {
+      const tx = await agent().redeemToken(tokenId, amount) as TransactionInfo
       tx.txType = Object.values(tx.txType)[0] as TxTypeDef
       tx.to = Object.values(tx.to)[0] as string
 
@@ -527,22 +537,9 @@ export class AgentCanister {
   };
 
   // update event notification
-  static async updateEventNotification(notification: NotificationInfo, receiverEventStatus?: NotificationEventStatusDef): Promise<void> {
+  static async updateEventNotification(notificationId: string, receiverEventStatus?: NotificationEventStatusDef): Promise<void> {
     try {
-      await agent().updateEventNotification({
-        id: notification.id,
-        title: notification.title,
-        content: notification.content ? [notification.content] : [],
-        notificationType: {[notification.notificationType]: notification.notificationType},
-        createdAt: moment(notification.createdAt).format(variables.dateFormat),
-        status: notification.status ? [{[notification.status]: notification.status}] : [],
-      
-        eventStatus: notification.eventStatus ? [{[notification.eventStatus]: notification.eventStatus}] : [],
-        tokenId: notification.tokenId ? [notification.tokenId] : [],
-        receivedBy: notification.receivedBy,
-        triggeredBy: notification.triggeredBy ? [notification.triggeredBy] : [],
-        quantity: notification.quantity ? [notification.quantity] : [],
-      }, receiverEventStatus ? [{[receiverEventStatus]: receiverEventStatus}] : [])
+      await agent().updateEventNotification(notificationId, receiverEventStatus ? [{[receiverEventStatus]: receiverEventStatus}] : [])
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)

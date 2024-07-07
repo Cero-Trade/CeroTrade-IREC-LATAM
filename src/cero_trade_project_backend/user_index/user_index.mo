@@ -545,6 +545,49 @@ actor class UserIndex() = this {
   };
 
 
+  /// get beneficiary
+  public shared({ caller }) func getBeneficiary(uid: T.UID, beneficiaryId: T.BID): async T.UserProfile {
+    _callValidation(caller);
+
+    var beneficiaryIds: [T.BID] = switch(usersDirectory.get(uid)) {
+      case (null) throw Error.reject(notExists);
+      case(?cid) await Users.canister(cid).getBeneficiaries(uid);
+    };
+    beneficiaryIds := Array.filter<T.BID>(beneficiaryIds, func x = x == beneficiaryId);
+
+    if (beneficiaryIds.size() == 0) throw Error.reject("Beneficiary not found");
+
+    // TODO this endpoint is temporary
+    let beneficiary = await HttpService.post({
+        url = HT.apiUrl # "users/retrieve-list";
+        port = null;
+        headers = [];
+        bodyJson = switch(Serde.JSON.toText(to_candid({
+          principalIds = Array.map<T.BID, Text>(beneficiaryIds, func x = Principal.toText(x))
+        }), ["principalIds"], null)) {
+          case(#err(error)) throw Error.reject("Cannot serialize data");
+          case(#ok(value)) value;
+        };
+      });
+
+
+    switch(Serde.JSON.fromText(beneficiary, null)) {
+      case(#err(_)) throw Error.reject("cannot serialize profile data");
+
+      case(#ok(blob)) {
+        let profileParts: ?[ProfilePart] = from_candid(blob);
+
+        let beneficiary = switch(profileParts) {
+          case(null) throw Error.reject("cannot serialize profile data");
+          case(?profiles) await buildUserProfiles(profiles);
+        };
+
+        beneficiary[0]
+      };
+    };
+  };
+
+
   // build [T.UserProfile] array from [ProfilePart]
   private func buildUserProfiles(profiles: [ProfilePart]): async [T.UserProfile] {
     let users = Buffer.Buffer<(Text, T.CompanyLogo)>(16);

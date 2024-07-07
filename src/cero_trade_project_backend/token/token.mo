@@ -618,6 +618,84 @@ shared ({ caller = _owner }) actor class Token(
     };
   };
 
+  public shared ({ caller }) func requestRedeem(args : T.RedeemArgs, { returns: Bool }) : async ICRC1.TransferResult {
+    _callValidation(caller);
+
+    let user = {
+      owner = args.owner.owner;
+      subaccount = switch (args.owner.subaccount) {
+        case (null) null;
+        case (?value) ?Blob.fromArray(value);
+      }
+    };
+    let canister = {
+      owner = Principal.fromActor(this);
+      subaccount = null;
+    };
+
+    let from = switch(returns) {
+      case(false) user;
+      case(true) canister;
+    };
+    let to = switch(returns) {
+      case(false) canister;
+      case(true) user;
+    };
+
+    switch (
+      await* icrc1().transfer_tokens(
+        from.owner,
+        {
+          from_subaccount = from.subaccount;
+          to;
+          amount = args.amount;
+          fee = null;
+          memo = null;
+          /// The time at which the transaction was created.
+          /// If this is set, the canister will check for duplicate transactions and reject them.
+          created_at_time = ?time64();
+        },
+        false,
+        null,
+      )
+    ) {
+      case (#trappable(val)) val;
+      case (#awaited(val)) val;
+      case (#err(#trappable(err))) D.trap(err);
+      case (#err(#awaited(err))) D.trap(err);
+    };
+  };
+
+  public shared ({ caller }) func redeemRequested(args : T.RedeemArgs) : async ICRC1.TransferResult {
+    _callValidation(caller);
+
+    // performe comission
+    let _comisison_block = switch (await ICPTypes.ICPLedger.icrc2_transfer_from({ from = args.owner; to = init_args.comissionHolder; fee = null; spender_subaccount = null; memo = null; created_at_time = ?time64(); amount = init_args.comission })) {
+      case (#Ok(block)) block;
+      case (#Err(err)) {
+        D.trap("cannot performe comission from failed" # debug_show (err));
+      };
+    };
+
+    switch (
+      await* icrc1().burn_tokens(
+        Principal.fromActor(this),
+        {
+          from_subaccount = null;
+          amount = args.amount;
+          memo = null;
+          created_at_time = ?time64();
+        },
+        false,
+      )
+    ) {
+      case (#trappable(val)) val;
+      case (#awaited(val)) val;
+      case (#err(#trappable(err))) D.trap(err);
+      case (#err(#awaited(err))) D.trap(err);
+    };
+  };
+
   public shared ({ caller }) func redeem(args : T.RedeemArgs) : async ICRC1.TransferResult {
     _callValidation(caller);
 

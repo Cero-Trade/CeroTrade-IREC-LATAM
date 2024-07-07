@@ -1,5 +1,4 @@
 <template>
-  <!-- TODO validate flow about icp spend -->
   <modal-approve
     ref="modalApprove"
     :token-id="tokenId"
@@ -12,6 +11,13 @@
         redeemToken()
     }"
   ></modal-approve>
+
+  <modal-confirm
+    ref="modalRequestRedeem"
+    title="Do you want to send redeem request"
+    :content="`you agree to send a request to ${beneficiaries?.find(e => e.principalId === redeemBeneficiary)?.companyName ?? 'your beneficiary'} to redeem ${(tokenAmount ?? 0) > 1 ? 'tokens' : 'token'} in his name`"
+    @accept="requestRedeemToken"
+  />
 
   <div id="token-details">
     <span class="mb-10 acenter" style="color: #475467; font-size: 16px; font-weight: 700;">
@@ -640,7 +646,14 @@
             <v-btn class="btn" @click="async () => {
               if (!(await formRedeem.validate()).valid) return
 
-              modalApprove.model = true
+              // if beneficiary provided
+              if (redeemBeneficiary) {
+                modalRequestRedeem.model = true
+
+              // if beneficiary not provided
+              } else {
+                modalApprove.model = true
+              }
             }" style="border: none!important;">Redeem</v-btn>
           </div>
         </v-card>
@@ -1341,6 +1354,7 @@ filters = ref({
 previewSeller = ref(null),
 
 modalApprove = ref(),
+modalRequestRedeem = ref(),
 
 
 tokenId = computed(() => route.query.tokenId),
@@ -1562,33 +1576,38 @@ async function takeOffMarket() {
   }
 }
 
-// TODO validate flow about icp spend
+async function requestRedeemToken() {
+  modalRequestRedeem.value.model = false
+  showLoader()
+
+  try {
+    await AgentCanister.requestRedeemToken(tokenId.value, Number(tokenAmount.value), Principal.fromText(redeemBeneficiary.value))
+    closeLoader()
+    dialogRedeem.value = false;
+    dialogRedeemCertificates.value = false;
+
+    toast.success(`you have send redemption request to beneficiary ${beneficiaries.value.find(e => e.principalId === redeemBeneficiary.value).companyName}`)
+  } catch (error) {
+    closeLoader()
+    console.error(error);
+    toast.error(error)
+  }
+}
+
 async function redeemToken() {
   showLoader()
 
   try {
-    // if beneficiary provided
-    if (redeemBeneficiary.value) {
-      await AgentCanister.requestRedeemToken(tokenId.value, Number(tokenAmount.value), Principal.fromText(redeemBeneficiary.value))
+    const tx = await AgentCanister.redeemToken(tokenId.value, Number(tokenAmount.value), null)
 
-      closeLoader()
-      dialogRedeem.value = false;
-      dialogRedeemCertificates.value = false;
+    await getData()
 
-      toast.success(`you have send redemption request to beneficiary ${redeemBeneficiary.value.companyName}`)
-    } else {
-      // if beneficiary not provided
-      const tx = await AgentCanister.redeemToken(tokenId.value, Number(tokenAmount.value), null)
+    closeLoader()
+    dialogRedeem.value = false;
+    dialogRedeemCertificates.value = false;
 
-      await getData()
-
-      closeLoader()
-      dialogRedeem.value = false;
-      dialogRedeemCertificates.value = false;
-
-      console.log("redeem token", tx);
-      toast.success(`you have redeemed ${tokenAmount.value} tokens`)
-    }
+    console.log("redeem token", tx);
+    toast.success(`you have redeemed ${tokenAmount.value} tokens`)
   } catch (error) {
     closeLoader()
     console.error(error);

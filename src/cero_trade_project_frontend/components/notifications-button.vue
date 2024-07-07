@@ -1,4 +1,11 @@
 <template>
+  <modal-approve
+    ref="modalApprove"
+    :token-id="currentNotificationEvent?.tokenId"
+    @approve="redeemRequested"
+    @close="loadingExecute = null"
+  ></modal-approve>
+
   <v-menu v-model="menuNotifications" width="400" height="498" offset="10" location="bottom center" content-class="notifications-menu" :close-on-content-click="false">
     <template #activator="{ props }">
       <v-badge v-model="showBadge" color="rgb(var(--v-theme-primary))">
@@ -122,7 +129,7 @@
                   >{{ isReceiver(item) ? 'Decline' : 'Dismiss' }}</v-btn>
 
                   <v-btn
-                    v-if="isReceiver(item)"
+                    v-if="isReceiver(item) && item.eventStatus === NotificationEventStatus.pending"
                     height="28"
                     min-height="28"
                     width="min-content"
@@ -146,12 +153,14 @@
 </template>
 
 <script setup>
+import ModalApprove from '@/components/modals/modal-approve.vue'
 import { NotificationEventStatus, NotificationStatus, NotificationType } from '@/models/notifications-model';
 import { UserProfileModel } from '@/models/user-profile-model';
 import { AgentCanister } from '@/repository/agent-canister';
 import { computed, onBeforeMount, ref, watch } from 'vue';
 import { useToast } from 'vue-toastification';
 import moment from 'moment'
+import { closeLoader, showLoader } from '@/plugins/functions';
 
 const
   toast = useToast(),
@@ -175,7 +184,11 @@ tabs = ref([
 loadingSeen = ref(false),
 loadingClear = ref(false),
 loadingDismiss = ref(null),
-loadingExecute = ref(null)
+loadingExecute = ref(null),
+
+modalApprove = ref(),
+
+currentNotificationEvent = computed(() => tabs.value[1].data?.find(e => e.id === loadingExecute.value))
 
 
 function isReceiver(item) {
@@ -277,7 +290,7 @@ async function dismiss(item) {
     if (item.notificationType === NotificationType.general) {
       await AgentCanister.clearGeneralNotifications([item.id])
     } else {
-      await AgentCanister.updateEventNotification(item, isReceiver(item) ? NotificationEventStatus.declined : null)
+      await AgentCanister.updateEventNotification(item.id, NotificationEventStatus.declined)
     }
 
     const index = tabs.value[currentTab.value].data.findIndex(e => e.id === item.id)
@@ -296,19 +309,13 @@ async function execute(item) {
   try {
     switch (item.notificationType) {
 
-      case NotificationType.beneficiary: {
-        await AgentCanister.updateBeneficiaries(item.triggeredBy, { remove: false })
-        await AgentCanister.updateEventNotification(item, NotificationEventStatus.accepted)
-      } break;
+      case NotificationType.beneficiary:
+          await AgentCanister.addBeneficiaryRequested(item.id)
+        break;
 
-
-      case NotificationType.redeem: {
-        // TODO here
-        console.log("execute redeem");
-
-        // await AgentCanister.redeemToken()
-        await AgentCanister.updateEventNotification(item, NotificationEventStatus.accepted)
-      } break;
+      case NotificationType.redeem:
+          modalApprove.value.showModal(item)
+        return;
     }
 
     const index = tabs.value[currentTab.value].data.findIndex(e => e.id === item.id)
@@ -319,6 +326,21 @@ async function execute(item) {
   }
 
   loadingExecute.value = null
+}
+
+async function redeemRequested(item) {
+  showLoader()
+
+  try {
+    await AgentCanister.redeemTokenRequested(item.id)
+
+    const index = tabs.value[currentTab.value].data.findIndex(e => e.id === item.id)
+    tabs.value[currentTab.value].data.splice(index, 1)
+  } catch (error) {
+    toast.error(error.toString())
+  }
+
+  closeLoader()
 }
 </script>
 

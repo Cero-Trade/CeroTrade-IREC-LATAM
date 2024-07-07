@@ -8,6 +8,7 @@ module NotificationsInterface {
 
   public type Notifications = actor {
     length: query () -> async Nat;
+    getNotification: (T.NotificationId) -> async T.NotificationInfo;
     getNotifications: ([T.NotificationId]) -> async [T.NotificationInfo];
     addNotification: (notification: T.NotificationInfo) -> async T.NotificationId;
     updateGeneral: (notificationIds: [T.NotificationId]) -> async();
