@@ -15,7 +15,10 @@ If you havent nns extension installed run:
 `dfx extension install nns`
 
 * You can run this proyect locally by run below script:
-`npm run deploy modules nns`
+```
+dfx start
+npm run deploy modules nns
+```
 
 
 * Also can try manually following these steps:
