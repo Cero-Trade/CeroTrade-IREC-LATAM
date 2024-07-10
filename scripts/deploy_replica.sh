@@ -4,6 +4,10 @@
 firstArg=$1
 secondArg=$2
 
+# Change identity to `default`
+echo "Change identity to `default`"
+dfx identity use default
+
 # Deploy nns canisters
 if [ "$firstArg" = "nns" ] || [ "$secondArg" = "nns" ]; then
   echo "====-Deploy nns canisters-===="
