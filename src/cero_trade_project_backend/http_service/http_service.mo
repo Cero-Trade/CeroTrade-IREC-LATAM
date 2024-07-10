@@ -8,7 +8,6 @@ import Iter "mo:base/Iter";
 import Buffer "mo:base/Buffer";
 import Source "mo:uuid/async/SourceV4";
 import UUID "mo:uuid/UUID";
-import Debug "mo:base/Debug";
 
 // types
 import HT "./http_service_types";
