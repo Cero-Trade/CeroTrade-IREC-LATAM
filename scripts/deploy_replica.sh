@@ -5,7 +5,8 @@ firstArg=$1
 secondArg=$2
 
 # Change identity to `default`
-echo "====-Change identity to default-===="
+echo "====-Change identity to default and branch to develop-===="
+git checkout develop
 dfx identity use default
 
 # Deploy nns canisters
