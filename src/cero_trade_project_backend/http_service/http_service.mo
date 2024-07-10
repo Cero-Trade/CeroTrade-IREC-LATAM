@@ -2,15 +2,34 @@ import Blob "mo:base/Blob";
 import Cycles "mo:base/ExperimentalCycles";
 import Array "mo:base/Array";
 import Nat8 "mo:base/Nat8";
+import Nat64 "mo:base/Nat64";
 import Text "mo:base/Text";
 import Iter "mo:base/Iter";
 import Buffer "mo:base/Buffer";
+import Source "mo:uuid/async/SourceV4";
+import UUID "mo:uuid/UUID";
 
 // types
 import HT "./http_service_types";
 
 //Actor
 actor HttpService {
+
+  // Generate idempotency Key
+  private func generateUUID() : async Text {
+    let g = Source.Source();
+    UUID.toText(await g.new());
+  };
+
+  // get url host
+  private func getHost(url: Text): Text {
+    let urlParts = Text.split(url, #char '/');
+    let urlPartsList = Iter.toArray(urlParts);
+
+    let host: Text = urlPartsList[2];
+
+    host # HT.port
+  };
 
   private func _extractHost(url: Text): Text {
     let partsIter = Text.split(url, #char '/');
@@ -41,20 +60,25 @@ actor HttpService {
         },
         { name = "X-Frame-Options"; value = "DENY" },
         { name = "X-Content-Type-Options"; value = "nosniff" },
+        { name = "Access-Control-Allow-Origin"; value = HT.apiUrl }
       ];
     };
     transformed;
   };
 
-  private func _generateHeaders(url: Text, customHeaders: [HT.HttpHeader]) : [HT.HttpHeader] {
+  private func _generateHeaders({ url: Text; headers: [HT.HttpHeader] }) : async [HT.HttpHeader] {
+    //idempotency keys should be unique so create a function that generates them.
+    let idempotency_key: Text = await generateUUID();
+
     // prepare headers for the system http_request call
     let default_headers  = Buffer.fromArray<HT.HttpHeader>([
-      { name = "Host"; value = _extractHost(url) # HT.port },
+      { name = "Host"; value = getHost(url) },
       { name = "User-Agent"; value = HT.headerName },
       { name = "Content-Type"; value = "application/json" },
+      { name= "Idempotency-Key"; value = idempotency_key }
     ]);
 
-    default_headers.append(Buffer.fromArray<HT.HttpHeader>(customHeaders));
+    default_headers.append(Buffer.fromArray<HT.HttpHeader>(headers));
     Buffer.toArray<HT.HttpHeader>(default_headers);
   };
 
@@ -109,7 +133,7 @@ actor HttpService {
   };
 
 
-  public func get(url: Text, args: { headers: [HT.HttpHeader]; }) : async Text {
+  public func get(url: Text, { headers: [HT.HttpHeader]; }) : async Text {
     // SETUP ARGUMENTS FOR HTTP GET request
 
     // Transform context
@@ -120,9 +144,9 @@ actor HttpService {
 
     // The HTTP request
     let http_request : HT.HttpRequestArgs = {
-      url = url;
+      url;
       max_response_bytes = null; //optional for request
-      headers = _generateHeaders(url, args.headers);
+      headers = await _generateHeaders({ url; headers });
       body = null; //optional for request
       method = #get;
       transform = ?transform_context;
@@ -132,7 +156,7 @@ actor HttpService {
   };
 
 
-  public func post(url: Text, args: { headers: [HT.HttpHeader]; bodyJson: Text }) : async Text {
+  public func post(url: Text, { headers: [HT.HttpHeader]; bodyJson: Text }) : async Text {
     // SETUP ARGUMENTS FOR HTTP POST request
 
     // Transform context
@@ -141,14 +165,15 @@ actor HttpService {
       context = Blob.fromArray([]);
     };
 
-    let request_body_as_Blob: Blob = Text.encodeUtf8(args.bodyJson);
+    let request_body_as_Blob: Blob = Text.encodeUtf8(bodyJson);
     let request_body_as_nat8: [Nat8] = Blob.toArray(request_body_as_Blob);
 
     // The HTTP request
     let http_request : HT.HttpRequestArgs = {
-      url = url;
-      max_response_bytes = null; //optional for request
-      headers = _generateHeaders(url, args.headers);
+      url;
+      // TODO under testing, this could be null or Nat64.fromNat(1024 * 1024)
+      max_response_bytes = ?Nat64.fromNat(1024 * 1024); //optional for request
+      headers = await _generateHeaders({ url; headers });
       body = ?request_body_as_nat8; //provide body for POST request
       method = #post;
       transform = ?transform_context;
