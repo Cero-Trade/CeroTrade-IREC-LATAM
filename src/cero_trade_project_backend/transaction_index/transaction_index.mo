@@ -120,7 +120,7 @@ actor class TransactionIndex() = this {
 
     switch(cid) {
       case(?canister_id) {
-        Cycles.add<system>(20_949_972_000);
+        Cycles.add<system>(T.cycles);
         await IC_MANAGEMENT.ic.start_canister({ canister_id });
       };
       case(null) {
@@ -132,7 +132,7 @@ actor class TransactionIndex() = this {
         };
 
         for(canister_id in deployedCanisters.vals()) {
-          Cycles.add<system>(20_949_972_000);
+          Cycles.add<system>(T.cycles);
           await IC_MANAGEMENT.ic.start_canister({ canister_id });
         };
       };
@@ -147,7 +147,7 @@ actor class TransactionIndex() = this {
 
     switch(cid) {
       case(?canister_id) {
-        Cycles.add<system>(20_949_972_000);
+        Cycles.add<system>(T.cycles);
         await IC_MANAGEMENT.ic.stop_canister({ canister_id });
       };
       case(null) {
@@ -159,7 +159,7 @@ actor class TransactionIndex() = this {
         };
 
         for(canister_id in deployedCanisters.vals()) {
-          Cycles.add<system>(20_949_972_000);
+          Cycles.add<system>(T.cycles);
           await IC_MANAGEMENT.ic.stop_canister({ canister_id });
         };
       };
@@ -181,7 +181,7 @@ actor class TransactionIndex() = this {
   private func _createCanister<system>(): async ?T.CanisterId {
     Debug.print(debug_show ("before registerToken: " # Nat.toText(Cycles.balance())));
 
-    Cycles.add<system>(300_000_000_000);
+    Cycles.add<system>(T.cyclesCreateCanister);
     let { canister_id } = await IC_MANAGEMENT.ic.create_canister({
       settings = ?{
         controllers = switch(controllers) {

@@ -10,6 +10,7 @@ import Source "mo:uuid/async/SourceV4";
 import UUID "mo:uuid/UUID";
 
 // types
+import T "../types";
 import HT "./http_service_types";
 
 //Actor
@@ -100,7 +101,7 @@ actor HttpService {
     //The way Cycles.add() works is that it adds those cycles to the next asynchronous call
     //"Function add(amount) indicates the additional amount of cycles to be transferred in the next remote call"
     //See: https://internetcomputer.org/docs/current/references/ic-interface-spec/#ic-http_request
-    Cycles.add<system>(20_949_972_000);
+    Cycles.add<system>(T.cycles);
 
     // MAKE HTTPS REQUEST AND WAIT FOR RESPONSE
     //Since the cycles were added above, you can just call the management canister with HTTPS outcalls below

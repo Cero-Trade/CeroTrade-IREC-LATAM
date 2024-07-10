@@ -15,6 +15,9 @@ import ICPTypes "./ICPTypes";
 import ENV "./env";
 
 module {
+  public let cycles: Nat = 20_949_972_000;
+  public let cyclesCreateCanister: Nat = 100_000_000_000;
+
   // TODO try to change to simplest format to better filtering
   // global date format variable
   public let dateFormat: Text = "YYYY-MM-DDTHH:mm:ss.sssssssssZ";

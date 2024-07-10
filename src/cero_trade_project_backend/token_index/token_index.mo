@@ -133,7 +133,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       case(null) {
         Debug.print(debug_show ("before registerToken: " # Nat.toText(Cycles.balance())));
 
-        Cycles.add<system>(300_000_000_000);
+        Cycles.add<system>(T.cyclesCreateCanister);
         /// create canister
         let { canister_id } = await IC_MANAGEMENT.ic.create_canister({
           settings = ?{
@@ -223,7 +223,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     switch(tokenDirectory.get(tokenId)) {
       case(null) throw Error.reject("Token doesn't exists");
       case(?canister_id) {
-        Cycles.add<system>(20_949_972_000);
+        Cycles.add<system>(T.cycles);
         await IC_MANAGEMENT.ic.stop_canister({ canister_id });
         await IC_MANAGEMENT.ic.delete_canister({ canister_id });
         let _ = tokenDirectory.remove(tokenId)
@@ -245,7 +245,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     switch(tokenDirectory.get(tokenId)) {
       case(null) throw Error.reject("Token doesn't exists");
       case(?canister_id) {
-        Cycles.add<system>(20_949_972_000);
+        Cycles.add<system>(T.cycles);
         return await IC_MANAGEMENT.ic.canister_status({ canister_id });
       };
     };
@@ -259,12 +259,12 @@ shared({ caller = owner }) actor class TokenIndex() = this {
 
     switch(cid) {
       case(?canister_id) {
-        Cycles.add<system>(20_949_972_000);
+        Cycles.add<system>(T.cycles);
         await IC_MANAGEMENT.ic.start_canister({ canister_id });
       };
       case(null) {
         for(canister_id in tokenDirectory.vals()) {
-          Cycles.add<system>(20_949_972_000);
+          Cycles.add<system>(T.cycles);
           await IC_MANAGEMENT.ic.start_canister({ canister_id });
         };
       };
@@ -279,12 +279,12 @@ shared({ caller = owner }) actor class TokenIndex() = this {
 
     switch(cid) {
       case(?canister_id) {
-        Cycles.add<system>(20_949_972_000);
+        Cycles.add<system>(T.cycles);
         await IC_MANAGEMENT.ic.stop_canister({ canister_id });
       };
       case(null) {
         for(canister_id in tokenDirectory.vals()) {
-          Cycles.add<system>(20_949_972_000);
+          Cycles.add<system>(T.cycles);
           await IC_MANAGEMENT.ic.stop_canister({ canister_id });
         };
       };
