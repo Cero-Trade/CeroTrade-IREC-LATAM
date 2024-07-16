@@ -466,8 +466,12 @@ windowStepComputed = computed(() => {
   }
 }),
 
-redemptionsByMe = computed(() => redemptions.value.filter(e => e.redeemedBy === profile.value?.principalId.toString())),
-redemptionsToMe = computed(() => redemptions.value.filter(e => e.beneficiary === profile.value?.principalId.toString())),
+redemptionsByMe = computed(() => redemptions.value.filter(e => e.redeemedBy.toString() === profile.value?.principalId.toString())),
+redemptionsToMe = computed(() => redemptions.value.filter(e => {
+  const principalId = profile.value?.principalId.toString()
+
+  return e.redeemedBy.toString() !== principalId && e.beneficiary.toString() === principalId
+})),
 
 filteredRedemptions = computed(() => {
   switch (redemptionTabs.value[redemptionTab.value].value) {
@@ -494,7 +498,11 @@ renewableEnergies = computed(() => filteredRedemptions.value?.reduce((acc, item)
   return acc;
 }, []) ?? []),
 
-calcMwh = (redemptions) => redemptions.map(e => e.mwh).reduce((a, b) => a + b, 0)
+calcMwh = (redemptions) => {
+  console.log("redemptions -->", redemptions);
+
+  return redemptions.map(e => e.mwh).reduce((a, b) => a + b, 0)
+}
 
 
 watch(windowStepComputed, (newVal) => {
