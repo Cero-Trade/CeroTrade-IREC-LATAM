@@ -498,11 +498,7 @@ renewableEnergies = computed(() => filteredRedemptions.value?.reduce((acc, item)
   return acc;
 }, []) ?? []),
 
-calcMwh = (redemptions) => {
-  console.log("redemptions -->", redemptions);
-
-  return redemptions.map(e => e.mwh).reduce((a, b) => a + b, 0)
-}
+calcMwh = (redemptions) => redemptions.map(e => e.mwh).reduce((a, b) => a + b, 0)
 
 
 watch(windowStepComputed, (newVal) => {
