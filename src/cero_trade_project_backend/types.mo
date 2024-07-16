@@ -37,6 +37,7 @@ module {
   };
 
   public type UID = Principal;
+  public type EID = Text;
   public type CanisterId = Principal;
   public type TokenId = Text;
   public type TransactionId = Text;

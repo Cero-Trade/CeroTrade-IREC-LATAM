@@ -896,4 +896,9 @@ actor class Agent() = this {
     let txIndex = await TokenIndex.requestRedeem(caller, tokenId, quantity, { returns = true });
     ?txIndex
   };
+
+
+  public func getUnregisteredIrecs(evidentId: T.EID): async Any {
+    await TokenIndex.getUnregisteredIrecs(evidentId);
+  };
 }

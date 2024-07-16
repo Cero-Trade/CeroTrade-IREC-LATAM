@@ -12,6 +12,7 @@ import Int "mo:base/Int";
 import Iter "mo:base/Iter";
 import Time "mo:base/Time";
 import Buffer "mo:base/Buffer";
+import Serde "mo:serde";
 import Debug "mo:base/Debug";
 
 import ICRC1 "mo:icrc1-mo/ICRC1";
@@ -26,7 +27,7 @@ import ICPTypes "../ICPTypes";
 
 // types
 import T "../types";
-// import HT "../http_service/http_service_types";
+import HT "../http_service/http_service_types";
 import ENV "../env";
 
 shared({ caller = owner }) actor class TokenIndex() = this {
@@ -38,6 +39,68 @@ shared({ caller = owner }) actor class TokenIndex() = this {
 
   var tokenDirectory: HM.HashMap<T.TokenId, T.CanisterId> = HM.HashMap(16, Text.equal, Text.hash);
   stable var tokenDirectoryEntries : [(T.TokenId, T.CanisterId)] = [];
+
+  // TODO checkout to try remove @ characters
+  type AssetResponse = {
+    @context: Text;
+    @id: Text;
+    @type: Text;
+    uid: Text;
+    code: Text;
+    issue: {
+        @context: Text;
+        @id: Text;
+        @type: Text;
+        uid: Text;
+        code: Text;
+        deviceDetails: Text;
+        latestIssueDetails: Text
+    };
+    issuer: {
+        @context: Text;
+        @id: Text;
+        @type: Text;
+        uid: Text;
+        code: Text;
+        latestOrganisationDetails: {
+            @context: Text;
+            @id: Text;
+            @type: Text;
+            uid: Text;
+            participantContractEntity: {
+                @context: Text;
+                @id: Text;
+                @type: Text;
+                uid: Text;
+                organisation: {};
+                country: {
+                    @context: Text;
+                    @id: Text;
+                    @type: Text;
+                    alpha2: Text;
+                    alpha3: Text;
+                    name: Text
+                }
+            };
+            name: Text
+        }
+    };
+    volume: Text;
+    startDate: Text;
+    endDate: Text;
+    country: {
+        @context: Text;
+        @id: Text;
+        @type: Text;
+        alpha2: Text;
+        alpha3: Text;
+        name: Text
+    };
+    supported: Bool;
+    offset: Bool;
+    co2Produced: Text;
+    radioactiveProduced: Text
+  };
 
 
   /// funcs to persistent collection state
@@ -667,6 +730,56 @@ shared({ caller = owner }) actor class TokenIndex() = this {
         case (#TooOld) "#TooOld";
       });
       case(#Ok(value)) value;
+    };
+  };
+
+  public shared({ caller }) func getUnregisteredIrecs(evidentId: T.EID): async Any {
+    _callValidation(caller);
+
+    let assetsJson = await HttpService.get({
+      url = HT.apiUrl # "transactions/" # evidentId;
+      port = null;
+      headers = [];
+    });
+
+    switch(Serde.JSON.fromText(assetsJson, null)) {
+      case(#err(_)) throw Error.reject("cannot serialize profile data");
+      case(#ok(blob)) {
+        // let assetResponse: ?AssetResponse = from_candid(blob);
+
+        // switch(assetResponse) {
+        //   case(null) throw Error.reject("cannot serialize profile data");
+        //   case(?value) {
+        //     Debug.print("here ----------> " # debug_show (value));
+        //     return value
+        //   };
+        // };
+      };
+    };
+  };
+
+  public shared({ caller }) func fetchAssetInfo(tokenId: T.TokenId): async AssetResponse {
+    _callValidation(caller);
+
+    let assetsJson = await HttpService.get({
+      url = HT.apiUrl # "assets/" # tokenId;
+      port = null;
+      headers = [];
+    });
+
+    switch(Serde.JSON.fromText(assetsJson, null)) {
+      case(#err(_)) throw Error.reject("cannot serialize profile data");
+      case(#ok(blob)) {
+        let assetResponse: ?AssetResponse = from_candid(blob);
+
+        switch(assetResponse) {
+          case(null) throw Error.reject("cannot serialize profile data");
+          case(?value) {
+            Debug.print("here ----------> " # debug_show (value));
+            return value
+          };
+        };
+      };
     };
   };
 }
