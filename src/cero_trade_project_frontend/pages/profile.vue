@@ -551,7 +551,7 @@ async function getRedemptions() {
         redeemedBy: item.from,
         beneficiary: item.to,
         energy_source: item.assetInfo.assetType,
-        // price: item.priceE8S,
+        price: item.priceE8S,
         mwh: item.tokenAmount,
         country: item.assetInfo.specifications.country,
         date: item.date.toDateString(),
