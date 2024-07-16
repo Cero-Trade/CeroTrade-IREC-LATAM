@@ -161,8 +161,8 @@ actor class Agent() = this {
 
   /// send beneficiary notification
   public shared({ caller }) func requestBeneficiary(beneficiaryId: T.BID): async() {
-    // check if user exists
-    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
+    // check if user exists and check beneficiary already added
+    if (await UserIndex.checkBeneficiary(caller, beneficiaryId)) throw Error.reject("Beneficiary has already been added");
 
     // send beneficiary notification
     await _addNotification({

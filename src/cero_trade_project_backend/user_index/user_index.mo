@@ -544,6 +544,18 @@ actor class UserIndex() = this {
     };
   };
 
+  // TODO this function is temporary
+  public shared({ caller }) func checkBeneficiary(uid: T.UID, beneficiaryId: T.BID): async Bool {
+    _callValidation(caller);
+
+    var beneficiaryIds: [T.BID] = switch(usersDirectory.get(uid)) {
+      case (null) throw Error.reject(notExists);
+      case(?cid) await Users.canister(cid).getBeneficiaries(uid);
+    };
+    beneficiaryIds := Array.filter<T.BID>(beneficiaryIds, func x = x == beneficiaryId);
+
+    beneficiaryIds.size() != 0;
+  };
 
   /// get beneficiary
   public shared({ caller }) func getBeneficiary(uid: T.UID, beneficiaryId: T.BID): async T.UserProfile {
