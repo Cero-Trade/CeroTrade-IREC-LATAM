@@ -439,14 +439,15 @@ actor class NotificationIndex() = this {
     let otherUserNotificationExists = Text.contains(otherJsonResponse, #text "true");
 
     // variable to know which user has cancel
-    var triggerHasCancel: Bool = false;
+    var redemptionCancelled: Bool = false;
 
     // change event notification status
     switch(eventStatus) {
       case(null) {};
       case(?value) {
-        if (value == #declined("declined") and notification.triggeredBy == ?userCaller) {
-          triggerHasCancel := true;
+        // validate if current notification is type redemption and was cancelled to return tokens holded
+        if (notification.notificationType == #redeem("redeem") and notification.eventStatus == ?#pending("pending") and value == #declined("declined")) {
+          redemptionCancelled := true;
         };
 
         await Notifications.canister(cid).updateEvent(notification.id, value);
@@ -456,7 +457,7 @@ actor class NotificationIndex() = this {
     // clear notification if all users has been cleaned
     if (not otherUserNotificationExists) await Notifications.canister(cid).clearNotification(notification.id);
 
-    triggerHasCancel
+    redemptionCancelled
   };
 
   // get user notification

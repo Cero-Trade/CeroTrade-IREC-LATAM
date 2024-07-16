@@ -880,9 +880,14 @@ actor class Agent() = this {
       };
     };
 
-    let triggerHasCancel = await NotificationIndex.updateEventNotification(caller, { receiver; trigger }, (cid, notification), eventStatus);
-    if (not triggerHasCancel) return null;
+    let redemptionCancelled = await NotificationIndex.updateEventNotification(caller, { receiver; trigger }, (cid, notification), eventStatus);
+    if (not redemptionCancelled) return null;
 
+    // flow to return holded tokens
+    let triggerUser = switch(notification.triggeredBy) {
+      case(null) throw Error.reject("triggeredBy not provided");
+      case(?value) value;
+    };
     let tokenId = switch(notification.tokenId) {
       case(null) throw Error.reject("tokenId not provided");
       case(?value) value;
@@ -893,7 +898,7 @@ actor class Agent() = this {
     };
 
     // return tokens holded on token canister if trigger performe cancelation
-    let txIndex = await TokenIndex.requestRedeem(caller, tokenId, quantity, { returns = true });
+    let txIndex = await TokenIndex.requestRedeem(triggerUser, tokenId, quantity, { returns = true });
     ?txIndex
   };
 }
