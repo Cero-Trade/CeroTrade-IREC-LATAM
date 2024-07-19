@@ -23,6 +23,7 @@
                 v-model="companyForm.companyLogo" id="compnay-logo" variant="solo"
                 border="1px solid #EAECF0"
                 rounded="10px"
+                accept="image/*"
                 sizes="120px"
                 prepend-icon=""
                 style="max-width: max-content !important;"

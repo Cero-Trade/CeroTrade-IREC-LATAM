@@ -34,7 +34,7 @@ shared({ caller = notificationIndexCaller }) actor class Notifications() {
     UUID.toText(await g.new());
   };
 
-  // get notifications on cero trade
+  // get notifications on Cero Trade
   public shared({ caller }) func getNotification(notificationId: T.NotificationId): async T.NotificationInfo {
     _callValidation(caller);
 
@@ -44,7 +44,7 @@ shared({ caller = notificationIndexCaller }) actor class Notifications() {
     };
   };
 
-  // get notifications on cero trade
+  // get notifications on Cero Trade
   public shared({ caller }) func getNotifications(notificationIds: [T.NotificationId]): async [T.NotificationInfo] {
     _callValidation(caller);
 
@@ -60,7 +60,7 @@ shared({ caller = notificationIndexCaller }) actor class Notifications() {
     Buffer.toArray<T.NotificationInfo>(notificationsInfo);
   };
 
-  /// add notification to cero trade
+  /// add notification to Cero Trade
   public shared({ caller }) func addNotification(notification: T.NotificationInfo): async T.NotificationId {
     _callValidation(caller);
 
@@ -105,7 +105,7 @@ shared({ caller = notificationIndexCaller }) actor class Notifications() {
     notifications.put(notificationId, notification);
   };
 
-  /// clear notifications from cero trade
+  /// clear notifications from Cero Trade
   public shared({ caller }) func clearNotifications(notificationIds: [T.NotificationId]): async() {
     _callValidation(caller);
 
@@ -114,7 +114,7 @@ shared({ caller = notificationIndexCaller }) actor class Notifications() {
     };
   };
 
-  /// clear notification from cero trade
+  /// clear notification from Cero Trade
   public shared({ caller }) func clearNotification(notificationId: T.NotificationId): async() {
     _callValidation(caller);
 

@@ -303,7 +303,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     _callValidation(caller);
 
     switch (tokenDirectory.get(tokenId)) {
-      case (null) throw Error.reject("Token not found on cero trade");
+      case (null) throw Error.reject("Token not found on Cero Trade");
       case (?cid) return await Token.canister(cid).assetMetadata();
     };
   };

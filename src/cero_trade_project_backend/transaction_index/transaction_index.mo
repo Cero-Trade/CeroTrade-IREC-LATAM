@@ -294,7 +294,7 @@ actor class TransactionIndex() = this {
   };
 
 
-  // /// used to get all transactions on cero trade
+  // /// used to get all transactions on Cero Trade
   // public shared({ caller }) func getTransactions(page: ?Nat, length: ?Nat, txType: ?T.TxType) : async {
   //   data: [T.TransactionInfo];
   //   totalPages: Nat;

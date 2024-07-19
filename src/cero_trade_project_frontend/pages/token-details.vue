@@ -68,14 +68,19 @@
                 <span style="color: #475467;">Radioactivity emission</span>
                 <span>{{ tokenDetail?.assetInfo.radioactivityEmnission }}%</span>
               </div>
+
+              <div class="jspace divrow mt-3 mb-1">
+                <span style="color: #475467;">Minted in Cero Trade</span>
+                <span>todo value</span>
+              </div>
             </v-card>
           </v-col>
 
           <v-col xl="4" lg="4" cols="12">
             <v-card class="card relative" style="min-height: 100%!important;">
-              <span>Amount owned/produced</span>
+              <span>Amount in Cero Trade/produced</span>
               <div id="chart">
-                <apexchart type="radialBar" :options="chartOptions" :series="seriesOwnedVsProduced"></apexchart>
+                <apexchart type="radialBar" :options="chartOptions" :series="seriesMintedVsProduced"></apexchart>
               </div>
             </v-card>
           </v-col>
@@ -1277,7 +1282,7 @@ tokenBenefits = [
 
 time_selection = 'Year',
 
-seriesOwnedVsProduced = ref([]),
+seriesMintedVsProduced = ref([]),
 chartOptions = {
   colors: ['#C6F221'],
   chart: {
@@ -1445,7 +1450,8 @@ async function getData() {
 
     haveToken.value = checkToken
     tokenDetail.value = token.value
-    seriesOwnedVsProduced.value = [token.value.totalAmount / token.value.assetInfo.volumeProduced || 0]
+    // TODO checkout minted value
+    seriesMintedVsProduced.value = [token.value.totalAmount / token.value.assetInfo.volumeProduced || 1]
   } catch (error) {
     console.error(error);
     toast.error(error)

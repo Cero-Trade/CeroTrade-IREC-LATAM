@@ -29,10 +29,10 @@ actor class Agent() = this {
   stable var controllers: ?[Principal] = null;
 
   // constants
-  stable let notExists = "User doesn't exists on cero trade";
+  stable let notExists = "User doesn't exists on Cero Trade";
 
 
-  /// login user into cero trade
+  /// login user into Cero Trade
   public shared({ caller }) func login(): async() {
     // WARN just for debug
     Debug.print(Principal.toText(caller));
@@ -42,7 +42,7 @@ actor class Agent() = this {
   };
 
 
-  /// register user into cero trade
+  /// register user into Cero Trade
   public shared({ caller }) func register(form: T.RegisterForm, beneficiary: ?T.BID): async() {
     await UserIndex.registerUser(caller, form, beneficiary)
   };
@@ -52,7 +52,7 @@ actor class Agent() = this {
   public shared({ caller }) func storeCompanyLogo(avatar: T.CompanyLogo): async() { await UserIndex.storeCompanyLogo(caller, avatar) };
 
 
-  /// delete user into cero trade
+  /// delete user into Cero Trade
   public shared({ caller }) func deleteUser(): async() { await UserIndex.deleteUser(caller) };
 
   /// get canister controllers
@@ -181,7 +181,7 @@ actor class Agent() = this {
   };
 
 
-  /// filter users on cero trade by name or principal id
+  /// filter users on Cero Trade by name or principal id
   public shared({ caller }) func filterUsers(user: Text): async [T.UserProfile] { await UserIndex.filterUsers(caller, user) };
 
 

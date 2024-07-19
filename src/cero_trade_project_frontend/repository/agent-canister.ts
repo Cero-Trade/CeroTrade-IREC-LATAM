@@ -42,6 +42,41 @@ export class AgentCanister {
     }
   }
 
+  static async updateUserInfo(data: {
+    companyId: string,
+    companyName: string,
+    companyLogo?: File[],
+    country: string,
+    city: string,
+    address: string,
+    email: string,
+  }): Promise<void> {
+    try {
+      // TODO missing endpoint
+      // update user
+      // await agent().updateUserInfo({
+      //   companyId: data.companyId,
+      //   companyName: data.companyName,
+      //   country: data.country,
+      //   city: data.city,
+      //   address: data.address,
+      //   email: data.email,
+      // })
+
+      if (data.companyLogo?.length) {
+        // store user company logo
+        const fileCompressed = await fileCompression(data.companyLogo[0]),
+        arrayBuffer = await getImageArrayBuffer(fileCompressed)
+        await AgentCanister.storeCompanyLogo(arrayBuffer)
+      }
+
+      await this.getProfile()
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
 
   static async storeCompanyLogo(companyLogo: Blob): Promise<void> {
     try {

@@ -55,7 +55,7 @@
         </v-card>
       </v-col>
 
-      <v-col cols="12" class="marketplace-styles">
+      <v-col cols="12" class="marketplace-styles mt-9">
         <h5 class="mb-3 bold">Redemptions</h5>
         
         <div class="divrow jspace">

@@ -30,7 +30,7 @@ shared({ caller = transactionIndexCaller }) actor class Transactions() {
   public query func length(): async Nat { transactions.size() };
 
 
-  /// register transaction to cero trade
+  /// register transaction to Cero Trade
   public shared({ caller }) func registerTransaction(txInfo: T.TransactionInfo): async T.TransactionId {
     _callValidation(caller);
 
