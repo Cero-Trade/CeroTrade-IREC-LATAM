@@ -41,6 +41,7 @@ module {
   public type CanisterId = Principal;
   public type TokenId = Text;
   public type TransactionId = Text;
+  public type EvidentTransactionId = Text;
   public type RedemId = Text;
   public type CompanyLogo = [Nat8];
   public type BID = UID;

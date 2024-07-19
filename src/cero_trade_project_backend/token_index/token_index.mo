@@ -40,61 +40,53 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   var tokenDirectory: HM.HashMap<T.TokenId, T.CanisterId> = HM.HashMap(16, Text.equal, Text.hash);
   stable var tokenDirectoryEntries : [(T.TokenId, T.CanisterId)] = [];
 
-  // TODO checkout to try remove @ characters
   type AssetResponse = {
-    @context: Text;
-    @id: Text;
-    @type: Text;
+    context: Text;
+    id: Text;
     uid: Text;
     code: Text;
     issue: {
-        @context: Text;
-        @id: Text;
-        @type: Text;
-        uid: Text;
-        code: Text;
-        deviceDetails: Text;
-        latestIssueDetails: Text
+      context: Text;
+      id: Text;
+      uid: Text;
+      code: Text;
+      deviceDetails: Text;
+      latestIssueDetails: Text
     };
     issuer: {
-        @context: Text;
-        @id: Text;
-        @type: Text;
+      context: Text;
+      id: Text;
+      uid: Text;
+      code: Text;
+      latestOrganisationDetails: {
+        context: Text;
+        id: Text;
         uid: Text;
-        code: Text;
-        latestOrganisationDetails: {
-            @context: Text;
-            @id: Text;
-            @type: Text;
-            uid: Text;
-            participantContractEntity: {
-                @context: Text;
-                @id: Text;
-                @type: Text;
-                uid: Text;
-                organisation: {};
-                country: {
-                    @context: Text;
-                    @id: Text;
-                    @type: Text;
-                    alpha2: Text;
-                    alpha3: Text;
-                    name: Text
-                }
-            };
+        participantContractEntity: {
+          context: Text;
+          id: Text;
+          uid: Text;
+          organisation: {};
+          country: {
+            context: Text;
+            id: Text;
+            alpha2: Text;
+            alpha3: Text;
             name: Text
-        }
+          }
+        };
+        name: Text
+      }
     };
     volume: Text;
     startDate: Text;
     endDate: Text;
     country: {
-        @context: Text;
-        @id: Text;
-        @type: Text;
-        alpha2: Text;
-        alpha3: Text;
-        name: Text
+      context: Text;
+      id: Text;
+      alpha2: Text;
+      alpha3: Text;
+      name: Text
     };
     supported: Bool;
     offset: Bool;
@@ -217,44 +209,61 @@ shared({ caller = owner }) actor class TokenIndex() = this {
         Debug.print(debug_show ("later create_canister: " # Nat.toText(Cycles.balance())));
 
         try {
-          // TODO perfome data fetch asset info using [tokenId] here
-          let energy = switch(tokenId) {
-            case("1") #hydro("hydro");
-            case("2") #ocean("ocean");
-            case("3") #geothermal("geothermal");
-            case("4") #biome("biome");
-            case("5") #wind("wind");
-            case("6") #sun("sun");
-            case _ #other("other");
-          };
+          let assetsJson = await HttpService.get({
+            url = HT.apiUrl # "assets/" # tokenId;
+            port = null;
+            headers = [];
+          });
 
-          let assetMetadata: T.AssetInfo = /* await HttpService.get({ url = "getToken" # tokenId; port = null; headers = [] }) */
-            {
-              tokenId;
-              assetType = energy;
-              startDate = "2024-04-29T19:43:34.000Z";
-              endDate = "2024-05-29T19:48:31.000Z";
-              co2Emission = "11.22";
-              radioactivityEmnission = "10.20";
-              volumeProduced: T.TokenAmount = 20_000;
-              deviceDetails = {
-                name = "machine";
-                deviceType = "type";
-                group = energy;
-                description = "description";
+          let assetMetadata: T.AssetInfo = switch(Serde.JSON.fromText(assetsJson, null)) {
+            case(#err(_)) throw Error.reject("cannot serialize asset data");
+            case(#ok(blob)) {
+              let assetResponse: ?AssetResponse = from_candid(blob);
+
+              switch(assetResponse) {
+                case(null) throw Error.reject("cannot serialize asset data");
+                case(?value) {
+                  Debug.print("here ----------> " # debug_show (value));
+
+                  // TODO missing energy type
+                  let energy: T.AssetType = #hydro("hydro");
+
+                  {
+                    tokenId;
+                    assetType = energy;
+                    startDate = value.startDate;
+                    endDate = value.endDate;
+                    co2Emission = value.co2Produced;
+                    radioactivityEmnission = value.radioactiveProduced;
+                    volumeProduced: T.TokenAmount = switch(Nat.fromText(value.volume)) {
+                      case(null) 0;
+                      case(?value) value;
+                    };
+                    // missing this info
+                    deviceDetails = {
+                      name = "machine";
+                      deviceType = "type";
+                      group = energy;
+                      description = "description";
+                    };
+                    // missing this info
+                    specifications = {
+                      deviceCode = "200";
+                      capacity: T.TokenAmount = 1_000;
+                      location = "location";
+                      latitude = "0";
+                      longitude = "1";
+                      address = "address anywhere";
+                      stateProvince = "chile";
+                      country = "CL";
+                    };
+                    // missing this info
+                    dates = ["2024-04-29T19:43:34.000Z", "2024-05-29T19:48:31.000Z", "2024-05-29T19:48:31.000Z"];
+                  };
+                };
               };
-              specifications = {
-                deviceCode = "200";
-                capacity: T.TokenAmount = 1_000;
-                location = "location";
-                latitude = "0";
-                longitude = "1";
-                address = "address anywhere";
-                stateProvince = "chile";
-                country = "CL";
-              };
-              dates = ["2024-04-29T19:43:34.000Z", "2024-05-29T19:48:31.000Z", "2024-05-29T19:48:31.000Z"];
             };
+          };
 
           // install canister code
           await IC_MANAGEMENT.ic.install_code({
@@ -733,13 +742,14 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     };
   };
 
-  public shared({ caller }) func getUnregisteredIrecs(evidentId: T.EID): async Any {
+  public shared({ caller }) func getUnregisteredIrecs(sourceAccountCode: T.EID): async Any {
     _callValidation(caller);
 
-    let assetsJson = await HttpService.get({
-      url = HT.apiUrl # "transactions/" # evidentId;
+    let assetsJson = await HttpService.post({
+      url = HT.apiUrl # "transactions/fetchByUser";
       port = null;
       headers = [];
+      body = { sourceAccountCode }
     });
 
     switch(Serde.JSON.fromText(assetsJson, null)) {
@@ -758,28 +768,14 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     };
   };
 
-  public shared({ caller }) func fetchAssetInfo(tokenId: T.TokenId): async AssetResponse {
+  public shared({ caller }) func markIrecAsRegistered(transactionId: T.EvidentTransactionId): async() {
     _callValidation(caller);
 
-    let assetsJson = await HttpService.get({
-      url = HT.apiUrl # "assets/" # tokenId;
+    let assetsJson = await HttpService.post({
+      url = HT.apiUrl # "transactions/markAsProcessed";
       port = null;
       headers = [];
+      body = { transactionId }
     });
-
-    switch(Serde.JSON.fromText(assetsJson, null)) {
-      case(#err(_)) throw Error.reject("cannot serialize profile data");
-      case(#ok(blob)) {
-        let assetResponse: ?AssetResponse = from_candid(blob);
-
-        switch(assetResponse) {
-          case(null) throw Error.reject("cannot serialize profile data");
-          case(?value) {
-            Debug.print("here ----------> " # debug_show (value));
-            return value
-          };
-        };
-      };
-    };
   };
 }

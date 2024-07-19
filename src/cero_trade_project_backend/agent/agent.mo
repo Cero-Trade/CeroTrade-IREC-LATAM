@@ -96,6 +96,18 @@ actor class Agent() = this {
   };
 
 
+  /// get unregistered irecs
+  public func getUnregisteredIrecs(sourceAccountCode: T.EID): async Any {
+    await TokenIndex.getUnregisteredIrecs(sourceAccountCode);
+  };
+
+
+  /// mark irec as registered
+  public func markIrecAsRegistered(sourceAccountCode: T.EID): async() {
+    await TokenIndex.markIrecAsRegistered(sourceAccountCode);
+  };
+
+
   /// performe mint with tokenId and amount requested
   public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, tokenAmount: T.TokenAmount): async T.TxIndex {
     IC_MANAGEMENT.adminValidation(caller, controllers);
@@ -895,10 +907,5 @@ actor class Agent() = this {
     // return tokens holded on token canister if trigger performe cancelation
     let txIndex = await TokenIndex.requestRedeem(caller, tokenId, quantity, { returns = true });
     ?txIndex
-  };
-
-
-  public func getUnregisteredIrecs(evidentId: T.EID): async Any {
-    await TokenIndex.getUnregisteredIrecs(evidentId);
   };
 }
