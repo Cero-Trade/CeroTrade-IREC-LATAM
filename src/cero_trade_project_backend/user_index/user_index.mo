@@ -607,13 +607,13 @@ actor class UserIndex() = this {
     for(profile in profiles.vals()) {
       let uid = Principal.fromText(profile.principalId);
 
-      let cid: T.CanisterId = switch(usersDirectory.get(uid)) {
-        case (null) throw Error.reject(notExists);
-        case(?cid) cid;
+      switch(usersDirectory.get(uid)) {
+        case (null) {};
+        case(?cid) {
+          let companyLogo = await Users.canister(cid).getCompanyLogo(uid);
+          users.add((profile.principalId, companyLogo));
+        };
       };
-
-      let companyLogo = await Users.canister(cid).getCompanyLogo(uid);
-      users.add((profile.principalId, companyLogo));
     };
 
     // map profiles values to [UserProfile]
