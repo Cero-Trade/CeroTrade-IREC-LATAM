@@ -91,7 +91,6 @@ actor class Agent() = this {
   public shared({ caller }) func registerToken(tokenId: Text, name: Text, symbol: Text, logo: Text): async (T.CanisterId, T.AssetInfo) {
     IC_MANAGEMENT.adminValidation(caller, controllers);
     let tokenStats = await TokenIndex.registerToken(tokenId, name, symbol, logo);
-    await Statistics.registerAssetStatistic(tokenStats.1.assetType, tokenStats.1.volumeProduced);
     tokenStats
   };
 
@@ -108,6 +107,9 @@ actor class Agent() = this {
 
     // update user portfolio
     await UserIndex.updatePortfolio(recipent, tokenId, { delete = false });
+
+    // register asset statistic
+    await Statistics.registerAssetStatistic(tokenId, { mwh = ?tokenAmount; redemptions = null });
 
     txIndex
   };
@@ -186,7 +188,7 @@ actor class Agent() = this {
 
 
   /// function to know user token balance
-  public shared({ caller }) func balanceOf(tokenId: T.TokenId): async Nat { await TokenIndex.balanceOf(caller, tokenId) };
+  public shared({ caller }) func balanceOf(tokenId: T.TokenId): async T.TokenAmount { await TokenIndex.balanceOf(caller, tokenId) };
 
   /// get user portfolio information
   public shared({ caller }) func getPortfolio(page: ?Nat, length: ?Nat, assetTypes: ?[T.AssetType], country: ?Text, mwhRange: ?[T.TokenAmount]): async {
@@ -550,6 +552,12 @@ actor class Agent() = this {
   };
 
 
+  // request to know if user is selling token provided in marketplace
+  public shared({ caller }) func checkUserTokenInMarket(tokenId: T.TokenId): async Bool {
+    await Marketplace.isSellingToken(caller, tokenId)
+  };
+
+
   // ask market to take off market
   public shared ({ caller }) func takeTokenOffMarket(tokenId: T.TokenId, quantity: T.TokenAmount): async T.TransactionInfo {
     // check if user exists
@@ -678,6 +686,9 @@ actor class Agent() = this {
     // change notification status
     let _ = await _updateEventNotification(caller, notificationId, ?#accepted("accepted"));
 
+    // register asset statistic
+    await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = ?quantity });
+
     { txInfo with transactionId = txId }
   };
 
@@ -715,6 +726,9 @@ actor class Agent() = this {
     // register transaction
     let txId = await TransactionIndex.registerTransaction(txInfo);
     await UserIndex.updateTransactions(caller, txId);
+
+    // register asset statistic
+    await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = ?quantity });
 
     { txInfo with transactionId = txId }
   };
@@ -818,8 +832,11 @@ actor class Agent() = this {
   };
 
 
-  // get asset registrations
-  public func getAssetStatistics(): async [(Text, T.TokenAmount)] { await Statistics.getAssetStatistics() };
+  // get all asset statistics
+  public func getAllAssetStatistics(): async [(T.TokenId, T.AssetStatistic)] { await Statistics.getAllAssetStatistics() };
+
+  // get asset statistics
+  public func getAssetStatistics(tokenId: T.TokenId): async T.AssetStatistic { await Statistics.getAssetStatistics(tokenId) };
 
 
   // get notifications

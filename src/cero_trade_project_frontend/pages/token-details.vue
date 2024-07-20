@@ -70,15 +70,15 @@
               </div>
 
               <div class="jspace divrow mt-3 mb-1">
-                <span style="color: #475467;">Minted in Cero Trade</span>
-                <span>todo value</span>
+                <span style="color: #475467;">Total volume produced</span>
+                <span>{{ tokenDetail?.assetInfo.volumeProduced }}</span>
               </div>
             </v-card>
           </v-col>
 
           <v-col xl="4" lg="4" cols="12">
             <v-card class="card relative" style="min-height: 100%!important;">
-              <span>Amount in Cero Trade/produced</span>
+              <span>Amount minted in CT / total produced</span>
               <div id="chart">
                 <apexchart type="radialBar" :options="chartOptions" :series="seriesMintedVsProduced"></apexchart>
               </div>
@@ -408,7 +408,7 @@
                 Sell
               </v-btn>
 
-              <v-btn v-if="haveToken" class="btn btn2" @click="showDialog('takeOff')" style="flex: 1 1 calc(50% - 10px)">
+              <v-btn v-if="haveTokenInMarket" class="btn btn2" @click="showDialog('takeOff')" style="flex: 1 1 calc(50% - 10px)">
                 Take off market
               </v-btn>
 
@@ -1339,11 +1339,12 @@ chartOptions = {
   fill: {
     type: 'solid',
   },
-  labels: ['Available'],
+  labels: ['Minted'],
 },
 beneficiaries = ref(null),
 
 haveToken = ref(false),
+haveTokenInMarket = ref(false),
 amountSelected = ref(),
 sellerSelected = ref(undefined),
 tokenPrice = ref(null),
@@ -1418,7 +1419,6 @@ watch(dialogRedeem, (value) => {
 
 
 onBeforeMount(() => {
-  console.log(UserProfileModel.get().country);
   getData()
 
   const input = route.query.input
@@ -1441,17 +1441,19 @@ onBeforeMount(() => {
 
 async function getData() {
   try {
-    const [checkToken, token, _, __] = await Promise.allSettled([
+    const [checkToken, checkTokenInMarket, token, statistics, _, __] = await Promise.allSettled([
       AgentCanister.checkUserToken(tokenId.value),
+      AgentCanister.checkUserTokenInMarket(tokenId.value),
       AgentCanister.getTokenDetails(tokenId.value),
+      AgentCanister.getAssetStatistics(tokenId.value),
       getMarketPlace(),
       getBeneficiaries()
     ])
 
-    haveToken.value = checkToken
+    haveToken.value = checkToken.value
+    haveTokenInMarket.value = checkTokenInMarket.value
     tokenDetail.value = token.value
-    // TODO checkout minted value
-    seriesMintedVsProduced.value = [token.value.totalAmount / token.value.assetInfo.volumeProduced || 1]
+    seriesMintedVsProduced.value = [(statistics.value.mwh / token.value.assetInfo.volumeProduced || 1) * 100]
   } catch (error) {
     console.error(error);
     toast.error(error)

@@ -1,7 +1,6 @@
 <!-- TODO subdomain integration with `cerotrade.cl/alfa` -->
 <!-- TODO delete beneficiary id from web3 register and migrate to web2 -->
 <!-- TODO import irecs in dashboard -->
-<!-- TODO minted in cero trade value -->
 
 # Cero Trade
 

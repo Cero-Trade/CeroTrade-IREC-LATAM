@@ -239,6 +239,16 @@ module {
     #redeem: Text;
     #beneficiary: Text;
   };
+  
+  //
+  // statistic types
+  //
+
+  public type AssetStatistic = {
+    mwh: TokenAmount;
+    assetType: AssetType;
+    redemptions: TokenAmount;
+  };
 
   //
   // ic management types

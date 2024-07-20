@@ -300,8 +300,6 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   };
 
   public shared({ caller }) func getAssetInfo(tokenId: T.TokenId): async T.AssetInfo {
-    _callValidation(caller);
-
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found on Cero Trade");
       case (?cid) return await Token.canister(cid).assetMetadata();
