@@ -12,7 +12,7 @@
               <v-card class="card jspace no-bottom-pa flex-grow-1">
                 <div class="divcol">
                   <span>Total MWh</span>
-                  <h4 class="bold mb-0">{{ totalMwh }}MWh</h4>
+                  <h4 class="bold mb-0">{{ formatAmount(totalMwh, { compact: true }) }} MWh</h4>
                 </div>
   
                 <!-- <div style="width: 140px;">
@@ -23,7 +23,7 @@
               <v-card class="card jspace no-bottom-pa flex-grow-1">
                 <div class="divcol">
                   <span>Redeemed MWh</span>
-                  <h4 class="bold mb-0">{{ totalRedemptions }}MWh</h4>
+                  <h4 class="bold mb-0">{{ formatAmount(totalRedemptions, { compact: true }) }} MWh</h4>
                 </div>
   
                 <!-- <div style="width: 140px;">
@@ -398,6 +398,7 @@
   import { AgentCanister } from '@/repository/agent-canister'
   import { useToast } from 'vue-toastification'
   import ModalImportIrecs from '@/components/modals/modal-import-irecs.vue'
+  import { formatAmount as formatAmountFunc } from '@/plugins/functions'
   import { ref } from 'vue'
   
   export default {
@@ -409,10 +410,12 @@
       // IrecChart
     },
     setup(){
-      const toast = useToast()
+      const toast = useToast(),
+      formatAmount = formatAmountFunc
 
       return{
         toast,
+        formatAmount,
         profile: UserProfileModel.get(),
         walletStatus: false,
         status2fa: false,

@@ -32,6 +32,8 @@ export default {
   ceroComisison: Number(process.env.CERO_COMISSION),
   isProduction: process.env.NODE_ENV === 'production',
   beneficiaryUrl: computed(() => `${process.env.NODE_ENV === 'production' ? 'https://z2mgf-dqaaa-aaaak-qihbq-cai.icp0.io' : 'http://localhost:5173'}/auth/register?canisterId=z2mgf-dqaaa-aaaak-qihbq-cai&beneficiary=${store.state.profile?.principalId.toString()}`),
+  defaultMaxDecimals: 8,
+  defaultLocale: 'en-US',
 
   isSafari: /^((?!chrome|android).)*safari/i.test(navigator.userAgent),
   isLogged() {

@@ -36,12 +36,12 @@
       <v-col xl="2" lg="2" md="4" cols="12" class="delete-mobile d-flex flex-column" style="gap: 20px;">
         <v-card class="card card-mwh d-flex flex-column-jcenter flex-grow-1">
           <h6>Total MWh</h6>
-          <h5 >{{ totalMwh }}MWh</h5>
+          <h5 >{{ totalMwh }} MWh</h5>
         </v-card>
 
         <v-card class="card card-mwh d-flex flex-column-jcenter flex-grow-1">
           <h6>Redeemed MWh</h6>
-          <h5>{{ totalRedeemed }}MWh</h5>
+          <h5>{{ totalRedeemed }} MWh</h5>
         </v-card>
       </v-col>
     </v-row>

@@ -1,6 +1,6 @@
-import variables from '@/mixins/variables';
 import store from '@/store'
 import imageCompression from 'browser-image-compression';
+import variables from "@/mixins/variables";
 
 /// Useful to set intersection threshold
 export function buildThresholdList() {
@@ -79,6 +79,90 @@ export function toCssVal(value, unit = 'px') {
       default: return `clamp(${formatValue})`
     }
   }
+}
+
+export function formatAmount(value, {
+  symbol,
+  symbolSuffixed = true,
+  currency,
+  locale = variables.defaultLocale,
+  maxDecimals = variables.defaultMaxDecimals,
+  minimumFractionDigits = variables.defaultMaxDecimals,
+  compact = false,
+  removeThousandSeparator
+}) {
+  // Parse the string as a number. If parsing fails, use 0.0.
+  value = parseFloat(Number(value).toString().replace(",", "")) || 0.0;
+
+  // Use the Intl.NumberFormat API to format the value.
+  let formatter
+
+  if (compact) {
+    formatter = new Intl.NumberFormat(
+      'en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 1,
+      notation: 'compact',
+      compactDisplay: 'short',
+    });
+  } else if (currency) {
+    formatter = new Intl.NumberFormat(
+      locale, {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: minimumFractionDigits,
+      maximumFractionDigits: maxDecimals,
+    });
+  } else {
+    formatter = new Intl.NumberFormat(
+      locale, {
+      minimumFractionDigits: minimumFractionDigits,
+      maximumFractionDigits: maxDecimals,
+    });
+  }
+
+  let formattedValue = formatter.format(value).trim();
+
+  if (symbol) {
+    formattedValue = formattedValue.replace(/[^0-9.,\s]+/g, symbol)
+
+    if (symbolSuffixed) {
+      formattedValue = `${formattedValue}${symbol}`
+    } else {
+      formattedValue = `${symbol}${formattedValue}`
+    }
+  }
+
+  if (removeThousandSeparator) {
+    const thousandSeparator = getDecimalSeparator(locale) === ',' ? '.' : ','
+    formattedValue = formattedValue.split(thousandSeparator).join('')
+  }
+
+  return formattedValue
+}
+
+export function unformatAmount(formattedValue, {
+  symbol,
+  locale = variables.defaultLocale,
+  symbolSuffixed = true,
+}) {
+  if (!formattedValue) return 0
+
+  if (symbol && symbolSuffixed) {
+    formattedValue = formattedValue.slice(0, -symbol.length)
+  }
+  else if (symbol) {
+    formattedValue = formattedValue.slice(symbol.length)
+  }
+
+  if (getDecimalSeparator(locale) === ',') {
+    formattedValue = formattedValue.replaceAll('.', '')
+    formattedValue = formattedValue.replace(',', '.')
+  } else {
+    formattedValue = formattedValue.replaceAll(',', '')
+  }
+
+  return parseFloat(formattedValue)
 }
 
 export function maxDecimals(value, max = 3) {

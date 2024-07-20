@@ -26,12 +26,12 @@
       <v-col cols="12" class="d-flex flex-wrap justify-space-between" style="gap: 20px">
         <v-card class="card relative d-flex flex-column-jcenter flex-grow-1">
           <span>Redeemed by me</span>
-          <h5 class="mb-0">{{ calcMwh(redemptionsByMe) }}MWh</h5>
+          <h5 class="mb-0">{{ calcMwh(redemptionsByMe) }} MWh</h5>
         </v-card>
         
         <v-card class="card relative d-flex flex-column-jcenter flex-grow-1">
           <span>Redeemed to my name</span>
-          <h5 class="mb-0">{{ calcMwh(redemptionsToMe) }}MWh</h5>
+          <h5 class="mb-0">{{ calcMwh(redemptionsToMe) }} MWh</h5>
         </v-card>
       </v-col>
 

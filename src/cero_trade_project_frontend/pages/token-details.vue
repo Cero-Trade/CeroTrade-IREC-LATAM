@@ -513,7 +513,7 @@
 
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Amount</span>
-            <span>{{ tokenAmount }}MWh</span>
+            <span>{{ tokenAmount }} MWh</span>
           </div>
         </v-card>
 
@@ -608,7 +608,7 @@
 
             <div class="jspace divrow mb-1">
               <span style="color: #475467;">Amount</span>
-              <span>{{ tokenAmount }}MWh</span>
+              <span>{{ tokenAmount }} MWh</span>
             </div>
 
             <v-divider class="mb-3 mt-4"  thickness="2" style="width: 100%;"></v-divider>
@@ -792,7 +792,7 @@
 
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Amount</span>
-            <span>{{ tokenAmount }}MWh</span>
+            <span>{{ tokenAmount }} MWh</span>
           </div>
         </v-card>
 
@@ -1453,7 +1453,7 @@ async function getData() {
     haveToken.value = checkToken.value
     haveTokenInMarket.value = checkTokenInMarket.value
     tokenDetail.value = token.value
-    seriesMintedVsProduced.value = [(statistics.value.mwh / token.value.assetInfo.volumeProduced || 1) * 100]
+    seriesMintedVsProduced.value = [(statistics.value.mwh || 1) / (token.value.assetInfo.volumeProduced || 1) * 100]
   } catch (error) {
     console.error(error);
     toast.error(error)
