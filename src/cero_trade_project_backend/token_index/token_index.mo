@@ -740,32 +740,30 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     };
   };
 
-  public shared({ caller }) func getUnregisteredIrecs(sourceAccountCode: T.EID): async Any {
+  public shared({ caller }) func getUnregisteredIrecs(sourceAccountCode: T.EID): async [T.UnregisteredIrec] {
     _callValidation(caller);
 
-    let assetsJson = await HttpService.post({
+    let irecsJson = await HttpService.post({
       url = HT.apiUrl # "transactions/fetchByUser";
       port = null;
       headers = [];
-      body = { sourceAccountCode }
+      bodyJson = "{\"sourceAccountCode\": \"" # sourceAccountCode # "\"}";
     });
 
-    switch(Serde.JSON.fromText(assetsJson, null)) {
+    switch(Serde.JSON.fromText(irecsJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize profile data");
       case(#ok(blob)) {
-        // let assetResponse: ?AssetResponse = from_candid(blob);
+        let irecsResponse: ?[T.UnregisteredIrec] = from_candid(blob);
 
-        // switch(assetResponse) {
-        //   case(null) throw Error.reject("cannot serialize profile data");
-        //   case(?value) {
-        //     Debug.print("here ----------> " # debug_show (value));
-        //     return value
-        //   };
-        // };
+        switch(irecsResponse) {
+          case(null) throw Error.reject("cannot serialize profile data");
+          case(?value) return value;
+        };
       };
     };
   };
 
+  // TODO evaluate this function to add user token and validate user transactions if corresponds
   public shared({ caller }) func markIrecAsRegistered(transactionId: T.EvidentTransactionId): async() {
     _callValidation(caller);
 
@@ -773,7 +771,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       url = HT.apiUrl # "transactions/markAsProcessed";
       port = null;
       headers = [];
-      body = { transactionId }
+      bodyJson = "{\"transactionId\": \"" # transactionId # "\"}";
     });
   };
 }

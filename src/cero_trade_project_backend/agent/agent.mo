@@ -96,7 +96,7 @@ actor class Agent() = this {
 
 
   /// get unregistered irecs
-  public func getUnregisteredIrecs(sourceAccountCode: T.EID): async Any {
+  public func getUnregisteredIrecs(sourceAccountCode: T.EID): async [T.UnregisteredIrec] {
     await TokenIndex.getUnregisteredIrecs(sourceAccountCode);
   };
 

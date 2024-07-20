@@ -175,6 +175,25 @@ module {
     dates: [Text];
   };
 
+  public type UnregisteredIrec = {
+    id: Nat;
+    transactionId: EvidentTransactionId;
+    sourceAccountCode: Text;
+    transactionType: Text;
+    volume: Text;
+    timestamp: Text;
+    items: [
+      {
+        source: Text;
+        volume: Text;
+        assetId: Text;
+      }
+    ];
+    processed: Bool;
+    createdAt: Text;
+    updatedAt: Text;
+  };
+
   //
   // Market types
   //
