@@ -22,22 +22,10 @@ const
   series = computed(() => {
     const series = props.series
 
-    series.forEach(({ data }) => {
-      for (let index = 0; index < totalLength - data.length; index++) {
-        if (index / 2 === 0) data.push(0)
-        else data.unshift(0)
-      }
-    });
-
     return series
   }),
   categories = computed(() => {
     const categories = props.categories
-
-    for (let index = 0; index < totalLength - categories.length; index++) {
-      if (index / 2 === 0) categories.push('')
-      else categories.unshift('')
-    }
 
     return categories;
   }),
@@ -72,7 +60,13 @@ options = computed(() => ({
     bar: {
       horizontal: false,
       borderRadius: 10,
-      columnWidth: '70%',
+      columnWidth: '52px',
+      borderRadiusWhenStacked: 'all',
+      colors: {
+        backgroundBarColors: ['#F2F4F7'],
+        backgroundBarOpacity: 1,
+        backgroundBarRadius: 10,
+      },
       dataLabels: {
         enabled: false,
       }
@@ -84,21 +78,21 @@ options = computed(() => ({
   xaxis: {
     type: 'category',
     categories: categories.value,
-      floating: true,
-      position: 'bottom',
-      labels: { 
-        show: true,
-        rotate: -90,
-        rotateAlways: true,
-        style: {
-            fontSize: '12px',
-            fontFamily: 'Grotesk, sans-serif',
-            fontWeight: 700,
-            cssClass: 'apexcharts-xaxis-label',
-        },
-        offsetX: 0,
-        offsetY: -80,
+    floating: true,
+    position: 'bottom',
+    labels: { 
+      show: true,
+      rotate: -90,
+      rotateAlways: true,
+      style: {
+          fontSize: '12px',
+          fontFamily: 'Grotesk, sans-serif',
+          fontWeight: 700,
+          cssClass: 'apexcharts-xaxis-label',
       },
+      offsetX: 0,
+      offsetY: -80,
+    },
   },
   dataLabels: {
     enabled: false
