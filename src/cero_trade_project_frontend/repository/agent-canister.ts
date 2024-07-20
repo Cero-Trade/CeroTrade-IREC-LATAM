@@ -10,6 +10,7 @@ import { Principal } from "@dfinity/principal";
 import moment from "moment";
 import variables from "@/mixins/variables";
 import { NotificationEventStatusDef, NotificationInfo, NotificationStatusDef, NotificationTypeDef } from "@/models/notifications-model";
+import { AssetStatistic } from "@/models/statistics-model";
 
 export class AgentCanister {
   static async register(data: {
@@ -36,6 +37,41 @@ export class AgentCanister {
       const fileCompressed = await fileCompression(data.companyLogo[0]),
       arrayBuffer = await getImageArrayBuffer(fileCompressed)
       await AgentCanister.storeCompanyLogo(arrayBuffer)
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+  static async updateUserInfo(data: {
+    companyId: string,
+    companyName: string,
+    companyLogo?: File[],
+    country: string,
+    city: string,
+    address: string,
+    email: string,
+  }): Promise<void> {
+    try {
+      // TODO missing endpoint
+      // update user
+      // await agent().updateUserInfo({
+      //   companyId: data.companyId,
+      //   companyName: data.companyName,
+      //   country: data.country,
+      //   city: data.city,
+      //   address: data.address,
+      //   email: data.email,
+      // })
+
+      if (data.companyLogo?.length) {
+        // store user company logo
+        const fileCompressed = await fileCompression(data.companyLogo[0]),
+        arrayBuffer = await getImageArrayBuffer(fileCompressed)
+        await AgentCanister.storeCompanyLogo(arrayBuffer)
+      }
+
+      await this.getProfile()
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)
@@ -92,12 +128,20 @@ export class AgentCanister {
 
   static async checkUserToken(tokenId: string): Promise<boolean> {
     try {
-      return await agent().checkUserToken(tokenId) as boolean
+      const balance = await agent().balanceOf(tokenId) as bigint
+      return balance > BigInt(0)
     } catch (_) {
       return false
     }
   }
 
+  static async checkUserTokenInMarket(tokenId: string): Promise<boolean> {
+    try {
+      return await agent().checkUserTokenInMarket(tokenId) as boolean
+    } catch (_) {
+      return false
+    }
+  }
 
   static async getPortfolio({ page, length, assetTypes, country, mwhRange }:
     {
@@ -476,11 +520,31 @@ export class AgentCanister {
   }
 
 
-  static async getAssetStatistics(): Promise<[string, number][]> {
+  static async getAllAssetStatistics(): Promise<[string, AssetStatistic][]> {
     try {
-      const res = await agent().getAssetStatistics() as [string, number][]
-      for (const item of res)
-        item[1] = Number(item[1])
+      const res = await agent().getAllAssetStatistics() as [string, AssetStatistic][]
+
+      for (const item of res) {
+        item[1].mwh = Number(item[1].mwh)
+        item[1].assetType = Object.values(item[1].assetType)[0] as AssetType
+        item[1].redemptions = Number(item[1].redemptions)
+      }
+
+      return res
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+
+  static async getAssetStatistics(tokenId: string): Promise<AssetStatistic> {
+    try {
+      const res = await agent().getAssetStatistics(tokenId) as AssetStatistic
+
+      res.mwh = Number(res.mwh)
+      res.assetType = Object.values(res.assetType)[0] as AssetType
+      res.redemptions = Number(res.redemptions)
 
       return res
     } catch (error) {

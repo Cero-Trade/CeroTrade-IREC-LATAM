@@ -30,8 +30,8 @@ actor class UserIndex() = this {
   stable var controllers: ?[Principal] = null;
 
   // constants
-  stable let alreadyExists = "User already exists on cero trade";
-  stable let notExists = "User doesn't exists on cero trade";
+  stable let alreadyExists = "User already exists on Cero Trade";
+  stable let notExists = "User doesn't exists on Cero Trade";
 
   // types
   type ProfilePart = {
@@ -345,7 +345,7 @@ actor class UserIndex() = this {
     };
   };
 
-  /// delete user to cero trade
+  /// delete user to Cero Trade
   public shared({ caller }) func deleteUser(uid: T.UID): async() {
     _callValidation(caller);
 
@@ -544,6 +544,18 @@ actor class UserIndex() = this {
     };
   };
 
+  // TODO this function is temporary
+  public shared({ caller }) func checkBeneficiary(uid: T.UID, beneficiaryId: T.BID): async Bool {
+    _callValidation(caller);
+
+    var beneficiaryIds: [T.BID] = switch(usersDirectory.get(uid)) {
+      case (null) throw Error.reject(notExists);
+      case(?cid) await Users.canister(cid).getBeneficiaries(uid);
+    };
+    beneficiaryIds := Array.filter<T.BID>(beneficiaryIds, func x = x == beneficiaryId);
+
+    beneficiaryIds.size() != 0;
+  };
 
   /// get beneficiary
   public shared({ caller }) func getBeneficiary(uid: T.UID, beneficiaryId: T.BID): async T.UserProfile {
@@ -595,13 +607,13 @@ actor class UserIndex() = this {
     for(profile in profiles.vals()) {
       let uid = Principal.fromText(profile.principalId);
 
-      let cid: T.CanisterId = switch(usersDirectory.get(uid)) {
-        case (null) throw Error.reject(notExists);
-        case(?cid) cid;
+      switch(usersDirectory.get(uid)) {
+        case (null) {};
+        case(?cid) {
+          let companyLogo = await Users.canister(cid).getCompanyLogo(uid);
+          users.add((profile.principalId, companyLogo));
+        };
       };
-
-      let companyLogo = await Users.canister(cid).getCompanyLogo(uid);
-      users.add((profile.principalId, companyLogo));
     };
 
     // map profiles values to [UserProfile]
@@ -664,7 +676,7 @@ actor class UserIndex() = this {
   };
 
 
-  /// filter users on cero trade by name or principal id
+  /// filter users on Cero Trade by name or principal id
   public shared({ caller }) func filterUsers(uid: T.UID, user: Text): async [T.UserProfile] {
     _callValidation(caller);
 

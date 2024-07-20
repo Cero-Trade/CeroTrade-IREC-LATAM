@@ -26,12 +26,12 @@
       <v-col cols="12" class="d-flex flex-wrap justify-space-between" style="gap: 20px">
         <v-card class="card relative d-flex flex-column-jcenter flex-grow-1">
           <span>Redeemed by me</span>
-          <h5 class="mb-0">{{ calcMwh(redemptionsByMe) }}MWh</h5>
+          <h5 class="mb-0">{{ calcMwh(redemptionsByMe) }} MWh</h5>
         </v-card>
         
         <v-card class="card relative d-flex flex-column-jcenter flex-grow-1">
           <span>Redeemed to my name</span>
-          <h5 class="mb-0">{{ calcMwh(redemptionsToMe) }}MWh</h5>
+          <h5 class="mb-0">{{ calcMwh(redemptionsToMe) }} MWh</h5>
         </v-card>
       </v-col>
 
@@ -55,7 +55,7 @@
         </v-card>
       </v-col>
 
-      <v-col cols="12" class="marketplace-styles">
+      <v-col cols="12" class="marketplace-styles mt-9">
         <h5 class="mb-3 bold">Redemptions</h5>
         
         <div class="divrow jspace">
@@ -466,8 +466,12 @@ windowStepComputed = computed(() => {
   }
 }),
 
-redemptionsByMe = computed(() => redemptions.value.filter(e => e.redeemedBy === profile.value?.principalId.toString())),
-redemptionsToMe = computed(() => redemptions.value.filter(e => e.beneficiary === profile.value?.principalId.toString())),
+redemptionsByMe = computed(() => redemptions.value.filter(e => e.redeemedBy.toString() === profile.value?.principalId.toString())),
+redemptionsToMe = computed(() => redemptions.value.filter(e => {
+  const principalId = profile.value?.principalId.toString()
+
+  return e.redeemedBy.toString() !== principalId && e.beneficiary.toString() === principalId
+})),
 
 filteredRedemptions = computed(() => {
   switch (redemptionTabs.value[redemptionTab.value].value) {
@@ -547,7 +551,7 @@ async function getRedemptions() {
         redeemedBy: item.from,
         beneficiary: item.to,
         energy_source: item.assetInfo.assetType,
-        // price: item.priceE8S,
+        price: item.priceE8S,
         mwh: item.tokenAmount,
         country: item.assetInfo.specifications.country,
         date: item.date.toDateString(),

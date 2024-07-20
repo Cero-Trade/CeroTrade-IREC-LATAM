@@ -33,7 +33,7 @@
         </v-card>
       </v-col>
 
-      <v-col xl="4" lg="4" md="4" sm="6" cols="12">
+      <!-- <v-col xl="4" lg="4" md="4" sm="6" cols="12">
         <v-card class="card" style="background-color: #F9FAFB!important;">
           <img class="mb-10" src="@/assets/sources/icons/ring-belt.svg" alt="Wallet" style="width: 21px; height: 21px;">
           <h5 class="mb-6">Notification</h5>
@@ -45,7 +45,7 @@
             <img src="@/assets/sources/icons/bell-black.svg" alt="bell icon">
           </v-btn>
         </v-card>
-      </v-col>
+      </v-col> -->
 
       <v-col xl="4" lg="4" md="4" sm="6" cols="12">
         <v-card class="card" style="background-color: #F9FAFB!important;">
@@ -75,7 +75,7 @@
         </v-card>
       </v-col>
 
-      <v-col xl="4" lg="4" md="4" sm="6" cols="12">
+      <!-- <v-col xl="4" lg="4" md="4" sm="6" cols="12">
         <v-card class="card flex-column" style="background-color: #F9FAFB!important; --h: 100%">
           <img src="@/assets/sources/icons/wallet.svg" alt="wallet icon" class="mb-10" style="width: 20px">
           <h5 class="mb-6">Select Prefered Payment</h5>
@@ -87,14 +87,14 @@
             <img src="@/assets/sources/icons/plus.svg" alt="plus icon">
           </v-btn>
         </v-card>
-      </v-col>
+      </v-col> -->
 
       <v-col xl="4" lg="4" md="4" sm="6" cols="12">
         <v-card class="card flex-column" style="background-color: #F9FAFB!important; --h: 100%">
           <img src="@/assets/sources/icons/trash.svg" alt="trash icon" class="mb-10" style="width: 20px">
           <h5 class="mb-6">Delete account</h5>
           <span class="tertiary" style="font-weight: 300;">
-            Delete acocunt from cero trade registration.
+            Delete acocunt from Cero Trade registration.
           </span>
           <v-btn class="btn mt-auto mr-auto" @click="dialogDeleteAccount = true">
             Delete
@@ -316,72 +316,126 @@
 
     <!-- Dialog information -->
     <v-dialog v-model="dialogCompany" persistent>
-      <v-card class="card card-dialog-company">
-        <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="dialogCompany = false">
-        <v-sheet class="mb-10 double-sheet">
-          <v-sheet>
-            <img src="@/assets/sources/icons/users.svg" alt="users icon">
+      <v-form ref="formProfileRef" @submit.prevent>
+        <v-card class="card card-dialog-company">
+          <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="dialogCompany = false">
+          <v-sheet class="mb-10 double-sheet">
+            <v-sheet>
+              <img src="@/assets/sources/icons/users.svg" alt="users icon">
+            </v-sheet>
           </v-sheet>
-        </v-sheet>
-        <h5>Company information</h5>
-        <span class="tertiary">Lorem ipsum dolor sit amet consectetur, adipisicing elit</span>
+          <h5>Company information</h5>
+          <span class="tertiary">Add a trusted company you want to redeem IRECS to to your list of trusted beneficiaries.</span>
 
-        <div class="divrow mt-4 mb-6 acenter" style="gap: 15px;">
-          <img src="@/assets/sources/images/company-logo.svg" alt="Logo" style="width: 45px;">
+          <v-file-input
+            id="profileCompanyLogo"
+            v-model="formProfile.companyLogo"
+            type="file"
+            accept="image/*"
+            class="d-none"
+            :rules="[globalRules.required]"
+            @change="({ target }) => {
+              const [file] = target.files
+              if (file) profileCompanyLogo = getUrlFromFile(file)
+            }"
+          ></v-file-input>
+          <label for="profileCompanyLogo" class="divrow mt-4 mb-6 acenter" style="gap: 15px; width: max-content;">
+            <v-card width="70" height="60" elevation="0" class="outlined d-flex flex-center pa-1">
+              <v-progress-circular
+                v-if="!profileCompanyLogo"
+                indeterminate
+                size="30"
+                color="rgb(var(--v-theme-primary))"
+              ></v-progress-circular>
+              <img v-else :src="profileCompanyLogo" alt="Logo" style="width: 100%; height: 100%; border-radius: inherit; object-fit: cover;">
+            </v-card>
 
-          <span style="color: #667085;"><img src="@/assets/sources/icons/cloud-upload.svg" alt="Logo" style="width: 15px;"> Replace Company Logo</span>
-        </div>
+            <span style="color: #667085;">
+              <img src="@/assets/sources/icons/cloud-upload.svg" alt="Logo" style="width: 15px;">
+              Replace Company Logo
+            </span>
+          </label>
 
-        <v-row>
-          <v-col xl="6" lg="6" cols="12">
-            <label for="company-name">Company name</label>
-            <v-text-field id="company-name" class="input" variant="solo" flat elevation="0" placeholder="ABC Company"></v-text-field>
-          </v-col>
+          <v-row>
+            <v-col xl="6" lg="6" cols="12">
+              <label for="company-name">Company name</label>
+              <v-text-field
+                id="company-name"
+                v-model="formProfile.companyName"
+                class="input" variant="solo" flat elevation="0"
+                placeholder="ABC Company"
+                :rules="[globalRules.required]"
+              ></v-text-field>
+            </v-col>
 
-          <v-col xl="6" lg="6" cols="12">
-            <label for="company-id">Company ID</label>
-            <v-text-field id="company-id" class="input" variant="solo" flat elevation="0" placeholder="0000000000"></v-text-field>
-          </v-col>
+            <v-col xl="6" lg="6" cols="12">
+              <label for="company-id">Company ID</label>
+              <v-text-field
+                id="company-id"
+                v-model="formProfile.companyId"
+                class="input" variant="solo" flat elevation="0"
+                placeholder="0000000000"
+                :rules="[globalRules.required]"
+              ></v-text-field>
+            </v-col>
 
-          <v-col xl="6" lg="6" cols="12">
-            <label for="city">City</label>
-            <v-text-field id="city" class="input" variant="solo" flat elevation="0" placeholder="New York"></v-text-field>
-          </v-col>
+            <v-col xl="6" lg="6" cols="12">
+              <label for="city">City</label>
+              <v-text-field
+                id="city"
+                v-model="formProfile.city"
+                class="input" variant="solo" flat elevation="0"
+                placeholder="New York"
+                :rules="[globalRules.required]"
+              ></v-text-field>
+            </v-col>
 
-          <v-col xl="6" lg="6" cols="12">
-            <label for="country">Country</label>
-            <v-select 
-            id="country" class="input" variant="solo" flat 
-            elevation="0" placeholder="USA"
-            menu-icon=""
-            >
-              <template #append-inner="{ isFocused }">
-                <img
-                  src="@/assets/sources/icons/chevron-down.svg"
-                  alt="chevron-down icon"
-                  :style="`transform: ${isFocused.value ? 'rotate(180deg)' : 'none'};`"
-                >
-              </template>
-            </v-select>
-          </v-col>
+            <v-col xl="6" lg="6" cols="12">
+              <label for="country">Country</label>
+              <v-autocomplete
+                id="country" v-model="formProfile.country"
+                class="input" variant="solo" flat elevation="0"
+                placeholder="USA"
+                menu-icon=""
+                :items="countries"
+                item-title="name"
+                item-value="code"
+                :rules="[globalRules.required]"
+              >
+                <template #append-inner="{ isFocused }">
+                  <img
+                    src="@/assets/sources/icons/chevron-down.svg"
+                    alt="chevron-down icon"
+                    :style="`transform: ${isFocused.value ? 'rotate(180deg)' : 'none'};`"
+                  >
+                </template>
+              </v-autocomplete>
+            </v-col>
 
-          <v-col cols="12">
-            <label for="address">Company address</label>
-            <v-text-field id="address" class="input" variant="solo" flat elevation="0" placeholder="office@abccompany.com"></v-text-field>
-          </v-col>
-        </v-row>
+            <v-col cols="12">
+              <label for="address">Company address</label>
+              <v-text-field
+                id="address"
+                v-model="formProfile.address"
+                class="input" variant="solo" flat elevation="0"
+                placeholder="office@abccompany.com"
+                :rules="[globalRules.required]"
+              ></v-text-field>
+            </v-col>
+          </v-row>
 
-        <div class="divrow mt-6" style="gap: 10px;">
-          <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogCompany = false">
-            Cancel
-            <img src="@/assets/sources/icons/close.svg" alt="close" style="width: 15px">
-          </v-btn>
-          <v-btn class="btn" @click="dialogCompany = false;" style="border: none!important;">
-            Save changes
-            <img src="@/assets/sources/icons/save.svg" alt="save icon">
-          </v-btn>
-        </div>
-      </v-card>
+          <div class="divrow mt-6" style="gap: 10px;">
+            <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogCompany = false">
+              Cancel
+              <img src="@/assets/sources/icons/close.svg" alt="close" style="width: 15px">
+            </v-btn>
+            <v-btn :loading="loadingFormProfile" class="btn" @click="saveProfileInfo" style="border: none!important;">
+              Save changes
+              <img src="@/assets/sources/icons/save.svg" alt="save icon">
+            </v-btn>
+          </div>
+        </v-card>
+      </v-form>
     </v-dialog>
     
     <!-- Dialog Select Payment -->
@@ -984,17 +1038,21 @@
 import '@/assets/styles/pages/settings.scss'
 import icpIcon from '@/assets/sources/icons/internet-computer-icon.svg'
 import bankIcon from '@/assets/sources/icons/bank.svg'
+import countriesJson from '@/assets/sources/json/countries-all.json'
+import ChileIcon from '@/assets/sources/icons/CL.svg'
 import { ref } from 'vue'
 import { AgentCanister } from '@/repository/agent-canister'
 import { AuthClientApi } from '@/repository/auth-client-api'
-import { closeLoader, showLoader } from '@/plugins/functions'
+import { closeLoader, fileCompression, getImageArrayBuffer, getUrlFromFile as getUrlFromFileFunc, showLoader } from '@/plugins/functions'
 import { useToast } from 'vue-toastification'
 import variables from '@/mixins/variables'
+import { UserProfileModel } from '@/models/user-profile-model'
 
 export default{
   setup(){
       const toast = useToast(),
       { globalRules, beneficiaryUrl } = variables,
+      getUrlFromFile = getUrlFromFileFunc,
       tabsWindow = ref(1),
       dialogNotification = ref(false),
       show_password= ref(false),
@@ -1042,10 +1100,27 @@ export default{
       }),
       beneficiaries = ref(null),
       loadingSearchBeneficiary = ref(false),
-      loadingAddBeneficiary = ref(false)
+      loadingAddBeneficiary = ref(false),
+      countries = countriesJson,
+      countriesImg = {
+        CL: ChileIcon
+      },
+      profileCompanyLogo = ref(null),
+      formProfileRef = ref(),
+      loadingFormProfile = ref(false),
+      formProfile = ref({
+        companyId: null,
+        companyName: null,
+        companyLogo: [],
+        country: null,
+        city: null,
+        address: null,
+        email: null,
+      })
 
     return{
       beneficiaryUrl,
+      getUrlFromFile,
       globalRules,
       toast,
       tabsWindow,
@@ -1077,7 +1152,18 @@ export default{
       formBeneficiary,
       beneficiaries,
       loadingSearchBeneficiary,
-      loadingAddBeneficiary
+      loadingAddBeneficiary,
+      countries,
+      countriesImg,
+      profileCompanyLogo,
+      formProfileRef,
+      loadingFormProfile,
+      formProfile,
+    }
+  },
+  computed: {
+    profile() {
+      return UserProfileModel.get()
     }
   },
   mounted() {
@@ -1086,10 +1172,21 @@ export default{
       this.dialogCompany = true
     }
 
-    this.getBeneficiaries()
+    this.getData()
   },
 
   methods:{
+    async getData() {
+      this.profileCompanyLogo = this.profile.companyLogo
+
+      this.formProfile.companyName = this.profile.companyName
+      this.formProfile.companyId = this.profile.companyId
+      this.formProfile.city = this.profile.city
+      this.formProfile.country = this.profile.country
+      this.formProfile.address = this.profile.address
+
+      await this.getBeneficiaries()
+    },
     async searchBeneficiaries() {
       if (!this.formBeneficiary.search || this.loadingSearchBeneficiary) return
       this.loadingSearchBeneficiary = true
@@ -1143,6 +1240,20 @@ export default{
       } catch (error) {
         this.toast.error(error);
       }
+    },
+    async saveProfileInfo() {
+      if (this.loadingFormProfile || !(await this.formProfileRef.validate()).valid) return
+      this.loadingFormProfile = true
+
+      try {
+        await AgentCanister.updateUserInfo(this.formProfile)
+        this.toast.success("Company information updated!")
+      } catch (error) {
+        this.toast.error(error.toString())
+      }
+
+      this.loadingFormProfile = false
+      this.dialogCompany = false;
     },
     async deleteAccount() {
       showLoader()

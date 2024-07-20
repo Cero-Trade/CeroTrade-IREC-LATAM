@@ -12,23 +12,23 @@
               <v-card class="card jspace no-bottom-pa flex-grow-1">
                 <div class="divcol">
                   <span>Total MWh</span>
-                  <h4 class="bold mb-0">10MWh</h4>
+                  <h4 class="bold mb-0">{{ formatAmount(totalMwh, { compact: true }) }} MWh</h4>
                 </div>
   
-                <div style="width: 140px;">
+                <!-- <div style="width: 140px;">
                   <mwh-chart height="80" :series="seriesMwh" />
-                </div>
+                </div> -->
               </v-card>
               
               <v-card class="card jspace no-bottom-pa flex-grow-1">
                 <div class="divcol">
                   <span>Redeemed MWh</span>
-                  <h4 class="bold mb-0">10MWh</h4>
+                  <h4 class="bold mb-0">{{ formatAmount(totalRedemptions, { compact: true }) }} MWh</h4>
                 </div>
   
-                <div style="width: 140px;">
-                  <mwh-chart height="80" :series="seriesMwh" />
-                </div>
+                <!-- <div style="width: 140px;">
+                  <mwh-chart height="80" :series="seriesRedemptions" />
+                </div> -->
               </v-card>
             </v-col>
   
@@ -398,6 +398,7 @@
   import { AgentCanister } from '@/repository/agent-canister'
   import { useToast } from 'vue-toastification'
   import ModalImportIrecs from '@/components/modals/modal-import-irecs.vue'
+  import { formatAmount as formatAmountFunc } from '@/plugins/functions'
   import { ref } from 'vue'
   
   export default {
@@ -409,10 +410,12 @@
       // IrecChart
     },
     setup(){
-      const toast = useToast()
+      const toast = useToast(),
+      formatAmount = formatAmountFunc
 
       return{
         toast,
+        formatAmount,
         profile: UserProfileModel.get(),
         walletStatus: false,
         status2fa: false,
@@ -459,27 +462,14 @@
         //     }
         //   }]
         // },
-  
-        series: [{
-          name: 'PRODUCT A',
-          data: [424, 355, 431, 167, 212, 543, 664, 155, 841, 637, 122, 443]
-        }, 
-        {
-          name: 'PRODUCT B',
-          data: [153, 623, 720, 338, 193, 217, 113, 233, 420, 558, 113, 927]
-        }, 
-        {
-          name: 'PRODUCT C',
-          data: [111, 187, 165, 115, 821, 814, 411, 173, 315, 115, 261, 314]
-        },],
-        
         seriesRenewable: ref(undefined),
         categoriesRenewable: ref(undefined),
-        seriesMwh: [{
-            name: 'Series 1',
-            data: [31, 40, 28, 51, 42, 109, 100, 31, 40, 28, 51, 42, 109, 100 ]
-          }, 
-        ],
+
+        seriesMwh: ref([]),
+        seriesRedemptions: ref([]),
+
+        totalMwh: ref(0),
+        totalRedemptions: ref(0)
       }
     },
     beforeMount() {
@@ -488,16 +478,40 @@
     methods: {
       async getData() {
         try {
-          const response = await AgentCanister.getAssetStatistics(),
-          categories = [], renewable = []
+          const response = await AgentCanister.getAllAssetStatistics(),
+          grouped = response.reduce((acc, [_, item]) => {
+            let existenceElement = acc.find(elem => elem.assetType === item.assetType);
 
-          for (const [energy, mwh] of response) {
-            renewable.push(energy)
-            categories.push(mwh)
+            if (existenceElement) {
+              existenceElement.mwh += item.mwh;
+              existenceElement.redemptions += item.redemptions;
+            } else {
+              acc.push({ ...item });
+            }
+            return acc;
+          }, []) ?? [],
+          assetTypes = [], redemptions = [], mwhs = []
+
+          for (const { assetType, mwh, redemptions: redeems } of grouped) {
+            assetTypes.push(assetType)
+            redemptions.push(redeems)
+            mwhs.push(mwh)
           }
 
-          this.seriesRenewable = [{ name: 'MWh in Cero Trade', data: categories }]
-          this.categoriesRenewable = renewable
+          this.seriesRenewable = [{ name: 'MWh in Cero Trade', data: mwhs }]
+          this.categoriesRenewable = assetTypes
+
+          this.seriesMwh = [{
+            name: 'Mwh for energy source',
+            data: mwhs
+          }]
+          this.seriesRedemptions = [{
+            name: 'Redemptions for energy source',
+            data: redemptions
+          }]
+
+          this.totalMwh = mwhs.reduce((acc, mwh) => acc + mwh, 0)
+          this.totalRedemptions = redemptions.reduce((acc, redemption) => acc + redemption, 0)
         } catch (error) {
           this.toast.error(error)
         }

@@ -29,10 +29,10 @@ actor class Agent() = this {
   stable var controllers: ?[Principal] = null;
 
   // constants
-  stable let notExists = "User doesn't exists on cero trade";
+  stable let notExists = "User doesn't exists on Cero Trade";
 
 
-  /// login user into cero trade
+  /// login user into Cero Trade
   public shared({ caller }) func login(): async() {
     // WARN just for debug
     Debug.print(Principal.toText(caller));
@@ -42,7 +42,7 @@ actor class Agent() = this {
   };
 
 
-  /// register user into cero trade
+  /// register user into Cero Trade
   public shared({ caller }) func register(form: T.RegisterForm, beneficiary: ?T.BID): async() {
     await UserIndex.registerUser(caller, form, beneficiary)
   };
@@ -52,7 +52,7 @@ actor class Agent() = this {
   public shared({ caller }) func storeCompanyLogo(avatar: T.CompanyLogo): async() { await UserIndex.storeCompanyLogo(caller, avatar) };
 
 
-  /// delete user into cero trade
+  /// delete user into Cero Trade
   public shared({ caller }) func deleteUser(): async() { await UserIndex.deleteUser(caller) };
 
   /// get canister controllers
@@ -91,7 +91,6 @@ actor class Agent() = this {
   public shared({ caller }) func registerToken(tokenId: Text, name: Text, symbol: Text, logo: Text): async (T.CanisterId, T.AssetInfo) {
     IC_MANAGEMENT.adminValidation(caller, controllers);
     let tokenStats = await TokenIndex.registerToken(tokenId, name, symbol, logo);
-    await Statistics.registerAssetStatistic(tokenStats.1.assetType, tokenStats.1.volumeProduced);
     tokenStats
   };
 
@@ -120,6 +119,9 @@ actor class Agent() = this {
 
     // update user portfolio
     await UserIndex.updatePortfolio(recipent, tokenId, { delete = false });
+
+    // register asset statistic
+    await Statistics.registerAssetStatistic(tokenId, { mwh = ?tokenAmount; redemptions = null });
 
     txIndex
   };
@@ -173,8 +175,8 @@ actor class Agent() = this {
 
   /// send beneficiary notification
   public shared({ caller }) func requestBeneficiary(beneficiaryId: T.BID): async() {
-    // check if user exists
-    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
+    // check if user exists and check beneficiary already added
+    if (await UserIndex.checkBeneficiary(caller, beneficiaryId)) throw Error.reject("Beneficiary has already been added");
 
     // send beneficiary notification
     await _addNotification({
@@ -193,12 +195,12 @@ actor class Agent() = this {
   };
 
 
-  /// filter users on cero trade by name or principal id
+  /// filter users on Cero Trade by name or principal id
   public shared({ caller }) func filterUsers(user: Text): async [T.UserProfile] { await UserIndex.filterUsers(caller, user) };
 
 
   /// function to know user token balance
-  public shared({ caller }) func balanceOf(tokenId: T.TokenId): async Nat { await TokenIndex.balanceOf(caller, tokenId) };
+  public shared({ caller }) func balanceOf(tokenId: T.TokenId): async T.TokenAmount { await TokenIndex.balanceOf(caller, tokenId) };
 
   /// get user portfolio information
   public shared({ caller }) func getPortfolio(page: ?Nat, length: ?Nat, assetTypes: ?[T.AssetType], country: ?Text, mwhRange: ?[T.TokenAmount]): async {
@@ -562,6 +564,12 @@ actor class Agent() = this {
   };
 
 
+  // request to know if user is selling token provided in marketplace
+  public shared({ caller }) func checkUserTokenInMarket(tokenId: T.TokenId): async Bool {
+    await Marketplace.isSellingToken(caller, tokenId)
+  };
+
+
   // ask market to take off market
   public shared ({ caller }) func takeTokenOffMarket(tokenId: T.TokenId, quantity: T.TokenAmount): async T.TransactionInfo {
     // check if user exists
@@ -573,7 +581,7 @@ actor class Agent() = this {
 
     // check if user has enough tokens
     let tokenInSale = await Marketplace.getUserTokensOnSale(caller, tokenId);
-    if (tokenInSale < quantity) throw Error.reject("Not enough tokens");
+    if (tokenInSale < quantity) throw Error.reject("Not enough tokens owned in market");
 
     // transfer tokens from marketplace to user
     let txIndex = await TokenIndex.takeOffMarketplace(caller, tokenId, quantity);
@@ -690,6 +698,9 @@ actor class Agent() = this {
     // change notification status
     let _ = await _updateEventNotification(caller, notificationId, ?#accepted("accepted"));
 
+    // register asset statistic
+    await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = ?quantity });
+
     { txInfo with transactionId = txId }
   };
 
@@ -727,6 +738,9 @@ actor class Agent() = this {
     // register transaction
     let txId = await TransactionIndex.registerTransaction(txInfo);
     await UserIndex.updateTransactions(caller, txId);
+
+    // register asset statistic
+    await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = ?quantity });
 
     { txInfo with transactionId = txId }
   };
@@ -830,8 +844,11 @@ actor class Agent() = this {
   };
 
 
-  // get asset registrations
-  public func getAssetStatistics(): async [(Text, T.TokenAmount)] { await Statistics.getAssetStatistics() };
+  // get all asset statistics
+  public func getAllAssetStatistics(): async [(T.TokenId, T.AssetStatistic)] { await Statistics.getAllAssetStatistics() };
+
+  // get asset statistics
+  public func getAssetStatistics(tokenId: T.TokenId): async T.AssetStatistic { await Statistics.getAssetStatistics(tokenId) };
 
 
   // get notifications
@@ -892,9 +909,14 @@ actor class Agent() = this {
       };
     };
 
-    let triggerHasCancel = await NotificationIndex.updateEventNotification(caller, { receiver; trigger }, (cid, notification), eventStatus);
-    if (not triggerHasCancel) return null;
+    let redemptionCancelled = await NotificationIndex.updateEventNotification(caller, { receiver; trigger }, (cid, notification), eventStatus);
+    if (not redemptionCancelled) return null;
 
+    // flow to return holded tokens
+    let triggerUser = switch(notification.triggeredBy) {
+      case(null) throw Error.reject("triggeredBy not provided");
+      case(?value) value;
+    };
     let tokenId = switch(notification.tokenId) {
       case(null) throw Error.reject("tokenId not provided");
       case(?value) value;
@@ -905,7 +927,7 @@ actor class Agent() = this {
     };
 
     // return tokens holded on token canister if trigger performe cancelation
-    let txIndex = await TokenIndex.requestRedeem(caller, tokenId, quantity, { returns = true });
+    let txIndex = await TokenIndex.requestRedeem(triggerUser, tokenId, quantity, { returns = true });
     ?txIndex
   };
 }

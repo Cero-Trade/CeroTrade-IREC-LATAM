@@ -33,7 +33,7 @@ shared({ caller = userIndexCaller }) actor class Users() {
   public query func length(): async Nat { users.size() };
 
 
-  /// register user to cero trade
+  /// register user to Cero Trade
   public shared({ caller }) func registerUser(uid: T.UID, token: Text): async() {
     _callValidation(caller);
 
@@ -50,14 +50,14 @@ shared({ caller = userIndexCaller }) actor class Users() {
   };
 
 
-  /// delete user to cero trade
+  /// delete user to Cero Trade
   public shared({ caller }) func deleteUser(uid: T.UID): async() {
     _callValidation(caller);
     let _ = users.remove(uid)
   };
 
 
-  /// store user company logo to cero trade
+  /// store user company logo to Cero Trade
   public shared({ caller }) func storeCompanyLogo(uid: T.UID, avatar: T.CompanyLogo): async() {
     _callValidation(caller);
 

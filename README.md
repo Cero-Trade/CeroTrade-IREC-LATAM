@@ -1,7 +1,6 @@
 <!-- TODO subdomain integration with `cerotrade.cl/alfa` -->
 <!-- TODO delete beneficiary id from web3 register and migrate to web2 -->
 <!-- TODO import irecs in dashboard -->
-<!-- TODO prevent to add beneficiary request if exists in current register -->
 
 <!-- TODO trouble dismiss button event notification, i guess is performing execute function -->
 <!-- TODO spend not authorized of tokens in redemption -->
