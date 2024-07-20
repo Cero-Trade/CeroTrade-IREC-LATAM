@@ -569,7 +569,7 @@ actor class Agent() = this {
 
     // check if user has enough tokens
     let tokenInSale = await Marketplace.getUserTokensOnSale(caller, tokenId);
-    if (tokenInSale < quantity) throw Error.reject("Not enough tokens");
+    if (tokenInSale < quantity) throw Error.reject("Not enough tokens owned in market");
 
     // transfer tokens from marketplace to user
     let txIndex = await TokenIndex.takeOffMarketplace(caller, tokenId, quantity);
