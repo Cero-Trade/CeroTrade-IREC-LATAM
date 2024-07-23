@@ -37,7 +37,7 @@ module {
   };
 
   public type UID = Principal;
-  public type EID = Text;
+  public type EvidentID = Text;
   public type CanisterId = Principal;
   public type TokenId = Text;
   public type TransactionId = Text;
@@ -56,6 +56,7 @@ module {
   //
   public type RegisterForm = {
     companyId: Text;
+    evidentId: EvidentID;
     companyName: Text;
     country: Text;
     city: Text;
@@ -173,25 +174,6 @@ module {
     deviceDetails: DeviceDetails;
     specifications: Specifications;
     dates: [Text];
-  };
-
-  public type UnregisteredIrec = {
-    id: Nat;
-    transactionId: EvidentTransactionId;
-    sourceAccountCode: Text;
-    transactionType: Text;
-    volume: Text;
-    timestamp: Text;
-    items: [
-      {
-        source: Text;
-        volume: Text;
-        assetId: Text;
-      }
-    ];
-    processed: Bool;
-    createdAt: Text;
-    updatedAt: Text;
   };
 
   //

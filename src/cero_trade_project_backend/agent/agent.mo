@@ -95,15 +95,10 @@ actor class Agent() = this {
   // };
 
 
-  /// get unregistered irecs
-  public func getUnregisteredIrecs(sourceAccountCode: T.EID): async [T.UnregisteredIrec] {
-    await TokenIndex.getUnregisteredIrecs(sourceAccountCode);
-  };
-
-
   /// import user tokens
-  public func importUserTokens(sourceAccountCode: T.EID, transactions: [T.EvidentTransactionId]): async() {
-    await TokenIndex.importUserTokens(sourceAccountCode, transactions);
+  public shared({ caller }) func importUserTokens(): async [{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }] {
+    let userToken = await UserIndex.getUserToken(caller);
+    await TokenIndex.importUserTokens(userToken);
   };
 
 

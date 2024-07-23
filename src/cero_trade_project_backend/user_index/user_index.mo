@@ -258,6 +258,7 @@ actor class UserIndex() = this {
     let formData = {
       principalId = Principal.toText(uid);
       companyId = form.companyId;
+      evidentId = form.evidentId;
       companyName = form.companyName;
       country = form.country;
       city = form.city;
@@ -266,7 +267,7 @@ actor class UserIndex() = this {
     };
 
     let formBlob = to_candid(formData);
-    let formKeys = ["principalId", "companyId", "companyName", "country", "city", "address", "email"];
+    let formKeys = ["principalId", "companyId", "evidentId", "companyName", "country", "city", "address", "email"];
 
     // WARN just for debug
     Debug.print(Principal.toText(uid));

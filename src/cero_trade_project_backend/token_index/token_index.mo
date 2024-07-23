@@ -184,110 +184,62 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   };
 
   /// register [tokenDirectory] collection
-  private func registerToken<system>(tokenId: Text): async (T.CanisterId, T.AssetInfo) {
-    if (tokenId == "") throw Error.reject("Must to provide a tokenId");
+  private func registerToken<system>(assetMetadata: T.AssetInfo): async T.CanisterId {
+    let cid = switch (tokenDirectory.get(assetMetadata.tokenId)) {
 
-    let assetsJson = await HttpService.get({
-      url = HT.apiUrl # "assets/" # tokenId;
-      port = null;
-      headers = [];
-    });
+      // get token
+      case (?cid) cid;
 
-    let assetMetadata: T.AssetInfo = switch(Serde.JSON.fromText(assetsJson, null)) {
-      case(#err(_)) throw Error.reject("cannot serialize asset data");
-      case(#ok(blob)) {
-        let assetResponse: ?AssetResponse = from_candid(blob);
+      // register token in case doesnt exists
+      case (null) {
+        Debug.print(debug_show ("before registerToken: " # Nat.toText(Cycles.balance())));
 
-        switch(assetResponse) {
-          case(null) throw Error.reject("cannot serialize asset data");
-          case(?value) {
-            Debug.print("here ----------> " # debug_show (value));
-
-            // TODO missing energy type
-            let energy: T.AssetType = #hydro("hydro");
-
-            {
-              tokenId;
-              assetType = energy;
-              startDate = value.startDate;
-              endDate = value.endDate;
-              co2Emission = value.co2Produced;
-              radioactivityEmnission = value.radioactiveProduced;
-              volumeProduced: T.TokenAmount = switch(Nat.fromText(value.volume)) {
-                case(null) 0;
-                case(?value) value;
+        Cycles.add<system>(T.cyclesCreateCanister);
+        /// create canister
+        let { canister_id } = await IC_MANAGEMENT.ic.create_canister({
+          settings = ?{
+            controllers = switch(controllers) {
+              case(null) null;
+              case(?value) {
+                let currentControllers = Buffer.fromArray<Principal>(value);
+                currentControllers.add(Principal.fromActor(this));
+                ?Buffer.toArray<Principal>(currentControllers);
               };
-              // missing this info
-              deviceDetails = {
-                name = "machine";
-                deviceType = "type";
-                group = energy;
-                description = "description";
-              };
-              // missing this info
-              specifications = {
-                deviceCode = "200";
-                capacity: T.TokenAmount = 1_000;
-                location = "location";
-                latitude = "0";
-                longitude = "1";
-                address = "address anywhere";
-                stateProvince = "chile";
-                country = "CL";
-              };
-              // missing this info
-              dates = ["2024-04-29T19:43:34.000Z", "2024-05-29T19:48:31.000Z", "2024-05-29T19:48:31.000Z"];
             };
-          };
-        };
+            compute_allocation = null;
+            memory_allocation = null;
+            freezing_threshold = null;
+          }
+        });
+
+        Debug.print(debug_show ("later create_canister: " # Nat.toText(Cycles.balance())));
+
+        // install canister code
+        await IC_MANAGEMENT.ic.install_code({
+          arg = to_candid({
+            // TODO review value declarations
+            name = assetMetadata.deviceDetails.name;
+            symbol = assetMetadata.tokenId;
+            logo = null;
+            assetMetadata;
+            comission = Nat64.toNat(T.getCeroComission());
+            comissionHolder;
+          });
+          wasm_module;
+          mode = #install;
+          canister_id;
+        });
+
+        Debug.print(debug_show ("later install_canister: " # Nat.toText(Cycles.balance())));
+
+        await Token.canister(canister_id).admin_init();
+
+        tokenDirectory.put(assetMetadata.tokenId, canister_id);
+        canister_id;
       };
     };
 
-
-    Debug.print(debug_show ("before registerToken: " # Nat.toText(Cycles.balance())));
-
-    Cycles.add<system>(T.cyclesCreateCanister);
-    /// create canister
-    let { canister_id } = await IC_MANAGEMENT.ic.create_canister({
-      settings = ?{
-        controllers = switch(controllers) {
-          case(null) null;
-          case(?value) {
-            let currentControllers = Buffer.fromArray<Principal>(value);
-            currentControllers.add(Principal.fromActor(this));
-            ?Buffer.toArray<Principal>(currentControllers);
-          };
-        };
-        compute_allocation = null;
-        memory_allocation = null;
-        freezing_threshold = null;
-      }
-    });
-
-    Debug.print(debug_show ("later create_canister: " # Nat.toText(Cycles.balance())));
-
-    // install canister code
-    await IC_MANAGEMENT.ic.install_code({
-      arg = to_candid({
-        // TODO review value declarations
-        name = assetMetadata.deviceDetails.name;
-        symbol = tokenId;
-        logo = null;
-        assetMetadata;
-        comission = Nat64.toNat(T.getCeroComission());
-        comissionHolder;
-      });
-      wasm_module;
-      mode = #install;
-      canister_id;
-    });
-
-    Debug.print(debug_show ("later install_canister: " # Nat.toText(Cycles.balance())));
-
-    await Token.canister(canister_id).admin_init();
-
-    tokenDirectory.put(tokenId, canister_id);
-    return (canister_id, assetMetadata);
+    cid
   };
 
   /// delete [tokenDirectory] collection
@@ -373,7 +325,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     };
   };
 
-  public shared({ caller }) func getAssetInfo(tokenId: T.TokenId): async T.AssetInfo {
+  public func getAssetInfo(tokenId: T.TokenId): async T.AssetInfo {
     switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found on Cero Trade");
       case (?cid) return await Token.canister(cid).assetMetadata();
@@ -381,55 +333,88 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   };
 
 
-  public shared({ caller }) func getUnregisteredIrecs(sourceAccountCode: T.EID): async [T.UnregisteredIrec] {
+  public shared({ caller }) func importUserTokens(userToken: T.UserToken): async [{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }] {
     _callValidation(caller);
 
-    let irecsJson = await HttpService.post({
-      url = HT.apiUrl # "transactions/fetchByUser";
+    let assetsJson = await HttpService.post({
+      url = HT.apiUrl # "assets/import";
       port = null;
       headers = [];
-      bodyJson = "{\"sourceAccountCode\": \"" # sourceAccountCode # "\"}";
+      bodyJson = "{\"userToken\": \"" # userToken # "\"}";
     });
 
-    switch(Serde.JSON.fromText(irecsJson, null)) {
-      case(#err(_)) throw Error.reject("cannot serialize profile data");
+    let assetsMetadata: [{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }] = switch(Serde.JSON.fromText(assetsJson, null)) {
+      case(#err(_)) throw Error.reject("cannot serialize asset data");
       case(#ok(blob)) {
-        let irecsResponse: ?[T.UnregisteredIrec] = from_candid(blob);
+        let assetResponse: ?[{ mwh: T.TokenAmount; assetInfo: AssetResponse }] = from_candid(blob);
 
-        switch(irecsResponse) {
-          case(null) throw Error.reject("cannot serialize profile data");
-          case(?value) return value;
+        switch(assetResponse) {
+          case(null) throw Error.reject("cannot serialize asset data");
+          case(?response) {
+            Debug.print("here ----------> " # debug_show (response));
+
+            let assets = Buffer.Buffer<{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }>(16);
+
+            for({ mwh; assetInfo } in response.vals()) {
+              assets.add({ mwh; assetInfo = buildAssetInfo(assetInfo) });
+            };
+
+            Buffer.toArray<{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }>(assets);
+          };
         };
       };
     };
-  };
 
 
-  // TODO evaluate this function to add user token and validate user transactions if corresponds
-  public shared({ caller }) func importUserTokens(sourceAccountCode: T.EID, transactions: [T.EvidentTransactionId]): async() {
-    _callValidation(caller);
+    for({ mwh; assetInfo } in assetsMetadata.vals()) {
+      // get token or register in case doesnt exists
+      let cid = await registerToken(assetInfo);
 
-    // let assetsJson = await HttpService.post({
-    //   url = HT.apiUrl # "transactions/markAsProcessed";
-    //   port = null;
-    //   headers = [];
-    //   bodyJson = "{\"transactionId\": \"" # transactionId # "\"}";
-    // });
+      // mint tokens to user
+      let _transferResult: ICRC1.TransferResult = await Token.canister(cid).mint({
+        to = {
+          owner = caller;
+          subaccount = null;
+        };
+        amount = mwh;
+        created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
+        memo = null;
+      });
+    };
+
+    assetsMetadata
   };
 
 
   public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, amount: T.TokenAmount): async T.TxIndex {
     _callValidation(caller);
 
-    // get token or register in case doesnt exists
-    let cid = switch (tokenDirectory.get(tokenId)) {
-      case (null) {
-        let result = await registerToken(tokenId);
-        result.0
+    let assetsJson = await HttpService.get({
+      url = HT.apiUrl # "assets/" # tokenId;
+      port = null;
+      headers = [];
+    });
+
+    let assetMetadata: T.AssetInfo = switch(Serde.JSON.fromText(assetsJson, null)) {
+      case(#err(_)) throw Error.reject("cannot serialize asset data");
+      case(#ok(blob)) {
+        let assetResponse: ?AssetResponse = from_candid(blob);
+
+        switch(assetResponse) {
+          case(null) throw Error.reject("cannot serialize asset data");
+          case(?value) {
+            Debug.print("here ----------> " # debug_show (value));
+
+            buildAssetInfo(value);
+          };
+        };
       };
-      case (?cid) cid;
     };
 
+    // get token or register in case doesnt exists
+    let cid = await registerToken(assetMetadata);
+
+    // mint token to user
     let transferResult: ICRC1.TransferResult = await Token.canister(cid).mint({
       to = {
         owner = recipent;
@@ -452,6 +437,45 @@ shared({ caller = owner }) actor class TokenIndex() = this {
         case (#TooOld) "#TooOld";
       });
       case(#Ok(value)) value;
+    };
+  };
+
+  // helper function used to build [AssetInfo] from AssetResponse
+  private func buildAssetInfo(asset: AssetResponse): T.AssetInfo {
+    // TODO missing energy type
+    let energy: T.AssetType = #hydro("hydro");
+
+    {
+      tokenId = asset.code;
+      assetType = energy;
+      startDate = asset.startDate;
+      endDate = asset.endDate;
+      co2Emission = asset.co2Produced;
+      radioactivityEmnission = asset.radioactiveProduced;
+      volumeProduced: T.TokenAmount = switch(Nat.fromText(asset.volume)) {
+        case(null) 0;
+        case(?value) value;
+      };
+      // missing this info
+      deviceDetails = {
+        name = "machine";
+        deviceType = "type";
+        group = energy;
+        description = "description";
+      };
+      // missing this info
+      specifications = {
+        deviceCode = "200";
+        capacity: T.TokenAmount = 1_000;
+        location = "location";
+        latitude = "0";
+        longitude = "1";
+        address = "address anywhere";
+        stateProvince = "chile";
+        country = "CL";
+      };
+      // missing this info
+      dates = ["2024-04-29T19:43:34.000Z", "2024-05-29T19:48:31.000Z", "2024-05-29T19:48:31.000Z"];
     };
   };
 

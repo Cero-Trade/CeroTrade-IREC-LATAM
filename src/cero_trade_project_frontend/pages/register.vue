@@ -40,11 +40,24 @@
                 ></v-text-field>
               </v-col>
               <v-col xl="6" lg="6" md="6" sm="12" cols="12">
-                <label for="companey-id">Company ID</label>
+                <label for="company-id">Company ID</label>
                 <v-text-field 
                 v-model="companyForm.companyId"
                 id="company-id" class="input" variant="solo" flat elevation="0" 
                 placeholder="123456789"
+                :rules="[globalRules.required]"
+                >
+                  <template #append-inner>
+                    <img src="@/assets/sources/icons/help-circle.svg" alt="help-circle icon">
+                  </template>
+                </v-text-field>
+              </v-col>
+              <v-col xl="6" lg="6" md="6" sm="12" cols="12">
+                <label for="evident-id">Evident Account ID</label>
+                <v-text-field 
+                v-model="companyForm.evidentId"
+                id="evident-id" class="input" variant="solo" flat elevation="0" 
+                placeholder="ET5T6GHO"
                 :rules="[globalRules.required]"
                 >
                   <template #append-inner>
@@ -205,6 +218,7 @@ windowStep = ref(1),
 companyFormRef = ref(),
 companyForm = ref({
   companyId: null,
+  evidentId: null,
   companyName: null,
   companyLogo: null,
   country: null,

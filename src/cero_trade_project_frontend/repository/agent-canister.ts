@@ -3,7 +3,7 @@ import { useAgentCanister as agent, getErrorMessage } from "@/services/icp-provi
 import avatar from '@/assets/sources/images/avatar-online.svg'
 import store from "@/store";
 import { UserProfileModel } from "@/models/user-profile-model";
-import { AssetType, TokenModel } from "@/models/token-model";
+import { AssetInfoModel, AssetType, TokenModel } from "@/models/token-model";
 import { Tokens, TokensICP, TransactionHistoryInfo, TransactionInfo, TxMethodDef, TxTypeDef } from "@/models/transaction-model";
 import { MarketplaceInfo, MarketplaceSellersInfo } from "@/models/marketplace-model";
 import { Principal } from "@dfinity/principal";
@@ -15,6 +15,7 @@ import { AssetStatistic } from "@/models/statistics-model";
 export class AgentCanister {
   static async register(data: {
     companyId: string,
+    evidentId: string,
     companyName: string,
     companyLogo: File[],
     country: string,
@@ -26,6 +27,7 @@ export class AgentCanister {
       // store user
       await agent().register({
         companyId: data.companyId,
+        evidentId: data.evidentId,
         companyName: data.companyName,
         country: data.country,
         city: data.city,
@@ -267,6 +269,52 @@ export class AgentCanister {
     try {
       await agent().requestBeneficiary(beneficiaryId)
     } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+  static async importUserTokens(): Promise<{ mwh: number, assetInfo: AssetInfoModel }[]> {
+    try {
+      return await agent().importUserTokens() as { mwh: number, assetInfo: AssetInfoModel }[]
+    } catch (error) {
+
+      // TODO while endpoint is builded - delete this later
+      return await new Promise((resolve, reject) => {
+        setTimeout(() => resolve([
+          {
+            mwh: 100,
+            assetInfo: {
+              tokenId: "string",
+              assetType: "hydro",
+              startDate: new Date(),
+              endDate: new Date(),
+              co2Emission: 100,
+              radioactivityEmnission: 100,
+              volumeProduced: 100,
+              deviceDetails: {
+                name: "string",
+                deviceType: "string",
+                group: "hydro",
+                description: "string",
+              },
+              specifications: {
+                deviceCode: "string",
+                capacity: 100,
+                location: "string",
+                latitude: 100,
+                longitude: 100,
+                address: "string",
+                stateProvince: "string",
+                country: "CL",
+              },
+              dates: [],
+            },
+          }
+        ]), 1000)
+      })
+      // TODO while endpoint is builded - delete this later
+
       console.error(error);
       throw getErrorMessage(error)
     }

@@ -7,7 +7,7 @@
       <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="model = false">
 
       <img
-        v-if="windowStep === 3"
+        v-if="windowStep !== 1"
         src="@/assets/sources/icons/lightning-green-circle.svg" alt="check icon"
         class="mb-4"
         style="width: 65px; height: 66.56px;"
@@ -23,11 +23,11 @@
         <v-window-item :value="1">
           <h5>Import your IRECs</h5>
 
-          <p>Submit your Evident account number so we can look for any asset transactions that haven’t been added to our marketplace.</p>
+          <p>Press check in order to verify any new IREC assets linked to your account in our Evident Platform Operator account.</p>
 
 
           <v-chip
-            v-if="!transactions"
+            v-if="!assets"
             color="var(--loader-bg-color)"
             class="loader-chip"
             style="width: 100% !important; border-radius: 12px !important;"
@@ -36,82 +36,39 @@
 
             <div class="d-flex flex-column ml-2">
               <span>Verifying information</span>
-              <span>Looking for your transactions.</span>
+              <span>Looking for your assets.</span>
             </div>
           </v-chip>
 
 
-          <v-form v-model="formValid" @submit.prevent>
-            <label for="account-number">Account number</label>
-            <v-text-field
-              id="account-number"
-              v-model="accountNumber"
-              placeholder="Enter Account Number"
-              variant="outlined"
-              density="compact"
-              :rules="[globalRules.required]"
-              @keyup="({ key }) => { if (key === 'Enter') getTransactions() }"
-            >
-              <template #append-inner>
-                <v-tooltip location="top">
-                  <template #activator="{ props }">
-                    <img src="@/assets/sources/icons/help-circle.svg" alt="info icon" v-bind="props">
-                  </template>
-
-                  <span>This is your account identifier number from evident</span>
-                </v-tooltip>
-              </template>
-            </v-text-field>
-          </v-form>
-
           <v-btn
-            :disabled="!formValid"
-            :loading="!transactions"
+            :loading="!assets"
             class="btn mt-4" style="border: none!important;width: 100% !important;"
-            @click="getTransactions"
-          >Submit</v-btn>
+            @click="importUserTokens"
+          >Check</v-btn>
         </v-window-item>
 
 
         <v-window-item :value="2">
-          <h5>Import your IRECs</h5>
+          <h5>Import successful</h5>
 
-          <p>Select the assets that you wish to add to your portafolio.</p>
+          <p>Your assets were succesfully tokenized and linked to your account. You can find them in your portafolio.</p>
 
           <v-data-table
             :headers="headers"
-            :items="transactions"
-            :loading="!transactions"
+            :items="assets"
+            :loading="!assets"
             class="mt-6 my-data-table hide-footer"
             density="compact"
           >
-            <template #[`item.checkbox`]="{ item }">
-              <v-checkbox
-                v-model="item.checkbox"
-                hide-details
-                density="compact"
-                class="mx-auto"
-                style="max-width: 22px!important; min-width: 22px!important;"
-              >
-                <template #input="{ model }">
-                  <img
-                    :src="model.value ? checkboxCheckedIcon : checkboxBaseIcon"
-                    alt="checkbox icon"
-                    style="width: 22px"
-                    @click="model.value = !model.value"
-                  >
-                </template>
-              </v-checkbox>
+            <template #[`item.assetInfo.tokenId`]="{ item }">
+              <span class="acenter bold" style="color: #475467;">{{ item.assetInfo.tokenId }} </span>
             </template>
 
-            <template #[`item.asset_id`]="{ item }">
-              <span class="acenter bold" style="color: #475467;">{{ item.asset_id }} </span>
-            </template>
-
-            <template #[`item.energy_source`]="{ item }">
+            <template #[`item.assetInfo.assetType`]="{ item }">
               <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-                <img :src="energies[item.energy_source]" :alt="`${item.energy_source} icon`" style="width: 20px;">
-                {{ item.energy_source }} Energy
+                <img :src="energies[item.assetInfo.assetType]" :alt="`${item.assetInfo.assetType} icon`" style="width: 20px;">
+                {{ item.assetInfo.assetType }} Energy
               </span>
             </template>
 
@@ -122,28 +79,26 @@
               </span>
             </template>
 
-            <template #[`item.country`]="{ item }">
+            <template #[`item.assetInfo.specifications.country`]="{ item }">
               <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-                <img :src="countriesImg[item.country]" :alt="`${item.country} Icon`" style="width: 20px;">
-                {{ item.country }}
+                <img :src="countriesImg[item.assetInfo.specifications.country]" :alt="`${item.assetInfo.specifications.country} Icon`" style="width: 20px;">
+                {{ item.assetInfo.specifications.country }}
               </span>
             </template>
           </v-data-table>
 
 
           <v-btn
-            :disabled="!selectedTxs.length"
-            :loading="loadingIrecs"
             class="btn mt-4" style="border: none!important;width: 100% !important;"
-            @click="importIrecs"
-          >Submit</v-btn>
+            @click="router.push('/my-portfolio')"
+          >Go to portfolio</v-btn>
         </v-window-item>
 
 
         <v-window-item :value="3">
-          <h5>Import successful</h5>
+          <h5>Import checked</h5>
 
-          <p>Your assets were succesfully tokenized and linked to your account. You can find them in your portafolio.</p>
+          <p>You have not assets pending for tokenize. You can checkout all assets owned in portafolio.</p>
 
           <v-btn
             class="btn mt-4" style="border: none!important;width: 100% !important;"
@@ -156,8 +111,6 @@
 </template>
 
 <script setup>
-import checkboxCheckedIcon from '@/assets/sources/icons/checkbox-checked.svg'
-import checkboxBaseIcon from '@/assets/sources/icons/checkbox-base.svg'
 import HydroEnergyIcon from '@/assets/sources/energies/hydro-color.svg'
 import OceanEnergyIcon from '@/assets/sources/energies/ocean.svg'
 import GeothermalEnergyIcon from '@/assets/sources/energies/geothermal.svg'
@@ -165,20 +118,17 @@ import BiomeEnergyIcon from '@/assets/sources/energies/biome.svg'
 import WindEnergyIcon from '@/assets/sources/energies/wind-color.svg'
 import SolarEnergyIcon from '@/assets/sources/energies/solar-color.svg'
 import ChileIcon from '@/assets/sources/icons/CL.svg'
-import variables from '@/mixins/variables';
-import { computed, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
+import { AgentCanister } from '@/repository/agent-canister'
 
 const
   router = useRouter(),
   toast = useToast(),
-  { globalRules } = variables,
 
 model = ref(false),
 windowStep = ref(1),
-formValid = ref(false),
-accountNumber = ref(null),
 
 energies = {
   hydro: HydroEnergyIcon,
@@ -192,16 +142,13 @@ countriesImg = {
   CL: ChileIcon
 },
 headers = [
-  { sortable: false, key: 'checkbox', align: "center" },
-  { title: 'Date', sortable: false, key: 'date'},
-  { title: 'Asset ID', sortable: false, key: 'asset_id'},
-  { title: 'Energy source', sortable: false, key: 'energy_source'},
+  { title: 'Date', sortable: false, key: 'assetInfo.startDate'},
+  { title: 'Asset ID', sortable: false, key: 'assetInfo.tokenId'},
+  { title: 'Energy source', sortable: false, key: 'assetInfo.assetType'},
   { title: 'MWh', key: 'mwh', sortable: false },
-  { title: 'Country', key: 'country', sortable: false },
+  { title: 'Country', key: 'assetInfo.specifications.country', sortable: false },
 ],
-transactions = ref([]),
-selectedTxs = computed(() => transactions.value.filter(e => e.checkbox)),
-loadingIrecs = ref(false)
+assets = ref([])
 
 defineExpose({ model })
 
@@ -209,57 +156,26 @@ defineExpose({ model })
 watch(model, (value) => {
   if (value) return
 
-  accountNumber.value = null
-  transactions.value = []
+  assets.value = []
   windowStep.value = 1
 })
 
-async function getTransactions() {
-  transactions.value = null
+
+async function importUserTokens() {
+  if (!assets.value) return
+  assets.value = null
 
   try {
-    setTimeout(() => {
-      transactions.value = [
-        {
-          checkbox: false,
-          date: new Date().toDateString(),
-          asset_id: "1",
-          energy_source: "hydro",
-          mwh: 100,
-          country: "CL",
-        },
-        {
-          checkbox: false,
-          date: new Date().toDateString(),
-          asset_id: "2",
-          energy_source: "ocean",
-          mwh: 100,
-          country: "CL",
-        },
-      ]
+    const result = await AgentCanister.importUserTokens()
+    assets.value = result
 
-      windowStep.value++
-    }, 1000)
+    if (assets.value.length) windowStep.value = 2
+    else windowStep.value = 3
+
   } catch (error) {
-    transactions.value = []
+    assets.value = []
     toast.error(error.toString())
   }
-}
-
-async function importIrecs() {
-  if (!selectedTxs.value.length || loadingIrecs.value) return
-  loadingIrecs.value = true
-
-  setTimeout(() => {
-    try {
-      console.log(selectedTxs.value);
-      windowStep.value++
-    } catch (error) {
-      toast.error(error.toString())
-    }
-
-    loadingIrecs.value = false
-  }, 1000);
 }
 </script>
 
