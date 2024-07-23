@@ -65,8 +65,7 @@ actor class NotificationIndex() = this {
 
     let branch = switch(ENV.DFX_NETWORK) {
       case("ic") "main";
-      case("local") "develop";
-      case _ throw Error.reject("No DFX_NETWORK provided");
+      case _ "develop";
     };
     let wasmModule = await HttpService.get({
       url = "https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # branch # "/wasm_modules/notifications.json";

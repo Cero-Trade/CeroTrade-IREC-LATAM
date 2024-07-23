@@ -264,7 +264,6 @@ module {
   //
   // statistic types
   //
-
   public type AssetStatistic = {
     mwh: TokenAmount;
     assetType: AssetType;

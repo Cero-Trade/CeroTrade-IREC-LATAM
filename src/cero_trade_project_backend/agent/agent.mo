@@ -87,12 +87,12 @@ actor class Agent() = this {
   };
 
 
-  /// register token on platform
-  public shared({ caller }) func registerToken(tokenId: Text, name: Text, symbol: Text, logo: Text): async (T.CanisterId, T.AssetInfo) {
-    IC_MANAGEMENT.adminValidation(caller, controllers);
-    let tokenStats = await TokenIndex.registerToken(tokenId, name, symbol, logo);
-    tokenStats
-  };
+  // /// register token on platform
+  // public shared({ caller }) func registerToken(tokenId: Text, name: Text, symbol: Text, logo: Text): async (T.CanisterId, T.AssetInfo) {
+  //   IC_MANAGEMENT.adminValidation(caller, controllers);
+  //   let tokenStats = await TokenIndex.registerToken(tokenId, name, symbol, logo);
+  //   tokenStats
+  // };
 
 
   /// get unregistered irecs
@@ -101,9 +101,9 @@ actor class Agent() = this {
   };
 
 
-  /// mark irec as registered
-  public func markIrecAsRegistered(sourceAccountCode: T.EID): async() {
-    await TokenIndex.markIrecAsRegistered(sourceAccountCode);
+  /// import user tokens
+  public func importUserTokens(sourceAccountCode: T.EID, transactions: [T.EvidentTransactionId]): async() {
+    await TokenIndex.importUserTokens(sourceAccountCode, transactions);
   };
 
 

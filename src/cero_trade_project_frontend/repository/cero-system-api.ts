@@ -12,21 +12,21 @@ export class CeroSystemApi {
     }
   }
 
-  static async registerToken({ tokenId, name, symbol, logo }: {
-    tokenId: string,
-    name: string,
-    symbol: string,
-    logo: File[]
-  }): Promise<Principal> {
-    const logoUrl = getUrlFromArrayBuffer(getImageArrayBuffer(logo[0]))
+  // static async registerToken({ tokenId, name, symbol, logo }: {
+  //   tokenId: string,
+  //   name: string,
+  //   symbol: string,
+  //   logo: File[]
+  // }): Promise<Principal> {
+  //   const logoUrl = getUrlFromArrayBuffer(getImageArrayBuffer(logo[0]))
 
-    try {
-      return await agent().registerToken(tokenId, name, symbol, logoUrl) as Principal
-    } catch (error) {
-      console.error(error);
-      throw getErrorMessage(error)
-    }
-  }
+  //   try {
+  //     return await agent().registerToken(tokenId, name, symbol, logoUrl) as Principal
+  //   } catch (error) {
+  //     console.error(error);
+  //     throw getErrorMessage(error)
+  //   }
+  // }
 
   static async mintTokenToUser({ user, tokenId, tokenAmount }: {
     user: string,

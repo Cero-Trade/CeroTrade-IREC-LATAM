@@ -8,7 +8,7 @@
     </v-form>
 
 
-    <h6>Register Token Module</h6>
+    <!-- <h6>Register Token Module</h6>
     <v-form ref="registerTokenFormRef" @submit.prevent="registerTokenCall">
       <v-text-field
         v-model="registerTokenForm.tokenId"
@@ -53,7 +53,7 @@
       :loading="loadingRegisterTokenForm"
       class="mb-6"
       @click="registerTokenCall"
-    >Call</v-btn>
+    >Call</v-btn> -->
 
 
     <h6>Mint To User Module</h6>
@@ -107,15 +107,15 @@ const
 // wasm module
 loadingWasmModule = ref(false),
 
-// register token module
-registerTokenFormRef = ref(),
-loadingRegisterTokenForm = ref(false),
-registerTokenForm = ref({
-  tokenId: null,
-  name: null,
-  symbol: null,
-  logo: null,
-}),
+// // register token module
+// registerTokenFormRef = ref(),
+// loadingRegisterTokenForm = ref(false),
+// registerTokenForm = ref({
+//   tokenId: null,
+//   name: null,
+//   symbol: null,
+//   logo: null,
+// }),
 
 // mint to user module
 mintToUserFormRef = ref(),
@@ -147,21 +147,21 @@ async function registerWasmModule(input) {
   loadingWasmModule.value = false
 }
 
-async function registerTokenCall() {
-  if (!(await registerTokenFormRef.value.validate()).valid || loadingRegisterTokenForm.value) return
-  loadingRegisterTokenForm.value = true
+// async function registerTokenCall() {
+//   if (!(await registerTokenFormRef.value.validate()).valid || loadingRegisterTokenForm.value) return
+//   loadingRegisterTokenForm.value = true
 
-  try {
-    const res = await CeroSystemApi.registerToken(registerTokenForm.value)
-    console.log(res);
+//   try {
+//     const res = await CeroSystemApi.registerToken(registerTokenForm.value)
+//     console.log(res);
 
-    toast.success("Token registered")
-  } catch (error) {
-    toast.error(error)
-  }
+//     toast.success("Token registered")
+//   } catch (error) {
+//     toast.error(error)
+//   }
 
-  loadingRegisterTokenForm.value = false
-}
+//   loadingRegisterTokenForm.value = false
+// }
 
 async function mintToUserCall() {
   if (!(await mintToUserFormRef.value.validate()).valid || loadingMintToUserForm.value) return

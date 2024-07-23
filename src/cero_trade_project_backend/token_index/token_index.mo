@@ -43,11 +43,13 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   type AssetResponse = {
     context: Text;
     id: Text;
+    _type: Text;
     uid: Text;
     code: Text;
     issue: {
       context: Text;
       id: Text;
+      _type: Text;
       uid: Text;
       code: Text;
       deviceDetails: Text;
@@ -56,20 +58,24 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     issuer: {
       context: Text;
       id: Text;
+      _type: Text;
       uid: Text;
       code: Text;
       latestOrganisationDetails: {
         context: Text;
         id: Text;
+        _type: Text;
         uid: Text;
         participantContractEntity: {
           context: Text;
           id: Text;
+          _type: Text;
           uid: Text;
           organisation: {};
           country: {
             context: Text;
             id: Text;
+            _type: Text;
             alpha2: Text;
             alpha3: Text;
             name: Text
@@ -84,6 +90,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     country: {
       context: Text;
       id: Text;
+      _type: Text;
       alpha2: Text;
       alpha3: Text;
       name: Text
@@ -138,8 +145,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
 
     let branch = switch(ENV.DFX_NETWORK) {
       case("ic") "main";
-      case("local") "develop";
-      case _ throw Error.reject("No DFX_NETWORK provided");
+      case _ "develop";
     };
     let wasmModule = await HttpService.get({
       url = "https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # branch # "/wasm_modules/token.json";
@@ -178,114 +184,110 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   };
 
   /// register [tokenDirectory] collection
-  public shared({ caller }) func registerToken<system>(tokenId: Text, name: Text, symbol: Text, logo: Text): async (T.CanisterId, T.AssetInfo) {
-    _callValidation(caller);
-
+  private func registerToken<system>(tokenId: Text): async (T.CanisterId, T.AssetInfo) {
     if (tokenId == "") throw Error.reject("Must to provide a tokenId");
 
-    switch(tokenDirectory.get(tokenId)) {
-      case(?value) throw Error.reject("Token already exists");
-      case(null) {
-        Debug.print(debug_show ("before registerToken: " # Nat.toText(Cycles.balance())));
+    let assetsJson = await HttpService.get({
+      url = HT.apiUrl # "assets/" # tokenId;
+      port = null;
+      headers = [];
+    });
 
-        Cycles.add<system>(T.cyclesCreateCanister);
-        /// create canister
-        let { canister_id } = await IC_MANAGEMENT.ic.create_canister({
-          settings = ?{
-            controllers = switch(controllers) {
-              case(null) null;
-              case(?value) {
-                let currentControllers = Buffer.fromArray<Principal>(value);
-                currentControllers.add(Principal.fromActor(this));
-                ?Buffer.toArray<Principal>(currentControllers);
+    let assetMetadata: T.AssetInfo = switch(Serde.JSON.fromText(assetsJson, null)) {
+      case(#err(_)) throw Error.reject("cannot serialize asset data");
+      case(#ok(blob)) {
+        let assetResponse: ?AssetResponse = from_candid(blob);
+
+        switch(assetResponse) {
+          case(null) throw Error.reject("cannot serialize asset data");
+          case(?value) {
+            Debug.print("here ----------> " # debug_show (value));
+
+            // TODO missing energy type
+            let energy: T.AssetType = #hydro("hydro");
+
+            {
+              tokenId;
+              assetType = energy;
+              startDate = value.startDate;
+              endDate = value.endDate;
+              co2Emission = value.co2Produced;
+              radioactivityEmnission = value.radioactiveProduced;
+              volumeProduced: T.TokenAmount = switch(Nat.fromText(value.volume)) {
+                case(null) 0;
+                case(?value) value;
               };
-            };
-            compute_allocation = null;
-            memory_allocation = null;
-            freezing_threshold = null;
-          }
-        });
-
-        Debug.print(debug_show ("later create_canister: " # Nat.toText(Cycles.balance())));
-
-        try {
-          let assetsJson = await HttpService.get({
-            url = HT.apiUrl # "assets/" # tokenId;
-            port = null;
-            headers = [];
-          });
-
-          let assetMetadata: T.AssetInfo = switch(Serde.JSON.fromText(assetsJson, null)) {
-            case(#err(_)) throw Error.reject("cannot serialize asset data");
-            case(#ok(blob)) {
-              let assetResponse: ?AssetResponse = from_candid(blob);
-
-              switch(assetResponse) {
-                case(null) throw Error.reject("cannot serialize asset data");
-                case(?value) {
-                  Debug.print("here ----------> " # debug_show (value));
-
-                  // TODO missing energy type
-                  let energy: T.AssetType = #hydro("hydro");
-
-                  {
-                    tokenId;
-                    assetType = energy;
-                    startDate = value.startDate;
-                    endDate = value.endDate;
-                    co2Emission = value.co2Produced;
-                    radioactivityEmnission = value.radioactiveProduced;
-                    volumeProduced: T.TokenAmount = switch(Nat.fromText(value.volume)) {
-                      case(null) 0;
-                      case(?value) value;
-                    };
-                    // missing this info
-                    deviceDetails = {
-                      name = "machine";
-                      deviceType = "type";
-                      group = energy;
-                      description = "description";
-                    };
-                    // missing this info
-                    specifications = {
-                      deviceCode = "200";
-                      capacity: T.TokenAmount = 1_000;
-                      location = "location";
-                      latitude = "0";
-                      longitude = "1";
-                      address = "address anywhere";
-                      stateProvince = "chile";
-                      country = "CL";
-                    };
-                    // missing this info
-                    dates = ["2024-04-29T19:43:34.000Z", "2024-05-29T19:48:31.000Z", "2024-05-29T19:48:31.000Z"];
-                  };
-                };
+              // missing this info
+              deviceDetails = {
+                name = "machine";
+                deviceType = "type";
+                group = energy;
+                description = "description";
               };
+              // missing this info
+              specifications = {
+                deviceCode = "200";
+                capacity: T.TokenAmount = 1_000;
+                location = "location";
+                latitude = "0";
+                longitude = "1";
+                address = "address anywhere";
+                stateProvince = "chile";
+                country = "CL";
+              };
+              // missing this info
+              dates = ["2024-04-29T19:43:34.000Z", "2024-05-29T19:48:31.000Z", "2024-05-29T19:48:31.000Z"];
             };
           };
-
-          // install canister code
-          await IC_MANAGEMENT.ic.install_code({
-            arg = to_candid({ name; symbol; logo; assetMetadata; comission = Nat64.toNat(T.getCeroComission()); comissionHolder });
-            wasm_module;
-            mode = #install;
-            canister_id;
-          });
-
-          Debug.print(debug_show ("later install_canister: " # Nat.toText(Cycles.balance())));
-
-          await Token.canister(canister_id).admin_init();
-
-          tokenDirectory.put(tokenId, canister_id);
-          return (canister_id, assetMetadata);
-        } catch (error) {
-          await IC_MANAGEMENT.ic.stop_canister({ canister_id });
-          await IC_MANAGEMENT.ic.delete_canister({ canister_id });
-          throw Error.reject(Error.message(error));
         };
       };
     };
+
+
+    Debug.print(debug_show ("before registerToken: " # Nat.toText(Cycles.balance())));
+
+    Cycles.add<system>(T.cyclesCreateCanister);
+    /// create canister
+    let { canister_id } = await IC_MANAGEMENT.ic.create_canister({
+      settings = ?{
+        controllers = switch(controllers) {
+          case(null) null;
+          case(?value) {
+            let currentControllers = Buffer.fromArray<Principal>(value);
+            currentControllers.add(Principal.fromActor(this));
+            ?Buffer.toArray<Principal>(currentControllers);
+          };
+        };
+        compute_allocation = null;
+        memory_allocation = null;
+        freezing_threshold = null;
+      }
+    });
+
+    Debug.print(debug_show ("later create_canister: " # Nat.toText(Cycles.balance())));
+
+    // install canister code
+    await IC_MANAGEMENT.ic.install_code({
+      arg = to_candid({
+        // TODO review value declarations
+        name = assetMetadata.deviceDetails.name;
+        symbol = tokenId;
+        logo = null;
+        assetMetadata;
+        comission = Nat64.toNat(T.getCeroComission());
+        comissionHolder;
+      });
+      wasm_module;
+      mode = #install;
+      canister_id;
+    });
+
+    Debug.print(debug_show ("later install_canister: " # Nat.toText(Cycles.balance())));
+
+    await Token.canister(canister_id).admin_init();
+
+    tokenDirectory.put(tokenId, canister_id);
+    return (canister_id, assetMetadata);
   };
 
   /// delete [tokenDirectory] collection
@@ -379,21 +381,64 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   };
 
 
+  public shared({ caller }) func getUnregisteredIrecs(sourceAccountCode: T.EID): async [T.UnregisteredIrec] {
+    _callValidation(caller);
+
+    let irecsJson = await HttpService.post({
+      url = HT.apiUrl # "transactions/fetchByUser";
+      port = null;
+      headers = [];
+      bodyJson = "{\"sourceAccountCode\": \"" # sourceAccountCode # "\"}";
+    });
+
+    switch(Serde.JSON.fromText(irecsJson, null)) {
+      case(#err(_)) throw Error.reject("cannot serialize profile data");
+      case(#ok(blob)) {
+        let irecsResponse: ?[T.UnregisteredIrec] = from_candid(blob);
+
+        switch(irecsResponse) {
+          case(null) throw Error.reject("cannot serialize profile data");
+          case(?value) return value;
+        };
+      };
+    };
+  };
+
+
+  // TODO evaluate this function to add user token and validate user transactions if corresponds
+  public shared({ caller }) func importUserTokens(sourceAccountCode: T.EID, transactions: [T.EvidentTransactionId]): async() {
+    _callValidation(caller);
+
+    // let assetsJson = await HttpService.post({
+    //   url = HT.apiUrl # "transactions/markAsProcessed";
+    //   port = null;
+    //   headers = [];
+    //   bodyJson = "{\"transactionId\": \"" # transactionId # "\"}";
+    // });
+  };
+
+
   public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, amount: T.TokenAmount): async T.TxIndex {
     _callValidation(caller);
 
-    let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
-      case (null) throw Error.reject("Token not found");
-      case (?cid) await Token.canister(cid).mint({
-        to = {
-          owner = recipent;
-          subaccount = null;
-        };
-        amount;
-        created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
-        memo = null;
-      });
+    // get token or register in case doesnt exists
+    let cid = switch (tokenDirectory.get(tokenId)) {
+      case (null) {
+        let result = await registerToken(tokenId);
+        result.0
+      };
+      case (?cid) cid;
     };
+
+    let transferResult: ICRC1.TransferResult = await Token.canister(cid).mint({
+      to = {
+        owner = recipent;
+        subaccount = null;
+      };
+      amount;
+      created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
+      memo = null;
+    });
 
     switch(transferResult) {
       case(#Err(error)) throw Error.reject(switch(error) {
@@ -738,40 +783,5 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       });
       case(#Ok(value)) value;
     };
-  };
-
-  public shared({ caller }) func getUnregisteredIrecs(sourceAccountCode: T.EID): async [T.UnregisteredIrec] {
-    _callValidation(caller);
-
-    let irecsJson = await HttpService.post({
-      url = HT.apiUrl # "transactions/fetchByUser";
-      port = null;
-      headers = [];
-      bodyJson = "{\"sourceAccountCode\": \"" # sourceAccountCode # "\"}";
-    });
-
-    switch(Serde.JSON.fromText(irecsJson, null)) {
-      case(#err(_)) throw Error.reject("cannot serialize profile data");
-      case(#ok(blob)) {
-        let irecsResponse: ?[T.UnregisteredIrec] = from_candid(blob);
-
-        switch(irecsResponse) {
-          case(null) throw Error.reject("cannot serialize profile data");
-          case(?value) return value;
-        };
-      };
-    };
-  };
-
-  // TODO evaluate this function to add user token and validate user transactions if corresponds
-  public shared({ caller }) func markIrecAsRegistered(transactionId: T.EvidentTransactionId): async() {
-    _callValidation(caller);
-
-    let assetsJson = await HttpService.post({
-      url = HT.apiUrl # "transactions/markAsProcessed";
-      port = null;
-      headers = [];
-      bodyJson = "{\"transactionId\": \"" # transactionId # "\"}";
-    });
   };
 }
