@@ -218,9 +218,11 @@ shared({ caller = owner }) actor class TokenIndex() = this {
         await IC_MANAGEMENT.ic.install_code({
           arg = to_candid({
             // TODO review value declarations
-            name = assetMetadata.deviceDetails.name;
-            symbol = assetMetadata.tokenId;
-            logo = null;
+            // 1- colocar identificador en contador sobre el token index
+            // 2- colocar identificador dentro de metadata del token
+            name = assetMetadata.deviceDetails.name; // SOL4
+            symbol = assetMetadata.tokenId; // "SOL4"
+            logo = null; // colocar imagen de cero trade + tipo de energia, guardar en un bucket estos logos
             assetMetadata;
             comission = Nat64.toNat(T.getCeroComission());
             comissionHolder;
@@ -346,6 +348,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     let assetsMetadata: [{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }] = switch(Serde.JSON.fromText(assetsJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize asset data");
       case(#ok(blob)) {
+        // TODO review return values
         let assetResponse: ?[{ mwh: T.TokenAmount; assetInfo: AssetResponse }] = from_candid(blob);
 
         switch(assetResponse) {
@@ -398,6 +401,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     let assetMetadata: T.AssetInfo = switch(Serde.JSON.fromText(assetsJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize asset data");
       case(#ok(blob)) {
+        // TODO review return values
         let assetResponse: ?AssetResponse = from_candid(blob);
 
         switch(assetResponse) {
@@ -442,6 +446,8 @@ shared({ caller = owner }) actor class TokenIndex() = this {
 
   // helper function used to build [AssetInfo] from AssetResponse
   private func buildAssetInfo(asset: AssetResponse): T.AssetInfo {
+    // TODO review asset construction
+
     // TODO missing energy type
     let energy: T.AssetType = #hydro("hydro");
 

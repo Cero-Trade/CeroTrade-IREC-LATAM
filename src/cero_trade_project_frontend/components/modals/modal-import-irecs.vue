@@ -96,7 +96,7 @@
 
 
         <v-window-item :value="3">
-          <h5>Import checked</h5>
+          <h5>No item to be imported</h5>
 
           <p>You have not assets pending for tokenize. You can checkout all assets owned in portafolio.</p>
 

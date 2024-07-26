@@ -2,9 +2,6 @@
 <!-- TODO delete beneficiary id from web3 register and migrate to web2 -->
 <!-- TODO import irecs in dashboard -->
 
-<!-- TODO trouble dismiss button event notification, i guess is performing execute function -->
-<!-- TODO spend not authorized of tokens in redemption -->
-
 # Cero Trade
 
 Public frontend url: https://z2mgf-dqaaa-aaaak-qihbq-cai.icp0.io?canisterId=z2mgf-dqaaa-aaaak-qihbq-cai
