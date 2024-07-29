@@ -8,8 +8,8 @@ module {
 
   public func tokenBearer(token: Text): { name: Text; value: Text; } {
     {
-      name = "Authorization";
-      value = "Bearer " # token
+      name = "userToken";
+      value = token;
     }
   };
 

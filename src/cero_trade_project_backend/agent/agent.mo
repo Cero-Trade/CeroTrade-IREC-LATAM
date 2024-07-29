@@ -37,7 +37,7 @@ actor class Agent() = this {
     // WARN just for debug
     Debug.print(Principal.toText(caller));
 
-    await UserIndex.login();
+    await UserIndex.login(caller);
   };
 
   /// logout user into Cero Trade
@@ -45,7 +45,7 @@ actor class Agent() = this {
     // WARN just for debug
     Debug.print(Principal.toText(caller));
 
-    await UserIndex.logout();
+    await UserIndex.logout(caller);
   };
 
 
