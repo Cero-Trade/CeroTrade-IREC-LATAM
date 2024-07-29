@@ -16,7 +16,7 @@ If you havent nns extension installed run:
 * You can run this proyect locally by run below script:
 ```
 dfx start
-npm run deploy modules nns
+npm run deploy clean
 ```
 
 
