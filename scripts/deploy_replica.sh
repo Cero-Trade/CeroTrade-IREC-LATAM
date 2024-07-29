@@ -1,8 +1,7 @@
 #!/bin/bash
 
 # Define optional modules argument
-firstArg=$1
-secondArg=$2
+flag=$1
 
 # Change identity to `default`
 echo "====-Change identity to default and branch to develop-===="
@@ -10,7 +9,7 @@ git checkout develop
 dfx identity use default
 
 # Deploy nns canisters
-if [ "$firstArg" = "nns" ] || [ "$secondArg" = "nns" ]; then
+if [ "$flag" = "clean" ] || [ "$flag" = "clean" ]; then
   echo "====-Deploy nns canisters-===="
   dfx nns install
   dfx nns import
@@ -41,7 +40,7 @@ cp src/declarations/notification_index/* .dfx/local/canisters/notification_index
 echo "====-Generate env.mo and deploy canisters-===="
 dfx canister create --all
 dfx build cero_trade_project_frontend
-if [ "$firstArg" = "nns" ] || [ "$secondArg" = "nns" ]; then
+if [ "$flag" = "clean" ] || [ "$flag" = "clean" ]; then
   dfx canister install cero_trade_project_frontend
 else
   dfx canister install cero_trade_project_frontend --mode upgrade
@@ -52,7 +51,7 @@ dfx deploy agent
 echo "====-Update canister controllers-===="
 npm run upgrade-controllers $(dfx identity get-principal)
 
-if [ "$firstArg" = "modules" ] || [ "$secondArg" = "modules" ]; then
+if [ "$flag" = "modules" ] || [ "$flag" = "modules" ] || [ "$flag" = "clean" ] || [ "$flag" = "clean" ]; then
   # Register wasm modules
   echo "====-Register wasm modules-===="
   dfx canister create token
