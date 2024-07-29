@@ -23,7 +23,6 @@ export class AuthClientApi {
       identityProvider,
       maxTimeToLive: BigInt(7 * 24 * 60 * 60 * 1000 * 1000 * 1000),
       onSuccess: async () => {
-        await AgentCanister.login()
         console.log("you are authenticated");
 
         onComplete()

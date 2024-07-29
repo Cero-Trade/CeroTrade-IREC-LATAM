@@ -77,6 +77,7 @@
 
 <script setup>
 import '@/assets/styles/pages/login.scss'
+import { AgentCanister } from '@/repository/agent-canister';
 import { AuthClientApi } from '@/repository/auth-client-api'
 import { onBeforeMount } from 'vue';
 import { ref } from 'vue'
@@ -94,20 +95,18 @@ loadingBtn = ref(false)
 onBeforeMount(logout)
 
 
-const login = async () => {
+const login = async () => AuthClientApi.signIn(async () => {
   if (loadingBtn.value) return
   loadingBtn.value = true
 
   try {
-    if (loadingBtn.value) return
-    loadingBtn.value = true
-
-    await AuthClientApi.signIn(() => router.push('/'))
+    await AgentCanister.login()
+    router.push('/')
   } catch (error) {
     loadingBtn.value = false
     toast.error(error.toString())
   }
-}
+})
 
 async function logout() {
   try {
