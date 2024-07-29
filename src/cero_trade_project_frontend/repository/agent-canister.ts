@@ -98,6 +98,14 @@ export class AgentCanister {
     }
   }
 
+  static async logout(): Promise<void> {
+    try {
+      await agent().logout()
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
 
   static async deleteUser(): Promise<void> {
     try {

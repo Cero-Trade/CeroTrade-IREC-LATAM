@@ -33,7 +33,7 @@
               </span> -->
 
               <v-col cols="12">
-                <v-btn class="center btn2" :loading="loadingBtn" @click="loginII">Login with Internet Identity <img src="@/assets/sources/icons/internet-computer-icon.svg" alt="IC icon" class="ic-icon"></v-btn>
+                <v-btn class="center btn2" :loading="loadingBtn" @click="login">Login with Internet Identity <img src="@/assets/sources/icons/internet-computer-icon.svg" alt="IC icon" class="ic-icon"></v-btn>
               </v-col>
               
               <v-col cols="12">
@@ -77,7 +77,6 @@
 
 <script setup>
 import '@/assets/styles/pages/login.scss'
-import { AgentCanister } from '@/repository/agent-canister';
 import { AuthClientApi } from '@/repository/auth-client-api'
 import { onBeforeMount } from 'vue';
 import { ref } from 'vue'
@@ -92,23 +91,25 @@ windowStep = ref(1),
 loadingBtn = ref(false)
 
 
-onBeforeMount(logoutII)
+onBeforeMount(logout)
 
 
-const loginII = async () => AuthClientApi.signIn(async () => {
+const login = async () => {
   if (loadingBtn.value) return
   loadingBtn.value = true
 
   try {
-    await AgentCanister.login()
-    router.push('/')
+    if (loadingBtn.value) return
+    loadingBtn.value = true
+
+    await AuthClientApi.signIn(() => router.push('/'))
   } catch (error) {
     loadingBtn.value = false
     toast.error(error.toString())
   }
-})
+}
 
-async function logoutII() {
+async function logout() {
   try {
     await AuthClientApi.signOut()
   } catch (error) {
