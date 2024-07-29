@@ -373,7 +373,7 @@ actor class UserIndex() = this {
     _callValidation(caller);
 
     let cid = switch(usersDirectory.get(uid)) {
-      case(null) throw Error.reject(notExists);
+      case(null) return;
       case(?value) value;
     };
 
