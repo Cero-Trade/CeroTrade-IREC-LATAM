@@ -6,6 +6,13 @@ module {
   public let apiUrl: Text = ENV.VITE_API_URL;
   public let headerName = "http_service_canister";
 
+  public func tokenBearer(token: Text): { name: Text; value: Text; } {
+    {
+      name = "Authorization";
+      value = "Bearer " # token
+    }
+  };
+
   public type HttpError = {
     status : Nat;
     body : Text;

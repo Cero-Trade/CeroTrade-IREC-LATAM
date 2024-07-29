@@ -37,8 +37,15 @@ actor class Agent() = this {
     // WARN just for debug
     Debug.print(Principal.toText(caller));
 
-    let exists: Bool = await UserIndex.checkPrincipal(caller);
-    if (not exists) throw Error.reject(notExists);
+    await UserIndex.login();
+  };
+
+  /// logout user into Cero Trade
+  public shared({ caller }) func logout(): async() {
+    // WARN just for debug
+    Debug.print(Principal.toText(caller));
+
+    await UserIndex.logout();
   };
 
 

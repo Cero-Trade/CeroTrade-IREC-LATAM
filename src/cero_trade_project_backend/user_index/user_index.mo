@@ -345,6 +345,48 @@ actor class UserIndex() = this {
     };
   };
 
+  /// login user into Cero Trade
+  public shared({ caller }) func login(uid: T.UID): async() {
+    _callValidation(caller);
+
+    let cid = switch(usersDirectory.get(uid)) {
+      case(null) throw Error.reject(notExists);
+      case(?value) value;
+    };
+
+    let oldToken = await Users.canister(cid).getUserToken(uid);
+
+    // fetch with oldToken + uid
+    let token = await HttpService.get({
+      url = HT.apiUrl # "users/login/" # Principal.toText(uid);
+      port = null;
+      headers = [HT.tokenBearer(oldToken)]
+    });
+
+    let trimmedToken = Text.trimEnd(Text.trimStart(token, #char '\"'), #char '\"');
+
+    await Users.canister(cid).updateUserToken(uid, trimmedToken);
+  };
+
+  /// logout user into Cero Trade
+  public shared({ caller }) func logout(uid: T.UID): async() {
+    _callValidation(caller);
+
+    let cid = switch(usersDirectory.get(uid)) {
+      case(null) throw Error.reject(notExists);
+      case(?value) value;
+    };
+
+    let currentToken = await Users.canister(cid).getUserToken(uid);
+
+    // fetch with currentToken + uid
+    let _ = await HttpService.get({
+      url = HT.apiUrl # "users/logout/" # Principal.toText(uid);
+      port = null;
+      headers = [HT.tokenBearer(currentToken)]
+    });
+  };
+
   /// delete user to Cero Trade
   public shared({ caller }) func deleteUser(uid: T.UID): async() {
     _callValidation(caller);

@@ -217,13 +217,15 @@ shared({ caller = userIndexCaller }) actor class Users() {
     };
   };
 
-  /// validate current token
-  public shared({ caller }) func validateToken(uid: T.UID, token: Text): async Bool {
+  /// update token stored
+  public shared({ caller }) func updateUserToken(uid: T.UID, token: Text): async() {
     _callValidation(caller);
 
     switch (users.get(uid)) {
       case (null) { throw Error.reject(userNotFound); };
-      case (?info) { return info.vaultToken == token; };
+      case (?info) {
+        users.put(uid, { info with vaultToken = token })
+      };
     };
   };
 }
