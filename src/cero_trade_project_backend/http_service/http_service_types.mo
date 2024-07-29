@@ -6,7 +6,7 @@ module {
   public let apiUrl: Text = ENV.VITE_API_URL;
   public let headerName = "http_service_canister";
 
-  public func tokenBearer(token: Text): { name: Text; value: Text; } {
+  public func tokenAuth(token: Text): { name: Text; value: Text; } {
     {
       name = "userToken";
       value = token;

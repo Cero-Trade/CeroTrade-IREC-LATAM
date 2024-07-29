@@ -235,18 +235,10 @@ actor class UserIndex() = this {
   };
 
   private func _deleteUserWeb2(token: Text): async() {
-    let formData = { token };
-    let formBlob = to_candid(formData);
-    let formKeys = ["token"];
-
-    let _ = await HttpService.post({
+    let _ = await HttpService.get({
         url = HT.apiUrl # "users/delete";
         port = null;
-        headers = [];
-        bodyJson = switch(Serde.JSON.toText(formBlob, formKeys, null)) {
-          case(#err(error)) throw Error.reject("Cannot serialize data");
-          case(#ok(value)) value;
-        };
+        headers = [HT.tokenAuth(token)];
       });
   };
 
@@ -360,7 +352,7 @@ actor class UserIndex() = this {
     let token = await HttpService.get({
       url = HT.apiUrl # "users/login/" # Principal.toText(uid);
       port = null;
-      headers = [HT.tokenBearer(oldToken)]
+      headers = [HT.tokenAuth(oldToken)]
     });
 
     let trimmedToken = Text.trimEnd(Text.trimStart(token, #char '\"'), #char '\"');
@@ -372,18 +364,15 @@ actor class UserIndex() = this {
   public shared({ caller }) func logout(uid: T.UID): async() {
     _callValidation(caller);
 
-    let cid = switch(usersDirectory.get(uid)) {
-      case(null) return;
-      case(?value) value;
+    let currentToken = switch(usersDirectory.get(uid)) {
+      case (null) return;
+      case(?cid) await Users.canister(cid).getUserToken(uid);
     };
-
-    let currentToken = await Users.canister(cid).getUserToken(uid);
-
     // fetch with currentToken + uid
     let _ = await HttpService.get({
       url = HT.apiUrl # "users/logout/" # Principal.toText(uid);
       port = null;
-      headers = [HT.tokenBearer(currentToken)]
+      headers = [HT.tokenAuth(currentToken)]
     });
   };
 
@@ -457,11 +446,11 @@ actor class UserIndex() = this {
       case(?cid) cid;
     };
 
-    let token = await Users.canister(cid).getUserToken(uid);
+    let currentToken = await Users.canister(cid).getUserToken(uid);
     let profileJson = await HttpService.get({
-      url = HT.apiUrl # "users/retrieve/" # token;
+      url = HT.apiUrl # "users/retrieve/";
       port = null;
-      headers = []
+      headers = [HT.tokenAuth(currentToken)]
     });
     let companyLogo = await Users.canister(cid).getCompanyLogo(uid);
 
@@ -722,13 +711,14 @@ actor class UserIndex() = this {
   public shared({ caller }) func filterUsers(uid: T.UID, user: Text): async [T.UserProfile] {
     _callValidation(caller);
 
-    // check if user exists
-    if (not (await checkPrincipal(uid))) throw Error.reject(notExists);
-
+    let currentToken = switch(usersDirectory.get(uid)) {
+      case (null) throw Error.reject(notExists);
+      case(?cid) await Users.canister(cid).getUserToken(uid);
+    };
     let usersJson = await HttpService.post({
         url = HT.apiUrl # "users/filter";
         port = null;
-        headers = [];
+        headers = [HT.tokenAuth(currentToken)];
         bodyJson = "{\"user\": \"" # user # "\"}";
       });
 
