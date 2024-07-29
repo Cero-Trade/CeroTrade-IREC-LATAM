@@ -30,4 +30,5 @@ module ENV {
   public let CANISTER_ID_NOTIFICATION_INDEX: Text = "by6od-j4aaa-aaaaa-qaadq-cai";
   public let CANISTER_ID_CERO_TRADE_PROJECT_FRONTEND: Text = "br5f7-7uaaa-aaaaa-qaaca-cai";
   public let CANISTER_ID: Text = "br5f7-7uaaa-aaaaa-qaaca-cai";
+  public let VITEST: Text = "true";
 }
