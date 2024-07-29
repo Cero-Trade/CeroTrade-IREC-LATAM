@@ -7,7 +7,7 @@ export interface TokenModel {
   assetInfo: AssetInfoModel;
 }
 
-export type AssetType = "hydro"|"ocean"|"geothermal"|"biome"|"wind"|"sun"|"other";
+export type AssetType = "Hydro"|"Ocean"|"Geothermal"|"Biome"|"Wind"|"Solar"|"Other";
 
 export interface AssetInfoModel {
   tokenId: string;
@@ -24,8 +24,7 @@ export interface AssetInfoModel {
 
 export interface DeviceDetailsModel {
   name: string;
-  deviceType: string;
-  group: AssetType;
+  deviceType: AssetType;
   description: string;
 };
 

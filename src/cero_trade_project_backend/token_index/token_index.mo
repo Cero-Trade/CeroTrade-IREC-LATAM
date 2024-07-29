@@ -8,6 +8,7 @@ import Array "mo:base/Array";
 import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
 import Nat64 "mo:base/Nat64";
+import Float "mo:base/Float";
 import Int "mo:base/Int";
 import Iter "mo:base/Iter";
 import Time "mo:base/Time";
@@ -41,64 +42,193 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   stable var tokenDirectoryEntries : [(T.TokenId, T.CanisterId)] = [];
 
   type AssetResponse = {
-    context: Text;
-    id: Text;
-    _type: Text;
-    uid: Text;
-    code: Text;
-    issue: {
+    source: Text;
+    volume: Text;
+    assetId: Text;
+    assetDetails: {
       context: Text;
       id: Text;
-      _type: Text;
+      contextType: Text;
       uid: Text;
       code: Text;
-      deviceDetails: Text;
-      latestIssueDetails: Text
-    };
-    issuer: {
-      context: Text;
-      id: Text;
-      _type: Text;
-      uid: Text;
-      code: Text;
-      latestOrganisationDetails: {
+      issue: {
         context: Text;
         id: Text;
-        _type: Text;
+        contextType: Text;
         uid: Text;
-        participantContractEntity: {
-          context: Text;
+        code: Text;
+        deviceDetails: {
           id: Text;
-          _type: Text;
+          contextType: Text;
+          context: Text;
           uid: Text;
-          organisation: {};
+          version: Nat;
+          deviceType: {
+            context: Text;
+            id: Text;
+            contextType: Text;
+            code: Text;
+            description: Text;
+            deviceGroup: Text;
+          };
+          fuel: {
+            context: Text;
+            id: Text;
+            contextType: Text;
+            code: Text;
+            description: Text;
+          };
+          meterIds: [Text];
+          blameable: {
+            context: Text;
+            id: Text;
+            contextType: Text;
+            username: Text;
+            email: Text;
+            latestUserDetails: {
+              context: Text;
+              id: Text;
+              contextType: Text;
+              forename: Text;
+              surname: Text;
+            }
+          };
+          timestamp: Text;
+          device: {
+            context: Text;
+            id: Text;
+            contextType: Text;
+            code: Text;
+          };
+          registrant: {
+            context: Text;
+            id: Text;
+            contextType: Text;
+            uid: Text;
+            code: Text;
+            latestOrganisationDetails: {
+              context: Text;
+              id: Text;
+              contextType: Text;
+              uid: Text;
+              name: Text;
+            }
+          };
+          issuer: {
+            context: Text;
+            id: Text;
+            contextType: Text;
+            uid: Text;
+            code: Text;
+            latestOrganisationDetails: {
+              context: Text;
+              id: Text;
+              contextType: Text;
+              uid: Text;
+              name: Text;
+            }
+          };
+          name: Text;
+          capacity: Text;
+          supported: Bool;
+          latitude: Float;
+          longitude: Float;
+          registrationDate: Text;
+          commissioningDate: Text;
+          expiryDate: Text;
+          status: Text;
+          active: Bool;
+          address1: Text;
+          postcode: Text;
+          stateProvince: Text;
           country: {
             context: Text;
             id: Text;
-            _type: Text;
+            contextType: Text;
             alpha2: Text;
             alpha3: Text;
-            name: Text
-          }
+            name: Text;
+          };
+          defaultAccount: Text;
+          notes: Text;
+          issuerNotes: Text;
+          otherSchemes: [Text];
+          files: [
+            {
+              context: Text;
+              id: Text;
+              contextType: Text;
+              uid: Text;
+              name: Text;
+              objectUid: Text;
+              mimeType: Text;
+              notes: Text;
+              archived: Bool;
+              created: Text;
+              category: Text;
+            }
+          ]
         };
-        name: Text
-      }
-    };
+        latestIssueDetails: Text;
+      };
+      issuer: {
+        context: Text;
+        id: Text;
+        contextType: Text;
+        uid: Text;
+        code: Text;
+        latestOrganisationDetails: {
+          context: Text;
+          id: Text;
+          contextType: Text;
+          uid: Text;
+          participantContractEntity: {
+            context: Text;
+            id: Text;
+            contextType: Text;
+            uid: Text;
+            organisation: {};
+            country: {
+              context: Text;
+              id: Text;
+              contextType: Text;
+              alpha2: Text;
+              alpha3: Text;
+              name: Text;
+            }
+          };
+          name: Text;
+        }
+      };
+      volume: Text;
+      startDate: Text;
+      endDate: Text;
+      country: {
+        context: Text;
+        id: Text;
+        contextType: Text;
+        alpha2: Text;
+        alpha3: Text;
+        name: Text;
+      };
+      supported: Bool;
+      offset: Bool;
+      co2Produced: Text;
+      radioactiveProduced: Text;
+    }
+  };
+
+  type TransactionResponse = {
+    id: Nat;
+    transactionId: Text;
+    sourceAccountCode: Text;
+    transactionType: Text;
     volume: Text;
-    startDate: Text;
-    endDate: Text;
-    country: {
-      context: Text;
-      id: Text;
-      _type: Text;
-      alpha2: Text;
-      alpha3: Text;
-      name: Text
-    };
-    supported: Bool;
-    offset: Bool;
-    co2Produced: Text;
-    radioactiveProduced: Text
+    timestamp: Text;
+    items: [AssetResponse];
+    processed: Bool;
+    createdAt: Text;
+    updatedAt: Text;
   };
 
 
@@ -348,18 +478,24 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     let assetsMetadata: [{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }] = switch(Serde.JSON.fromText(assetsJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize asset data");
       case(#ok(blob)) {
-        // TODO review return values
-        let assetResponse: ?[{ mwh: T.TokenAmount; assetInfo: AssetResponse }] = from_candid(blob);
+        let transactionResponse: ?[TransactionResponse] = from_candid(blob);
 
-        switch(assetResponse) {
+        switch(transactionResponse) {
           case(null) throw Error.reject("cannot serialize asset data");
           case(?response) {
-            Debug.print("here ----------> " # debug_show (response));
-
             let assets = Buffer.Buffer<{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }>(16);
 
-            for({ mwh; assetInfo } in response.vals()) {
-              assets.add({ mwh; assetInfo = buildAssetInfo(assetInfo) });
+            for({ items } in response.vals()) {
+              for(assetResponse in items.vals()) {
+                assets.add({
+                  // TODO review mwh value here
+                  mwh = switch(Nat.fromText(assetResponse.assetDetails.volume)) {
+                    case(null) 0;
+                    case(?value) value;
+                  };
+                  assetInfo = buildAssetInfo(assetResponse);
+                });
+              };
             };
 
             Buffer.toArray<{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }>(assets);
@@ -401,16 +537,11 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     let assetMetadata: T.AssetInfo = switch(Serde.JSON.fromText(assetsJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize asset data");
       case(#ok(blob)) {
-        // TODO review return values
         let assetResponse: ?AssetResponse = from_candid(blob);
 
         switch(assetResponse) {
           case(null) throw Error.reject("cannot serialize asset data");
-          case(?value) {
-            Debug.print("here ----------> " # debug_show (value));
-
-            buildAssetInfo(value);
-          };
+          case(?value) buildAssetInfo(value);
         };
       };
     };
@@ -446,39 +577,44 @@ shared({ caller = owner }) actor class TokenIndex() = this {
 
   // helper function used to build [AssetInfo] from AssetResponse
   private func buildAssetInfo(asset: AssetResponse): T.AssetInfo {
-    // TODO review asset construction
-
-    // TODO missing energy type
-    let energy: T.AssetType = #hydro("hydro");
+    let assetType: T.AssetType = switch(asset.assetDetails.issue.deviceDetails.deviceType.deviceGroup) {
+      case("Hydro") #Hydro("Hydro");
+      case("Ocean") #Ocean("Ocean");
+      case("Geothermal") #Geothermal("Geothermal");
+      case("Biome") #Biome("Biome");
+      case("Wind") #Wind("Wind");
+      case("Solar") #Solar("Solar");
+      case _ #Other("Other");
+    };
 
     {
-      tokenId = asset.code;
-      assetType = energy;
-      startDate = asset.startDate;
-      endDate = asset.endDate;
-      co2Emission = asset.co2Produced;
-      radioactivityEmnission = asset.radioactiveProduced;
-      volumeProduced: T.TokenAmount = switch(Nat.fromText(asset.volume)) {
+      tokenId = asset.assetId;
+      assetType;
+      startDate = asset.assetDetails.startDate;
+      endDate = asset.assetDetails.endDate;
+      co2Emission = asset.assetDetails.co2Produced;
+      radioactivityEmnission = asset.assetDetails.radioactiveProduced;
+      volumeProduced = switch(Nat.fromText(asset.assetDetails.volume)) {
         case(null) 0;
         case(?value) value;
       };
-      // missing this info
       deviceDetails = {
-        name = "machine";
-        deviceType = "type";
-        group = energy;
-        description = "description";
+        name = asset.assetDetails.issue.deviceDetails.name;
+        deviceType = assetType;
+        description = asset.assetDetails.issue.deviceDetails.deviceType.description;
       };
-      // missing this info
       specifications = {
-        deviceCode = "200";
-        capacity: T.TokenAmount = 1_000;
-        location = "location";
-        latitude = "0";
-        longitude = "1";
-        address = "address anywhere";
-        stateProvince = "chile";
-        country = "CL";
+        deviceCode = asset.assetDetails.issue.deviceDetails.deviceType.code;
+        capacity = switch(Nat.fromText(asset.assetDetails.issue.deviceDetails.capacity)) {
+          case(null) 0;
+          case(?value) value;
+        };
+        location = asset.assetDetails.country.name;
+        latitude = Float.toText(asset.assetDetails.issue.deviceDetails.latitude);
+        longitude = Float.toText(asset.assetDetails.issue.deviceDetails.longitude);
+        address = asset.assetDetails.issue.deviceDetails.address1;
+        stateProvince = asset.assetDetails.issue.deviceDetails.stateProvince;
+        country = asset.assetDetails.issue.deviceDetails.country.alpha2;
       };
       // missing this info
       dates = ["2024-04-29T19:43:34.000Z", "2024-05-29T19:48:31.000Z", "2024-05-29T19:48:31.000Z"];

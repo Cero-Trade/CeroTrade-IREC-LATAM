@@ -49,7 +49,7 @@ shared ({ caller = _owner }) actor class Token(
     min_burn_amount = ?1;
     max_memo = ?64;
     advanced_settings = null;
-    metadata = ? #Map([("assetMetadata", #Map([("assetId", #Text(init_args.assetMetadata.tokenId)), ("assetType", #Text(switch (init_args.assetMetadata.assetType) { case (#hydro(hydro)) hydro; case (#ocean(ocean)) ocean; case (#geothermal(geothermal)) geothermal; case (#biome(biome)) biome; case (#wind(wind)) wind; case (#sun(sun)) sun; case (#other(other)) other })), ("startDate", #Text(init_args.assetMetadata.startDate)), ("endDate", #Text(init_args.assetMetadata.endDate)), ("co2Emission", #Text(init_args.assetMetadata.co2Emission)), ("radioactivityEmnission", #Text(init_args.assetMetadata.radioactivityEmnission)), ("volumeProduced", #Nat(init_args.assetMetadata.volumeProduced)), ("deviceDetails", #Map([("name", #Text(init_args.assetMetadata.deviceDetails.name)), ("deviceType", #Text(init_args.assetMetadata.deviceDetails.deviceType)), ("group", #Text(switch (init_args.assetMetadata.deviceDetails.group) { case (#hydro(hydro)) hydro; case (#ocean(ocean)) ocean; case (#geothermal(geothermal)) geothermal; case (#biome(biome)) biome; case (#wind(wind)) wind; case (#sun(sun)) sun; case (#other(other)) other })), ("description", #Text(init_args.assetMetadata.deviceDetails.description))])), ("specifications", #Map([("deviceCode", #Text(init_args.assetMetadata.specifications.deviceCode)), ("capacity", #Nat(init_args.assetMetadata.specifications.capacity)), ("location", #Text(init_args.assetMetadata.specifications.location)), ("latitude", #Text(init_args.assetMetadata.specifications.latitude)), ("longitude", #Text(init_args.assetMetadata.specifications.longitude)), ("address", #Text(init_args.assetMetadata.specifications.address)), ("stateProvince", #Text(init_args.assetMetadata.specifications.stateProvince)), ("country", #Text(init_args.assetMetadata.specifications.country))])), ("dates", #Array(Array.map<Text, { #Text : Text }>(init_args.assetMetadata.dates, func x = #Text(x))))]))]);
+    metadata = ? #Map([("assetMetadata", #Map([("assetId", #Text(init_args.assetMetadata.tokenId)), ("assetType", #Text(switch (init_args.assetMetadata.assetType) { case (#Hydro(Hydro)) Hydro; case (#Ocean(Ocean)) Ocean; case (#Geothermal(Geothermal)) Geothermal; case (#Biome(Biome)) Biome; case (#Wind(Wind)) Wind; case (#Solar(Solar)) Solar; case (#Other(Other)) Other })), ("startDate", #Text(init_args.assetMetadata.startDate)), ("endDate", #Text(init_args.assetMetadata.endDate)), ("co2Emission", #Text(init_args.assetMetadata.co2Emission)), ("radioactivityEmnission", #Text(init_args.assetMetadata.radioactivityEmnission)), ("volumeProduced", #Nat(init_args.assetMetadata.volumeProduced)), ("deviceDetails", #Map([("name", #Text(init_args.assetMetadata.deviceDetails.name)), ("deviceType", #Text(switch (init_args.assetMetadata.deviceDetails.deviceType) { case (#Hydro(Hydro)) Hydro; case (#Ocean(Ocean)) Ocean; case (#Geothermal(Geothermal)) Geothermal; case (#Biome(Biome)) Biome; case (#Wind(Wind)) Wind; case (#Solar(Solar)) Solar; case (#Other(Other)) Other })), ("description", #Text(init_args.assetMetadata.deviceDetails.description))])), ("specifications", #Map([("deviceCode", #Text(init_args.assetMetadata.specifications.deviceCode)), ("capacity", #Nat(init_args.assetMetadata.specifications.capacity)), ("location", #Text(init_args.assetMetadata.specifications.location)), ("latitude", #Text(init_args.assetMetadata.specifications.latitude)), ("longitude", #Text(init_args.assetMetadata.specifications.longitude)), ("address", #Text(init_args.assetMetadata.specifications.address)), ("stateProvince", #Text(init_args.assetMetadata.specifications.stateProvince)), ("country", #Text(init_args.assetMetadata.specifications.country))])), ("dates", #Array(Array.map<Text, { #Text : Text }>(init_args.assetMetadata.dates, func x = #Text(x))))]))]);
     fee_collector = null;
     transaction_window = null;
     permitted_drift = null;
@@ -343,13 +343,13 @@ shared ({ caller = _owner }) actor class Token(
           assetType = switch (map.get(1).1) {
             case (#Text(text)) {
               switch (text) {
-                case ("hydro") #hydro(text);
-                case ("ocean") #ocean(text);
-                case ("geothermal") #geothermal(text);
-                case ("biome") #biome(text);
-                case ("wind") #wind(text);
-                case ("sun") #sun(text);
-                case ("other") #other(text);
+                case ("Hydro") #Hydro(text);
+                case ("Ocean") #Ocean(text);
+                case ("Geothermal") #Geothermal(text);
+                case ("Biome") #Biome(text);
+                case ("Wind") #Wind(text);
+                case ("Solar") #Solar(text);
+                case ("Other") #Other(text);
                 case (_) throw Error.reject("cannot find assetMetadata");
               };
             };
@@ -399,13 +399,13 @@ shared ({ caller = _owner }) actor class Token(
                 switch (childMap.get(2).1) {
                   case (#Text(text)) {
                     switch (text) {
-                      case ("hydro") #hydro(text);
-                      case ("ocean") #ocean(text);
-                      case ("geothermal") #geothermal(text);
-                      case ("biome") #biome(text);
-                      case ("wind") #wind(text);
-                      case ("sun") #sun(text);
-                      case ("other") #other(text);
+                      case ("Hydro") #Hydro(text);
+                      case ("Ocean") #Ocean(text);
+                      case ("Geothermal") #Geothermal(text);
+                      case ("Biome") #Biome(text);
+                      case ("Wind") #Wind(text);
+                      case ("Solar") #Solar(text);
+                      case ("Other") #Other(text);
                       case (_) throw Error.reject("cannot find assetMetadata");
                     };
                   };

@@ -286,7 +286,7 @@ export class AgentCanister {
             mwh: 100,
             assetInfo: {
               tokenId: "string",
-              assetType: "hydro",
+              assetType: "Hydro",
               startDate: new Date(),
               endDate: new Date(),
               co2Emission: 100,
@@ -294,16 +294,15 @@ export class AgentCanister {
               volumeProduced: 100,
               deviceDetails: {
                 name: "string",
-                deviceType: "string",
-                group: "hydro",
+                deviceType: "Hydro",
                 description: "string",
               },
               specifications: {
                 deviceCode: "string",
                 capacity: 100,
                 location: "string",
-                latitude: 100,
-                longitude: 100,
+                latitude: 0.1,
+                longitude: 1.0,
                 address: "string",
                 stateProvince: "string",
                 country: "CL",

@@ -136,19 +136,18 @@ module {
   // Token
   //
   public type AssetType = {
-    #hydro: Text;
-    #ocean: Text;
-    #geothermal: Text;
-    #biome: Text;
-    #wind: Text;
-    #sun: Text;
-    #other: Text;
+    #Hydro: Text;
+    #Ocean: Text;
+    #Geothermal: Text;
+    #Biome: Text;
+    #Wind: Text;
+    #Solar: Text;
+    #Other: Text;
   };
 
   public type DeviceDetails = {
     name: Text;
-    deviceType: Text;
-    group: AssetType;
+    deviceType: AssetType;
     description: Text;
   };
 
