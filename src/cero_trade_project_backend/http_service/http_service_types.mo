@@ -6,11 +6,16 @@ module {
   public let apiUrl: Text = ENV.VITE_API_URL;
   public let headerName = "http_service_canister";
 
-  public func tokenAuth(token: Text): { name: Text; value: Text; } {
-    {
-      name = "userToken";
-      value = token;
-    }
+
+  public func tokenAuth(userToken: Text): { name: Text; value: Text; } {
+    { name = "userToken"; value = userToken; }
+  };
+
+  public func tokenAuthFromUser(uid: Principal): async { name: Text; value: Text; } {
+    let userIndex: UserIndex = actor (ENV.CANISTER_ID_USER_INDEX);
+    let userToken = await userIndex.getUserToken(uid);
+
+    { name = "userToken"; value = userToken; }
   };
 
   public type HttpError = {
@@ -94,5 +99,10 @@ module {
   //3. Declaring the management canister which you use to make the HTTPS outcall
   public type IC = actor {
     http_request : HttpRequestArgs -> async HttpResponsePayload;
+  };
+
+
+  public type UserIndex = actor {
+    getUserToken : (uid: Principal) -> async Text;
   };
 }

@@ -59,7 +59,14 @@ actor class UserIndex() = this {
     usersDirectoryEntries := [];
   };
 
-  private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.CANISTER_ID_AGENT) == caller };
+  private func _callValidation(caller: Principal) {
+    let authorizedCanisters = [
+      ENV.CANISTER_ID_AGENT,
+      ENV.CANISTER_ID_USER_INDEX,
+    ];
+
+    assert Array.find<Text>(authorizedCanisters, func x = Principal.fromText(x) == caller) != null;
+  };
 
   /// get size of usersDirectory collection
   public query func length(): async Nat { usersDirectory.size() };
@@ -368,6 +375,7 @@ actor class UserIndex() = this {
       case (null) return;
       case(?cid) await Users.canister(cid).getUserToken(uid);
     };
+
     // fetch with currentToken + uid
     let _ = await HttpService.get({
       url = HT.apiUrl # "users/logout/" # Principal.toText(uid);
