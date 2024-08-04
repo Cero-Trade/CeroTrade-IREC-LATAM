@@ -296,17 +296,19 @@ actor class NotificationIndex() = this {
       };
     };
 
+    // Convert userNotificationIds to a HashMap for faster lookup
+    let notificationIdMap = HM.fromIter<T.NotificationId, Null>(Iter.fromArray(Array.map<T.NotificationId, (T.NotificationId, Null)>(userNotificationIds, func id = (id, null))), 16, Text.equal, Text.hash);
+
     // iterate notifications on directory
     for((cid, canisterNotifications) in notificationsDirectory.entries()) {
       // filter user notifications to verify if providing own notifications
-      let verifiedNotificationIds = Array.filter<T.NotificationId>(notificationIds, func (x) {
-        Array.find<T.NotificationId>(userNotificationIds, func y = x == y) != null
-      });
+      let verifiedNotificationIds = Array.filter<T.NotificationId>(notificationIds, func x = notificationIdMap.get(x) != null);
+
+      // Convert verifiedNotificationIds to a HashMap for faster lookup
+      let verifiedNotificationIdMap = HM.fromIter<T.NotificationId, Null>(Iter.fromArray(Array.map<T.NotificationId, (T.NotificationId, Null)>(verifiedNotificationIds, func id = (id, null))), 16, Text.equal, Text.hash);
 
       // filter notification ids by present on current canister iterated
-      let filteredIds = Array.filter<T.NotificationId>(canisterNotifications, func (id) {
-        Array.find<T.NotificationId>(verifiedNotificationIds, func x = x == id) != null;
-      });
+      let filteredIds = Array.filter<T.NotificationId>(canisterNotifications, func id = verifiedNotificationIdMap.get(id) != null);
 
 
       if (filteredIds.size() > 0) {
@@ -338,17 +340,19 @@ actor class NotificationIndex() = this {
       };
     };
 
+    // Convert userNotificationIds to a HashMap for faster lookup
+    let notificationIdMap = HM.fromIter<T.NotificationId, Null>(Iter.fromArray(Array.map<T.NotificationId, (T.NotificationId, Null)>(userNotificationIds, func id = (id, null))), 16, Text.equal, Text.hash);
+
     // iterate notifications on directory
     for((cid, canisterNotifications) in notificationsDirectory.entries()) {
       // filter user notifications to verify if providing own notifications
-      let verifiedNotificationIds = Array.filter<T.NotificationId>(notificationIds, func (x) {
-        Array.find<T.NotificationId>(userNotificationIds, func y = x == y) != null
-      });
+      let verifiedNotificationIds = Array.filter<T.NotificationId>(notificationIds, func x = notificationIdMap.get(x) != null);
+
+      // Convert verifiedNotificationIds to a HashMap for faster lookup
+      let verifiedNotificationIdMap = HM.fromIter<T.NotificationId, Null>(Iter.fromArray(Array.map<T.NotificationId, (T.NotificationId, Null)>(verifiedNotificationIds, func id = (id, null))), 16, Text.equal, Text.hash);
 
       // filter notification ids by present on current canister iterated
-      let filteredIds = Array.filter<T.NotificationId>(canisterNotifications, func (id) {
-        Array.find<T.NotificationId>(verifiedNotificationIds, func x = x == id) != null;
-      });
+      let filteredIds = Array.filter<T.NotificationId>(canisterNotifications, func id = verifiedNotificationIdMap.get(id) != null);
 
 
       if (filteredIds.size() > 0) {
@@ -510,30 +514,26 @@ actor class NotificationIndex() = this {
       };
     };
 
+    // Convert notificationIds to a HashMap for faster lookup
+    let notificationIdMap = HM.fromIter<T.NotificationId, Null>(Iter.fromArray(Array.map<T.NotificationId, (T.NotificationId, Null)>(notificationIds, func id = (id, null))), 16, Text.equal, Text.hash);
 
-    let notifications = Buffer.Buffer<T.NotificationInfo>(50);
+    var notifications: [T.NotificationInfo] = [];
 
     // iterate notifications on directory
     for((cid, canisterNotifications) in notificationsDirectory.entries()) {
       // filter notification ids by present on current canister iterated
-      let filteredIds = Array.filter<T.NotificationId>(canisterNotifications, func (id) {
-        Array.find<T.NotificationId>(notificationIds, func x = x == id) != null;
-      });
-
+      let filteredIds = Array.filter<T.NotificationId>(canisterNotifications, func id = notificationIdMap.get(id) != null);
 
       if (filteredIds.size() > 0) {
         let notificationsInfo = await Notifications.canister(cid).getNotifications(filteredIds);
-        let notificationsInfoFiltered = Array.filter<T.NotificationInfo>(notificationsInfo, func (item) {
+
+        notifications := Array.filter<T.NotificationInfo>(notificationsInfo, func (item) {
+          // filter notifications by NotificationType
           notificationTypes.size() < 1 or Array.find<T.NotificationType>(notificationTypes, func x = item.notificationType == x) != null
         });
-
-        // add notifications to buffer
-        for(notification in notificationsInfoFiltered.vals()) {
-          notifications.add(notification)
-        };
       }
     };
 
-    Buffer.toArray<T.NotificationInfo>(notifications);
+    notifications
   };
 }
