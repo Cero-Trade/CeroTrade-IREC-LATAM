@@ -13,9 +13,9 @@ Public candid url: https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=<canister
 
 `npm run deploy`: used to upgrade all canisters excluding dynamic canisters.
 
-`npm run deploy modules` or `npm run deploy --modules`: used to upgrade all canisters including dynamic canisters.
+`npm run deploy modules`: used to upgrade all canisters including dynamic canisters.
 
-`npm run deploy clean` or `npm run deploy --clean`: used to deploy canisters from zero, useful when run dfx start --clean.
+`npm run deploy clean`: used to deploy canisters from zero, useful when run dfx start --clean.
 
 ## Project setup
 
