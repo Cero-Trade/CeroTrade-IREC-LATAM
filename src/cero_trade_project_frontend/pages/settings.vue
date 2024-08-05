@@ -418,8 +418,18 @@
                 id="address"
                 v-model="formProfile.address"
                 class="input" variant="solo" flat elevation="0"
-                placeholder="office@abccompany.com"
                 :rules="[globalRules.required]"
+              ></v-text-field>
+            </v-col>
+
+            <v-col cols="12">
+              <label for="email">Email</label>
+              <v-text-field
+                id="email"
+                v-model="formProfile.email"
+                class="input" variant="solo" flat elevation="0"
+                placeholder="office@abccompany.com"
+                :rules="[globalRules.email]"
               ></v-text-field>
             </v-col>
           </v-row>
@@ -1184,6 +1194,7 @@ export default{
       this.formProfile.city = this.profile.city
       this.formProfile.country = this.profile.country
       this.formProfile.address = this.profile.address
+      this.formProfile.email = this.profile.email
 
       await this.getBeneficiaries()
     },

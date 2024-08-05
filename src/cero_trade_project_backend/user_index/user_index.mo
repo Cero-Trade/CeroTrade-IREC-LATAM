@@ -59,7 +59,14 @@ actor class UserIndex() = this {
     usersDirectoryEntries := [];
   };
 
-  private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.CANISTER_ID_AGENT) == caller };
+  private func _callValidation(caller: Principal) {
+    let authorizedCanisters = [
+      ENV.CANISTER_ID_AGENT,
+      ENV.CANISTER_ID_USER_INDEX,
+    ];
+
+    assert Array.find<Text>(authorizedCanisters, func x = Principal.fromText(x) == caller) != null;
+  };
 
   /// get size of usersDirectory collection
   public query func length(): async Nat { usersDirectory.size() };
@@ -234,18 +241,10 @@ actor class UserIndex() = this {
   };
 
   private func _deleteUserWeb2(token: Text): async() {
-    let formData = { token };
-    let formBlob = to_candid(formData);
-    let formKeys = ["token"];
-
-    let _ = await HttpService.post({
+    let _ = await HttpService.get({
         url = HT.apiUrl # "users/delete";
         port = null;
-        headers = [];
-        bodyJson = switch(Serde.JSON.toText(formBlob, formKeys, null)) {
-          case(#err(error)) throw Error.reject("Cannot serialize data");
-          case(#ok(value)) value;
-        };
+        headers = [HT.tokenAuth(token)];
       });
   };
 
@@ -345,6 +344,48 @@ actor class UserIndex() = this {
     };
   };
 
+  /// update user into Cero Trade
+  public shared({ caller }) func updateUserInfo(uid: T.UID, form: T.UpdateUserForm) : async() {
+    _callValidation(caller);
+
+    let cid = switch(usersDirectory.get(uid)) {
+      case(null) throw Error.reject(notExists);
+      case(?value) value;
+    };
+
+    let formData = {
+      principalId = Principal.toText(uid);
+      companyId = form.companyId;
+      companyName = form.companyName;
+      country = form.country;
+      city = form.city;
+      address = form.address;
+      email = form.email;
+    };
+
+    let formBlob = to_candid(formData);
+    let formKeys = ["principalId", "companyId", "companyName", "country", "city", "address", "email"];
+
+    // WARN just for debug
+    Debug.print(Principal.toText(uid));
+
+    let token = switch(usersDirectory.get(uid)) {
+      case (null) throw Error.reject(notExists);
+      case(?cid) await Users.canister(cid).getUserToken(uid);
+    };
+
+    // update user info in web2 database
+    let _ = await HttpService.post({
+        url = HT.apiUrl # "users/update";
+        port = null;
+        headers = [HT.tokenAuth(token)];
+        bodyJson = switch(Serde.JSON.toText(formBlob, formKeys, null)) {
+          case(#err(error)) throw Error.reject("Cannot serialize data");
+          case(#ok(value)) value;
+        };
+      });
+  };
+
   /// delete user to Cero Trade
   public shared({ caller }) func deleteUser(uid: T.UID): async() {
     _callValidation(caller);
@@ -415,11 +456,11 @@ actor class UserIndex() = this {
       case(?cid) cid;
     };
 
-    let token = await Users.canister(cid).getUserToken(uid);
+    let currentToken = await Users.canister(cid).getUserToken(uid);
     let profileJson = await HttpService.get({
-      url = HT.apiUrl # "users/retrieve/" # token;
+      url = HT.apiUrl # "users/retrieve/";
       port = null;
-      headers = []
+      headers = [HT.tokenAuth(currentToken)]
     });
     let companyLogo = await Users.canister(cid).getCompanyLogo(uid);
 
@@ -602,7 +643,7 @@ actor class UserIndex() = this {
 
   // build [T.UserProfile] array from [ProfilePart]
   private func buildUserProfiles(profiles: [ProfilePart]): async [T.UserProfile] {
-    let users = Buffer.Buffer<(Text, T.CompanyLogo)>(16);
+    let users = HM.HashMap<Text, T.UserProfile>(16, Text.equal, Text.hash);
 
     for(profile in profiles.vals()) {
       let uid = Principal.fromText(profile.principalId);
@@ -611,50 +652,24 @@ actor class UserIndex() = this {
         case (null) {};
         case(?cid) {
           let companyLogo = await Users.canister(cid).getCompanyLogo(uid);
-          users.add((profile.principalId, companyLogo));
+
+          users.put(profile.principalId, {
+            companyLogo;
+            principalId = profile.principalId;
+            companyId = profile.companyId;
+            companyName = profile.companyName;
+            city = profile.city;
+            country = profile.country;
+            address = profile.address;
+            email = profile.email;
+            createdAt = profile.createdAt;
+            updatedAt = profile.updatedAt;
+          });
         };
       };
     };
 
-    // map profiles values to [UserProfile]
-    return Array.map<ProfilePart, T.UserProfile>(profiles, func (item) {
-      let principalId = item.principalId;
-      let user = Array.find<(Text, T.CompanyLogo)>(Buffer.toArray<(Text, T.CompanyLogo)>(users), func (element) { element.0 == principalId });
-
-      switch(user) {
-        /// this case will not occur, just here to can compile
-        case(null) {
-          {
-            companyLogo = [];
-            principalId;
-            companyId = item.companyId;
-            companyName = item.companyName;
-            city = item.city;
-            country = item.country;
-            address = item.address;
-            email = item.email;
-            createdAt = item.createdAt;
-            updatedAt = item.updatedAt;
-          }
-        };
-
-        // build [UserProfile] object
-        case(?value) {
-          {
-            companyLogo = value.1;
-            principalId;
-            companyId = item.companyId;
-            companyName = item.companyName;
-            city = item.city;
-            country = item.country;
-            address = item.address;
-            email = item.email;
-            createdAt = item.createdAt;
-            updatedAt = item.updatedAt;
-          }
-        };
-      };
-    })
+    Iter.toArray(users.vals())
   };
 
 
@@ -680,13 +695,14 @@ actor class UserIndex() = this {
   public shared({ caller }) func filterUsers(uid: T.UID, user: Text): async [T.UserProfile] {
     _callValidation(caller);
 
-    // check if user exists
-    if (not (await checkPrincipal(uid))) throw Error.reject(notExists);
-
+    let currentToken = switch(usersDirectory.get(uid)) {
+      case (null) throw Error.reject(notExists);
+      case(?cid) await Users.canister(cid).getUserToken(uid);
+    };
     let usersJson = await HttpService.post({
         url = HT.apiUrl # "users/filter";
         port = null;
-        headers = [];
+        headers = [HT.tokenAuth(currentToken)];
         bodyJson = "{\"user\": \"" # user # "\"}";
       });
 

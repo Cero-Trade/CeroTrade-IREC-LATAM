@@ -1,9 +1,11 @@
+import HM = "mo:base/HashMap";
 import Principal "mo:base/Principal";
 import Error "mo:base/Error";
 import Debug "mo:base/Debug";
 import Cycles "mo:base/ExperimentalCycles";
 import Text "mo:base/Text";
 import Array "mo:base/Array";
+import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
 import Nat64 "mo:base/Nat64";
 import Float "mo:base/Float";
@@ -37,7 +39,7 @@ actor class Agent() = this {
     // WARN just for debug
     Debug.print(Principal.toText(caller));
 
-    let exists: Bool = await UserIndex.checkPrincipal(caller);
+    let exists = await UserIndex.checkPrincipal(caller);
     if (not exists) throw Error.reject(notExists);
   };
 
@@ -51,6 +53,8 @@ actor class Agent() = this {
   /// store user avatar into users collection
   public shared({ caller }) func storeCompanyLogo(avatar: T.CompanyLogo): async() { await UserIndex.storeCompanyLogo(caller, avatar) };
 
+  /// update user into Cero Trade
+  public shared({ caller }) func updateUserInfo(form: T.UpdateUserForm): async() { await UserIndex.updateUserInfo(caller, form) };
 
   /// delete user into Cero Trade
   public shared({ caller }) func deleteUser(): async() { await UserIndex.deleteUser(caller) };
@@ -295,6 +299,10 @@ actor class Agent() = this {
       higherPriceE8S: T.Price;
     }, Text>(marketInfo, func x = x.tokenId));
 
+    // Convert tokensInfo to a HashMap for faster lookup
+    let tokensInfoMap = HM.fromIter<T.TokenId, T.AssetInfo>(Iter.fromArray(Array.map<T.AssetInfo, (T.TokenId, T.AssetInfo)>(tokensInfo, func info = (info.tokenId, info))), 16, Text.equal, Text.hash);
+
+
     // map market and asset values to marketplace info
     let marketplace: [T.MarketplaceInfo] = Array.map<{
       tokenId: T.TokenId;
@@ -302,7 +310,7 @@ actor class Agent() = this {
       lowerPriceE8S: T.Price;
       higherPriceE8S: T.Price;
     }, T.MarketplaceInfo>(marketInfo, func (item) {
-      let assetInfo = Array.find<T.AssetInfo>(tokensInfo, func (info) { info.tokenId == item.tokenId });
+      let assetInfo = tokensInfoMap.get(item.tokenId);
 
       switch (assetInfo) {
         /// this case will not occur, just here to can compile
@@ -411,6 +419,9 @@ actor class Agent() = this {
       priceE8S: T.Price;
     }, Text>(marketInfo, func x = x.tokenId));
 
+    // Convert tokensInfo to a HashMap for faster lookup
+    let tokensInfoMap = HM.fromIter<T.TokenId, T.AssetInfo>(Iter.fromArray(Array.map<T.AssetInfo, (T.TokenId, T.AssetInfo)>(tokensInfo, func info = (info.tokenId, info))), 16, Text.equal, Text.hash);
+
 
     // map market and asset values to marketplace info
     let marketplace: [T.MarketplaceSellersInfo] = Array.map<{
@@ -419,9 +430,7 @@ actor class Agent() = this {
       mwh: T.TokenAmount;
       priceE8S: T.Price;
     }, T.MarketplaceSellersInfo>(marketInfo, func (item) {
-
-      let assetInfo: ?T.AssetInfo = Array.find<T.AssetInfo>(tokensInfo, func (info) { info.tokenId == item.tokenId });
-
+      let assetInfo = tokensInfoMap.get(item.tokenId);
 
       // build MarketplaceSellersInfo object
       {
@@ -781,11 +790,13 @@ actor class Agent() = this {
     // get tokens info
     let tokensInfo: [T.AssetInfo] = await TokenIndex.getTokensInfo(Array.map<T.TransactionInfo, Text>(transactionsInfo, func x = x.tokenId));
 
+    // Convert tokensInfo to a HashMap for faster lookup
+    let tokensInfoMap = HM.fromIter<T.TokenId, T.AssetInfo>(Iter.fromArray(Array.map<T.AssetInfo, (T.TokenId, T.AssetInfo)>(tokensInfo, func info = (info.tokenId, info))), 16, Text.equal, Text.hash);
+
 
     // map market and asset values to marketplace info
     let transactions: [T.TransactionHistoryInfo] = Array.map<T.TransactionInfo, T.TransactionHistoryInfo>(transactionsInfo, func (item) {
-
-      let assetInfo: ?T.AssetInfo = Array.find<T.AssetInfo>(tokensInfo, func (info) { info.tokenId == item.tokenId });
+      let assetInfo = tokensInfoMap.get(item.tokenId);
 
 
       // build MarketplaceSellersInfo object

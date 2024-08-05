@@ -1,5 +1,6 @@
 <!-- TODO subdomain integration with `cerotrade.cl/alfa` -->
 <!-- TODO delete beneficiary id from web3 register and migrate to web2 -->
+<!-- TODO graphic on dashboard when is empty looks weirdo -->
 <!-- TODO import irecs in dashboard -->
 
 # Cero Trade
@@ -7,6 +8,14 @@
 Public frontend url: https://z2mgf-dqaaa-aaaak-qihbq-cai.icp0.io?canisterId=z2mgf-dqaaa-aaaak-qihbq-cai
 
 Public candid url: https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=<canister_id>
+
+## Deployment Commands
+
+`npm run deploy`: used to upgrade all canisters excluding dynamic canisters.
+
+`npm run deploy modules` or `npm run deploy --modules`: used to upgrade all canisters including dynamic canisters.
+
+`npm run deploy clean` or `npm run deploy --clean`: used to deploy canisters from zero, useful when run dfx start --clean.
 
 ## Project setup
 
@@ -16,7 +25,7 @@ If you havent nns extension installed run:
 * You can run this proyect locally by run below script:
 ```
 dfx start
-npm run deploy modules nns
+npm run deploy clean
 ```
 
 

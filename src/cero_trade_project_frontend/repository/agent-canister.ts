@@ -55,16 +55,15 @@ export class AgentCanister {
     email: string,
   }): Promise<void> {
     try {
-      // TODO missing endpoint
       // update user
-      // await agent().updateUserInfo({
-      //   companyId: data.companyId,
-      //   companyName: data.companyName,
-      //   country: data.country,
-      //   city: data.city,
-      //   address: data.address,
-      //   email: data.email,
-      // })
+      await agent().updateUserInfo({
+        companyId: data.companyId,
+        companyName: data.companyName,
+        country: data.country,
+        city: data.city,
+        address: data.address,
+        email: data.email,
+      })
 
       if (data.companyLogo?.length) {
         // store user company logo

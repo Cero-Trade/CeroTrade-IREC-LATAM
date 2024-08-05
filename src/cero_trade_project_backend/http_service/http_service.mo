@@ -73,10 +73,10 @@ actor HttpService {
   };
 
   private func _generateHeaders({ url: Text; port: ?Text; headers: [HT.HttpHeader] }) : async [HT.HttpHeader] {
-    //idempotency keys should be unique so create a function that generates them.
+    // Idempotency keys should be unique so create a function that generates them.
     let idempotency_key: Text = await generateUUID();
 
-    // prepare headers for the system http_request call
+    // Prepare headers for the system http_request call
     let default_headers  = Buffer.fromArray<HT.HttpHeader>([
       { name = "Host"; value = getHost(url, port) },
       { name = "User-Agent"; value = HT.headerName },
