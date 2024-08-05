@@ -2,7 +2,6 @@ import variables from "@/mixins/variables";
 import { useAuthClient as client } from "@/services/icp-provider";
 import { AnonymousIdentity } from "@dfinity/agent";
 import { Principal } from "@dfinity/principal";
-import { AgentCanister } from "./agent-canister";
 
 export class AuthClientApi {
   static async signOut(returnTo?: string): Promise<void> {
