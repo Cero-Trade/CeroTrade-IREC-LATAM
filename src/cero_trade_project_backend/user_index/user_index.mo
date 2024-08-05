@@ -369,11 +369,16 @@ actor class UserIndex() = this {
     // WARN just for debug
     Debug.print(Principal.toText(uid));
 
+    let token = switch(usersDirectory.get(uid)) {
+      case (null) throw Error.reject(notExists);
+      case(?cid) await Users.canister(cid).getUserToken(uid);
+    };
+
     // update user info in web2 database
     let _ = await HttpService.post({
         url = HT.apiUrl # "users/update";
         port = null;
-        headers = [];
+        headers = [HT.tokenAuth(token)];
         bodyJson = switch(Serde.JSON.toText(formBlob, formKeys, null)) {
           case(#err(error)) throw Error.reject("Cannot serialize data");
           case(#ok(value)) value;
