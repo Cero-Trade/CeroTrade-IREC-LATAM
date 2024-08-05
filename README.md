@@ -8,6 +8,14 @@ Public frontend url: https://z2mgf-dqaaa-aaaak-qihbq-cai.icp0.io?canisterId=z2mg
 
 Public candid url: https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=<canister_id>
 
+## Deployment Commands
+
+`npm run deploy`: used to upgrade all canisters excluding dynamic canisters.
+
+`npm run deploy modules` or `npm run deploy --modules`: used to upgrade all canisters including dynamic canisters.
+
+`npm run deploy clean` or `npm run deploy --clean`: used to deploy canisters from zero, useful when run dfx start --clean.
+
 ## Project setup
 
 If you havent nns extension installed run:
