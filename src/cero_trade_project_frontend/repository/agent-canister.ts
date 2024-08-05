@@ -285,7 +285,7 @@ export class AgentCanister {
             mwh: 100,
             assetInfo: {
               tokenId: "string",
-              assetType: "Hydro",
+              assetType: "Hydro-Electric",
               startDate: new Date(),
               endDate: new Date(),
               co2Emission: 100,
@@ -293,7 +293,7 @@ export class AgentCanister {
               volumeProduced: 100,
               deviceDetails: {
                 name: "string",
-                deviceType: "Hydro",
+                deviceType: "Hydro-Electric",
                 description: "string",
               },
               specifications: {
