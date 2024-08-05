@@ -355,16 +355,19 @@ actor class UserIndex() = this {
 
     let oldToken = await Users.canister(cid).getUserToken(uid);
 
-    // fetch with oldToken + uid
-    let token = await HttpService.get({
-      url = HT.apiUrl # "users/login/" # Principal.toText(uid);
-      port = null;
-      headers = [HT.tokenAuth(oldToken)]
-    });
+    // TODO while be updated API to avoid errors
+    try {
+      // fetch with oldToken + uid
+      let token = await HttpService.get({
+        url = HT.apiUrl # "users/login/" # Principal.toText(uid);
+        port = null;
+        headers = [HT.tokenAuth(oldToken)]
+      });
 
-    let trimmedToken = Text.trimEnd(Text.trimStart(token, #char '\"'), #char '\"');
+      let trimmedToken = Text.trimEnd(Text.trimStart(token, #char '\"'), #char '\"');
 
-    await Users.canister(cid).updateUserToken(uid, trimmedToken);
+      await Users.canister(cid).updateUserToken(uid, trimmedToken);
+    } catch (error) {}
   };
 
   /// logout user into Cero Trade
@@ -376,12 +379,15 @@ actor class UserIndex() = this {
       case(?cid) await Users.canister(cid).getUserToken(uid);
     };
 
-    // fetch with currentToken + uid
-    let _ = await HttpService.get({
-      url = HT.apiUrl # "users/logout/" # Principal.toText(uid);
-      port = null;
-      headers = [HT.tokenAuth(currentToken)]
-    });
+    // TODO while be updated API to avoid errors
+    try {
+      // fetch with currentToken + uid
+      let _ = await HttpService.get({
+        url = HT.apiUrl # "users/logout/" # Principal.toText(uid);
+        port = null;
+        headers = [HT.tokenAuth(currentToken)]
+      });
+    } catch (error) {}
   };
 
   /// delete user to Cero Trade
