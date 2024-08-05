@@ -136,12 +136,10 @@ module {
   // Token
   //
   public type AssetType = {
-    #Hydro: Text;
-    #Ocean: Text;
-    #Geothermal: Text;
-    #Biome: Text;
-    #Wind: Text;
     #Solar: Text;
+    #Wind: Text;
+    #HydroElectric: Text;
+    #Thermal: Text;
     #Other: Text;
   };
 

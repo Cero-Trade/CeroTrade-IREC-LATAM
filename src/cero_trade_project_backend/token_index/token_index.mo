@@ -578,12 +578,10 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   // helper function used to build [AssetInfo] from AssetResponse
   private func buildAssetInfo(asset: AssetResponse): T.AssetInfo {
     let assetType: T.AssetType = switch(asset.assetDetails.issue.deviceDetails.deviceType.deviceGroup) {
-      case("Hydro") #Hydro("Hydro");
-      case("Ocean") #Ocean("Ocean");
-      case("Geothermal") #Geothermal("Geothermal");
-      case("Biome") #Biome("Biome");
-      case("Wind") #Wind("Wind");
       case("Solar") #Solar("Solar");
+      case("Wind") #Wind("Wind");
+      case("Hydro-Electric") #HydroElectric("Hydro-Electric");
+      case("Thermal") #Thermal("Thermal");
       case _ #Other("Other");
     };
 

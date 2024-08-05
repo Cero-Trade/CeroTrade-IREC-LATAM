@@ -7,7 +7,7 @@ export interface TokenModel {
   assetInfo: AssetInfoModel;
 }
 
-export type AssetType = "Hydro"|"Ocean"|"Geothermal"|"Biome"|"Wind"|"Solar"|"Other";
+export type AssetType = "Solar"|"Wind"|"Hydro-Electric"|"Thermal"|"Other";
 
 export interface AssetInfoModel {
   tokenId: string;

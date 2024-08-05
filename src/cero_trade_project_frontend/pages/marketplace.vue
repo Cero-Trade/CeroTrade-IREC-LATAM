@@ -255,12 +255,10 @@ timeline = ref('Timeline'),
 toggle = ref(0),
 
 energies = {
-  hydro: HydroEnergyIcon,
-  ocean: OceanEnergyIcon,
-  geothermal: GeothermalEnergyIcon,
-  biome: BiomeEnergyIcon,
-  wind: WindEnergyIcon,
-  sun: SolarEnergyIcon,
+  "Solar": SolarEnergyIcon,
+  "Wind": WindEnergyIcon,
+  "Hydro-Electric": HydroEnergyIcon,
+  "Thermal": GeothermalEnergyIcon,
 },
 countriesImg = {
   CL: ChileIcon
