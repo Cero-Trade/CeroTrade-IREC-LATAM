@@ -40,7 +40,7 @@ actor class Agent() = this {
     Debug.print(Principal.toText(caller));
 
     let exists = await UserIndex.checkPrincipal(caller);
-    if (!exists) throw Error.reject(notExists);
+    if (not exists) throw Error.reject(notExists);
   };
 
 
@@ -54,9 +54,7 @@ actor class Agent() = this {
   public shared({ caller }) func storeCompanyLogo(avatar: T.CompanyLogo): async() { await UserIndex.storeCompanyLogo(caller, avatar) };
 
   /// update user into Cero Trade
-  public shared({ caller }) func updateUserInfo(form: T.UpdateUserForm): async() {
-    await UserIndex.updateUserInfo(caller, form)
-  };
+  public shared({ caller }) func updateUserInfo(form: T.UpdateUserForm): async() { await UserIndex.updateUserInfo(caller, form) };
 
   /// delete user into Cero Trade
   public shared({ caller }) func deleteUser(): async() { await UserIndex.deleteUser(caller) };
