@@ -7,8 +7,6 @@ import { AgentCanister } from "./agent-canister";
 export class AuthClientApi {
   static async signOut(returnTo?: string): Promise<void> {
     await client()?.logout({ returnTo })
-
-    await AgentCanister.logout()
   }
 
   static async signIn(onComplete: Function): Promise<void> {

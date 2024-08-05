@@ -39,15 +39,8 @@ actor class Agent() = this {
     // WARN just for debug
     Debug.print(Principal.toText(caller));
 
-    await UserIndex.login(caller);
-  };
-
-  /// logout user into Cero Trade
-  public shared({ caller }) func logout(): async() {
-    // WARN just for debug
-    Debug.print(Principal.toText(caller));
-
-    await UserIndex.logout(caller);
+    let exists = await UserIndex.checkPrincipal(caller);
+    if (!exists) throw Error.reject(notExists);
   };
 
 
@@ -60,6 +53,10 @@ actor class Agent() = this {
   /// store user avatar into users collection
   public shared({ caller }) func storeCompanyLogo(avatar: T.CompanyLogo): async() { await UserIndex.storeCompanyLogo(caller, avatar) };
 
+  /// update user into Cero Trade
+  public shared({ caller }) func updateUserInfo(form: T.UpdateUserForm): async() {
+    await UserIndex.updateUserInfo(caller, form)
+  };
 
   /// delete user into Cero Trade
   public shared({ caller }) func deleteUser(): async() { await UserIndex.deleteUser(caller) };

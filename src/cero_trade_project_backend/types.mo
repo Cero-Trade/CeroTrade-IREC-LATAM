@@ -61,6 +61,15 @@ module {
     email: Text;
   };
 
+  public type UpdateUserForm = {
+    companyId: Text;
+    companyName: Text;
+    country: Text;
+    city: Text;
+    address: Text;
+    email: Text;
+  };
+
   public type UserInfo = {
     companyLogo: ?CompanyLogo;
     vaultToken: Text;

@@ -344,8 +344,8 @@ actor class UserIndex() = this {
     };
   };
 
-  /// login user into Cero Trade
-  public shared({ caller }) func login(uid: T.UID): async() {
+  /// update user into Cero Trade
+  public shared({ caller }) func updateUserInfo(uid: T.UID, form: T.UpdateUserForm) : async() {
     _callValidation(caller);
 
     let cid = switch(usersDirectory.get(uid)) {
@@ -353,41 +353,32 @@ actor class UserIndex() = this {
       case(?value) value;
     };
 
-    let oldToken = await Users.canister(cid).getUserToken(uid);
-
-    // TODO this trycatch is while be updated API to avoid errors
-    try {
-      // fetch with oldToken
-      let token = await HttpService.get({
-        url = HT.apiUrl # "users/login";
-        port = null;
-        headers = [HT.tokenAuth(oldToken)]
-      });
-
-      let trimmedToken = Text.trimEnd(Text.trimStart(token, #char '\"'), #char '\"');
-
-      await Users.canister(cid).updateUserToken(uid, trimmedToken);
-    } catch (error) {}
-  };
-
-  /// logout user into Cero Trade
-  public shared({ caller }) func logout(uid: T.UID): async() {
-    _callValidation(caller);
-
-    let currentToken = switch(usersDirectory.get(uid)) {
-      case (null) return;
-      case(?cid) await Users.canister(cid).getUserToken(uid);
+    let formData = {
+      principalId = Principal.toText(uid);
+      companyId = form.companyId;
+      companyName = form.companyName;
+      country = form.country;
+      city = form.city;
+      address = form.address;
+      email = form.email;
     };
 
-    // TODO this trycatch is while be updated API to avoid errors
-    try {
-      // fetch with currentToken
-      let _ = await HttpService.get({
-        url = HT.apiUrl # "users/logout";
+    let formBlob = to_candid(formData);
+    let formKeys = ["principalId", "companyId", "companyName", "country", "city", "address", "email"];
+
+    // WARN just for debug
+    Debug.print(Principal.toText(uid));
+
+    // update user info in web2 database
+    let _ = await HttpService.post({
+        url = HT.apiUrl # "users/update";
         port = null;
-        headers = [HT.tokenAuth(currentToken)]
+        headers = [];
+        bodyJson = switch(Serde.JSON.toText(formBlob, formKeys, null)) {
+          case(#err(error)) throw Error.reject("Cannot serialize data");
+          case(#ok(value)) value;
+        };
       });
-    } catch (error) {}
   };
 
   /// delete user to Cero Trade
