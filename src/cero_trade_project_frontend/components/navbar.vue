@@ -37,13 +37,25 @@
       <div class="center divrow displaynone" style="gap: 20px;">
         <notifications-button />
 
-        <v-sheet class="center divrow pointer" style="gap: 10px; background-color: transparent;" @click="$router.push('/profile')">
-          <v-img-load :src="UserProfileModel.get().companyLogo" alt="Avatar" cover rounded="50%" sizes="35px" />
-          <div class="divcol">
-            <span style="font-weight: 700; color: #fff;">{{ UserProfileModel.get().companyName }}</span>
-            <span style="color: #98A2B3;">{{ UserProfileModel.get().email }}</span>
-          </div>
-        </v-sheet>
+        <v-menu location="bottom" style="border-radius: 12px !important;">
+          <template #activator="{ props }">
+            <v-sheet class="center divrow pointer" style="gap: 10px; background-color: transparent;" v-bind="props">
+              <v-img-load :src="UserProfileModel.get().companyLogo" alt="Avatar" cover rounded="50%" sizes="35px" />
+              <div class="divcol">
+                <span style="font-weight: 700; color: #fff;">{{ UserProfileModel.get().companyName }}</span>
+                <span style="color: #98A2B3;">{{ UserProfileModel.get().email }}</span>
+              </div>
+            </v-sheet>
+          </template>
+
+          <v-list>
+            <v-list-item
+              v-for="(item, i) in optionsMenu" :key="i"
+              :title="item.name"
+              :to="item.to"
+            />
+          </v-list>
+        </v-menu>
       </div>
 
       <!-- Mobile Nav -->
@@ -119,10 +131,8 @@ import marketplace_green from '@/assets/sources/icons/marketplace-green.svg'
 import config_green from '@/assets/sources/icons/config-green.svg'
 import support_green from '@/assets/sources/icons/support-green.svg'
 import market_trends from '@/assets/sources/icons/market-trends.svg'
-import { AgentCanister } from '@/repository/agent-canister'
 import { useToast } from 'vue-toastification';
 import { useRouter } from 'vue-router'
-import { closeLoader, showLoader } from '@/plugins/functions'
 import { ref } from 'vue'
 import { UserProfileModel } from '@/models/user-profile-model'
 import NotificationsButton from '@/components/notifications-button.vue'
@@ -152,7 +162,17 @@ iconMap = {
   marketplace_green,
   config_green,
   support_green,
-}
+},
+optionsMenu = [
+  {
+    name: "Profile",
+    to: "/profile"
+  },
+  {
+    name: "Logout",
+    to: "/auth/login"
+  },
+]
 </script>
 
 <style scoped lang="scss">
