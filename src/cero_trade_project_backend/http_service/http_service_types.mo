@@ -7,15 +7,15 @@ module {
   public let headerName = "http_service_canister";
 
 
-  public func tokenAuth(userToken: Text): { name: Text; value: Text; } {
-    { name = "userToken"; value = userToken; }
+  public func tokenAuth(token: Text): { name: Text; value: Text; } {
+    { name = "token"; value = token; }
   };
 
   public func tokenAuthFromUser(uid: Principal): async { name: Text; value: Text; } {
     let userIndex: UserIndex = actor (ENV.CANISTER_ID_USER_INDEX);
-    let userToken = await userIndex.getUserToken(uid);
+    let token = await userIndex.getUserToken(uid);
 
-    { name = "userToken"; value = userToken; }
+    { name = "token"; value = token; }
   };
 
   public type HttpError = {
