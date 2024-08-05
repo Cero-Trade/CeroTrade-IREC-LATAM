@@ -1194,6 +1194,7 @@ export default{
       this.formProfile.city = this.profile.city
       this.formProfile.country = this.profile.country
       this.formProfile.address = this.profile.address
+      this.formProfile.email = this.profile.email
 
       await this.getBeneficiaries()
     },
