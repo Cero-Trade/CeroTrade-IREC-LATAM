@@ -355,11 +355,11 @@ actor class UserIndex() = this {
 
     let oldToken = await Users.canister(cid).getUserToken(uid);
 
-    // TODO while be updated API to avoid errors
+    // TODO this trycatch is while be updated API to avoid errors
     try {
-      // fetch with oldToken + uid
+      // fetch with oldToken
       let token = await HttpService.get({
-        url = HT.apiUrl # "users/login/" # Principal.toText(uid);
+        url = HT.apiUrl # "users/login";
         port = null;
         headers = [HT.tokenAuth(oldToken)]
       });
@@ -379,11 +379,11 @@ actor class UserIndex() = this {
       case(?cid) await Users.canister(cid).getUserToken(uid);
     };
 
-    // TODO while be updated API to avoid errors
+    // TODO this trycatch is while be updated API to avoid errors
     try {
-      // fetch with currentToken + uid
+      // fetch with currentToken
       let _ = await HttpService.get({
-        url = HT.apiUrl # "users/logout/" # Principal.toText(uid);
+        url = HT.apiUrl # "users/logout";
         port = null;
         headers = [HT.tokenAuth(currentToken)]
       });
