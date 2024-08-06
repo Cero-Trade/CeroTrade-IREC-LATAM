@@ -87,7 +87,7 @@
           @update:options="getRedemptions"
         >
           <template #[`item.asset_id`]="{ item }">
-            <span class="flex-center wbold" style="color: #475467;">{{ item.asset_id }}</span>
+            <span class="flex-center wbold" style="color: #475467;" :title="item.asset_id">{{ shortString(item.asset_id, {}) }}</span>
           </template>
 
           <template #[`item.redeemedBy`]="{ item }">
@@ -378,7 +378,7 @@ import { AgentCanister } from '@/repository/agent-canister'
 import { UserProfileModel } from '@/models/user-profile-model'
 import { TxType } from '@/models/transaction-model'
 import moment from 'moment'
-import { shortPrincipalId } from '@/plugins/functions'
+import { shortPrincipalId, shortString } from '@/plugins/functions'
 // import IrecChart from '@/components/irec-chart.vue'
 
 const
