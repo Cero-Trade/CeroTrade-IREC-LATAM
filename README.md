@@ -188,5 +188,8 @@ https://mops.one/
 ### Custom domain configuration
 https://internetcomputer.org/docs/current/developer-docs/web-apps/custom-domains/using-custom-domains#custom-domains-on-the-boundary-nodes
 
+### Tutorial to apply tests
+https://internetcomputer.org/docs/current/tutorials/developer-journey/level-2/2.5-unit-testing#motoko-unit-testing
+
 ### found canister
 dfx canister deposit-cycles 400000000000 --network ic user_index

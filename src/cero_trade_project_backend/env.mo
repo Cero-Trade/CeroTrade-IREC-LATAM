@@ -30,4 +30,5 @@ module ENV {
   public let CANISTER_ID_TRANSACTION_INDEX: Text = "ajuq4-ruaaa-aaaaa-qaaga-cai";
   public let CANISTER_ID_NNS_LEDGER: Text = "ryjl3-tyaaa-aaaaa-aaaba-cai";
   public let CANISTER_ID: Text = "br5f7-7uaaa-aaaaa-qaaca-cai";
+  public let VITEST: Text = "true";
 }
