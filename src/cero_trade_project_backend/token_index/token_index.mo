@@ -42,180 +42,27 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   stable var tokenDirectoryEntries : [(T.TokenId, T.CanisterId)] = [];
 
   type AssetResponse = {
-    source: Text;
-    volume: Text;
-    assetId: Text;
-    assetDetails: {
-      context: Text;
-      id: Text;
-      contextType: Text;
-      uid: Text;
-      code: Text;
-      issue: {
-        context: Text;
-        id: Text;
-        contextType: Text;
-        uid: Text;
-        code: Text;
-        deviceDetails: {
-          id: Text;
-          contextType: Text;
-          context: Text;
-          uid: Text;
-          version: Nat;
-          deviceType: {
-            context: Text;
-            id: Text;
-            contextType: Text;
-            code: Text;
-            description: Text;
-            deviceGroup: Text;
-          };
-          fuel: {
-            context: Text;
-            id: Text;
-            contextType: Text;
-            code: Text;
-            description: Text;
-          };
-          meterIds: [Text];
-          blameable: {
-            context: Text;
-            id: Text;
-            contextType: Text;
-            username: Text;
-            email: Text;
-            latestUserDetails: {
-              context: Text;
-              id: Text;
-              contextType: Text;
-              forename: Text;
-              surname: Text;
-            }
-          };
-          timestamp: Text;
-          device: {
-            context: Text;
-            id: Text;
-            contextType: Text;
-            code: Text;
-          };
-          registrant: {
-            context: Text;
-            id: Text;
-            contextType: Text;
-            uid: Text;
-            code: Text;
-            latestOrganisationDetails: {
-              context: Text;
-              id: Text;
-              contextType: Text;
-              uid: Text;
-              name: Text;
-            }
-          };
-          issuer: {
-            context: Text;
-            id: Text;
-            contextType: Text;
-            uid: Text;
-            code: Text;
-            latestOrganisationDetails: {
-              context: Text;
-              id: Text;
-              contextType: Text;
-              uid: Text;
-              name: Text;
-            }
-          };
-          name: Text;
-          capacity: Text;
-          supported: Bool;
-          latitude: Float;
-          longitude: Float;
-          registrationDate: Text;
-          commissioningDate: Text;
-          expiryDate: Text;
-          status: Text;
-          active: Bool;
-          address1: Text;
-          postcode: Text;
-          stateProvince: Text;
-          country: {
-            context: Text;
-            id: Text;
-            contextType: Text;
-            alpha2: Text;
-            alpha3: Text;
-            name: Text;
-          };
-          defaultAccount: Text;
-          notes: Text;
-          issuerNotes: Text;
-          otherSchemes: [Text];
-          files: [
-            {
-              context: Text;
-              id: Text;
-              contextType: Text;
-              uid: Text;
-              name: Text;
-              objectUid: Text;
-              mimeType: Text;
-              notes: Text;
-              archived: Bool;
-              created: Text;
-              category: Text;
-            }
-          ]
-        };
-        latestIssueDetails: Text;
-      };
-      issuer: {
-        context: Text;
-        id: Text;
-        contextType: Text;
-        uid: Text;
-        code: Text;
-        latestOrganisationDetails: {
-          context: Text;
-          id: Text;
-          contextType: Text;
-          uid: Text;
-          participantContractEntity: {
-            context: Text;
-            id: Text;
-            contextType: Text;
-            uid: Text;
-            organisation: {};
-            country: {
-              context: Text;
-              id: Text;
-              contextType: Text;
-              alpha2: Text;
-              alpha3: Text;
-              name: Text;
-            }
-          };
-          name: Text;
-        }
-      };
-      volume: Text;
-      startDate: Text;
-      endDate: Text;
-      country: {
-        context: Text;
-        id: Text;
-        contextType: Text;
-        alpha2: Text;
-        alpha3: Text;
-        name: Text;
-      };
-      supported: Bool;
-      offset: Bool;
-      co2Produced: Text;
-      radioactiveProduced: Text;
-    }
+    tokenId: Text;
+    assetType: Text;
+    startDate: Text;
+    endDate: Text;
+    co2Emission: Text;
+    radioactivityEmnission: Text;
+    volumeProduced: Text;
+    // deviceDetails
+    name: Text;
+    deviceType: Text;
+    description: Text;
+    // specifications
+    deviceCode: Text;
+    capacity: Text;
+    location: Text;
+    latitude: Text;
+    longitude: Text;
+    address: Text;
+    stateProvince: Text;
+    country: Text;
+    dates: [Text];
   };
 
   type TransactionResponse = {
@@ -313,6 +160,46 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     };
   };
 
+  stable var SolarId: Nat = 0;
+  stable var WindId: Nat = 0;
+  stable var HydroElectricId: Nat = 0;
+  stable var ThermalId: Nat = 0;
+  stable var OtherId: Nat = 0;
+
+  private func buildSymbol(assetType: T.AssetType): Text {
+    var tokenId: Nat = 0;
+
+    let symbol = switch(assetType) {
+      case (#Solar(value)) {
+        SolarId := SolarId + 1;
+        tokenId := SolarId;
+        "SOL"
+      };
+      case (#Wind(value)) {
+        WindId := WindId + 1;
+        tokenId := WindId;
+        "WI"
+      };
+      case (#HydroElectric(value)) {
+        HydroElectricId := HydroElectricId + 1;
+        tokenId := HydroElectricId;
+        "HE"
+      };
+      case (#Thermal(value)) {
+        ThermalId := ThermalId + 1;
+        tokenId := ThermalId;
+        "TM"
+      };
+      case (#Other(text)) {
+        OtherId := OtherId + 1;
+        tokenId := OtherId;
+        "OTH"
+      };
+    };
+
+    symbol # Nat.toText(tokenId)
+  };
+
   /// register [tokenDirectory] collection
   private func registerToken<system>(assetMetadata: T.AssetInfo): async T.CanisterId {
     let cid = switch (tokenDirectory.get(assetMetadata.tokenId)) {
@@ -347,12 +234,9 @@ shared({ caller = owner }) actor class TokenIndex() = this {
         // install canister code
         await IC_MANAGEMENT.ic.install_code({
           arg = to_candid({
-            // TODO review value declarations
-            // 1- colocar identificador en contador sobre el token index
-            // 2- colocar identificador dentro de metadata del token
             name = assetMetadata.deviceDetails.name; // SOL4
-            symbol = assetMetadata.tokenId; // "SOL4"
-            logo = null; // colocar imagen de cero trade + tipo de energia, guardar en un bucket estos logos
+            symbol = buildSymbol(assetMetadata.assetType); // "SOL4"
+            logo = ""; // colocar imagen de cero trade + tipo de energia, guardar en un bucket estos logos
             assetMetadata;
             comission = Nat64.toNat(T.getCeroComission());
             comissionHolder;
@@ -488,7 +372,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
               for(assetResponse in items.vals()) {
                 assets.add({
                   // TODO review mwh value here
-                  mwh = switch(Nat.fromText(assetResponse.assetDetails.volume)) {
+                  mwh = switch(Nat.fromText(assetResponse.volumeProduced)) {
                     case(null) 0;
                     case(?value) value;
                   };
@@ -576,7 +460,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
 
   // helper function used to build [AssetInfo] from AssetResponse
   private func buildAssetInfo(asset: AssetResponse): T.AssetInfo {
-    let assetType: T.AssetType = switch(asset.assetDetails.issue.deviceDetails.deviceType.deviceGroup) {
+    let assetType: T.AssetType = switch(asset.assetType) {
       case("Solar") #Solar("Solar");
       case("Wind") #Wind("Wind");
       case("Hydro-Electric") #HydroElectric("Hydro-Electric");
@@ -585,36 +469,35 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     };
 
     {
-      tokenId = asset.assetId;
+      tokenId = asset.tokenId;
       assetType;
-      startDate = asset.assetDetails.startDate;
-      endDate = asset.assetDetails.endDate;
-      co2Emission = asset.assetDetails.co2Produced;
-      radioactivityEmnission = asset.assetDetails.radioactiveProduced;
-      volumeProduced = switch(Nat.fromText(asset.assetDetails.volume)) {
+      startDate = asset.startDate;
+      endDate = asset.endDate;
+      co2Emission = asset.co2Emission;
+      radioactivityEmnission = asset.radioactivityEmnission;
+      volumeProduced = switch(Nat.fromText(asset.volumeProduced)) {
         case(null) 0;
         case(?value) value;
       };
       deviceDetails = {
-        name = asset.assetDetails.issue.deviceDetails.name;
+        name = asset.name;
         deviceType = assetType;
-        description = asset.assetDetails.issue.deviceDetails.deviceType.description;
+        description = asset.description;
       };
       specifications = {
-        deviceCode = asset.assetDetails.issue.deviceDetails.deviceType.code;
-        capacity = switch(Nat.fromText(asset.assetDetails.issue.deviceDetails.capacity)) {
+        deviceCode = asset.deviceCode;
+        capacity = switch(Nat.fromText(asset.capacity)) {
           case(null) 0;
           case(?value) value;
         };
-        location = asset.assetDetails.country.name;
-        latitude = Float.toText(asset.assetDetails.issue.deviceDetails.latitude);
-        longitude = Float.toText(asset.assetDetails.issue.deviceDetails.longitude);
-        address = asset.assetDetails.issue.deviceDetails.address1;
-        stateProvince = asset.assetDetails.issue.deviceDetails.stateProvince;
-        country = asset.assetDetails.issue.deviceDetails.country.alpha2;
+        location = asset.location;
+        latitude = asset.latitude;
+        longitude = asset.longitude;
+        address = asset.address;
+        stateProvince = asset.stateProvince;
+        country = asset.country;
       };
-      // missing this info
-      dates = ["2024-04-29T19:43:34.000Z", "2024-05-29T19:48:31.000Z", "2024-05-29T19:48:31.000Z"];
+      dates = asset.dates;
     };
   };
 

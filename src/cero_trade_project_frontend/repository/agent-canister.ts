@@ -277,42 +277,6 @@ export class AgentCanister {
     try {
       return await agent().importUserTokens() as { mwh: number, assetInfo: AssetInfoModel }[]
     } catch (error) {
-
-      // TODO while endpoint is builded - delete this later
-      return await new Promise((resolve, reject) => {
-        setTimeout(() => resolve([
-          {
-            mwh: 100,
-            assetInfo: {
-              tokenId: "string",
-              assetType: "Hydro-Electric",
-              startDate: new Date(),
-              endDate: new Date(),
-              co2Emission: 100,
-              radioactivityEmnission: 100,
-              volumeProduced: 100,
-              deviceDetails: {
-                name: "string",
-                deviceType: "Hydro-Electric",
-                description: "string",
-              },
-              specifications: {
-                deviceCode: "string",
-                capacity: 100,
-                location: "string",
-                latitude: 0.1,
-                longitude: 1.0,
-                address: "string",
-                stateProvince: "string",
-                country: "CL",
-              },
-              dates: [],
-            },
-          }
-        ]), 1000)
-      })
-      // TODO while endpoint is builded - delete this later
-
       console.error(error);
       throw getErrorMessage(error)
     }
