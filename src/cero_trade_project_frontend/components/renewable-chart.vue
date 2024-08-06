@@ -11,7 +11,7 @@ const
     height: String,
     categories: {
       type: Array,
-      default: ["", "", "", "", ""]
+      default: []
     },
     series: {
       type: Array,
