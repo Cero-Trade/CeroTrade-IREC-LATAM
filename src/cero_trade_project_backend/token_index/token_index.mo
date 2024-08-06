@@ -5,6 +5,7 @@ import Error "mo:base/Error";
 import Cycles "mo:base/ExperimentalCycles";
 import Blob "mo:base/Blob";
 import Array "mo:base/Array";
+import Hash "mo:base/Hash";
 import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
 import Nat64 "mo:base/Nat64";
@@ -63,6 +64,13 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     dates: [Text];
   };
 
+  type ItemResponse = {
+    source: Text;
+    volume: Text;
+    assetId: Text;
+    assetDetails: AssetResponse;
+  };
+
   type TransactionResponse = {
     id: Nat;
     transactionId: Text;
@@ -70,7 +78,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     transactionType: Text;
     volume: Text;
     timestamp: Text;
-    items: [AssetResponse];
+    items: [ItemResponse];
     processed: Bool;
     createdAt: Text;
     updatedAt: Text;
@@ -356,38 +364,43 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       headers = [await HT.tokenAuthFromUser(uid)];
     });
 
-    let assetsMetadata: [{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }] = switch(Serde.JSON.fromText(assetsJson, null)) {
+    // used hashmap to find faster elements using Hash
+    // this Hash have limitation when data length is too large.
+    // In this case, would consider changing to another more effective method.
+    let assetsMetadata = HM.HashMap<Nat, { mwh: T.TokenAmount; assetInfo: T.AssetInfo }>(16, Nat.equal, Hash.hash);
+
+    switch(Serde.JSON.fromText(assetsJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize asset data");
       case(#ok(blob)) {
         let transactionResponse: ?[TransactionResponse] = from_candid(blob);
+        var index: Nat = 0;
 
         switch(transactionResponse) {
           case(null) throw Error.reject("cannot serialize asset data");
           case(?response) {
-            let assets = Buffer.Buffer<{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }>(16);
-
             for({ items } in response.vals()) {
-              for(assetResponse in items.vals()) {
-                assets.add({
-                  mwh = await T.textToNat(assetResponse.volumeProduced);
-                  assetInfo = await buildAssetInfo(assetResponse);
+              for(itemResponse in items.vals()) {
+                index := index + 1;
+
+                assetsMetadata.put(index, {
+                  mwh = await T.textToNat(itemResponse.volume);
+                  assetInfo = await buildAssetInfo(itemResponse.assetDetails);
                 });
               };
             };
-
-            Buffer.toArray<{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }>(assets);
           };
+
         };
       };
     };
 
 
-    for({ mwh; assetInfo } in assetsMetadata.vals()) {
+    for((key, { mwh; assetInfo }) in assetsMetadata.entries()) {
       // get token or register in case doesnt exists
       let cid = await registerToken(assetInfo);
 
       // mint tokens to user
-      let _transferResult: ICRC1.TransferResult = await Token.canister(cid).mint({
+      let transferResult: ICRC1.TransferResult = await Token.canister(cid).mint({
         to = {
           owner = uid;
           subaccount = null;
@@ -396,9 +409,28 @@ shared({ caller = owner }) actor class TokenIndex() = this {
         created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
         memo = null;
       });
+
+      switch(transferResult) {
+        case(#Ok(value)) Debug.print("#Ok - minted " # Nat.toText(mwh) # " tokens in tx index: " # Nat.toText(value));
+
+        case(#Err(error)) {
+          Debug.print(switch(error) {
+            case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
+            case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
+            case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
+            case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
+            case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
+            case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
+            case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
+            case (#TooOld) "#TooOld";
+          });
+
+          assetsMetadata.delete(key);
+        };
+      };
     };
 
-    assetsMetadata
+    Iter.toArray(assetsMetadata.vals())
   };
 
 
