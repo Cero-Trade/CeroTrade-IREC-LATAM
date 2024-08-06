@@ -11,7 +11,6 @@ export type AssetType = "Solar"|"Wind"|"Hydro-Electric"|"Thermal"|"Other";
 
 export interface AssetInfoModel {
   tokenId: string;
-  assetType: AssetType;
   startDate: Date;
   endDate: Date;
   co2Emission: number;

@@ -8,7 +8,6 @@ import Array "mo:base/Array";
 import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
 import Nat64 "mo:base/Nat64";
-import Float "mo:base/Float";
 import Int "mo:base/Int";
 import Iter "mo:base/Iter";
 import Time "mo:base/Time";
@@ -43,7 +42,6 @@ shared({ caller = owner }) actor class TokenIndex() = this {
 
   type AssetResponse = {
     tokenId: Text;
-    assetType: Text;
     startDate: Text;
     endDate: Text;
     co2Emission: Text;
@@ -235,7 +233,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
         await IC_MANAGEMENT.ic.install_code({
           arg = to_candid({
             name = assetMetadata.deviceDetails.name; // SOL4
-            symbol = buildSymbol(assetMetadata.assetType); // "SOL4"
+            symbol = buildSymbol(assetMetadata.deviceDetails.deviceType); // "SOL4"
             logo = ""; // colocar imagen de cero trade + tipo de energia, guardar en un bucket estos logos
             assetMetadata;
             comission = Nat64.toNat(T.getCeroComission());
@@ -371,12 +369,8 @@ shared({ caller = owner }) actor class TokenIndex() = this {
             for({ items } in response.vals()) {
               for(assetResponse in items.vals()) {
                 assets.add({
-                  // TODO review mwh value here
-                  mwh = switch(Nat.fromText(assetResponse.volumeProduced)) {
-                    case(null) 0;
-                    case(?value) value;
-                  };
-                  assetInfo = buildAssetInfo(assetResponse);
+                  mwh = await T.textToNat(assetResponse.volumeProduced);
+                  assetInfo = await buildAssetInfo(assetResponse);
                 });
               };
             };
@@ -424,7 +418,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
 
         switch(assetResponse) {
           case(null) throw Error.reject("cannot serialize asset data");
-          case(?value) buildAssetInfo(value);
+          case(?value) await buildAssetInfo(value);
         };
       };
     };
@@ -459,8 +453,8 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   };
 
   // helper function used to build [AssetInfo] from AssetResponse
-  private func buildAssetInfo(asset: AssetResponse): T.AssetInfo {
-    let assetType: T.AssetType = switch(asset.assetType) {
+  private func buildAssetInfo(asset: AssetResponse): async T.AssetInfo {
+    let deviceType: T.AssetType = switch(asset.deviceType) {
       case("Solar") #Solar("Solar");
       case("Wind") #Wind("Wind");
       case("Hydro-Electric") #HydroElectric("Hydro-Electric");
@@ -470,26 +464,19 @@ shared({ caller = owner }) actor class TokenIndex() = this {
 
     {
       tokenId = asset.tokenId;
-      assetType;
       startDate = asset.startDate;
       endDate = asset.endDate;
       co2Emission = asset.co2Emission;
       radioactivityEmnission = asset.radioactivityEmnission;
-      volumeProduced = switch(Nat.fromText(asset.volumeProduced)) {
-        case(null) 0;
-        case(?value) value;
-      };
+      volumeProduced = await T.textToNat(asset.volumeProduced);
       deviceDetails = {
         name = asset.name;
-        deviceType = assetType;
+        deviceType;
         description = asset.description;
       };
       specifications = {
         deviceCode = asset.deviceCode;
-        capacity = switch(Nat.fromText(asset.capacity)) {
-          case(null) 0;
-          case(?value) value;
-        };
+        capacity = await T.textToNat(asset.capacity);
         location = asset.location;
         latitude = asset.latitude;
         longitude = asset.longitude;
@@ -580,7 +567,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       let assetTypeMatches = switch (assetTypes) {
         case(null) true;
         case(?assets) {
-          let assetType = Array.find<T.AssetType>(assets, func (assetType) { assetType == item.assetInfo.assetType });
+          let assetType = Array.find<T.AssetType>(assets, func (assetType) { assetType == item.assetInfo.deviceDetails.deviceType });
           assetType != null
         };
       };

@@ -29,7 +29,7 @@
     </span>
     <h3 class="acenter mb-4">
       <company-logo
-        :energy-src="energies[tokenDetail?.assetInfo.assetType]"
+        :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
         :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
         class="mr-4"
       ></company-logo>
@@ -44,8 +44,8 @@
               <div class="jspace divrow mb-1">
                 <span style="color: #475467;">Type</span>
                 <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-                  <img :src="energiesColored[tokenDetail?.assetInfo.assetType]" :alt="`${tokenDetail?.assetInfo.assetType} icon`" style="width: 20px;">
-                  {{ tokenDetail?.assetInfo.assetType }} energy
+                  <img :src="energiesColored[tokenDetail?.assetInfo.deviceDetails.deviceType]" :alt="`${tokenDetail?.assetInfo.deviceDetails.deviceType} icon`" style="width: 20px;">
+                  {{ tokenDetail?.assetInfo.deviceDetails.deviceType }} energy
                 </span>
               </div>
 
@@ -135,8 +135,8 @@
                       <div class="jspace divrow mt-3 mb-1">
                         <span style="color: #475467;">Device group</span>
                         <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-                          <img :src="energiesColored[tokenDetail?.assetInfo.assetType]" :alt="`${tokenDetail?.assetInfo.assetType} icon`" style="width: 20px;">
-                          {{ tokenDetail?.assetInfo.assetType }}
+                          <img :src="energiesColored[tokenDetail?.assetInfo.deviceDetails.deviceType]" :alt="`${tokenDetail?.assetInfo.deviceDetails.deviceType} icon`" style="width: 20px;">
+                          {{ tokenDetail?.assetInfo.deviceDetails.deviceType }}
                         </span>
                       </div>
 
@@ -487,7 +487,7 @@
           <div class="jspace divrow mb-4 acenter">
             <h5 class="acenter mb-0 bold h5-mobile">
               <company-logo
-                :energy-src="energies[tokenDetail?.assetInfo.assetType]"
+                :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
                 :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
                 class="mr-4"
               ></company-logo>
@@ -498,8 +498,8 @@
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Energy source type</span>
             <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-              <img :src="energiesColored[tokenDetail?.assetInfo.assetType]" :alt="`${tokenDetail?.assetInfo.assetType} icon`" style="width: 20px;">
-              {{ tokenDetail?.assetInfo.assetType }}
+              <img :src="energiesColored[tokenDetail?.assetInfo.deviceDetails.deviceType]" :alt="`${tokenDetail?.assetInfo.deviceDetails.deviceType} icon`" style="width: 20px;">
+              {{ tokenDetail?.assetInfo.deviceDetails.deviceType }}
             </span>
           </div>
 
@@ -582,7 +582,7 @@
             <div class="jspace divrow mb-2 acenter">
               <h5 class="acenter h5-mobile">
                 <company-logo
-                  :energy-src="energies[tokenDetail?.assetInfo.assetType]"
+                  :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
                   :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
                   class="mr-4"
                 ></company-logo>
@@ -593,8 +593,8 @@
             <div class="jspace divrow mb-1">
               <span style="color: #475467;">Energy source type</span>
               <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-                <img :src="energiesColored[tokenDetail?.assetInfo.assetType]" :alt="`${tokenDetail?.assetInfo.assetType} icon`" style="width: 20px;">
-                {{ tokenDetail?.assetInfo.assetType }}
+                <img :src="energiesColored[tokenDetail?.assetInfo.deviceDetails.deviceType]" :alt="`${tokenDetail?.assetInfo.deviceDetails.deviceType} icon`" style="width: 20px;">
+                {{ tokenDetail?.assetInfo.deviceDetails.deviceType }}
               </span>
             </div>
 
@@ -759,7 +759,7 @@
           <div class="jspace divrow mb-4 acenter">
             <h5 class="acenter mb-0 bold h5-mobile">
               <company-logo
-                :energy-src="energies[tokenDetail?.assetInfo.assetType]"
+                :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
                 :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
                 class="mr-4"
               ></company-logo>
@@ -777,8 +777,8 @@
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Energy source type</span>
             <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-              <img :src="energiesColored[tokenDetail?.assetInfo.assetType]" :alt="`${tokenDetail?.assetInfo.assetType} icon`" style="width: 20px;">
-              {{ tokenDetail?.assetInfo.assetType }}
+              <img :src="energiesColored[tokenDetail?.assetInfo.deviceDetails.deviceType]" :alt="`${tokenDetail?.assetInfo.deviceDetails.deviceType} icon`" style="width: 20px;">
+              {{ tokenDetail?.assetInfo.deviceDetails.deviceType }}
             </span>
           </div>
 
@@ -923,7 +923,7 @@
           <div class="jspace divrow mb-2 acenter">
             <h5 class="acenter h5-mobile">
               <company-logo
-                :energy-src="energies[tokenDetail?.assetInfo.assetType]"
+                :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
                 :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
                 class="mr-4"
               ></company-logo>
@@ -940,8 +940,8 @@
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Energy source type</span>
             <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-              <img :src="energiesColored[tokenDetail?.assetInfo.assetType]" :alt="`${tokenDetail?.assetInfo.assetType} icon`" style="width: 20px;">
-              {{ tokenDetail?.assetInfo.assetType }}
+              <img :src="energiesColored[tokenDetail?.assetInfo.deviceDetails.deviceType]" :alt="`${tokenDetail?.assetInfo.deviceDetails.deviceType} icon`" style="width: 20px;">
+              {{ tokenDetail?.assetInfo.deviceDetails.deviceType }}
             </span>
           </div>
 
@@ -1008,7 +1008,7 @@
           <div class="jspace divrow mb-1 acenter">
             <h5 class="acenter h5-mobile">
               <company-logo
-                :energy-src="energies[tokenDetail?.assetInfo.assetType]"
+                :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
                 :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
                 class="mr-4"
               ></company-logo>
@@ -1025,8 +1025,8 @@
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Energy source type</span>
             <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-              <img :src="energiesColored[tokenDetail?.assetInfo.assetType]" :alt="`${tokenDetail?.assetInfo.assetType} icon`" style="width: 20px;">
-              {{ tokenDetail?.assetInfo.assetType }}
+              <img :src="energiesColored[tokenDetail?.assetInfo.deviceDetails.deviceType]" :alt="`${tokenDetail?.assetInfo.deviceDetails.deviceType} icon`" style="width: 20px;">
+              {{ tokenDetail?.assetInfo.deviceDetails.deviceType }}
             </span>
           </div>
 

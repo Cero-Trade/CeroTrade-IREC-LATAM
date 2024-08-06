@@ -332,7 +332,6 @@ actor class Agent() = this {
             higherPriceE8S = item.higherPriceE8S;
             assetInfo = {
               tokenId = item.tokenId;
-              assetType = #HydroElectric("Hydro-Electric");
               startDate = "2024-04-29T19:43:34.000Z";
               endDate = "2024-05-29T19:48:31.000Z";
               co2Emission = "11.22";
@@ -379,7 +378,7 @@ actor class Agent() = this {
       // by assetTypes
       let assetTypeMatches = switch (assetTypes) {
         case(null) true;
-        case(?assets) Array.find<T.AssetType>(assets, func (assetType) { assetType == item.assetInfo.assetType }) != null;
+        case(?assets) Array.find<T.AssetType>(assets, func (assetType) { assetType == item.assetInfo.deviceDetails.deviceType }) != null;
       };
 
       // by country
@@ -844,7 +843,7 @@ actor class Agent() = this {
         case(?assets) {
           switch(item.assetInfo) {
             case(null) false;
-            case(?asset) Array.find<T.AssetType>(assets, func (assetType) { assetType == asset.assetType }) != null;
+            case(?asset) Array.find<T.AssetType>(assets, func (assetType) { assetType == asset.deviceDetails.deviceType }) != null;
           };
         };
       };

@@ -376,7 +376,7 @@ async function getData() {
     for (const item of tokensInfo.data) {
       list.push({
         token_id: item.tokenId,
-        energy_source: item.assetInfo.assetType,
+        energy_source: item.assetInfo.deviceDetails.deviceType,
         country: item.assetInfo.specifications.country,
         mwh: item.totalAmount,
       })

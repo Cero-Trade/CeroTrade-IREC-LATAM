@@ -548,7 +548,7 @@ async function getRedemptions() {
         asset_id: item.assetInfo.tokenId,
         redeemedBy: item.from,
         beneficiary: item.to,
-        energy_source: item.assetInfo.assetType,
+        energy_source: item.assetInfo.deviceDetails.deviceType,
         price: item.priceE8S,
         mwh: item.tokenAmount,
         country: item.assetInfo.specifications.country,

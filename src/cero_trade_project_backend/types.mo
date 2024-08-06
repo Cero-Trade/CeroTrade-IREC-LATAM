@@ -1,11 +1,17 @@
 import HM = "mo:base/HashMap";
 import TM "mo:base/TrieMap";
 import Nat "mo:base/Nat";
+import Float "mo:base/Float";
+import Int "mo:base/Int";
+import Int64 "mo:base/Int64";
+import Char "mo:base/Char";
+import Nat32 "mo:base/Nat32";
 import Nat64 "mo:base/Nat64";
 import Blob "mo:base/Blob";
 import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import Error "mo:base/Error";
+import Debug "mo:base/Debug";
 import Array "mo:base/Array";
 
 // interfaces
@@ -34,6 +40,38 @@ module {
       case(null) 0;
       case(?value) value;
     });
+  };
+
+  /// helper function to convert Text to Nat
+  public func textToNat(t: Text): async Nat {
+    var i : Float = 1;
+    var f : Float = 0;
+    var isDecimal : Bool = false;
+
+    for (c in t.chars()) {
+      if (Char.isDigit(c)) {
+        let charToNat : Nat64 = Nat64.fromNat(Nat32.toNat(Char.toNat32(c) -48));
+        let natToFloat : Float = Float.fromInt64(Int64.fromNat64(charToNat));
+        if (isDecimal) {
+          let n : Float = natToFloat / Float.pow(10, i);
+          f := f + n;
+        } else {
+          f := f * 10 + natToFloat;
+        };
+        i := i + 1;
+      } else {
+        if (Char.equal(c, '.') or Char.equal(c, ',')) {
+          f := f / Float.pow(10, i); // Force decimal
+          f := f * Float.pow(10, i); // Correction
+          isDecimal := true;
+          i := 1;
+        } else {
+          throw Error.reject("NaN");
+        };
+      };
+    };
+
+    Int.abs(Float.toInt(f));
   };
 
   public type UID = Principal;
@@ -171,7 +209,6 @@ module {
 
   public type AssetInfo = {
     tokenId: TokenId;
-    assetType: AssetType;
     startDate: Text;
     endDate: Text;
     co2Emission: Text;

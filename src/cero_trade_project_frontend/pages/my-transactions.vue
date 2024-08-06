@@ -467,7 +467,7 @@ async function getData() {
         transaction_id: item.transactionId,
         type: item.txType,
         recipent: item.to,
-        energy_source: item.assetInfo.assetType,
+        energy_source: item.assetInfo.deviceDetails.deviceType,
         country: item.assetInfo.specifications.country,
         mwh: item.tokenAmount,
         asset_id: item.assetInfo.tokenId,

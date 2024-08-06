@@ -169,7 +169,7 @@ export class AgentCanister {
 
       for (const item of response.tokensInfo.data) {
         // format record value
-        item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
+        item.assetInfo.deviceDetails.deviceType = Object.values(item.assetInfo.deviceDetails.deviceType)[0] as AssetType
         item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
         item.totalAmount = Number(item.totalAmount)
         item.inMarket = Number(item.inMarket)
@@ -205,7 +205,7 @@ export class AgentCanister {
       token.inMarket = Number(token.inMarket)
       token.assetInfo.specifications.capacity = Number(token.assetInfo.specifications.capacity)
       // format dates
-      token.assetInfo.assetType = Object.values(token.assetInfo.assetType)[0] as AssetType
+      token.assetInfo.deviceDetails.deviceType = Object.values(token.assetInfo.deviceDetails.deviceType)[0] as AssetType
       token.assetInfo.startDate = new Date(token.assetInfo.startDate)
       token.assetInfo.endDate = new Date(token.assetInfo.endDate)
 
@@ -283,7 +283,7 @@ export class AgentCanister {
         transaction.assetInfo.volumeProduced = Number(transaction.assetInfo.volumeProduced)
         transaction.assetInfo.specifications.capacity = Number(transaction.assetInfo.specifications.capacity)
         // format dates
-        transaction.assetInfo.assetType = Object.values(transaction.assetInfo.assetType)[0] as AssetType
+        transaction.assetInfo.deviceDetails.deviceType = Object.values(transaction.assetInfo.deviceDetails.deviceType)[0] as AssetType
         transaction.assetInfo.startDate = new Date(transaction.assetInfo.startDate)
         transaction.assetInfo.endDate = new Date(transaction.assetInfo.endDate)
   
@@ -311,7 +311,7 @@ export class AgentCanister {
       token.inMarket = Number(token.inMarket)
       token.assetInfo.specifications.capacity = Number(token.assetInfo.specifications.capacity)
       // format dates
-      token.assetInfo.assetType = Object.values(token.assetInfo.assetType)[0] as AssetType
+      token.assetInfo.deviceDetails.deviceType = Object.values(token.assetInfo.deviceDetails.deviceType)[0] as AssetType
       token.assetInfo.startDate = new Date(token.assetInfo.startDate)
       token.assetInfo.endDate = new Date(token.assetInfo.endDate)
 
@@ -358,7 +358,7 @@ export class AgentCanister {
 
       for (const item of response.data) {
         // format record value
-        item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
+        item.assetInfo.deviceDetails.deviceType = Object.values(item.assetInfo.deviceDetails.deviceType)[0] as AssetType
         item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
         item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
         item.mwh = Number(item.mwh)
@@ -405,7 +405,7 @@ export class AgentCanister {
 
         // get nullable object
         item.assetInfo = item.assetInfo[0]
-        item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
+        item.assetInfo.deviceDetails.deviceType = Object.values(item.assetInfo.deviceDetails.deviceType)[0] as AssetType
         item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
         item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
 
@@ -531,7 +531,7 @@ export class AgentCanister {
         // get nullable object
         item.to = item.to[0]
         item.assetInfo = item.assetInfo[0]
-        item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
+        item.assetInfo.deviceDetails.deviceType = Object.values(item.assetInfo.deviceDetails.deviceType)[0] as AssetType
         item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
         item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
 

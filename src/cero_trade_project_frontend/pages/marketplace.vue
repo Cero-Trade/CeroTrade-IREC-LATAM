@@ -327,7 +327,7 @@ async function getData() {
     for (const item of marketplace) {
       list.push({
         token_id: item.tokenId,
-        energy_source: item.assetInfo.assetType,
+        energy_source: item.assetInfo.deviceDetails.deviceType,
         country: item.assetInfo.specifications.country,
         price: item.lowerPriceE8S === item.higherPriceE8S ? item.higherPriceE8S : `${item.lowerPriceE8S} - ${item.higherPriceE8S}`,
         mwh: item.mwh,

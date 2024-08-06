@@ -66,13 +66,13 @@
             </template>
 
             <template #[`item.assetInfo.startDate`]="{ item }">
-              <span class="acenter bold" style="color: #475467;">{{ item.assetInfo.startDate.toDateString() }}</span>
+              <span class="acenter bold" style="color: #475467; width: 150px">{{ item.assetInfo.startDate.toDateString() }}</span>
             </template>
 
-            <template #[`item.assetInfo.assetType`]="{ item }">
+            <template #[`item.assetInfo.deviceDetails.deviceType`]="{ item }">
               <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-                <img :src="energies[item.assetInfo.assetType]" :alt="`${item.assetInfo.assetType} icon`" style="width: 20px;">
-                {{ item.assetInfo.assetType }} Energy
+                <img :src="energies[item.assetInfo.deviceDetails.deviceType]" :alt="`${item.assetInfo.deviceDetails.deviceType} icon`" style="width: 20px;">
+                {{ item.assetInfo.deviceDetails.deviceType }} Energy
               </span>
             </template>
 
@@ -144,9 +144,9 @@ countriesImg = {
   CL: ChileIcon
 },
 headers = [
-  { title: 'Date', sortable: false, key: 'assetInfo.startDate'},
-  { title: 'Asset ID', sortable: false, key: 'assetInfo.tokenId'},
-  { title: 'Energy source', sortable: false, key: 'assetInfo.assetType'},
+  { title: 'Date', sortable: false, key: 'assetInfo.startDate' },
+  { title: 'Asset ID', sortable: false, key: 'assetInfo.tokenId' },
+  { title: 'Energy source', sortable: false, key: 'assetInfo.deviceDetails.deviceType' },
   { title: 'MWh', key: 'mwh', sortable: false },
   { title: 'Country', key: 'assetInfo.specifications.country', sortable: false },
 ],

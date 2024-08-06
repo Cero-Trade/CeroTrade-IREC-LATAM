@@ -40,7 +40,7 @@ shared({ caller = owner }) actor class Statistics() {
         };
 
         assetStatistics.put(tokenId, {
-          assetType = assetInfo.assetType;
+          assetType = assetInfo.deviceDetails.deviceType;
           mwh;
           redemptions = 0;
         });
