@@ -130,7 +130,7 @@
             <v-card class="card cards-marketplace">
               <div class="divrow jspace acenter mb-6">
                 <div class="divrow center" style="gap: 5px;">
-                  <h6 class="mb-0 font700" :tilte="item.token_id">Asset # {{ shortString(item.token_id, {}) }}</h6>
+                  <h6 class="mb-0 font700" :title="item.token_id">Asset # {{ shortString(item.token_id, {}) }}</h6>
                 </div>
 
                 <v-chip @click="goDetails(item)" color="white" class="chip-table" style="border-radius: 10px!important;">
