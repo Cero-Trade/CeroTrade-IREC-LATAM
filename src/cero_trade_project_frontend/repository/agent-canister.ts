@@ -279,6 +279,7 @@ export class AgentCanister {
 
       for (const transaction of transactions) {
         // format record value
+        transaction.mwh = Number(transaction.mwh)
         transaction.assetInfo.volumeProduced = Number(transaction.assetInfo.volumeProduced)
         transaction.assetInfo.specifications.capacity = Number(transaction.assetInfo.specifications.capacity)
         // format dates
@@ -290,6 +291,8 @@ export class AgentCanister {
         for (const date of transaction.assetInfo.dates) dates.push(new Date(date))
         transaction.assetInfo.dates = dates
       }
+
+      console.log(transactions);
 
       return transactions
     } catch (error) {

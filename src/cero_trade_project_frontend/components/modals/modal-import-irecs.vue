@@ -65,6 +65,10 @@
               <span class="acenter bold" style="color: #475467;">{{ item.assetInfo.tokenId }} </span>
             </template>
 
+            <template #[`item.assetInfo.startDate`]="{ item }">
+              <span class="acenter bold" style="color: #475467;">{{ item.assetInfo.startDate.toDateString() }}</span>
+            </template>
+
             <template #[`item.assetInfo.assetType`]="{ item }">
               <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
                 <img :src="energies[item.assetInfo.assetType]" :alt="`${item.assetInfo.assetType} icon`" style="width: 20px;">

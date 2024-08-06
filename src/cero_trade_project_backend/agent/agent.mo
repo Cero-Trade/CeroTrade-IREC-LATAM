@@ -100,7 +100,20 @@ actor class Agent() = this {
 
 
   /// import user tokens
-  public shared({ caller }) func importUserTokens(): async [{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }] { await TokenIndex.importUserTokens(caller); };
+  public shared({ caller }) func importUserTokens(): async [{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }] {
+    // performe import of tokens
+    let transactions = await TokenIndex.importUserTokens(caller);
+
+    for(tx in transactions.vals()) {
+      // update user portfolio
+      await UserIndex.updatePortfolio(caller, tx.assetInfo.tokenId, { delete = false });
+
+      // register asset statistic
+      await Statistics.registerAssetStatistic(tx.assetInfo.tokenId, { mwh = ?tx.mwh; redemptions = null });
+    };
+
+    transactions
+  };
 
 
   /// performe mint with tokenId and amount requested

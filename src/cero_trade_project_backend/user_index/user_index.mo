@@ -62,7 +62,7 @@ actor class UserIndex() = this {
   private func _callValidation(caller: Principal) {
     let authorizedCanisters = [
       ENV.CANISTER_ID_AGENT,
-      ENV.CANISTER_ID_USER_INDEX,
+      ENV.CANISTER_ID_TOKEN_INDEX,
     ];
 
     assert Array.find<Text>(authorizedCanisters, func x = Principal.fromText(x) == caller) != null;
