@@ -62,7 +62,7 @@
             density="compact"
           >
             <template #[`item.assetInfo.tokenId`]="{ item }">
-              <span class="acenter bold" style="color: #475467;">{{ item.assetInfo.tokenId }} </span>
+              <span class="acenter bold" style="color: #475467;">{{ shortString(item.assetInfo.tokenId, {}) }} </span>
             </template>
 
             <template #[`item.assetInfo.startDate`]="{ item }">
@@ -122,6 +122,7 @@ import BiomeEnergyIcon from '@/assets/sources/energies/biome.svg'
 import WindEnergyIcon from '@/assets/sources/energies/wind-color.svg'
 import SolarEnergyIcon from '@/assets/sources/energies/solar-color.svg'
 import ChileIcon from '@/assets/sources/icons/CL.svg'
+import { shortString } from '@/plugins/functions'
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';

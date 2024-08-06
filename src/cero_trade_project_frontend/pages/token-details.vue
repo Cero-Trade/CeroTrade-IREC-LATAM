@@ -27,13 +27,13 @@
       <img src="@/assets/sources/icons/chevron-right-light.svg" alt="arrow right icon" class="mx-1">
       <span style="color: #00555B;">Asset # {{ tokenId }}</span>
     </span>
-    <h3 class="acenter mb-4">
+    <h3 class="acenter mb-4" :title="tokenId">
       <company-logo
         :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
         :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
         class="mr-4"
       ></company-logo>
-      Asset # {{ tokenId }}
+      Asset # {{ shortString(tokenId, {}) }}
     </h3>
 
     <v-row>
@@ -485,13 +485,13 @@
           <v-divider class="mb-3 mt-4"  thickness="2" style="width: 150%; position: relative; left: -50px;"></v-divider>
           
           <div class="jspace divrow mb-4 acenter">
-            <h5 class="acenter mb-0 bold h5-mobile">
+            <h5 class="acenter mb-0 bold h5-mobile" :title="tokenId">
               <company-logo
                 :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
                 :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
                 class="mr-4"
               ></company-logo>
-              #{{ tokenId }}
+              #{{ shortString(tokenId, {}) }}
             </h5>
           </div>
           
@@ -580,13 +580,13 @@
             <v-divider class="mb-3 mt-4"  thickness="2" style="width: 150%; position: relative; left: -50px;"></v-divider>
             
             <div class="jspace divrow mb-2 acenter">
-              <h5 class="acenter h5-mobile">
+              <h5 class="acenter h5-mobile" :title="tokenId">
                 <company-logo
                   :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
                   :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
                   class="mr-4"
                 ></company-logo>
-                #{{ tokenId }}
+                #{{ shortString(tokenId, {}) }}
               </h5>
             </div>
 
@@ -757,13 +757,13 @@
           <v-divider class="mb-3 mt-4"  thickness="2" style="width: 150%; position: relative; left: -50px;"></v-divider>
           
           <div class="jspace divrow mb-4 acenter">
-            <h5 class="acenter mb-0 bold h5-mobile">
+            <h5 class="acenter mb-0 bold h5-mobile" :title="tokenId">
               <company-logo
                 :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
                 :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
                 class="mr-4"
               ></company-logo>
-              #{{ tokenId }}
+              #{{ shortString(tokenId, {}) }}
             </h5>
             <div class="divrow mb-0 astart acenter">
               <h5 class="mb-0 mr-2 h5-mobile">
@@ -921,13 +921,13 @@
           <v-divider class="mb-3 mt-4"  thickness="2" style="width: 150%; position: relative; left: -50px;"></v-divider>
           
           <div class="jspace divrow mb-2 acenter">
-            <h5 class="acenter h5-mobile">
+            <h5 class="acenter h5-mobile" :title="tokenId">
               <company-logo
                 :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
                 :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
                 class="mr-4"
               ></company-logo>
-              #{{ tokenId }}
+              #{{ shortString(tokenId, {}) }}
             </h5>
             <div class="divrow astart acenter">
               <h5 class="mr-2 h5-mobile">
@@ -1006,13 +1006,13 @@
 
         <v-card class="card mt-6 pa-6">
           <div class="jspace divrow mb-1 acenter">
-            <h5 class="acenter h5-mobile">
+            <h5 class="acenter h5-mobile" :title="tokenId">
               <company-logo
                 :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
                 :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
                 class="mr-4"
               ></company-logo>
-              #{{ tokenId }}
+              #{{ shortString(tokenId, {}) }}
             </h5>
             <div class="divrow astart acenter">
               <h5 class="mr-2 h5-mobile">
@@ -1178,9 +1178,8 @@ import { computed, onBeforeMount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import variables from '@/mixins/variables'
-import { closeLoader, convertE8SToICP, showLoader, maxDecimals, shortPrincipalId } from '@/plugins/functions'
+import { closeLoader, convertE8SToICP, showLoader, maxDecimals, shortPrincipalId, shortString } from '@/plugins/functions'
 import { Principal } from '@dfinity/principal'
-import { UserProfileModel } from '@/models/user-profile-model'
 
 const
   route = useRoute(),
@@ -1192,7 +1191,7 @@ energiesColored = {
   "Solar": SolarEnergyColorIcon,
   "Wind": WindEnergyColorIcon,
   "Hydro-Electric": HydroEnergyColorIcon,
-  "Thermal": GeothermalEnergyColorIcon,
+  "Thermal": GeothermalEnergyIcon,
 },
 energies = {
   "Solar": SolarEnergyIcon,

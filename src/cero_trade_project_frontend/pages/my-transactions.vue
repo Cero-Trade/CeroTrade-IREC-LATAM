@@ -96,6 +96,10 @@
         </span>
       </template>
 
+      <template #[`item.asset_id`]="{ item }">
+        <span class="acenter" :title="item.asset_id">{{ shortString(item.asset_id, {}) }} </span>
+      </template>
+
       <template #[`item.price`]="{ item }">
         <span class="divrow jspace acenter">
           {{ item.price }} <v-sheet class="chip-currency bold">ICP</v-sheet>
@@ -332,7 +336,7 @@ import { TxType, TxMethod } from '@/models/transaction-model'
 import { useToast } from 'vue-toastification'
 import { useRouter } from 'vue-router'
 import moment from "moment";
-import { shortPrincipalId } from '@/plugins/functions'
+import { shortPrincipalId, shortString } from '@/plugins/functions'
 
 const
   router = useRouter(),

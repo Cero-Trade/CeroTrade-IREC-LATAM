@@ -293,3 +293,10 @@ export function shortPrincipalId(principalId) {
 
   return `${splitted[0]}...${splitted[splitted.length - 1]}`
 }
+
+export function shortString(text, { from, to }) {
+  from ||= 4
+  to ||= 4
+
+  return `${text.substring(0, from)}...${text.substring(text.length - to, text.length)}`
+}
