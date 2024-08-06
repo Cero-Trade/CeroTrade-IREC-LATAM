@@ -349,13 +349,13 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   };
 
 
-  public shared({ caller }) func importUserTokens(userToken: T.UserToken): async [{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }] {
+  public shared({ caller }) func importUserTokens(uid: T.UID): async [{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }] {
     _callValidation(caller);
 
     let assetsJson = await HttpService.get({
       url = HT.apiUrl # "transactions/fetchByUser";
       port = null;
-      headers = [{ name = "userToken"; value = userToken; }];
+      headers = [await HT.tokenAuthFromUser(uid)];
     });
 
     let assetsMetadata: [{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }] = switch(Serde.JSON.fromText(assetsJson, null)) {
@@ -395,7 +395,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       // mint tokens to user
       let _transferResult: ICRC1.TransferResult = await Token.canister(cid).mint({
         to = {
-          owner = caller;
+          owner = uid;
           subaccount = null;
         };
         amount = mwh;

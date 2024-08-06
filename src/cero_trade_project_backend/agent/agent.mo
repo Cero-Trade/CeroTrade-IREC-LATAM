@@ -100,10 +100,7 @@ actor class Agent() = this {
 
 
   /// import user tokens
-  public shared({ caller }) func importUserTokens(): async [{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }] {
-    let userToken = await UserIndex.getUserToken(caller);
-    await TokenIndex.importUserTokens(userToken);
-  };
+  public shared({ caller }) func importUserTokens(): async [{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }] { await TokenIndex.importUserTokens(caller); };
 
 
   /// performe mint with tokenId and amount requested

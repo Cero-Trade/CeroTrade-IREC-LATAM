@@ -275,7 +275,23 @@ export class AgentCanister {
 
   static async importUserTokens(): Promise<{ mwh: number, assetInfo: AssetInfoModel }[]> {
     try {
-      return await agent().importUserTokens() as { mwh: number, assetInfo: AssetInfoModel }[]
+      const transactions = await agent().importUserTokens() as { mwh: number, assetInfo: AssetInfoModel }[]
+
+      for (const transaction of transactions) {
+        // format record value
+        transaction.assetInfo.volumeProduced = Number(transaction.assetInfo.volumeProduced)
+        transaction.assetInfo.specifications.capacity = Number(transaction.assetInfo.specifications.capacity)
+        // format dates
+        transaction.assetInfo.assetType = Object.values(transaction.assetInfo.assetType)[0] as AssetType
+        transaction.assetInfo.startDate = new Date(transaction.assetInfo.startDate)
+        transaction.assetInfo.endDate = new Date(transaction.assetInfo.endDate)
+  
+        const dates: Date[] = [];
+        for (const date of transaction.assetInfo.dates) dates.push(new Date(date))
+        transaction.assetInfo.dates = dates
+      }
+
+      return transactions
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)
