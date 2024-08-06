@@ -11,25 +11,17 @@ const
     height: String,
     categories: {
       type: Array,
-      default: ["", "", "", "", ""]
+      default: []
     },
     series: {
       type: Array,
       default: []
     }
   }),
-  totalLength = 6,
-  series = computed(() => {
-    const series = props.series
 
-    return series
-  }),
-  categories = computed(() => {
-    const categories = props.categories
-
-    return categories;
-  }),
-
+totalLength = 6,
+series = computed(() => props.series),
+categories = computed(() => props.categories),
 options = computed(() => ({
   chart: {
     type: 'bar',
@@ -80,8 +72,8 @@ options = computed(() => ({
     categories: categories.value,
     floating: true,
     position: 'bottom',
-    labels: { 
-      show: true,
+    labels: {
+      show: categories.value.length,
       rotate: -90,
       rotateAlways: true,
       style: {
