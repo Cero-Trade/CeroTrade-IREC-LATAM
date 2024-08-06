@@ -170,27 +170,27 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     var tokenId: Nat = 0;
 
     let symbol = switch(assetType) {
-      case (#Solar(value)) {
+      case (#Solar(_)) {
         SolarId := SolarId + 1;
         tokenId := SolarId;
         "SOL"
       };
-      case (#Wind(value)) {
+      case (#Wind(_)) {
         WindId := WindId + 1;
         tokenId := WindId;
         "WI"
       };
-      case (#HydroElectric(value)) {
+      case (#HydroElectric(_)) {
         HydroElectricId := HydroElectricId + 1;
         tokenId := HydroElectricId;
         "HE"
       };
-      case (#Thermal(value)) {
+      case (#Thermal(_)) {
         ThermalId := ThermalId + 1;
         tokenId := ThermalId;
         "TM"
       };
-      case (#Other(text)) {
+      case (#Other(_)) {
         OtherId := OtherId + 1;
         tokenId := OtherId;
         "OTH"

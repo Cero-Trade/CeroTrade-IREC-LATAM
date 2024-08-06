@@ -49,19 +49,45 @@ shared ({ caller = _owner }) actor class Token(
     min_burn_amount = ?1;
     max_memo = ?64;
     advanced_settings = null;
-    metadata = ? #Map([("assetMetadata", #Map([("assetId", #Text(init_args.assetMetadata.tokenId)), ("assetType", #Text(switch (init_args.assetMetadata.assetType) {
-      case (#Solar(Solar)) Solar;
-      case (#Wind(Wind)) Wind;
-      case (#HydroElectric(HydroElectric)) HydroElectric;
-      case (#Thermal(Thermal)) Thermal;
-      case (#Other(Other)) Other;
-    })), ("startDate", #Text(init_args.assetMetadata.startDate)), ("endDate", #Text(init_args.assetMetadata.endDate)), ("co2Emission", #Text(init_args.assetMetadata.co2Emission)), ("radioactivityEmnission", #Text(init_args.assetMetadata.radioactivityEmnission)), ("volumeProduced", #Nat(init_args.assetMetadata.volumeProduced)), ("deviceDetails", #Map([("name", #Text(init_args.assetMetadata.deviceDetails.name)), ("deviceType", #Text(switch (init_args.assetMetadata.deviceDetails.deviceType) {
-      case (#Solar(Solar)) Solar;
-      case (#Wind(Wind)) Wind;
-      case (#HydroElectric(HydroElectric)) HydroElectric;
-      case (#Thermal(Thermal)) Thermal;
-      case (#Other(Other)) Other;
-    })), ("description", #Text(init_args.assetMetadata.deviceDetails.description))])), ("specifications", #Map([("deviceCode", #Text(init_args.assetMetadata.specifications.deviceCode)), ("capacity", #Nat(init_args.assetMetadata.specifications.capacity)), ("location", #Text(init_args.assetMetadata.specifications.location)), ("latitude", #Text(init_args.assetMetadata.specifications.latitude)), ("longitude", #Text(init_args.assetMetadata.specifications.longitude)), ("address", #Text(init_args.assetMetadata.specifications.address)), ("stateProvince", #Text(init_args.assetMetadata.specifications.stateProvince)), ("country", #Text(init_args.assetMetadata.specifications.country))])), ("dates", #Array(Array.map<Text, { #Text : Text }>(init_args.assetMetadata.dates, func x = #Text(x))))]))]);
+    metadata = ? #Map([
+      ("assetMetadata", #Map([
+        ("assetId", #Text(init_args.assetMetadata.tokenId)),
+        ("assetType", #Text(switch (init_args.assetMetadata.assetType) {
+          case (#Solar(Solar)) Solar;
+          case (#Wind(Wind)) Wind;
+          case (#HydroElectric(HydroElectric)) HydroElectric;
+          case (#Thermal(Thermal)) Thermal;
+          case (#Other(Other)) Other;
+        })),
+        ("startDate", #Text(init_args.assetMetadata.startDate)),
+        ("endDate", #Text(init_args.assetMetadata.endDate)),
+        ("co2Emission", #Text(init_args.assetMetadata.co2Emission)),
+        ("radioactivityEmnission", #Text(init_args.assetMetadata.radioactivityEmnission)),
+        ("volumeProduced", #Nat(init_args.assetMetadata.volumeProduced)),
+        ("deviceDetails", #Map([
+          ("name", #Text(init_args.assetMetadata.deviceDetails.name)),
+          ("deviceType", #Text(switch (init_args.assetMetadata.deviceDetails.deviceType) {
+            case (#Solar(Solar)) Solar;
+            case (#Wind(Wind)) Wind;
+            case (#HydroElectric(HydroElectric)) HydroElectric;
+            case (#Thermal(Thermal)) Thermal;
+            case (#Other(Other)) Other;
+          })),
+          ("description", #Text(init_args.assetMetadata.deviceDetails.description))
+        ])),
+        ("specifications", #Map([
+          ("deviceCode", #Text(init_args.assetMetadata.specifications.deviceCode)),
+          ("capacity", #Nat(init_args.assetMetadata.specifications.capacity)),
+          ("location", #Text(init_args.assetMetadata.specifications.location)),
+          ("latitude", #Text(init_args.assetMetadata.specifications.latitude)),
+          ("longitude", #Text(init_args.assetMetadata.specifications.longitude)),
+          ("address", #Text(init_args.assetMetadata.specifications.address)),
+          ("stateProvince", #Text(init_args.assetMetadata.specifications.stateProvince)),
+          ("country", #Text(init_args.assetMetadata.specifications.country))
+        ])),
+        ("dates", #Array(Array.map<Text, { #Text : Text }>(init_args.assetMetadata.dates, func x = #Text(x))))
+      ]))
+    ]);
     fee_collector = null;
     transaction_window = null;
     permitted_drift = null;
@@ -355,11 +381,11 @@ shared ({ caller = _owner }) actor class Token(
           assetType = switch (map.get(1).1) {
             case (#Text(text)) {
               switch (text) {
-                case("Solar") #Solar(text);
-                case("Wind") #Wind(text);
-                case("Hydro-Electric") #HydroElectric(text);
-                case("Thermal") #Thermal(text);
-                case _ #Other(text);
+                case("Solar") #Solar("Solar");
+                case("Wind") #Wind("Wind");
+                case("Hydro-Electric") #HydroElectric("Hydro-Electric");
+                case("Thermal") #Thermal("Thermal");
+                case _ #Other("Other");
               };
             };
             case (_) throw Error.reject("cannot find assetMetadata");
@@ -396,14 +422,14 @@ shared ({ caller = _owner }) actor class Token(
             };
             deviceType = switch (map.get(7).1) {
               case (#Map(childMap)) {
-                switch (childMap.get(2).1) {
+                switch (childMap.get(1).1) {
                   case (#Text(text)) {
                     switch (text) {
-                      case("Solar") #Solar(text);
-                      case("Wind") #Wind(text);
-                      case("Hydro-Electric") #HydroElectric(text);
-                      case("Thermal") #Thermal(text);
-                      case _ #Other(text);
+                      case("Solar") #Solar("Solar");
+                      case("Wind") #Wind("Wind");
+                      case("Hydro-Electric") #HydroElectric("Hydro-Electric");
+                      case("Thermal") #Thermal("Thermal");
+                      case _ #Other("Other");
                     };
                   };
                   case (_) throw Error.reject("cannot find assetMetadata");
@@ -413,7 +439,7 @@ shared ({ caller = _owner }) actor class Token(
             };
             description = switch (map.get(7).1) {
               case (#Map(childMap)) {
-                switch (childMap.get(3).1) {
+                switch (childMap.get(2).1) {
                   case (#Text(text)) text;
                   case (_) throw Error.reject("cannot find assetMetadata");
                 };
