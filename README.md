@@ -1,6 +1,7 @@
 <!-- TODO subdomain integration with `cerotrade.cl/alfa` -->
 <!-- TODO delete beneficiary id from web3 register and migrate to web2 -->
 <!-- TODO review about decimal amounts precision in backend web2 and web3 -->
+<!-- TODO redemptions flow need storage pdf, review this cases -->
 
 # Cero Trade
 
