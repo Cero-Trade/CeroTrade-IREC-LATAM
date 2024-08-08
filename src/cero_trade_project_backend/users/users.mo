@@ -41,9 +41,6 @@ shared({ caller = userIndexCaller }) actor class Users() {
       vaultToken = token;
       principal = uid;
       companyLogo = null;
-      portfolio = [];
-      transactions = [];
-      beneficiaries = [];
     };
 
     users.put(uid, userInfo);
@@ -85,126 +82,6 @@ shared({ caller = userIndexCaller }) actor class Users() {
       case(null) throw Error.reject("Logo not found");
       case(?value) value;
     }
-  };
-
-
-  /// update user portfolio
-  public shared({ caller }) func updatePortfolio(uid: T.UID, tokenId: T.TokenId, { delete: Bool }) : async() {
-    _callValidation(caller);
-
-    let userInfo = switch (users.get(uid)) {
-      case (null) throw Error.reject(userNotFound);
-      case (?info) info;
-    };
-
-    let portfolio = Buffer.fromArray<T.TokenId>(userInfo.portfolio);
-
-    switch(Buffer.indexOf<T.TokenId>(tokenId, portfolio, Text.equal)) {
-      case(null) {
-        portfolio.add(tokenId);
-
-        users.put(uid, { userInfo with portfolio = Buffer.toArray(portfolio) })
-      };
-      case(?index) {
-        if (delete) {
-          let _ = portfolio.remove(index);
-        } else {
-          portfolio.put(index, tokenId);
-        };
-
-        users.put(uid, { userInfo with portfolio = Buffer.toArray(portfolio) })
-      };
-    };
-  };
-
-
-  /// delete user portfolio
-  public shared({ caller }) func deletePortfolio(uid: T.UID, tokenId: T.TokenId) : async() {
-    _callValidation(caller);
-
-    let userInfo = switch (users.get(uid)) {
-      case (null) throw Error.reject(userNotFound);
-      case (?info) info;
-    };
-
-    let portfolio = Buffer.fromArray<T.TokenId>(userInfo.portfolio);
-
-    switch(Buffer.indexOf<T.TokenId>(tokenId, portfolio, Text.equal)) {
-      case(null) throw Error.reject("Token doesn't exists");
-      case(?index) {
-        let _ = portfolio.remove(index);
-
-        users.put(uid, { userInfo with portfolio = Buffer.toArray(portfolio) })
-      };
-    };
-  };
-
-
-  /// update user transactions
-  public shared({ caller }) func updateTransactions(uid: T.UID, txId: T.TransactionId) : async() {
-    _callValidation(caller);
-
-    let userInfo = switch (users.get(uid)) {
-      case (null) throw Error.reject(userNotFound);
-      case (?info) info;
-    };
-
-    let transactions = Buffer.fromArray<T.TransactionId>(userInfo.transactions);
-
-    transactions.add(txId);
-    users.put(uid, { userInfo with transactions = Buffer.toArray(transactions) });
-  };
-
-  /// update user beneficiaries
-  public shared({ caller }) func updateBeneficiaries(uid: T.UID, beneficiaryId: T.BID, { delete: Bool }) : async() {
-    _callValidation(caller);
-
-    let userInfo = switch (users.get(uid)) {
-      case (null) throw Error.reject(userNotFound);
-      case (?info) info;
-    };
-
-    let beneficiaries = Buffer.fromArray<T.BID>(userInfo.beneficiaries);
-
-    if (delete) {
-      let index = switch(Buffer.indexOf<T.BID>(beneficiaryId, beneficiaries, Principal.equal)) {
-        case(null) throw Error.reject("Beneficiary not found");
-        case(?value) value;
-      };
-
-      let _ = beneficiaries.remove(index);
-    } else {
-      beneficiaries.add(beneficiaryId);
-    };
-
-    users.put(uid, { userInfo with beneficiaries = Buffer.toArray(beneficiaries) });
-  };
-
-  public shared({ caller }) func getPortfolioTokenIds(uid: T.UID) : async [T.TokenId] {
-    _callValidation(caller);
-
-    switch (users.get(uid)) {
-      case (null) throw Error.reject(userNotFound);
-      case (?info) return info.portfolio;
-    };
-  };
-
-  public shared({ caller }) func getTransactionIds(uid: T.UID) : async [T.TransactionId] {
-    _callValidation(caller);
-
-    switch (users.get(uid)) {
-      case (null) throw Error.reject(userNotFound);
-      case (?info) return info.transactions;
-    };
-  };
-
-  public shared({ caller }) func getBeneficiaries(uid: T.UID) : async [T.BID] {
-    _callValidation(caller);
-
-    switch (users.get(uid)) {
-      case (null) throw Error.reject(userNotFound);
-      case (?info) return info.beneficiaries;
-    };
   };
 
   /// get vaultToken from user
