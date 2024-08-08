@@ -358,10 +358,12 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   public shared({ caller }) func importUserTokens(uid: T.UID): async [{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }] {
     _callValidation(caller);
 
+    let tokenHeader = await HT.tokenAuthFromUser(uid);
+
     let assetsJson = await HttpService.get({
       url = HT.apiUrl # "transactions/fetchByUser";
       port = null;
-      headers = [await HT.tokenAuthFromUser(uid)];
+      headers = [tokenHeader];
     });
 
     // used hashmap to find faster elements using Hash
@@ -430,7 +432,17 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       };
     };
 
-    Iter.toArray(assetsMetadata.vals())
+    let transactions = Iter.toArray(assetsMetadata.vals());
+
+    if (transactions.size() > 0) {
+      // update user portfolio
+      await updatePortfolio(tokenHeader, Array.map<{
+        mwh: T.TokenAmount;
+        assetInfo: T.AssetInfo
+      }, T.TokenId>(transactions, func x = x.assetInfo.tokenId)/* , { delete = false } */);
+    };
+
+    transactions
   };
 
 
@@ -469,7 +481,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       memo = null;
     });
 
-    switch(transferResult) {
+    let txIndex = switch(transferResult) {
       case(#Err(error)) throw Error.reject(switch(error) {
         case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
         case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
@@ -482,6 +494,11 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       });
       case(#Ok(value)) value;
     };
+
+    // update user portfolio
+    await updatePortfolio(await HT.tokenAuthFromUser(recipent), [tokenId]/* , { delete = false } */);
+
+    txIndex
   };
 
   // helper function used to build [AssetInfo] from AssetResponse
@@ -539,11 +556,32 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     };
   };
 
-  public shared({ caller }) func getPortfolio(uid: T.UID, tokenIds: [T.TokenId], page: ?Nat, length: ?Nat, assetTypes: ?[T.AssetType], country: ?Text, mwhRange: ?[T.TokenAmount]): async {
-    data: [T.TokenInfo];
+  /// get user portfolio
+  public shared({ caller }) func getPortfolio(uid: T.UID, page: ?Nat, length: ?Nat, assetTypes: ?[T.AssetType], country: ?Text, mwhRange: ?[T.TokenAmount]): async {
+    tokens: [T.TokenInfo];
+    txIds: [T.TransactionId];
     totalPages: Nat;
   } {
     _callValidation(caller);
+
+    // fetch user to get token ids
+    let portfolioJson = await HttpService.get({
+      url = HT.apiUrl # "users/portfolio";
+      port = null;
+      headers = [await HT.tokenAuthFromUser(uid)];
+    });
+
+    let portfolioIds: { tokenIds: [T.TokenId]; txIds: [T.TransactionId] } = switch(Serde.JSON.fromText(portfolioJson, null)) {
+      case(#err(_)) throw Error.reject("cannot serialize asset data");
+      case(#ok(blob)) {
+        let portfolio: ?{ tokenIds: [T.TokenId]; txIds: [T.TransactionId] } = from_candid(blob);
+
+        switch(portfolio) {
+          case(null) throw Error.reject("cannot serialize asset data");
+          case(?value) value;
+        };
+      };
+    };
 
     // define page based on statement
     let startPage = switch(page) {
@@ -566,7 +604,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     Debug.print(debug_show ("before getPortfolio: " # Nat.toText(Cycles.balance())));
 
 
-    for(tokenId in tokenIds.vals()) {
+    for(tokenId in portfolioIds.tokenIds.vals()) {
       if (i >= startIndex and i < startIndex + maxLength) {
         switch(tokenDirectory.get(tokenId)) {
           case(null) {};
@@ -586,32 +624,27 @@ shared({ caller = owner }) actor class TokenIndex() = this {
               case(?range) token.totalAmount >= range[0] and token.totalAmount <= range[1];
             };
 
-            if (filterRange) tokens.add(token);
+            // filter by assetTypes
+            let filterAssetType = switch (assetTypes) {
+              case(null) true;
+              case(?assets) {
+                let assetType = Array.find<T.AssetType>(assets, func (assetType) { assetType == token.assetInfo.deviceDetails.deviceType });
+                assetType != null
+              };
+            };
+
+            // filter by country
+            let filterCountry = switch (country) {
+              case(null) true;
+              case(?value) token.assetInfo.specifications.country == value;
+            };
+
+            if (token.totalAmount > 0 and filterRange and filterAssetType and filterCountry) tokens.add(token);
           };
         };
       };
       i += 1;
     };
-
-
-    let filteredTokens: [T.TokenInfo] = Array.filter<T.TokenInfo>(Buffer.toArray<T.TokenInfo>(tokens), func (item) {
-      // by assetTypes
-      let assetTypeMatches = switch (assetTypes) {
-        case(null) true;
-        case(?assets) {
-          let assetType = Array.find<T.AssetType>(assets, func (assetType) { assetType == item.assetInfo.deviceDetails.deviceType });
-          assetType != null
-        };
-      };
-
-      // by country
-      let countryMatches = switch (country) {
-        case(null) true;
-        case(?value) item.assetInfo.specifications.country == value;
-      };
-
-      assetTypeMatches and countryMatches;
-    });
 
 
     Debug.print(debug_show ("later getPortfolio: " # Nat.toText(Cycles.balance())));
@@ -620,9 +653,26 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     if (totalPages <= 0) totalPages := 1;
 
     {
-      data = filteredTokens;
+      tokens = Buffer.toArray<T.TokenInfo>(tokens);
+      txIds = portfolioIds.txIds;
       totalPages;
     }
+  };
+
+  /// update user portfolio
+  private func updatePortfolio(tokenHeader: { name: Text; value: Text; }, tokenIds: [T.TokenId]/* , { delete: Bool } */) : async() {
+
+    let _ = await HttpService.post({
+        url = HT.apiUrl # "users/portfolio";
+        port = null;
+        headers = [tokenHeader];
+        bodyJson = switch(Serde.JSON.toText(to_candid({
+          tokenIds;
+        }), ["tokenIds"], null)) {
+          case(#err(error)) throw Error.reject("Cannot serialize data");
+          case(#ok(value)) value;
+        };
+      });
   };
 
   public shared({ caller }) func getTokensInfo(tokenIds: [T.TokenId]): async [T.AssetInfo] {
@@ -739,7 +789,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       });
     };
 
-    switch(transferResult) {
+    let txIndex = switch(transferResult) {
       case(#Err(error)) throw Error.reject(switch(error) {
         case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
         case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
@@ -752,6 +802,11 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       });
       case(#Ok(value)) value;
     };
+
+    // store token register on profile
+    await updatePortfolio(await HT.tokenAuthFromUser(buyer), [tokenId]/* , { delete = false } */);
+
+    txIndex
   };
 
   public shared ({ caller }) func requestRedeem(owner: T.UID, tokenId: T.TokenId, amount: T.TokenAmount, { returns: Bool }) : async T.TxIndex {

@@ -105,9 +105,6 @@ actor class Agent() = this {
     let transactions = await TokenIndex.importUserTokens(caller);
 
     for(tx in transactions.vals()) {
-      // update user portfolio
-      await UserIndex.updatePortfolio(caller, tx.assetInfo.tokenId, { delete = false });
-
       // register asset statistic
       await Statistics.registerAssetStatistic(tx.assetInfo.tokenId, { mwh = ?tx.mwh; redemptions = null });
     };
@@ -125,9 +122,6 @@ actor class Agent() = this {
 
     // mint token to user token collection
     let txIndex = await TokenIndex.mintTokenToUser(recipent, tokenId, tokenAmount);
-
-    // update user portfolio
-    await UserIndex.updatePortfolio(recipent, tokenId, { delete = false });
 
     // register asset statistic
     await Statistics.registerAssetStatistic(tokenId, { mwh = ?tokenAmount; redemptions = null });
@@ -216,32 +210,18 @@ actor class Agent() = this {
     tokensInfo: { data: [T.TokenInfo]; totalPages: Nat; };
     tokensRedemption: [T.TransactionInfo]
   } {
-    let tokenIds = await UserIndex.getPortfolioTokenIds(caller);
-    var tokensInfo: {
-      data: [T.TokenInfo];
+    let tokensInfo: {
+      tokens: [T.TokenInfo];
+      txIds: [T.TransactionId];
       totalPages: Nat;
-    } = await TokenIndex.getPortfolio(caller, tokenIds, page, length, assetTypes, country, mwhRange);
+    } = await TokenIndex.getPortfolio(caller, page, length, assetTypes, country, mwhRange);
 
-    for(token in tokensInfo.data.vals()) {
-      if (token.totalAmount <= 0) {
-        await UserIndex.updatePortfolio(caller, token.tokenId, { delete = true });
+    let tokensRedemption: [T.TransactionInfo] = await TransactionIndex.getTransactionsById(tokensInfo.txIds, ?#redemption("redemption"), null, null, null, null);
 
-        let tokens = Buffer.fromArray<T.TokenInfo>(tokensInfo.data);
-
-        switch (Buffer.indexOf<Text>(token.tokenId, Buffer.map<T.TokenInfo, Text>(tokens, func x =  x.tokenId ), Text.equal)) {
-          case(null) {};
-          case(?index) {
-            let _ = tokens.remove(index);
-            tokensInfo := { tokensInfo with data = Buffer.toArray<T.TokenInfo>(tokens) };
-          };
-        };
-      }
+    { 
+      tokensInfo = { data = tokensInfo.tokens; totalPages = tokensInfo.totalPages; };
+      tokensRedemption
     };
-
-    let txIds = await UserIndex.getTransactionIds(caller);
-    let tokensRedemption: [T.TransactionInfo] = await TransactionIndex.getTransactionsById(txIds, ?#redemption("redemption"), null, null, null, null);
-
-    { tokensInfo; tokensRedemption };
   };
 
 
@@ -508,16 +488,11 @@ actor class Agent() = this {
       method = #blockchainTransfer("blockchainTransfer");
     };
 
-    // store token register on profile
-    await UserIndex.updatePortfolio(caller, tokenId, { delete = false });
-
     // register transaction
     let txId = await TransactionIndex.registerTransaction(txInfo);
-    // store to caller
-    await UserIndex.updateTransactions(caller, txId);
 
-    // store to recipent
-    await UserIndex.updateTransactions(recipent, txId);
+    // store to caller and recipent
+    await UserIndex.updateTransactions(caller, ?recipent, txId);
 
     // take token off marketplace reference
     await Marketplace.takeOffSale(tokenId, tokenAmount, recipent);
@@ -567,7 +542,9 @@ actor class Agent() = this {
 
     // register transaction
     let txId = await TransactionIndex.registerTransaction(txInfo);
-    await UserIndex.updateTransactions(caller, txId);
+
+    // store to caller
+    await UserIndex.updateTransactions(caller, null, txId);
 
     // put tokens on marketplace reference
     await Marketplace.putOnSale(tokenId, quantity, caller, priceE8S);
@@ -614,7 +591,9 @@ actor class Agent() = this {
 
     // register transaction
     let txId = await TransactionIndex.registerTransaction(txInfo);
-    await UserIndex.updateTransactions(caller, txId);
+
+    // store to caller
+    await UserIndex.updateTransactions(caller, null, txId);
 
     // take off tokens on marketplace reference
     await Marketplace.takeOffSale(tokenId, quantity, caller);
@@ -677,6 +656,11 @@ actor class Agent() = this {
       case(?value) value;
     };
 
+    let triggeredBy = switch(notification.triggeredBy) {
+      case(null) throw Error.reject("triggeredBy not provided");
+      case(?value) value;
+    };
+
     // redeem tokens
     let txIndex = await TokenIndex.redeemRequested(notification);
 
@@ -697,15 +681,8 @@ actor class Agent() = this {
     // register transaction
     let txId = await TransactionIndex.registerTransaction(txInfo);
 
-    // update receiver user transactions
-    await UserIndex.updateTransactions(notification.receivedBy, txId);
-
-    // update trigger user transactions
-    let triggeredBy = switch(notification.triggeredBy) {
-      case(null) throw Error.reject("triggeredBy not provided");
-      case(?value) value;
-    };
-    await UserIndex.updateTransactions(triggeredBy, txId);
+    // update receiver and trigger user transactions
+    await UserIndex.updateTransactions(notification.receivedBy, ?triggeredBy, txId);
 
     // change notification status
     let _ = await _updateEventNotification(caller, notificationId, ?#accepted("accepted"));
@@ -749,7 +726,9 @@ actor class Agent() = this {
 
     // register transaction
     let txId = await TransactionIndex.registerTransaction(txInfo);
-    await UserIndex.updateTransactions(caller, txId);
+
+    // store to caller
+    await UserIndex.updateTransactions(caller, null, txId);
 
     // register asset statistic
     await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = ?quantity });
