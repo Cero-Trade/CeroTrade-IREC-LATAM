@@ -1,6 +1,7 @@
 <!-- TODO subdomain integration with `cerotrade.cl/alfa` -->
 <!-- TODO review about decimal amounts precision in backend web2 and web3 -->
 <!-- TODO redemptions flow need storage pdf, review this cases -->
+<!-- TODO checkout timeout requests on API Web2 -->
 
 # Cero Trade
 
