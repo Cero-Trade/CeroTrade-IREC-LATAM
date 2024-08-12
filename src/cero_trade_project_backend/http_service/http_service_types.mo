@@ -1,5 +1,6 @@
 import Error "mo:base/Error";
 import Nat "mo:base/Nat";
+import Debug "mo:base/Debug";
 import ENV "../env";
 
 module {
@@ -8,6 +9,9 @@ module {
 
 
   public func tokenAuth(token: Text): { name: Text; value: Text; } {
+    // WARN just for debug
+    Debug.print("tokenAuth: " # debug_show({ name = "token"; value = token; }));
+
     { name = "token"; value = token; }
   };
 

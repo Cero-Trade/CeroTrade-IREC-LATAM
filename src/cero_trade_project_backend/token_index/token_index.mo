@@ -388,6 +388,14 @@ shared({ caller = owner }) actor class TokenIndex() = this {
                   mwh = await T.textToNat(itemResponse.volume);
                   assetInfo = await buildAssetInfo(itemResponse.assetDetails);
                 });
+
+                switch(assetsMetadata.get(index)) {
+                  case(null) {};
+                  case(?asset) {
+                    Debug.print("user mwh: " # Nat.toText(asset.mwh));
+                    Debug.print("user assetInfo capacity: " # Nat.toText(asset.assetInfo.specifications.capacity));
+                  };
+                };
               };
             };
           };

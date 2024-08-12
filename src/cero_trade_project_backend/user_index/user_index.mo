@@ -269,7 +269,7 @@ actor class UserIndex() = this {
     let formKeys = ["principalId", "companyId", "evidentId", "companyName", "country", "city", "address", "email"];
 
     // WARN just for debug
-    Debug.print(Principal.toText(uid));
+    Debug.print("register - principal: " # Principal.toText(uid));
 
     // tokenize userInfo in web2 backend
     let token = await HttpService.post({
@@ -284,7 +284,7 @@ actor class UserIndex() = this {
     let trimmedToken = Text.trimEnd(Text.trimStart(token, #char '\"'), #char '\"');
 
     // WARN just for debug
-    Debug.print("token: " # trimmedToken);
+    Debug.print("register - token: " # trimmedToken);
 
     try {
       let errorText = "Error generating canister";
@@ -413,7 +413,19 @@ actor class UserIndex() = this {
       case(?cid) cid;
     };
 
-    await Users.canister(cid).getUserToken(uid);
+    let token = await Users.canister(cid).getUserToken(uid);
+
+    // WARN just for debug
+    Debug.print("getUserToken: " # debug_show({ cid; token; }));
+
+    for((uid, cid) in usersDirectory.entries()) {
+      let token = await Users.canister(cid).getUserToken(uid);
+
+      // WARN just for debug
+      Debug.print("all user tokens: " # debug_show({ uid; token; }));
+    };
+
+    token
   };
 
   /// get canister id that allow current user
