@@ -63,6 +63,7 @@ actor class UserIndex() = this {
     let authorizedCanisters = [
       ENV.CANISTER_ID_AGENT,
       ENV.CANISTER_ID_TOKEN_INDEX,
+      ENV.CANISTER_ID_BUCKET_INDEX,
     ];
 
     assert Array.find<Text>(authorizedCanisters, func x = Principal.fromText(x) == caller) != null;
@@ -88,28 +89,8 @@ actor class UserIndex() = this {
   public shared({ caller }) func registerWasmArray(): async() {
     _callValidation(caller);
 
-    let branch = switch(ENV.DFX_NETWORK) {
-      case("ic") "main";
-      case _ "develop";
-    };
-    let wasmModule = await HttpService.get({
-      url = "https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # branch # "/wasm_modules/users.json";
-      port = null;
-      headers = []
-    });
-
-    let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
-    let wasm_array = Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
-      switch (Nat.fromText(part)) {
-        case null 0;
-        case (?n) n;
-      }
-    });
-    let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
-
     // register wasm
-    wasm_module := Blob.fromArray(nums8);
-
+    wasm_module := await IC_MANAGEMENT.getWasmModule(#users("users"));
 
     // update deployed canisters
     let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
@@ -202,7 +183,7 @@ actor class UserIndex() = this {
       case(?cid) await IC_MANAGEMENT.ic.canister_status({ canister_id = cid });
     };
 
-    status.memory_size > T.LOW_MEMORY_LIMIT
+    status.memory_size > IC_MANAGEMENT.LOW_MEMORY_LIMIT
   };
 
   /// autonomous function, will be executed when current canister it is full
@@ -335,7 +316,7 @@ actor class UserIndex() = this {
   };
 
   /// store user avatar into users collection
-  public shared({ caller }) func storeCompanyLogo(uid: T.UID, avatar: T.CompanyLogo): async() {
+  public shared({ caller }) func storeCompanyLogo(uid: T.UID, avatar: T.ArrayFile): async() {
     _callValidation(caller);
 
     switch(usersDirectory.get(uid)) {

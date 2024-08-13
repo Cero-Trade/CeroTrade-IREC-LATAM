@@ -63,27 +63,8 @@ actor class NotificationIndex() = this {
   public shared({ caller }) func registerWasmArray(): async() {
     _callValidation(caller);
 
-    let branch = switch(ENV.DFX_NETWORK) {
-      case("ic") "main";
-      case _ "develop";
-    };
-    let wasmModule = await HttpService.get({
-      url = "https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # branch # "/wasm_modules/notifications.json";
-      port = null;
-      headers = []
-    });
-
-    let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
-    let wasm_array = Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
-      switch (Nat.fromText(part)) {
-        case null 0;
-        case (?n) n;
-      }
-    });
-    let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
-
     // register wasm
-    wasm_module := Blob.fromArray(nums8);
+    wasm_module := await IC_MANAGEMENT.getWasmModule(#notifications("notifications"));
 
     // update deployed canisters
     for (canister_id in notificationsDirectory.keys()) {
@@ -158,7 +139,7 @@ actor class NotificationIndex() = this {
       case(null) throw Error.reject("Cant find notifications canisters registered");
       case(?values) {
         let { memory_size } = await IC_MANAGEMENT.ic.canister_status({ canister_id });
-        memory_size > T.LOW_MEMORY_LIMIT
+        memory_size > IC_MANAGEMENT.LOW_MEMORY_LIMIT
       };
     };
   };
@@ -526,10 +507,12 @@ actor class NotificationIndex() = this {
       if (filteredIds.size() > 0) {
         let notificationsInfo = await Notifications.canister(cid).getNotifications(filteredIds);
 
-        notifications := Array.filter<T.NotificationInfo>(notificationsInfo, func (item) {
+        let filteredNotificationsInfo = Array.filter<T.NotificationInfo>(notificationsInfo, func (item) {
           // filter notifications by NotificationType
           notificationTypes.size() < 1 or Array.find<T.NotificationType>(notificationTypes, func x = item.notificationType == x) != null
         });
+
+        notifications := Array.flatten<T.NotificationInfo>([notifications, filteredNotificationsInfo]);
       }
     };
 

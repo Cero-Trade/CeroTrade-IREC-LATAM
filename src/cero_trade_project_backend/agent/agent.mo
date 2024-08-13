@@ -51,7 +51,7 @@ actor class Agent() = this {
 
 
   /// store user avatar into users collection
-  public shared({ caller }) func storeCompanyLogo(avatar: T.CompanyLogo): async() { await UserIndex.storeCompanyLogo(caller, avatar) };
+  public shared({ caller }) func storeCompanyLogo(avatar: T.ArrayFile): async() { await UserIndex.storeCompanyLogo(caller, avatar) };
 
   /// update user into Cero Trade
   public shared({ caller }) func updateUserInfo(form: T.UpdateUserForm): async() { await UserIndex.updateUserInfo(caller, form) };
@@ -78,7 +78,7 @@ actor class Agent() = this {
   };
 
   /// register a canister wasm module
-  public shared({ caller }) func registerWasmModule(moduleName: T.WasmModuleName): async() {
+  public shared({ caller }) func registerWasmModule(moduleName: IC_MANAGEMENT.WasmModuleName): async() {
     IC_MANAGEMENT.adminValidation(caller, controllers);
 
     switch(moduleName) {
@@ -194,6 +194,9 @@ actor class Agent() = this {
       createdAt = DateTime.now().toText();
       status = null;
       eventStatus = ?#pending("pending");
+      redeemPeriodStart = null;
+      redeemPeriodEnd = null;
+      redeemLocale = null;
     });
   };
 
@@ -602,7 +605,7 @@ actor class Agent() = this {
   };
 
 
-  public shared({ caller }) func requestRedeemToken(tokenId: T.TokenId, quantity: T.TokenAmount, beneficiary: T.BID): async T.TxIndex {
+  public shared({ caller }) func requestRedeemToken(tokenId: T.TokenId, quantity: T.TokenAmount, beneficiary: T.BID, periodStart: Text, periodEnd: Text, locale: Text): async T.TxIndex {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
@@ -622,6 +625,9 @@ actor class Agent() = this {
       createdAt = DateTime.now().toText();
       status = null;
       eventStatus = ?#pending("pending");
+      redeemPeriodStart = ?periodStart;
+      redeemPeriodEnd = ?periodEnd;
+      redeemLocale = ?locale;
     });
 
     txIndex
@@ -673,6 +679,7 @@ actor class Agent() = this {
       tokenId;
       txType = #redemption("redemption");
       tokenAmount = quantity;
+      /// cero trade comission + transaction fee estimated
       priceE8S = ?{ e8s = T.getCeroComission() + 20_000 };
       date = DateTime.now().toText();
       method = #blockchainTransfer("blockchainTransfer");
@@ -694,7 +701,7 @@ actor class Agent() = this {
   };
 
   // redeem certificate by burning user tokens
-  public shared({ caller }) func redeemToken(tokenId: T.TokenId, quantity: T.TokenAmount): async T.TransactionInfo {
+  public shared({ caller }) func redeemToken(tokenId: T.TokenId, quantity: T.TokenAmount, periodStart: Text, periodEnd: Text, locale: Text): async T.TransactionInfo {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
@@ -708,7 +715,7 @@ actor class Agent() = this {
     if (availableTokens < quantity) throw Error.reject("Not enough tokens");
 
     // ask token to burn the tokens
-    let txIndex = await TokenIndex.redeem(caller, tokenId, quantity);
+    let txIndex = await TokenIndex.redeem(caller, tokenId, quantity, periodStart, periodEnd, locale);
 
     // build transaction
     let txInfo: T.TransactionInfo = {
@@ -719,6 +726,7 @@ actor class Agent() = this {
       tokenId;
       txType = #redemption("redemption");
       tokenAmount = quantity;
+      /// cero trade comission + transaction fee estimated
       priceE8S = ?{ e8s = T.getCeroComission() + 20_000 };
       date = DateTime.now().toText();
       method = #blockchainTransfer("blockchainTransfer");

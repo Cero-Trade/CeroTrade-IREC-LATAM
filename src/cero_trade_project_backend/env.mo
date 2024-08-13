@@ -27,6 +27,7 @@ module ENV {
   public let CANISTER_ID_NNS_CYCLES_MINTING: Text = "rkp4c-7iaaa-aaaaa-aaaca-cai";
   public let CANISTER_ID_NNS_GOVERNANCE: Text = "rrkah-fqaaa-aaaaa-aaaaq-cai";
   public let CANISTER_ID_USER_INDEX: Text = "ahw5u-keaaa-aaaaa-qaaha-cai";
+  public let CANISTER_ID_BUCKET_INDEX: Text = "ahw5u-keaaa-aaaaa-qaaha-cai";
   public let CANISTER_ID_TOKEN_INDEX: Text = "a4tbr-q4aaa-aaaaa-qaafq-cai";
   public let CANISTER_ID_NNS_LIFELINE: Text = "rno2w-sqaaa-aaaaa-aaacq-cai";
   public let CANISTER_ID: Text = "br5f7-7uaaa-aaaaa-qaaca-cai";

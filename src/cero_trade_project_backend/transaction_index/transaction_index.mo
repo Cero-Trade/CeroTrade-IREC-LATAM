@@ -11,9 +11,6 @@ import Error "mo:base/Error";
 import Debug "mo:base/Debug";
 import Buffer "mo:base/Buffer";
 
-// canisters
-import HttpService "canister:http_service";
-
 // interfaces
 import IC_MANAGEMENT "../ic_management_canister_interface";
 import Transactions "../transactions/transactions_interface";
@@ -63,28 +60,8 @@ actor class TransactionIndex() = this {
   public shared({ caller }) func registerWasmArray(): async() {
     _callValidation(caller);
 
-    let branch = switch(ENV.DFX_NETWORK) {
-      case("ic") "main";
-      case _ "develop";
-    };
-    let wasmModule = await HttpService.get({
-      url = "https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # branch # "/wasm_modules/transactions.json";
-      port = null;
-      headers = []
-    });
-
-    let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
-    let wasm_array = Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
-      switch (Nat.fromText(part)) {
-        case null 0;
-        case (?n) n;
-      }
-    });
-    let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
-
     // register wasm
-    wasm_module := Blob.fromArray(nums8);
-
+    wasm_module := await IC_MANAGEMENT.getWasmModule(#transactions("transactions"));
 
     // update deployed canisters
     let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
@@ -173,7 +150,7 @@ actor class TransactionIndex() = this {
       case(?cid) await IC_MANAGEMENT.ic.canister_status({ canister_id = cid });
     };
 
-    status.memory_size > T.LOW_MEMORY_LIMIT
+    status.memory_size > IC_MANAGEMENT.LOW_MEMORY_LIMIT
   };
 
   /// autonomous function, will be executed when current canister it is full

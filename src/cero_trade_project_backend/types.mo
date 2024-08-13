@@ -81,7 +81,7 @@ module {
   public type TransactionId = Text;
   public type EvidentTransactionId = Text;
   public type RedemId = Text;
-  public type CompanyLogo = [Nat8];
+  public type ArrayFile = [Nat8];
   public type BID = UID;
   public type TxIndex = Nat;
   public type TokenAmount = Nat;
@@ -112,13 +112,13 @@ module {
   };
 
   public type UserInfo = {
-    companyLogo: ?CompanyLogo;
+    companyLogo: ?ArrayFile;
     vaultToken: Text;
     principal: Principal;
   };
 
   public type UserProfile = {
-    companyLogo: CompanyLogo;
+    companyLogo: ArrayFile;
     principalId: Text;
     companyId: Text;
     companyName: Text;
@@ -263,6 +263,10 @@ module {
     receivedBy: BID;
     triggeredBy: ?UID;
     quantity: ?TokenAmount;
+
+    redeemPeriodStart: ?Text;
+    redeemPeriodEnd: ?Text;
+    redeemLocale: ?Text;
   };
 
   public type NotificationStatus = {
@@ -290,18 +294,11 @@ module {
     assetType: AssetType;
     redemptions: TokenAmount;
   };
-
+  
   //
-  // ic management types
+  // bucket types
   //
-  public type WasmModuleName = {
-    #token: Text;
-    #users: Text;
-    #transactions: Text;
-    #notifications: Text;
-  };
-
-  public let LOW_MEMORY_LIMIT: Nat = 50000;
+  public type BucketId = Text;
 
   //
   // ICP Types

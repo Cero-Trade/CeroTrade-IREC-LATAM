@@ -126,27 +126,8 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   public shared({ caller }) func registerWasmArray(): async() {
     _callValidation(caller);
 
-    let branch = switch(ENV.DFX_NETWORK) {
-      case("ic") "main";
-      case _ "develop";
-    };
-    let wasmModule = await HttpService.get({
-      url = "https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # branch # "/wasm_modules/token.json";
-      port = null;
-      headers = [];
-    });
-
-    let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
-    let wasm_array = Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
-      switch (Nat.fromText(part)) {
-        case null 0;
-        case (?n) n;
-      }
-    });
-    let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
-
     // register wasm
-    wasm_module := Blob.fromArray(nums8);
+    wasm_module := await IC_MANAGEMENT.getWasmModule(#token("token"));
 
     // update deployed canisters
     for((tokenId, canister_id) in tokenDirectory.entries()) {
@@ -876,8 +857,30 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     };
   };
 
-  public shared({ caller }) func redeem(owner: T.UID, tokenId: T.TokenId, amount: T.TokenAmount): async T.TxIndex {
+  public shared({ caller }) func redeem(owner: T.UID, tokenId: T.TokenId, amount: T.TokenAmount, periodStart: Text, periodEnd: Text, locale: Text): async T.TxIndex {
     _callValidation(caller);
+
+    // - volume: El volumen de I-RECs que se quiere redimir.
+    // - beneficiary: El identificador del beneficiario de la redención.
+    // - items: Un url identificador de los items. Esta información debe traerse al momento de hacer el importe de los IRECs.
+    // - periodStart y periodEnd: Las fechas de inicio y fin del periodo de redención. Esto debe ser un input del usuario.
+    // - locale: El idioma en que se quiere obtener el "redemption statement" (ej. "en", "es"). Este debe ser un input del usuario.
+    let tokenHeader = await HT.tokenAuthFromUser(owner);
+    let _pdf = await HttpService.post({
+        url = HT.apiUrl # "redemption";
+        port = null;
+        headers = [tokenHeader];
+        bodyJson = switch(Serde.JSON.toText(to_candid({
+          volume = amount;
+          beneficiary = owner;
+          items = tokenId;
+          periodStart;
+          periodEnd;
+        }), ["amount", "owner", "tokenId", "periodStart", "periodEnd"], null)) {
+          case(#err(error)) throw Error.reject("Cannot serialize data");
+          case(#ok(value)) value;
+        };
+      });
 
     let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");

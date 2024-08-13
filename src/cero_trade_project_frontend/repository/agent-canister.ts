@@ -478,9 +478,15 @@ export class AgentCanister {
   }
 
 
-  static async redeemToken(tokenId: string, amount: number): Promise<TransactionInfo> {
+  static async redeemToken({ tokenId, amount, periodStart, periodEnd, locale}: {
+    tokenId: string,
+    amount: number,
+    periodStart: Date,
+    periodEnd: Date,
+    locale: string,
+  }): Promise<TransactionInfo> {
     try {
-      const tx = await agent().redeemToken(tokenId, amount) as TransactionInfo
+      const tx = await agent().redeemToken(tokenId, amount, periodStart, periodEnd, locale) as TransactionInfo
       tx.txType = Object.values(tx.txType)[0] as TxTypeDef
       tx.to = Object.values(tx.to)[0] as string
 

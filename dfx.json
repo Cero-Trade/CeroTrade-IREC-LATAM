@@ -14,6 +14,16 @@
       "main": "src/cero_trade_project_backend/agent/agent.mo",
       "type": "motoko"
     },
+    "bucket_index": {
+      "main": "src/cero_trade_project_backend/bucket_index/bucket_index.mo",
+      "type": "motoko"
+    },
+    "bucket": {
+      "args": "-v --incremental-gc",
+      "gzip": true,
+      "main": "src/cero_trade_project_backend/bucket/bucket.mo",
+      "type": "motoko"
+    },
     "cero_trade_project_frontend": {
       "dependencies": [
         "nns-ledger",
@@ -176,9 +186,6 @@
       "type": "motoko"
     },
     "transaction_index": {
-      "dependencies": [
-        "http_service"
-      ],
       "main": "src/cero_trade_project_backend/transaction_index/transaction_index.mo",
       "type": "motoko"
     },
