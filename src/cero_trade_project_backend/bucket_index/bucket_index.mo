@@ -207,7 +207,7 @@ actor class BucketIndex() = this {
     };
   };
 
-  // ================================================================================== //
+  // ======================================================================================================== //
 
   /// add file to [bucketDirectory] collection
   public shared({ caller }) func addFile(bucketId: T.BucketId, file: T.ArrayFile) : async() {

@@ -20,6 +20,7 @@ import TransactionIndex "canister:transaction_index";
 import Marketplace "canister:marketplace";
 import Statistics "canister:statistics";
 import NotificationIndex "canister:notification_index";
+import BucketIndex "canister:notification_index";
 
 // interfaces
 import IC_MANAGEMENT "../ic_management_canister_interface";
@@ -37,7 +38,7 @@ actor class Agent() = this {
   /// login user into Cero Trade
   public shared({ caller }) func login(): async() {
     // WARN just for debug
-    Debug.print(Principal.toText(caller));
+    Debug.print("logged user with principal --> " # Principal.toText(caller));
 
     let exists = await UserIndex.checkPrincipal(caller);
     if (not exists) throw Error.reject(notExists);
@@ -75,6 +76,7 @@ actor class Agent() = this {
     await TokenIndex.registerControllers();
     await TransactionIndex.registerControllers();
     await NotificationIndex.registerControllers();
+    await BucketIndex.registerControllers();
   };
 
   /// register a canister wasm module
@@ -86,6 +88,7 @@ actor class Agent() = this {
       case(#users("users")) await UserIndex.registerWasmArray();
       case(#transactions("transactions")) await TransactionIndex.registerWasmArray();
       case(#notifications("notifications")) await NotificationIndex.registerWasmArray();
+      case(#bucket("bucket")) await BucketIndex.registerWasmArray();
       case _ throw Error.reject("Module name doesn't exists");
     };
   };

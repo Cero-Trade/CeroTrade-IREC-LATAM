@@ -10,16 +10,14 @@ import Error "mo:base/Error";
 import Array "mo:base/Array";
 import Iter "mo:base/Iter";
 
+// interfaces
+import HTTP "./http_service/http_service_interface";
+
 // types
 import ENV "./env";
-import HT "./http_service/http_service_types";
 
 module IC_MANAGEMENT_CANISTER_INTERFACE {
   public let ic : IC = actor ("aaaaa-aa");
-
-  public type HttpService = actor {
-    get: ({ url: Text; port: ?Text; headers: [HT.HttpHeader]; }) -> async Text;
-  };
 
   public func getControllers(canister_id: Principal): async ?[Principal] {
     let status = await ic.canister_status({ canister_id });
@@ -47,8 +45,6 @@ module IC_MANAGEMENT_CANISTER_INTERFACE {
   public let LOW_MEMORY_LIMIT: Nat = 50000;
 
   public func getWasmModule(moduleName: WasmModuleName): async Blob {
-    let httpService: HttpService = actor (ENV.CANISTER_ID_HTTP_SERVICE);
-
     let wasmModuleName = switch(moduleName) {
       case(#token(value)) value;
       case(#users(value)) value;
@@ -61,9 +57,10 @@ module IC_MANAGEMENT_CANISTER_INTERFACE {
       case("ic") "main";
       case _ "develop";
     };
-    let wasmModule = await httpService.get({
+    let wasmModule = await HTTP.canister.get({
       url = "https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # branch # "/wasm_modules/" # wasmModuleName # ".json";
       port = null;
+      uid = null;
       headers = []
     });
 

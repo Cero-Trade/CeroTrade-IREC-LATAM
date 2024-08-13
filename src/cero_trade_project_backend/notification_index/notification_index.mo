@@ -12,16 +12,13 @@ import Error "mo:base/Error";
 import Serde "mo:serde";
 import Debug "mo:base/Debug";
 
-// canisters
-import HttpService "canister:http_service";
-
 // interfaces
-import IC_MANAGEMENT "../ic_management_canister_interface";
 import Notifications "../notifications/notifications_interface";
+import IC_MANAGEMENT "../ic_management_canister_interface";
+import HTTP "../http_service/http_service_interface";
 
 // types
 import T "../types";
-import HT "../http_service/http_service_types";
 import ENV "../env";
 
 actor class NotificationIndex() = this {
@@ -179,6 +176,8 @@ actor class NotificationIndex() = this {
     return canister_id
   };
 
+  // ======================================================================================================== //
+
   /// add notification to [notificationsDirectory] collection
   public shared({ caller }) func addNotification(receiverToken: T.UserToken, triggerToken: ?T.UserToken, notification: T.NotificationInfo) : async() {
     _callValidation(caller);
@@ -218,9 +217,10 @@ actor class NotificationIndex() = this {
       let notificationId = await Notifications.canister(cid).addNotification(notification);
 
       // add notification to receiver user
-      let _ = await HttpService.post({
-        url = HT.apiUrl # "users/add-notification";
+      let _ = await HTTP.canister.post({
+        url = HTTP.apiUrl # "users/add-notification";
         port = null;
+        uid = null;
         headers = [];
         bodyJson = switch(Serde.JSON.toText(to_candid({ token = receiverToken; notification = notificationId }), ["token", "notification"], null)) {
           case(#err(error)) throw Error.reject("Cannot serialize data");
@@ -232,9 +232,10 @@ actor class NotificationIndex() = this {
         case(null) {};
         case(?token) {
           // add notification to trigger user
-          let _ = await HttpService.post({
-            url = HT.apiUrl # "users/add-notification";
+          let _ = await HTTP.canister.post({
+            url = HTTP.apiUrl # "users/add-notification";
             port = null;
+            uid = null;
             headers = [];
             bodyJson = switch(Serde.JSON.toText(to_candid({ token; notification = notificationId }), ["token", "notification"], null)) {
               case(#err(error)) throw Error.reject("Cannot serialize data");
@@ -259,9 +260,10 @@ actor class NotificationIndex() = this {
   public shared({ caller }) func updateGeneralNotifications(token: T.UserToken, notificationIds: [T.NotificationId]) : async() {
     _callValidation(caller);
 
-    let notificationIdsJson = await HttpService.get({
-      url = HT.apiUrl # "users/notifications/" # token;
+    let notificationIdsJson = await HTTP.canister.get({
+      url = HTTP.apiUrl # "users/notifications/" # token;
       port = null;
+      uid = null;
       headers = [];
     });
 
@@ -303,9 +305,10 @@ actor class NotificationIndex() = this {
   public shared({ caller }) func clearGeneralNotifications(token: T.UserToken, notificationIds: [T.NotificationId]) : async() {
     _callValidation(caller);
 
-    let notificationIdsJson = await HttpService.get({
-      url = HT.apiUrl # "users/notifications/" # token;
+    let notificationIdsJson = await HTTP.canister.get({
+      url = HTTP.apiUrl # "users/notifications/" # token;
       port = null;
+      uid = null;
       headers = [];
     });
 
@@ -337,9 +340,10 @@ actor class NotificationIndex() = this {
 
       if (filteredIds.size() > 0) {
         // clear notifications from records
-        let _ = await HttpService.post({
-            url = HT.apiUrl # "users/clear-notifications";
+        let _ = await HTTP.canister.post({
+            url = HTTP.apiUrl # "users/clear-notifications";
             port = null;
+            uid = null;
             headers = [];
             bodyJson = switch(Serde.JSON.toText(to_candid({ token; notifications = filteredIds }), ["token", "notifications"], null)) {
               case(#err(error)) throw Error.reject("Cannot serialize data");
@@ -395,18 +399,20 @@ actor class NotificationIndex() = this {
     let queryParameter = "?id=" # notification.id;
 
     // checkout user notification existance
-    let jsonResponse = await HttpService.get({
-      url = HT.apiUrl # "users/notification/" # userToken # queryParameter;
+    let jsonResponse = await HTTP.canister.get({
+      url = HTTP.apiUrl # "users/notification/" # userToken # queryParameter;
       port = null;
+      uid = null;
       headers = [];
     });
     let userNotificationExists: Bool = Text.contains(jsonResponse, #text "true");
     if (not userNotificationExists) throw Error.reject("notification id provided not match with user notifications");
 
     // remove user notification register
-    let _ = await HttpService.post({
-        url = HT.apiUrl # "users/clear-notifications";
+    let _ = await HTTP.canister.post({
+        url = HTTP.apiUrl # "users/clear-notifications";
         port = null;
+        uid = null;
         headers = [];
         bodyJson = switch(Serde.JSON.toText(to_candid({ token = userToken; notifications = [notification.id] }), ["token", "notifications"], null)) {
           case(#err(error)) throw Error.reject("Cannot serialize data");
@@ -415,9 +421,10 @@ actor class NotificationIndex() = this {
       });
 
     // checkout other user notification existance
-    let otherJsonResponse = await HttpService.get({
-      url = HT.apiUrl # "users/notification/" # otherUserToken # queryParameter;
+    let otherJsonResponse = await HTTP.canister.get({
+      url = HTTP.apiUrl # "users/notification/" # otherUserToken # queryParameter;
       port = null;
+      uid = null;
       headers = [];
     });
     let otherUserNotificationExists = Text.contains(otherJsonResponse, #text "true");
@@ -477,9 +484,10 @@ actor class NotificationIndex() = this {
     };
 
     let queryParameters = "?page=" # pageParam # "&length=" # lengthParam;
-    let notificationIdsJson = await HttpService.get({
-      url = HT.apiUrl # "users/notifications/" # token # queryParameters;
+    let notificationIdsJson = await HTTP.canister.get({
+      url = HTTP.apiUrl # "users/notifications/" # token # queryParameters;
       port = null;
+      uid = null;
       headers = [];
     });
 

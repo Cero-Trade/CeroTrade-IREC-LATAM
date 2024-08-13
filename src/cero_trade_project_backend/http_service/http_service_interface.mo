@@ -1,20 +1,16 @@
 import Error "mo:base/Error";
 import Nat "mo:base/Nat";
+import Principal "mo:base/Principal";
+
+// types
 import ENV "../env";
 
-module {
+module HttpServiceInterface {
+  public let canister: HttpService = actor (ENV.CANISTER_ID_HTTP_SERVICE);
   public let apiUrl: Text = ENV.VITE_API_URL;
   public let headerName = "http_service_canister";
 
-
   public func tokenAuth(token: Text): { name: Text; value: Text; } {
-    { name = "token"; value = token; }
-  };
-
-  public func tokenAuthFromUser(uid: Principal): async { name: Text; value: Text; } {
-    let userIndex: UserIndex = actor (ENV.CANISTER_ID_USER_INDEX);
-    let token = await userIndex.getUserToken(uid);
-
     { name = "token"; value = token; }
   };
 
@@ -101,8 +97,8 @@ module {
     http_request : HttpRequestArgs -> async HttpResponsePayload;
   };
 
-
-  public type UserIndex = actor {
-    getUserToken : (uid: Principal) -> async Text;
+  public type HttpService = actor {
+    get: ({ url: Text; port: ?Text; uid: ?Principal; headers: [HttpHeader]; }) -> async Text;
+    post: ({ url: Text; port: ?Text; uid: ?Principal; headers: [HttpHeader]; bodyJson: Text }) -> async Text;
   };
 }

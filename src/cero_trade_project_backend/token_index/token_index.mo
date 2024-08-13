@@ -18,17 +18,14 @@ import Debug "mo:base/Debug";
 
 import ICRC1 "mo:icrc1-mo/ICRC1";
 
-// canisters
-import HttpService "canister:http_service";
-
 // interfaces
-import IC_MANAGEMENT "../ic_management_canister_interface";
 import Token "../token/token_interface";
+import IC_MANAGEMENT "../ic_management_canister_interface";
 import ICPTypes "../ICPTypes";
+import HTTP "../http_service/http_service_interface";
 
 // types
 import T "../types";
-import HT "../http_service/http_service_types";
 import ENV "../env";
 
 shared({ caller = owner }) actor class TokenIndex() = this {
@@ -320,6 +317,8 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     };
   };
 
+  // ======================================================================================================== //
+
   /// get canister id that allow current token
   public query func getTokenCanister(tokenId: T.TokenId): async T.CanisterId {
     switch (tokenDirectory.get(tokenId)) {
@@ -339,12 +338,11 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   public shared({ caller }) func importUserTokens(uid: T.UID): async [{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }] {
     _callValidation(caller);
 
-    let tokenHeader = await HT.tokenAuthFromUser(uid);
-
-    let assetsJson = await HttpService.get({
-      url = HT.apiUrl # "transactions/fetchByUser";
+    let assetsJson = await HTTP.canister.get({
+      url = HTTP.apiUrl # "transactions/fetchByUser";
       port = null;
-      headers = [tokenHeader];
+      uid = ?uid;
+      headers = [];
     });
 
     // used hashmap to find faster elements using Hash
@@ -417,7 +415,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
 
     if (transactions.size() > 0) {
       // update user portfolio
-      await updatePortfolio(tokenHeader, Array.map<{
+      await updatePortfolio(uid, Array.map<{
         mwh: T.TokenAmount;
         assetInfo: T.AssetInfo
       }, T.TokenId>(transactions, func x = x.assetInfo.tokenId)/* , { delete = false } */);
@@ -430,9 +428,10 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, amount: T.TokenAmount): async T.TxIndex {
     _callValidation(caller);
 
-    let assetsJson = await HttpService.get({
-      url = HT.apiUrl # "assets/" # tokenId;
+    let assetsJson = await HTTP.canister.get({
+      url = HTTP.apiUrl # "assets/" # tokenId;
       port = null;
+      uid = null;
       headers = [];
     });
 
@@ -477,7 +476,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     };
 
     // update user portfolio
-    await updatePortfolio(await HT.tokenAuthFromUser(recipent), [tokenId]/* , { delete = false } */);
+    await updatePortfolio(recipent, [tokenId]/* , { delete = false } */);
 
     txIndex
   };
@@ -546,10 +545,11 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     _callValidation(caller);
 
     // fetch user to get token ids
-    let portfolioJson = await HttpService.get({
-      url = HT.apiUrl # "users/portfolio";
+    let portfolioJson = await HTTP.canister.get({
+      url = HTTP.apiUrl # "users/portfolio";
       port = null;
-      headers = [await HT.tokenAuthFromUser(uid)];
+      uid = ?uid;
+      headers = [];
     });
 
     let portfolioIds: { tokenIds: [T.TokenId]; txIds: [T.TransactionId] } = switch(Serde.JSON.fromText(portfolioJson, null)) {
@@ -641,12 +641,13 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   };
 
   /// update user portfolio
-  private func updatePortfolio(tokenHeader: { name: Text; value: Text; }, tokenIds: [T.TokenId]/* , { delete: Bool } */) : async() {
+  private func updatePortfolio(uid: T.UID, tokenIds: [T.TokenId]/* , { delete: Bool } */) : async() {
 
-    let _ = await HttpService.post({
-        url = HT.apiUrl # "users/portfolio";
+    let _ = await HTTP.canister.post({
+        url = HTTP.apiUrl # "users/portfolio";
         port = null;
-        headers = [tokenHeader];
+        uid = ?uid;
+        headers = [];
         bodyJson = switch(Serde.JSON.toText(to_candid({
           tokenIds;
         }), ["tokenIds"], null)) {
@@ -785,7 +786,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     };
 
     // store token register on profile
-    await updatePortfolio(await HT.tokenAuthFromUser(buyer), [tokenId]/* , { delete = false } */);
+    await updatePortfolio(buyer, [tokenId]/* , { delete = false } */);
 
     txIndex
   };
@@ -851,11 +852,11 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     // - items: Un url identificador de los items. Esta información debe traerse al momento de hacer el importe de los IRECs.
     // - periodStart y periodEnd: Las fechas de inicio y fin del periodo de redención. Esto debe ser un input del usuario.
     // - locale: El idioma en que se quiere obtener el "redemption statement" (ej. "en", "es"). Este debe ser un input del usuario.
-    let tokenHeader = await HT.tokenAuthFromUser(notification.receivedBy);
-    let pdfJson = await HttpService.post({
-        url = HT.apiUrl # "redemption";
+    let pdfJson = await HTTP.canister.post({
+        url = HTTP.apiUrl # "redemption";
         port = null;
-        headers = [tokenHeader];
+        uid = ?notification.receivedBy;
+        headers = [];
         bodyJson = switch(Serde.JSON.toText(to_candid({
           volume = amount;
           beneficiary = Principal.toText(notification.receivedBy);
@@ -920,11 +921,11 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     // - items: Un url identificador de los items. Esta información debe traerse al momento de hacer el importe de los IRECs.
     // - periodStart y periodEnd: Las fechas de inicio y fin del periodo de redención. Esto debe ser un input del usuario.
     // - locale: El idioma en que se quiere obtener el "redemption statement" (ej. "en", "es"). Este debe ser un input del usuario.
-    let tokenHeader = await HT.tokenAuthFromUser(owner);
-    let pdfJson = await HttpService.post({
-        url = HT.apiUrl # "redemption";
+    let pdfJson = await HTTP.canister.post({
+        url = HTTP.apiUrl # "redemption";
         port = null;
-        headers = [tokenHeader];
+        uid = ?owner;
+        headers = [];
         bodyJson = switch(Serde.JSON.toText(to_candid({
           volume = amount;
           beneficiary = owner;

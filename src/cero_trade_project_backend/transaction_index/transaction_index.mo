@@ -3,9 +3,7 @@ import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import Cycles "mo:base/ExperimentalCycles";
 import Blob "mo:base/Blob";
-import Array "mo:base/Array";
 import Nat "mo:base/Nat";
-import Nat8 "mo:base/Nat8";
 import Iter "mo:base/Iter";
 import Error "mo:base/Error";
 import Debug "mo:base/Debug";
@@ -191,6 +189,8 @@ actor class TransactionIndex() = this {
       throw Error.reject(Error.message(error));
     }
   };
+
+  // ======================================================================================================== //
 
   /// register [transactionsDirectory] collection
   public shared({ caller }) func registerTransaction(txInfo: T.TransactionInfo) : async T.TransactionId {

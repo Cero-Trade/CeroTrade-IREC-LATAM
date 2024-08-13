@@ -2,26 +2,26 @@
   "canisters": {
     "agent": {
       "dependencies": [
-        "http_service",
         "users",
         "user_index",
         "token_index",
         "transaction_index",
         "marketplace",
         "statistics",
-        "notification_index"
+        "notification_index",
+        "bucket_index"
       ],
       "main": "src/cero_trade_project_backend/agent/agent.mo",
-      "type": "motoko"
-    },
-    "bucket_index": {
-      "main": "src/cero_trade_project_backend/bucket_index/bucket_index.mo",
       "type": "motoko"
     },
     "bucket": {
       "args": "-v --incremental-gc",
       "gzip": true,
       "main": "src/cero_trade_project_backend/bucket/bucket.mo",
+      "type": "motoko"
+    },
+    "bucket_index": {
+      "main": "src/cero_trade_project_backend/bucket_index/bucket_index.mo",
       "type": "motoko"
     },
     "cero_trade_project_frontend": {
@@ -38,6 +38,9 @@
       "type": "assets"
     },
     "http_service": {
+      "dependencies": [
+        "user_index"
+      ],
       "main": "src/cero_trade_project_backend/http_service/http_service.mo",
       "type": "motoko"
     },
@@ -153,9 +156,6 @@
       "wasm": ""
     },
     "notification_index": {
-      "dependencies": [
-        "http_service"
-      ],
       "main": "src/cero_trade_project_backend/notification_index/notification_index.mo",
       "type": "motoko"
     },
@@ -179,9 +179,6 @@
       "type": "motoko"
     },
     "token_index": {
-      "dependencies": [
-        "http_service"
-      ],
       "main": "src/cero_trade_project_backend/token_index/token_index.mo",
       "type": "motoko"
     },
@@ -196,9 +193,6 @@
       "type": "motoko"
     },
     "user_index": {
-      "dependencies": [
-        "http_service"
-      ],
       "main": "src/cero_trade_project_backend/user_index/user_index.mo",
       "type": "motoko"
     },
