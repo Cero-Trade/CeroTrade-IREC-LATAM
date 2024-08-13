@@ -153,6 +153,7 @@ module {
     priceE8S: ?Price;
     date: Text;
     method: TxMethod;
+    redemptionPdf: ?ArrayFile;
   };
 
   public type TransactionHistoryInfo = {
@@ -166,6 +167,7 @@ module {
     priceE8S: ?Price;
     date: Text;
     method: TxMethod;
+    redemptionPdf: ?ArrayFile;
   };
 
   public type TxType = {

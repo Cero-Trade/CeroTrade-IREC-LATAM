@@ -489,6 +489,7 @@ actor class Agent() = this {
       priceE8S = ?totalPriceE8S;
       date = DateTime.now().toText();
       method = #blockchainTransfer("blockchainTransfer");
+      redemptionPdf = null;
     };
 
     // register transaction
@@ -541,6 +542,7 @@ actor class Agent() = this {
       priceE8S = ?priceE8S;
       date = DateTime.now().toText();
       method = #blockchainTransfer("blockchainTransfer");
+      redemptionPdf = null;
     };
 
     // register transaction
@@ -590,6 +592,7 @@ actor class Agent() = this {
       priceE8S = null;
       date = DateTime.now().toText();
       method = #blockchainTransfer("blockchainTransfer");
+      redemptionPdf = null;
     };
 
     // register transaction
@@ -668,7 +671,7 @@ actor class Agent() = this {
     };
 
     // redeem tokens
-    let txIndex = await TokenIndex.redeemRequested(notification);
+    let { txIndex; redemptionPdf } = await TokenIndex.redeemRequested(notification);
 
     // build transaction
     let txInfo: T.TransactionInfo = {
@@ -683,6 +686,7 @@ actor class Agent() = this {
       priceE8S = ?{ e8s = T.getCeroComission() + 20_000 };
       date = DateTime.now().toText();
       method = #blockchainTransfer("blockchainTransfer");
+      redemptionPdf = ?redemptionPdf;
     };
 
     // register transaction
@@ -715,7 +719,7 @@ actor class Agent() = this {
     if (availableTokens < quantity) throw Error.reject("Not enough tokens");
 
     // ask token to burn the tokens
-    let txIndex = await TokenIndex.redeem(caller, tokenId, quantity, periodStart, periodEnd, locale);
+    let { txIndex; redemptionPdf; } = await TokenIndex.redeem(caller, tokenId, quantity, periodStart, periodEnd, locale);
 
     // build transaction
     let txInfo: T.TransactionInfo = {
@@ -730,6 +734,7 @@ actor class Agent() = this {
       priceE8S = ?{ e8s = T.getCeroComission() + 20_000 };
       date = DateTime.now().toText();
       method = #blockchainTransfer("blockchainTransfer");
+      redemptionPdf = ?redemptionPdf;
     };
 
     // register transaction
@@ -806,6 +811,7 @@ actor class Agent() = this {
         method = item.method;
         from = item.from;
         to = item.to;
+        redemptionPdf = item.redemptionPdf;
         assetInfo;
       }
     });

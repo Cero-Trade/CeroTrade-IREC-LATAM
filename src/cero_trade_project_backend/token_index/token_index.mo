@@ -819,7 +819,10 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     };
   };
 
-  public shared({ caller }) func redeemRequested(notification: T.NotificationInfo): async T.TxIndex {
+  public shared({ caller }) func redeemRequested(notification: T.NotificationInfo): async {
+    txIndex: T.TxIndex;
+    redemptionPdf: T.ArrayFile;
+  } {
     _callValidation(caller);
 
     let tokenId = switch(notification.tokenId) {
@@ -829,6 +832,53 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     let amount = switch(notification.quantity) {
       case(null) throw Error.reject("quantity not provided");
       case(?value) value;
+    };
+    let periodStart = switch(notification.redeemPeriodStart) {
+      case(null) throw Error.reject("redeemPeriodStart not provided");
+      case(?value) value;
+    };
+    let periodEnd = switch(notification.redeemPeriodEnd) {
+      case(null) throw Error.reject("redeemPeriodEnd not provided");
+      case(?value) value;
+    };
+    let locale = switch(notification.redeemLocale) {
+      case(null) throw Error.reject("redeemLocale not provided");
+      case(?value) value;
+    };
+
+    // - volume: El volumen de I-RECs que se quiere redimir.
+    // - beneficiary: El identificador del beneficiario de la redención.
+    // - items: Un url identificador de los items. Esta información debe traerse al momento de hacer el importe de los IRECs.
+    // - periodStart y periodEnd: Las fechas de inicio y fin del periodo de redención. Esto debe ser un input del usuario.
+    // - locale: El idioma en que se quiere obtener el "redemption statement" (ej. "en", "es"). Este debe ser un input del usuario.
+    let tokenHeader = await HT.tokenAuthFromUser(notification.receivedBy);
+    let pdfJson = await HttpService.post({
+        url = HT.apiUrl # "redemption";
+        port = null;
+        headers = [tokenHeader];
+        bodyJson = switch(Serde.JSON.toText(to_candid({
+          volume = amount;
+          beneficiary = Principal.toText(notification.receivedBy);
+          items = tokenId;
+          periodStart;
+          periodEnd;
+          locale;
+        }), ["volume", "beneficiary", "items", "periodStart", "periodEnd", "locale"], null)) {
+          case(#err(error)) throw Error.reject("Cannot serialize data");
+          case(#ok(value)) value;
+        };
+      });
+
+    let redemptionPdf: T.ArrayFile = switch(Serde.JSON.fromText(pdfJson, null)) {
+      case(#err(_)) throw Error.reject("cannot serialize asset data");
+      case(#ok(blob)) {
+        let response: ?{ pdf: T.ArrayFile } = from_candid(blob);
+
+        switch(response) {
+          case(null) throw Error.reject("cannot serialize PDF file data");
+          case(?value) value.pdf;
+        };
+      };
     };
 
     let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
@@ -842,7 +892,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       });
     };
 
-    switch(transferResult) {
+    let txIndex = switch(transferResult) {
       case(#Err(error)) throw Error.reject(switch(error) {
         case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
         case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
@@ -855,9 +905,14 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       });
       case(#Ok(value)) value;
     };
+
+    { txIndex; redemptionPdf; }
   };
 
-  public shared({ caller }) func redeem(owner: T.UID, tokenId: T.TokenId, amount: T.TokenAmount, periodStart: Text, periodEnd: Text, locale: Text): async T.TxIndex {
+  public shared({ caller }) func redeem(owner: T.UID, tokenId: T.TokenId, amount: T.TokenAmount, periodStart: Text, periodEnd: Text, locale: Text): async {
+    txIndex: T.TxIndex;
+    redemptionPdf: T.ArrayFile;
+  } {
     _callValidation(caller);
 
     // - volume: El volumen de I-RECs que se quiere redimir.
@@ -866,7 +921,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     // - periodStart y periodEnd: Las fechas de inicio y fin del periodo de redención. Esto debe ser un input del usuario.
     // - locale: El idioma en que se quiere obtener el "redemption statement" (ej. "en", "es"). Este debe ser un input del usuario.
     let tokenHeader = await HT.tokenAuthFromUser(owner);
-    let _pdf = await HttpService.post({
+    let pdfJson = await HttpService.post({
         url = HT.apiUrl # "redemption";
         port = null;
         headers = [tokenHeader];
@@ -876,11 +931,24 @@ shared({ caller = owner }) actor class TokenIndex() = this {
           items = tokenId;
           periodStart;
           periodEnd;
-        }), ["amount", "owner", "tokenId", "periodStart", "periodEnd"], null)) {
+          locale;
+        }), ["volume", "beneficiary", "items", "periodStart", "periodEnd", "locale"], null)) {
           case(#err(error)) throw Error.reject("Cannot serialize data");
           case(#ok(value)) value;
         };
       });
+
+    let redemptionPdf: T.ArrayFile = switch(Serde.JSON.fromText(pdfJson, null)) {
+      case(#err(_)) throw Error.reject("cannot serialize asset data");
+      case(#ok(blob)) {
+        let response: ?{ pdf: T.ArrayFile } = from_candid(blob);
+
+        switch(response) {
+          case(null) throw Error.reject("cannot serialize PDF file data");
+          case(?value) value.pdf;
+        };
+      };
+    };
 
     let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
@@ -893,7 +961,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       });
     };
 
-    switch(transferResult) {
+    let txIndex = switch(transferResult) {
       case(#Err(error)) throw Error.reject(switch(error) {
         case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
         case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
@@ -906,5 +974,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       });
       case(#Ok(value)) value;
     };
+
+    { txIndex; redemptionPdf }
   };
 }

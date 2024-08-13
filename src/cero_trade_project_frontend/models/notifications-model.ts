@@ -33,4 +33,8 @@ export interface NotificationInfo {
   receivedBy: Principal;
   triggeredBy?: Principal;
   quantity?: number;
+
+  redeemPeriodStart?: string;
+  redeemPeriodEnd?: string;
+  redeemLocale?: string;
 }

@@ -186,6 +186,7 @@ export class AgentCanister {
         item.txType = Object.values(item.txType)[0] as TxTypeDef
         item.to = Object.values(item.to)[0] as string
         item.tokenAmount = Number(item.tokenAmount)
+        item.redemptionPdf = await getUrlFromArrayBuffer(item.redemptionPdf)
       }
 
       return response
@@ -427,7 +428,9 @@ export class AgentCanister {
     try {
       const tx = await agent().purchaseToken(tokenId, recipent, amount) as TransactionInfo
       tx.txType = Object.values(tx.txType)[0] as TxTypeDef
-      tx.to = Object.values(tx.to)[0] as string
+      tx.to = tx.to[0] as string
+      tx.method = Object.values(tx.method)[0] as TxMethodDef
+      tx.priceE8S = tx.priceE8S[0] ? convertE8SToICP(Number(tx.priceE8S[0]['e8s'])) : null
 
       return tx
     } catch (error) {
@@ -488,7 +491,9 @@ export class AgentCanister {
     try {
       const tx = await agent().redeemToken(tokenId, amount, periodStart, periodEnd, locale) as TransactionInfo
       tx.txType = Object.values(tx.txType)[0] as TxTypeDef
-      tx.to = Object.values(tx.to)[0] as string
+      tx.to = tx.to[0] as string
+      tx.method = Object.values(tx.method)[0] as TxMethodDef
+      tx.priceE8S = tx.priceE8S[0] ? convertE8SToICP(Number(tx.priceE8S[0]['e8s'])) : null
 
       return tx
     } catch (error) {
@@ -533,6 +538,7 @@ export class AgentCanister {
         item.txType = Object.values(item.txType)[0] as TxTypeDef
         item.method = Object.values(item.method)[0] as TxMethodDef
         item.date = new Date(item.date)
+        item.redemptionPdf = await getUrlFromArrayBuffer(item.redemptionPdf)
 
         // get nullable object
         item.to = item.to[0]
