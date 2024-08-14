@@ -336,7 +336,7 @@ actor class Agent() = this {
                 longitude = "1.0";
                 address = "address anywhere";
                 stateProvince = "chile";
-                country = "chile";
+                country = "CL";
               };
               dates = ["2024-04-29T19:43:34.000Z", "2024-05-29T19:48:31.000Z", "2024-05-29T19:48:31.000Z"];
             };
@@ -498,8 +498,8 @@ actor class Agent() = this {
     // register transaction
     let txId = await TransactionIndex.registerTransaction(txInfo);
 
-    // store to caller and recipent
-    await UserIndex.updateTransactions(caller, ?recipent, txId);
+    // // store to caller and recipent
+    // await UserIndex.updateTransactions(caller, ?recipent, txId);
 
     // take token off marketplace reference
     await Marketplace.takeOffSale(tokenId, tokenAmount, recipent);
@@ -551,8 +551,8 @@ actor class Agent() = this {
     // register transaction
     let txId = await TransactionIndex.registerTransaction(txInfo);
 
-    // store to caller
-    await UserIndex.updateTransactions(caller, null, txId);
+    // // store to caller
+    // await UserIndex.updateTransactions(caller, null, txId);
 
     // put tokens on marketplace reference
     await Marketplace.putOnSale(tokenId, quantity, caller, priceE8S);
@@ -601,8 +601,8 @@ actor class Agent() = this {
     // register transaction
     let txId = await TransactionIndex.registerTransaction(txInfo);
 
-    // store to caller
-    await UserIndex.updateTransactions(caller, null, txId);
+    // // store to caller
+    // await UserIndex.updateTransactions(caller, null, txId);
 
     // take off tokens on marketplace reference
     await Marketplace.takeOffSale(tokenId, quantity, caller);
@@ -695,8 +695,8 @@ actor class Agent() = this {
     // register transaction
     let txId = await TransactionIndex.registerTransaction(txInfo);
 
-    // update receiver and trigger user transactions
-    await UserIndex.updateTransactions(notification.receivedBy, ?triggeredBy, txId);
+    // // update receiver and trigger user transactions
+    // await UserIndex.updateTransactions(notification.receivedBy, ?triggeredBy, txId);
 
     // change notification status
     let _ = await _updateEventNotification(caller, notificationId, ?#accepted("accepted"));
@@ -743,8 +743,8 @@ actor class Agent() = this {
     // register transaction
     let txId = await TransactionIndex.registerTransaction(txInfo);
 
-    // store to caller
-    await UserIndex.updateTransactions(caller, null, txId);
+    // // store to caller
+    // await UserIndex.updateTransactions(caller, null, txId);
 
     // register asset statistic
     await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = ?quantity });

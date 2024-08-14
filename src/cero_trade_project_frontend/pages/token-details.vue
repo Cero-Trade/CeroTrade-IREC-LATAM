@@ -1565,7 +1565,6 @@ async function getBeneficiaries() {
   } catch (error) {
     beneficiaries.value = []
     console.error(error);
-    toast.error(error)
   }
 }
 

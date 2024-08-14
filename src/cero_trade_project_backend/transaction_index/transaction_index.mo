@@ -237,6 +237,8 @@ actor class TransactionIndex() = this {
   public shared({ caller }) func getTransactionsById(txIds: [T.TransactionId], txType: ?T.TxType, priceRange: ?[T.Price], mwhRange: ?[T.TokenAmount], method: ?T.TxMethod, rangeDates: ?[Text]) : async [T.TransactionInfo] {
     _callValidation(caller);
 
+    let txIds = Iter.toArray(transactionsDirectory.keys());
+
     let txs = Buffer.Buffer<T.TransactionInfo>(50);
 
     Debug.print(debug_show ("before getTransactionsById: " # Nat.toText(Cycles.balance())));

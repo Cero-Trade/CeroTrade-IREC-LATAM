@@ -418,13 +418,13 @@ shared({ caller = owner }) actor class TokenIndex() = this {
 
     let transactions = Iter.toArray(assetsMetadata.vals());
 
-    if (transactions.size() > 0) {
-      // update user portfolio
-      await updatePortfolio(uid, Array.map<{
-        mwh: T.TokenAmount;
-        assetInfo: T.AssetInfo
-      }, T.TokenId>(transactions, func x = x.assetInfo.tokenId)/* , { delete = false } */);
-    };
+    // if (transactions.size() > 0) {
+    //   // update user portfolio
+    //   await updatePortfolio(uid, Array.map<{
+    //     mwh: T.TokenAmount;
+    //     assetInfo: T.AssetInfo
+    //   }, T.TokenId>(transactions, func x = x.assetInfo.tokenId)/* , { delete = false } */);
+    // };
 
     transactions
   };
@@ -433,24 +433,36 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, amount: T.TokenAmount): async T.TxIndex {
     _callValidation(caller);
 
-    let assetsJson = await HTTP.canister.get({
-      url = HTTP.apiUrl # "assets/" # tokenId;
-      port = null;
-      uid = null;
-      headers = [];
-    });
-
-    let assetMetadata: T.AssetInfo = switch(Serde.JSON.fromText(assetsJson, null)) {
-      case(#err(_)) throw Error.reject("cannot serialize asset data");
-      case(#ok(blob)) {
-        let assetResponse: ?AssetResponse = from_candid(blob);
-
-        switch(assetResponse) {
-          case(null) throw Error.reject("cannot serialize asset data");
-          case(?value) await buildAssetInfo(value);
-        };
-      };
+    let assetType: Text = switch(tokenId) {
+      case("1") "Solar";
+      case("2") "Wind";
+      case("3") "Hydro-Electric";
+      case("4") "Thermal";
+      case _ "Other";
     };
+
+    let assetMetadata: T.AssetInfo = await buildAssetInfo({
+      tokenId;
+      startDate = "2024-04-29T19:43:34.000Z";
+      endDate = "2024-05-29T19:48:31.000Z";
+      co2Emission = "11.22";
+      radioactivityEmnission = "10.20";
+      volumeProduced = "100000";
+      // deviceDetails
+      name = "machine";
+      deviceType = assetType;
+      description = "description";
+      // specifications
+      deviceCode = "200";
+      capacity = "100000";
+      location = "location";
+      latitude = "0.1";
+      longitude = "1.0";
+      address = "address";
+      stateProvince = "chile";
+      country = "CL";
+      dates = ["2024-04-29T19:43:34.000Z", "2024-05-29T19:48:31.000Z", "2024-05-29T19:48:31.000Z"];
+    });
 
     // get token or register in case doesnt exists
     let cid = await registerToken(assetMetadata);
@@ -549,24 +561,28 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   } {
     _callValidation(caller);
 
-    // fetch user to get token ids
-    let portfolioJson = await HTTP.canister.get({
-      url = HTTP.apiUrl # "users/portfolio";
-      port = null;
-      uid = ?uid;
-      headers = [];
-    });
+    // // fetch user to get token ids
+    // let portfolioJson = await HTTP.canister.get({
+    //   url = HTTP.apiUrl # "users/portfolio";
+    //   port = null;
+    //   uid = ?uid;
+    //   headers = [];
+    // });
 
-    let portfolioIds: { tokenIds: [T.TokenId]; txIds: [T.TransactionId] } = switch(Serde.JSON.fromText(portfolioJson, null)) {
-      case(#err(_)) throw Error.reject("cannot serialize asset data");
-      case(#ok(blob)) {
-        let portfolio: ?{ tokenIds: [T.TokenId]; txIds: [T.TransactionId] } = from_candid(blob);
+    // let portfolioIds: { tokenIds: [T.TokenId]; txIds: [T.TransactionId] } = switch(Serde.JSON.fromText(portfolioJson, null)) {
+    //   case(#err(_)) throw Error.reject("cannot serialize asset data");
+    //   case(#ok(blob)) {
+    //     let portfolio: ?{ tokenIds: [T.TokenId]; txIds: [T.TransactionId] } = from_candid(blob);
 
-        switch(portfolio) {
-          case(null) throw Error.reject("cannot serialize asset data");
-          case(?value) value;
-        };
-      };
+    //     switch(portfolio) {
+    //       case(null) throw Error.reject("cannot serialize asset data");
+    //       case(?value) value;
+    //     };
+    //   };
+    // };
+    let portfolioIds = {
+      tokenIds = Iter.toArray(tokenDirectory.keys());
+      txIds = [];
     };
 
     // define page based on statement
