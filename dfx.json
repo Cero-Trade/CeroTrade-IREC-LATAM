@@ -2,14 +2,13 @@
   "canisters": {
     "agent": {
       "dependencies": [
-        "users",
         "user_index",
         "token_index",
-        "transaction_index",
-        "marketplace",
-        "statistics",
         "notification_index",
-        "bucket_index"
+        "transaction_index",
+        "bucket_index",
+        "marketplace",
+        "statistics"
       ],
       "main": "src/cero_trade_project_backend/agent/agent.mo",
       "type": "motoko"
