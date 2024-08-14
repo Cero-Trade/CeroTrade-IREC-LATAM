@@ -317,6 +317,11 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     };
   };
 
+  public shared({ caller }) func getTokensInCeroTrade(): async [(T.TokenId, T.CanisterId)] {
+    IC_MANAGEMENT.adminValidation(caller, controllers);
+    Iter.toArray(tokenDirectory.entries())
+  };
+
   // ======================================================================================================== //
 
   /// get canister id that allow current token

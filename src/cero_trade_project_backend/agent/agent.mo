@@ -336,7 +336,7 @@ actor class Agent() = this {
                 longitude = "1.0";
                 address = "address anywhere";
                 stateProvince = "chile";
-                country = "chile";
+                country = "CL";
               };
               dates = ["2024-04-29T19:43:34.000Z", "2024-05-29T19:48:31.000Z", "2024-05-29T19:48:31.000Z"];
             };
