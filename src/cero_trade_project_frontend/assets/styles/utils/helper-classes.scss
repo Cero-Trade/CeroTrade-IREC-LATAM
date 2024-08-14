@@ -45,6 +45,12 @@
   }
 }
 
+//*- hidden -//
+.hidden {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
 //*- pixel border -//
 .pixelBorder {
   --c-size: 4.5px;

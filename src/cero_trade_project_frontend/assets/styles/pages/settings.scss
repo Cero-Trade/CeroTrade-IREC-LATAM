@@ -71,6 +71,21 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    
+    .div-radio-sell{
+      border: 1px solid #EAECF0;
+      border-radius: 10px;
+      padding: 5px 10px;
+      margin-block: 15px;
+      display: flex;
+      align-items: center;
+      position: relative;
+      cursor: pointer;
+
+      &.active {
+        border: 1px solid rgb(var(--v-theme-primary)) !important;
+      }
+    }
 
     .card-dialog-notification{
       width: 600px;
@@ -80,17 +95,6 @@
 
       .pl0-pr0-mobile{
         padding-inline: 0px!important;
-      }
-      
-      .div-radio-sell{
-        border: 1px solid #EAECF0;
-        border-radius: 10px;
-        padding: 5px 10px;
-        margin-block: 15px;
-        display: flex;
-        align-items: center;
-        position: relative;
-        cursor: pointer;
       }
 
       .tertiary{

@@ -1,14 +1,82 @@
 import HM = "mo:base/HashMap";
 import TM "mo:base/TrieMap";
 import Nat "mo:base/Nat";
+import Nat8 "mo:base/Nat8";
 import Nat64 "mo:base/Nat64";
 import Blob "mo:base/Blob";
 import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import Error "mo:base/Error";
 import Array "mo:base/Array";
+import Iter "mo:base/Iter";
+
+// interfaces
+import HTTP "./http_service/http_service_interface";
+
+// types
+import ENV "./env";
 
 module IC_MANAGEMENT_CANISTER_INTERFACE {
+  public let ic : IC = actor ("aaaaa-aa");
+
+  public func getControllers(canister_id: Principal): async ?[Principal] {
+    let status = await ic.canister_status({ canister_id });
+    status.settings.controllers
+  };
+
+  // global admin assert validation
+  public func adminValidation(caller: Principal, controllers: ?[Principal]) {
+    if (ENV.DFX_NETWORK != "ic") return assert true;
+
+    assert switch(controllers) {
+      case(null) true;
+      case(?value) Array.find<Principal>(value, func x = x == caller) != null;
+    };
+  };
+
+  public type WasmModuleName = {
+    #token: Text;
+    #users: Text;
+    #transactions: Text;
+    #notifications: Text;
+    #bucket: Text;
+  };
+
+  public let LOW_MEMORY_LIMIT: Nat = 50000;
+
+  public func getWasmModule(moduleName: WasmModuleName): async Blob {
+    let wasmModuleName = switch(moduleName) {
+      case(#token(value)) value;
+      case(#users(value)) value;
+      case(#transactions(value)) value;
+      case(#notifications(value)) value;
+      case(#bucket(value)) value;
+    };
+
+    let branch = switch(ENV.DFX_NETWORK) {
+      case("ic") "main";
+      case _ "develop";
+    };
+    let wasmModule = await HTTP.canister.get({
+      url = "https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # branch # "/wasm_modules/" # wasmModuleName # ".json";
+      port = null;
+      uid = null;
+      headers = []
+    });
+
+    let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
+    let wasm_array = Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
+      switch (Nat.fromText(part)) {
+        case null 0;
+        case (?n) n;
+      }
+    });
+    let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
+
+    // return wasm
+    Blob.fromArray(nums8);
+  };
+
   public type CanisterSettings = {
     controllers: ?[Principal];
     compute_allocation: ?Nat;

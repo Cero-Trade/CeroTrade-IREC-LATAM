@@ -1,3 +1,4 @@
+import Principal "mo:base/Principal";
 import Blob "mo:base/Blob";
 import Cycles "mo:base/ExperimentalCycles";
 import Array "mo:base/Array";
@@ -9,11 +10,28 @@ import Buffer "mo:base/Buffer";
 import Source "mo:uuid/async/SourceV4";
 import UUID "mo:uuid/UUID";
 
+// canisters
+import UserIndex "canister:user_index";
+
 // types
-import HT "./http_service_types";
+import T "../types";
+import ENV "../env";
+import HTTP "./http_service_interface";
 
 //Actor
 actor HttpService {
+  private func _callValidation(caller: Principal) {
+    let authorizedCanisters = [
+      ENV.CANISTER_ID_AGENT,
+      ENV.CANISTER_ID_USER_INDEX,
+      ENV.CANISTER_ID_TOKEN_INDEX,
+      ENV.CANISTER_ID_TRANSACTION_INDEX,
+      ENV.CANISTER_ID_NOTIFICATION_INDEX,
+      ENV.CANISTER_ID_BUCKET_INDEX,
+    ];
+
+    assert Array.find<Text>(authorizedCanisters, func x = Principal.fromText(x) == caller) != null;
+  };
 
   // Generate idempotency Key
   private func generateUUID() : async Text {
@@ -22,13 +40,18 @@ actor HttpService {
   };
 
   // get url host
-  private func getHost(url: Text): Text {
+  private func getHost(url: Text, port: ?Text): Text {
     let urlParts = Text.split(url, #char '/');
     let urlPartsList = Iter.toArray(urlParts);
 
     let host: Text = urlPartsList[2];
 
-    host # HT.port
+    let hostingPort = switch(port) {
+      case(null) ":443";
+      case(?value) value;
+    };
+
+    host # hostingPort
   };
 
   private func _extractHost(url: Text): Text {
@@ -43,8 +66,8 @@ actor HttpService {
   };
 
   // CREATE TRANSFORM FUNCTION
-  public query func transform(raw : HT.TransformArgs) : async HT.CanisterHttpResponsePayload {
-    let transformed : HT.CanisterHttpResponsePayload = {
+  public query func transform(raw : HTTP.TransformArgs) : async HTTP.CanisterHttpResponsePayload {
+    let transformed : HTTP.CanisterHttpResponsePayload = {
       status = raw.response.status;
       body = raw.response.body;
       headers = [
@@ -60,31 +83,42 @@ actor HttpService {
         },
         { name = "X-Frame-Options"; value = "DENY" },
         { name = "X-Content-Type-Options"; value = "nosniff" },
-        { name = "Access-Control-Allow-Origin"; value = HT.apiUrl }
+        { name = "Access-Control-Allow-Origin"; value = HTTP.apiUrl }
       ];
     };
     transformed;
   };
 
-  private func _generateHeaders({ url: Text; headers: [HT.HttpHeader] }) : async [HT.HttpHeader] {
-    //idempotency keys should be unique so create a function that generates them.
+  private func _generateHeaders({ url: Text; port: ?Text; uid: ?T.UID; headers: [HTTP.HttpHeader] }) : async [HTTP.HttpHeader] {
+    // Idempotency keys should be unique so create a function that generates them.
     let idempotency_key: Text = await generateUUID();
 
-    // prepare headers for the system http_request call
-    let default_headers  = Buffer.fromArray<HT.HttpHeader>([
-      { name = "Host"; value = getHost(url) },
-      { name = "User-Agent"; value = HT.headerName },
+    // Prepare headers for the system http_request call
+    let default_headers  = Buffer.fromArray<HTTP.HttpHeader>([
+      { name = "Host"; value = getHost(url, port) },
+      { name = "User-Agent"; value = HTTP.headerName },
       { name = "Content-Type"; value = "application/json" },
       { name= "Idempotency-Key"; value = idempotency_key }
     ]);
 
-    default_headers.append(Buffer.fromArray<HT.HttpHeader>(headers));
-    Buffer.toArray<HT.HttpHeader>(default_headers);
+    // used to fetch token from user and return token auth header
+    switch(uid) {
+      case(null) {};
+      case(?value) {
+        let token = await UserIndex.getUserToken(value);
+        default_headers.add({ name = "token"; value = token; });
+      };
+    };
+
+    Array.flatten<HTTP.HttpHeader>([
+      Buffer.toArray<HTTP.HttpHeader>(default_headers),
+      headers
+    ]);
   };
 
-  private func _sendRequest<system>(request: HT.HttpRequestArgs) : async Text {
+  private func _sendRequest<system>(request: HTTP.HttpRequestArgs) : async Text {
     // DECLARE MANAGEMENT CANISTER
-    let ic : HT.IC = actor ("aaaaa-aa");
+    let ic : HTTP.IC = actor ("aaaaa-aa");
 
     // ADD CYCLES TO PAY FOR HTTP REQUEST
 
@@ -95,11 +129,11 @@ actor HttpService {
     //The way Cycles.add() works is that it adds those cycles to the next asynchronous call
     //"Function add(amount) indicates the additional amount of cycles to be transferred in the next remote call"
     //See: https://internetcomputer.org/docs/current/references/ic-interface-spec/#ic-http_request
-    Cycles.add<system>(20_949_972_000);
+    Cycles.add<system>(T.cycles);
 
     // MAKE HTTPS REQUEST AND WAIT FOR RESPONSE
     //Since the cycles were added above, you can just call the management canister with HTTPS outcalls below
-    let http_response : HT.HttpResponsePayload = await ic.http_request(request);
+    let http_response : HTTP.HttpResponsePayload = await ic.http_request(request);
 
     // DECODE THE RESPONSE
 
@@ -126,28 +160,30 @@ actor HttpService {
     // CHECK THE STATUS OF THE RESPONSE
     // If the status is not in the range 200-299, it indicates an error.
     if (http_response.status < 200 or http_response.status > 299) {
-      throw HT.httpError({ status = http_response.status; body = decoded_text });
+      throw HTTP.httpError({ status = http_response.status; body = decoded_text });
     };
 
     decoded_text
   };
 
 
-  public func get(url: Text, { headers: [HT.HttpHeader]; }) : async Text {
+  public shared({ caller }) func get({ url: Text; port: ?Text; uid: ?T.UID; headers: [HTTP.HttpHeader]; }) : async Text {
+    _callValidation(caller);
+
     // SETUP ARGUMENTS FOR HTTP GET request
 
     // Transform context
-    let transform_context : HT.TransformContext = {
+    let transform_context : HTTP.TransformContext = {
       function = transform;
       context = Blob.fromArray([]);
     };
 
     // The HTTP request
-    let http_request : HT.HttpRequestArgs = {
+    let http_request : HTTP.HttpRequestArgs = {
       url;
       max_response_bytes = null; //optional for request
-      headers = await _generateHeaders({ url; headers });
-      body = null; //optional for request
+      headers = await _generateHeaders({ url; port; uid; headers });
+      body = null;
       method = #get;
       transform = ?transform_context;
     };
@@ -156,11 +192,13 @@ actor HttpService {
   };
 
 
-  public func post(url: Text, { headers: [HT.HttpHeader]; bodyJson: Text }) : async Text {
+  public shared({ caller }) func post({ url: Text; port: ?Text; uid: ?T.UID; headers: [HTTP.HttpHeader]; bodyJson: Text }) : async Text {
+    _callValidation(caller);
+
     // SETUP ARGUMENTS FOR HTTP POST request
 
     // Transform context
-    let transform_context : HT.TransformContext = {
+    let transform_context : HTTP.TransformContext = {
       function = transform;
       context = Blob.fromArray([]);
     };
@@ -169,11 +207,11 @@ actor HttpService {
     let request_body_as_nat8: [Nat8] = Blob.toArray(request_body_as_Blob);
 
     // The HTTP request
-    let http_request : HT.HttpRequestArgs = {
+    let http_request : HTTP.HttpRequestArgs = {
       url;
       // TODO under testing, this could be null or Nat64.fromNat(1024 * 1024)
       max_response_bytes = ?Nat64.fromNat(1024 * 1024); //optional for request
-      headers = await _generateHeaders({ url; headers });
+      headers = await _generateHeaders({ url; port; uid; headers });
       body = ?request_body_as_nat8; //provide body for POST request
       method = #post;
       transform = ?transform_context;

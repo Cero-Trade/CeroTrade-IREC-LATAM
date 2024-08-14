@@ -3,10 +3,7 @@ import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import Nat "mo:base/Nat";
 import Error "mo:base/Error";
-import Bool "mo:base/Bool";
-import Buffer "mo:base/Buffer";
 import Iter "mo:base/Iter";
-import AccountIdentifier "mo:account-identifier";
 
 
 // types
@@ -34,33 +31,29 @@ shared({ caller = userIndexCaller }) actor class Users() {
   public query func length(): async Nat { users.size() };
 
 
-  /// register user to cero trade
+  /// register user to Cero Trade
   public shared({ caller }) func registerUser(uid: T.UID, token: Text): async() {
     _callValidation(caller);
 
     let userInfo = {
       vaultToken = token;
       principal = uid;
-      ledger = AccountIdentifier.accountIdentifier(uid, AccountIdentifier.defaultSubaccount());
       companyLogo = null;
-      portfolio = [];
-      transactions = [];
-      beneficiaries = [];
     };
 
     users.put(uid, userInfo);
   };
 
 
-  /// delete user to cero trade
+  /// delete user to Cero Trade
   public shared({ caller }) func deleteUser(uid: T.UID): async() {
     _callValidation(caller);
     let _ = users.remove(uid)
   };
 
 
-  /// store user company logo to cero trade
-  public shared({ caller }) func storeCompanyLogo(uid: T.UID, avatar: T.CompanyLogo): async() {
+  /// store user company logo to Cero Trade
+  public shared({ caller }) func storeCompanyLogo(uid: T.UID, avatar: T.ArrayFile): async() {
     _callValidation(caller);
 
     let userInfo = switch (users.get(uid)) {
@@ -75,7 +68,7 @@ shared({ caller = userIndexCaller }) actor class Users() {
 
 
   /// get user from usersAvatar collection
-  public shared({ caller }) func getCompanyLogo(uid: T.UID) : async T.CompanyLogo {
+  public shared({ caller }) func getCompanyLogo(uid: T.UID) : async T.ArrayFile {
     _callValidation(caller);
 
     let companyLogo = switch (users.get(uid)) {
@@ -89,113 +82,8 @@ shared({ caller = userIndexCaller }) actor class Users() {
     }
   };
 
-
-  /// update user portfolio
-  public shared({ caller }) func updatePorfolio(uid: T.UID, tokenId: T.TokenId) : async() {
-    _callValidation(caller);
-
-    let userInfo = switch (users.get(uid)) {
-      case (null) throw Error.reject(userNotFound);
-      case (?info) info;
-    };
-
-    let portfolio = Buffer.fromArray<T.TokenId>(userInfo.portfolio);
-
-    switch(Buffer.indexOf<T.TokenId>(tokenId, portfolio, Text.equal)) {
-      case(null) {
-        portfolio.add(tokenId);
-
-        users.put(uid, { userInfo with portfolio = Buffer.toArray(portfolio) })
-      };
-      case(?index) {
-        portfolio.put(index, tokenId);
-
-        users.put(uid, { userInfo with portfolio = Buffer.toArray(portfolio) })
-      };
-    };
-  };
-
-
-  /// delete user portfolio
-  public shared({ caller }) func deletePorfolio(uid: T.UID, tokenId: T.TokenId) : async() {
-    _callValidation(caller);
-
-    let userInfo = switch (users.get(uid)) {
-      case (null) throw Error.reject(userNotFound);
-      case (?info) info;
-    };
-
-    let portfolio = Buffer.fromArray<T.TokenId>(userInfo.portfolio);
-
-    switch(Buffer.indexOf<T.TokenId>(tokenId, portfolio, Text.equal)) {
-      case(null) throw Error.reject("Token doesn't exists");
-      case(?index) {
-        let _ = portfolio.remove(index);
-
-        users.put(uid, { userInfo with portfolio = Buffer.toArray(portfolio) })
-      };
-    };
-  };
-
-
-  /// update user transactions
-  public shared({ caller }) func updateTransactions(uid: T.UID, txId: T.TransactionId) : async() {
-    _callValidation(caller);
-
-    let userInfo = switch (users.get(uid)) {
-      case (null) throw Error.reject(userNotFound);
-      case (?info) info;
-    };
-
-    let transactions = Buffer.fromArray<T.TransactionId>(userInfo.transactions);
-
-    transactions.add(txId);
-    users.put(uid, { userInfo with transactions = Buffer.toArray(transactions) });
-
-    // switch(Buffer.indexOf<T.TransactionId>(txId, transactions, Text.equal)) {
-    //   case(null) {
-    //     transactions.add(txId);
-
-    //     users.put(uid, { userInfo with transactions = Buffer.toArray(transactions) })
-    //   };
-    //   case(?index) {
-    //     transactions.put(index, txId);
-
-    //     users.put(uid, { userInfo with transactions = Buffer.toArray(transactions) })
-    //   };
-    // };
-  };
-
-
-  public shared({ caller }) func getPortfolioTokenIds(uid: T.UID) : async [T.TokenId] {
-    _callValidation(caller);
-
-    switch (users.get(uid)) {
-      case (null) throw Error.reject(userNotFound);
-      case (?info) return info.portfolio;
-    };
-  };
-
-  public shared({ caller }) func getTransactionIds(uid: T.UID) : async [T.TransactionId] {
-    _callValidation(caller);
-
-    switch (users.get(uid)) {
-      case (null) throw Error.reject(userNotFound);
-      case (?info) return info.transactions;
-    };
-  };
-
-  public shared({ caller }) func getBeneficiaries(uid: T.UID) : async [T.Beneficiary] {
-    _callValidation(caller);
-
-    switch (users.get(uid)) {
-      case (null) throw Error.reject(userNotFound);
-      case (?info) return info.beneficiaries;
-    };
-  };
-
   /// get vaultToken from user
-  public shared({ caller }) func getUserToken(uid: T.UID) : async Text {
+  public shared({ caller }) func getUserToken(uid: T.UID) : async T.UserToken {
     _callValidation(caller);
 
     switch (users.get(uid)) {
@@ -204,23 +92,15 @@ shared({ caller = userIndexCaller }) actor class Users() {
     };
   };
 
-  /// validate current token
-  public shared({ caller }) func validateToken(uid: T.UID, token: Text): async Bool {
+  /// update token stored
+  public shared({ caller }) func updateUserToken(uid: T.UID, token: Text): async() {
     _callValidation(caller);
 
     switch (users.get(uid)) {
       case (null) { throw Error.reject(userNotFound); };
-      case (?info) { return info.vaultToken == token; };
-    };
-  };
-
-  /// obtain user ledger
-  public shared({ caller }) func getLedger(uid: T.UID): async Blob {
-    _callValidation(caller);
-
-    switch (users.get(uid)) {
-      case (null) { throw Error.reject(userNotFound); };
-      case (?info) { return info.ledger };
+      case (?info) {
+        users.put(uid, { info with vaultToken = token })
+      };
     };
   };
 }

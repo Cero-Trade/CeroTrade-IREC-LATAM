@@ -44,6 +44,10 @@
 //---------------------------------------------------------------------------------------------//
 //?========== direct settings ==========//
 //---------------------------------------------------------------------------------------------//
+.border-radius:not(.v-btn--variant-icon) {
+  border-radius: 10px !important;
+}
+
 .v-otp-input {
   .v-field--focused .v-field__outline * {
     border-color: vars.$primary;

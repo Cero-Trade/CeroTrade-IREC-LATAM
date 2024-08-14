@@ -1,54 +1,34 @@
 {
   "canisters": {
-    "users": {
-      "main": "src/cero_trade_project_backend/users/users.mo",
-      "type": "motoko"
-    },
-    "user_index": {
-      "main": "src/cero_trade_project_backend/user_index/user_index.mo",
-      "type": "motoko",
-      "dependencies": [ "http_service" ]
-    },
-    "token": {
-      "main": "src/cero_trade_project_backend/token/token.mo",
-      "type": "motoko"
-    },
-    "token_index": {
-      "main": "src/cero_trade_project_backend/token_index/token_index.mo",
-      "type": "motoko",
-      "dependencies": [ "http_service" ]
-    },
-    "transactions": {
-      "main": "src/cero_trade_project_backend/transactions/transactions.mo",
-      "type": "motoko"
-    },
-    "transaction_index": {
-      "main": "src/cero_trade_project_backend/transaction_index/transaction_index.mo",
-      "type": "motoko",
-      "dependencies": [ "http_service" ]
-    },
-    "marketplace": {
-      "main": "src/cero_trade_project_backend/marketplace/marketplace.mo",
-      "type": "motoko"
-    },
-    "http_service": {
-      "main": "src/cero_trade_project_backend/http_service/http_service.mo",
-      "type": "motoko"
-    },
     "agent": {
-      "main": "src/cero_trade_project_backend/agent/agent.mo",
-      "type": "motoko",
       "dependencies": [
-        "http_service",
         "users",
         "user_index",
         "token_index",
         "transaction_index",
-        "marketplace"
-      ]
+        "marketplace",
+        "statistics",
+        "notification_index",
+        "bucket_index"
+      ],
+      "main": "src/cero_trade_project_backend/agent/agent.mo",
+      "type": "motoko"
+    },
+    "bucket": {
+      "args": "-v --incremental-gc",
+      "gzip": true,
+      "main": "src/cero_trade_project_backend/bucket/bucket.mo",
+      "type": "motoko"
+    },
+    "bucket_index": {
+      "main": "src/cero_trade_project_backend/bucket_index/bucket_index.mo",
+      "type": "motoko"
     },
     "cero_trade_project_frontend": {
-      "dependencies": [ "agent" ],
+      "dependencies": [
+        "nns-ledger",
+        "agent"
+      ],
       "frontend": {
         "entrypoint": "dist/index.html"
       },
@@ -56,24 +36,195 @@
         "dist/"
       ],
       "type": "assets"
+    },
+    "http_service": {
+      "dependencies": [
+        "user_index"
+      ],
+      "main": "src/cero_trade_project_backend/http_service/http_service.mo",
+      "type": "motoko"
+    },
+    "internet_identity": {
+      "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",
+      "frontend": {},
+      "remote": {
+        "id": {
+          "ic": "rdmx6-jaaaa-aaaaa-aaadq-cai"
+        }
+      },
+      "type": "custom",
+      "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz"
+    },
+    "marketplace": {
+      "main": "src/cero_trade_project_backend/marketplace/marketplace.mo",
+      "type": "motoko"
+    },
+    "nns-cycles-minting": {
+      "build": "",
+      "candid": "candid/nns-cycles-minting.did",
+      "remote": {
+        "id": {
+          "ic": "rkp4c-7iaaa-aaaaa-aaaca-cai",
+          "local": "rkp4c-7iaaa-aaaaa-aaaca-cai"
+        }
+      },
+      "type": "custom",
+      "wasm": ""
+    },
+    "nns-genesis-token": {
+      "build": "",
+      "candid": "candid/nns-genesis-token.did",
+      "remote": {
+        "id": {
+          "ic": "renrk-eyaaa-aaaaa-aaada-cai",
+          "local": "renrk-eyaaa-aaaaa-aaada-cai"
+        }
+      },
+      "type": "custom",
+      "wasm": ""
+    },
+    "nns-governance": {
+      "build": "",
+      "candid": "candid/nns-governance.did",
+      "remote": {
+        "id": {
+          "ic": "rrkah-fqaaa-aaaaa-aaaaq-cai",
+          "local": "rrkah-fqaaa-aaaaa-aaaaq-cai"
+        }
+      },
+      "type": "custom",
+      "wasm": ""
+    },
+    "nns-ledger": {
+      "build": "",
+      "candid": "candid/nns-ledger.did",
+      "remote": {
+        "id": {
+          "ic": "ryjl3-tyaaa-aaaaa-aaaba-cai",
+          "local": "ryjl3-tyaaa-aaaaa-aaaba-cai"
+        }
+      },
+      "type": "custom",
+      "wasm": ""
+    },
+    "nns-lifeline": {
+      "build": "",
+      "candid": "candid/nns-lifeline.did",
+      "remote": {
+        "id": {
+          "ic": "rno2w-sqaaa-aaaaa-aaacq-cai",
+          "local": "rno2w-sqaaa-aaaaa-aaacq-cai"
+        }
+      },
+      "type": "custom",
+      "wasm": ""
+    },
+    "nns-registry": {
+      "build": "",
+      "candid": "candid/nns-registry.did",
+      "remote": {
+        "id": {
+          "ic": "rwlgt-iiaaa-aaaaa-aaaaa-cai",
+          "local": "rwlgt-iiaaa-aaaaa-aaaaa-cai"
+        }
+      },
+      "type": "custom",
+      "wasm": ""
+    },
+    "nns-root": {
+      "build": "",
+      "candid": "candid/nns-root.did",
+      "remote": {
+        "id": {
+          "ic": "r7inp-6aaaa-aaaaa-aaabq-cai",
+          "local": "r7inp-6aaaa-aaaaa-aaabq-cai"
+        }
+      },
+      "type": "custom",
+      "wasm": ""
+    },
+    "nns-sns-wasm": {
+      "build": "",
+      "candid": "candid/nns-sns-wasm.did",
+      "remote": {
+        "id": {
+          "ic": "qaa6y-5yaaa-aaaaa-aaafa-cai",
+          "local": "qaa6y-5yaaa-aaaaa-aaafa-cai"
+        }
+      },
+      "type": "custom",
+      "wasm": ""
+    },
+    "notification_index": {
+      "main": "src/cero_trade_project_backend/notification_index/notification_index.mo",
+      "type": "motoko"
+    },
+    "notifications": {
+      "args": "-v --incremental-gc",
+      "gzip": true,
+      "main": "src/cero_trade_project_backend/notifications/notifications.mo",
+      "type": "motoko"
+    },
+    "statistics": {
+      "dependencies": [
+        "token_index"
+      ],
+      "main": "src/cero_trade_project_backend/statistics/statistics.mo",
+      "type": "motoko"
+    },
+    "token": {
+      "args": "-v --incremental-gc",
+      "gzip": true,
+      "main": "src/cero_trade_project_backend/token/token.mo",
+      "type": "motoko"
+    },
+    "token_index": {
+      "main": "src/cero_trade_project_backend/token_index/token_index.mo",
+      "type": "motoko"
+    },
+    "transaction_index": {
+      "main": "src/cero_trade_project_backend/transaction_index/transaction_index.mo",
+      "type": "motoko"
+    },
+    "transactions": {
+      "args": "-v --incremental-gc",
+      "gzip": true,
+      "main": "src/cero_trade_project_backend/transactions/transactions.mo",
+      "type": "motoko"
+    },
+    "user_index": {
+      "main": "src/cero_trade_project_backend/user_index/user_index.mo",
+      "type": "motoko"
+    },
+    "users": {
+      "args": "-v --incremental-gc",
+      "gzip": true,
+      "main": "src/cero_trade_project_backend/users/users.mo",
+      "type": "motoko"
     }
   },
   "defaults": {
     "build": {
       "args": "",
-      "packtool": "mops sources"
+      "packtool": "mops sources",
+      "replica": {
+        "subnet_type": "system"
+      }
     }
   },
   "networks": {
-    "local": {
-      "bind": "127.0.0.1:4943",
-      "type": "ephemeral"
-    },
     "ic": {
       "providers": [
         "https://mainnet.dfinity.network"
       ],
       "type": "persistent"
+    },
+    "local": {
+      "bind": "127.0.0.1:8080",
+      "replica": {
+        "subnet_type": "system"
+      },
+      "type": "ephemeral"
     }
   },
   "output_env_file": ".env",

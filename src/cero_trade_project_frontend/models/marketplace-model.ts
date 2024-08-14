@@ -3,8 +3,8 @@ import { TokensICP } from "./transaction-model";
 
 export interface MarketplaceInfo {
   tokenId: Text;
-  lowerPriceICP: TokensICP;
-  higherPriceICP: TokensICP;
+  lowerPriceE8S: TokensICP;
+  higherPriceE8S: TokensICP;
   mwh: number;
   assetInfo: AssetInfoModel;
 }
@@ -12,7 +12,7 @@ export interface MarketplaceInfo {
 export interface MarketplaceSellersInfo {
   sellerId: string;
   tokenId: Text;
-  priceICP: TokensICP;
+  priceE8S: TokensICP;
   mwh: number;
   assetInfo: AssetInfoModel;
 }

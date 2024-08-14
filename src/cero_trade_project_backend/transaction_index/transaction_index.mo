@@ -3,23 +3,21 @@ import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import Cycles "mo:base/ExperimentalCycles";
 import Blob "mo:base/Blob";
-import Array "mo:base/Array";
 import Nat "mo:base/Nat";
-import Nat8 "mo:base/Nat8";
 import Iter "mo:base/Iter";
 import Error "mo:base/Error";
 import Debug "mo:base/Debug";
 import Buffer "mo:base/Buffer";
 
-// canisters
-import HttpService "canister:http_service";
+// interfaces
+import IC_MANAGEMENT "../ic_management_canister_interface";
+import Transactions "../transactions/transactions_interface";
 
 // types
 import T "../types";
 import ENV "../env";
 
 actor class TransactionIndex() = this {
-  private func TransactionsCanister(cid: T.CanisterId): T.TransactionsInterface { actor (Principal.toText(cid)) };
   stable var wasm_module: Blob = "";
 
   stable var controllers: ?[Principal] = null;
@@ -43,36 +41,25 @@ actor class TransactionIndex() = this {
   /// get size of transactionsDirectory collection
   public query func length(): async Nat { transactionsDirectory.size() };
 
+  /// get canister controllers
+  public shared({ caller }) func getControllers(): async ?[Principal] {
+    IC_MANAGEMENT.adminValidation(caller, controllers);
+    await IC_MANAGEMENT.getControllers(Principal.fromActor(this));
+  };
+
   /// register canister controllers
   public shared({ caller }) func registerControllers(): async () {
     _callValidation(caller);
 
-    controllers := await T.getControllers(Principal.fromActor(this));
+    controllers := await IC_MANAGEMENT.getControllers(Principal.fromActor(this));
   };
 
   /// register wasm module to dynamic transactions canister, only admin can run it
   public shared({ caller }) func registerWasmArray(): async() {
     _callValidation(caller);
 
-    let branch = switch(ENV.DFX_NETWORK) {
-      case("ic") "main";
-      case("local") "develop";
-      case _ throw Error.reject("No DFX_NETWORK provided");
-    };
-    let wasmModule = await HttpService.get("https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # branch # "/wasm_modules/transactions.json", { headers = [] });
-
-    let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
-    let wasm_array = Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
-      switch (Nat.fromText(part)) {
-        case null 0;
-        case (?n) n;
-      }
-    });
-    let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
-
     // register wasm
-    wasm_module := Blob.fromArray(nums8);
-
+    wasm_module := await IC_MANAGEMENT.getWasmModule(#transactions("transactions"));
 
     // update deployed canisters
     let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
@@ -90,7 +77,7 @@ actor class TransactionIndex() = this {
     };
 
     for (canister_id in deployedCanisters.vals()) {
-      await T.ic.install_code({
+      await IC_MANAGEMENT.ic.install_code({
         arg = to_candid();
         wasm_module;
         mode = #upgrade;
@@ -99,37 +86,57 @@ actor class TransactionIndex() = this {
     };
   };
 
-  /// resume all deployed canisters
-  public shared({ caller }) func startAllDeployedCanisters<system>(): async () {
-    T.adminValidation(caller, controllers);
+  /// resume all deployed canisters.
+  ///
+  /// only resume one if provide canister id
+  public shared({ caller }) func startAllDeployedCanisters<system>(cid: ?T.CanisterId): async () {
+    IC_MANAGEMENT.adminValidation(caller, controllers);
 
-    let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
-    for (cid in transactionsDirectory.vals()) {
-      if (not(Buffer.contains<T.CanisterId>(deployedCanisters, cid, Principal.equal))) {
-        deployedCanisters.append(Buffer.fromArray<T.CanisterId>([cid]));
+    switch(cid) {
+      case(?canister_id) {
+        Cycles.add<system>(T.cycles);
+        await IC_MANAGEMENT.ic.start_canister({ canister_id });
       };
-    };
+      case(null) {
+        let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
+        for (cid in transactionsDirectory.vals()) {
+          if (not(Buffer.contains<T.CanisterId>(deployedCanisters, cid, Principal.equal))) {
+            deployedCanisters.append(Buffer.fromArray<T.CanisterId>([cid]));
+          };
+        };
 
-    for(canister_id in deployedCanisters.vals()) {
-      Cycles.add<system>(20_949_972_000);
-      await T.ic.start_canister({ canister_id });
+        for(canister_id in deployedCanisters.vals()) {
+          Cycles.add<system>(T.cycles);
+          await IC_MANAGEMENT.ic.start_canister({ canister_id });
+        };
+      };
     };
   };
 
-  /// stop all deployed canisters
-  public shared({ caller }) func stopAllDeployedCanisters<system>(): async () {
-    T.adminValidation(caller, controllers);
+  /// stop all deployed canisters.
+  ///
+  /// only stop one if provide canister id
+  public shared({ caller }) func stopAllDeployedCanisters<system>(cid: ?T.CanisterId): async () {
+    IC_MANAGEMENT.adminValidation(caller, controllers);
 
-    let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
-    for (cid in transactionsDirectory.vals()) {
-      if (not(Buffer.contains<T.CanisterId>(deployedCanisters, cid, Principal.equal))) {
-        deployedCanisters.append(Buffer.fromArray<T.CanisterId>([cid]));
+    switch(cid) {
+      case(?canister_id) {
+        Cycles.add<system>(T.cycles);
+        await IC_MANAGEMENT.ic.stop_canister({ canister_id });
       };
-    };
+      case(null) {
+        let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
+        for (cid in transactionsDirectory.vals()) {
+          if (not(Buffer.contains<T.CanisterId>(deployedCanisters, cid, Principal.equal))) {
+            deployedCanisters.append(Buffer.fromArray<T.CanisterId>([cid]));
+          };
+        };
 
-    for(canister_id in deployedCanisters.vals()) {
-      Cycles.add<system>(20_949_972_000);
-      await T.ic.stop_canister({ canister_id });
+        for(canister_id in deployedCanisters.vals()) {
+          Cycles.add<system>(T.cycles);
+          await IC_MANAGEMENT.ic.stop_canister({ canister_id });
+        };
+      };
     };
   };
 
@@ -138,20 +145,27 @@ actor class TransactionIndex() = this {
   public func checkMemoryStatus() : async Bool {
     let status = switch(currentCanisterid) {
       case(null) throw Error.reject("Cant find transactions canisters registered");
-      case(?cid) await T.ic.canister_status({ canister_id = cid });
+      case(?cid) await IC_MANAGEMENT.ic.canister_status({ canister_id = cid });
     };
 
-    status.memory_size > T.LOW_MEMORY_LIMIT
+    status.memory_size > IC_MANAGEMENT.LOW_MEMORY_LIMIT
   };
 
   /// autonomous function, will be executed when current canister it is full
   private func _createCanister<system>(): async ?T.CanisterId {
     Debug.print(debug_show ("before registerToken: " # Nat.toText(Cycles.balance())));
 
-    Cycles.add<system>(300_000_000_000);
-    let { canister_id } = await T.ic.create_canister({
+    Cycles.add<system>(T.cyclesCreateCanister);
+    let { canister_id } = await IC_MANAGEMENT.ic.create_canister({
       settings = ?{
-        controllers;
+        controllers = switch(controllers) {
+          case(null) null;
+          case(?value) {
+            let currentControllers = Buffer.fromArray<Principal>(value);
+            currentControllers.add(Principal.fromActor(this));
+            ?Buffer.toArray<Principal>(currentControllers);
+          };
+        };
         compute_allocation = null;
         memory_allocation = null;
         freezing_threshold = null;
@@ -161,7 +175,7 @@ actor class TransactionIndex() = this {
     Debug.print(debug_show ("later create_canister: " # Nat.toText(Cycles.balance())));
 
     try {
-      await T.ic.install_code({
+      await IC_MANAGEMENT.ic.install_code({
         arg = to_candid();
         wasm_module;
         mode = #install;
@@ -175,6 +189,8 @@ actor class TransactionIndex() = this {
       throw Error.reject(Error.message(error));
     }
   };
+
+  // ======================================================================================================== //
 
   /// register [transactionsDirectory] collection
   public shared({ caller }) func registerTransaction(txInfo: T.TransactionInfo) : async T.TransactionId {
@@ -208,7 +224,7 @@ actor class TransactionIndex() = this {
       };
 
       // register transaction
-      let txId: T.TransactionId = await TransactionsCanister(cid).registerTransaction(txInfo);
+      let txId: T.TransactionId = await Transactions.canister(cid).registerTransaction(txInfo);
 
       transactionsDirectory.put(txId, cid);
       txId
@@ -244,7 +260,7 @@ actor class TransactionIndex() = this {
 
     // iterate canisters to get transactions supplied
     for((cid, txIds) in directory.entries()) {
-      let transactions: [T.TransactionInfo] = await TransactionsCanister(cid).getTransactionsById(txIds, txType, priceRange, mwhRange, method, rangeDates);
+      let transactions: [T.TransactionInfo] = await Transactions.canister(cid).getTransactionsById(txIds, txType, priceRange, mwhRange, method, rangeDates);
       txs.append(Buffer.fromArray<T.TransactionInfo>(transactions));
     };
 
@@ -254,7 +270,7 @@ actor class TransactionIndex() = this {
   };
 
 
-  // /// used to get all transactions on cero trade
+  // /// used to get all transactions on Cero Trade
   // public shared({ caller }) func getTransactions(page: ?Nat, length: ?Nat, txType: ?T.TxType) : async {
   //   data: [T.TransactionInfo];
   //   totalPages: Nat;
@@ -302,7 +318,7 @@ actor class TransactionIndex() = this {
 
   //   // get transactions
   //   for((cid, txIds) in txsInCanister.entries()) {
-  //     let transactions: [T.TransactionInfo] = await TransactionsCanister(cid).getTransactionsById(txIds, txType);
+  //     let transactions: [T.TransactionInfo] = await Transactions.canister(cid).getTransactionsById(txIds, txType);
   //     txs.append(Buffer.fromArray<T.TransactionInfo>(transactions));
   //   };
 

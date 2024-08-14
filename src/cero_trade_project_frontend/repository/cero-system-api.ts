@@ -1,3 +1,4 @@
+import { getImageArrayBuffer, getUrlFromArrayBuffer } from "@/plugins/functions";
 import { useAgentCanister as agent, getErrorMessage } from "@/services/icp-provider";
 import { Principal } from "@dfinity/principal";
 
@@ -11,14 +12,21 @@ export class CeroSystemApi {
     }
   }
 
-  static async registerToken(tokenId: string): Promise<Principal> {
-    try {
-      return await agent().registerToken(tokenId) as Principal
-    } catch (error) {
-      console.error(error);
-      throw getErrorMessage(error)
-    }
-  }
+  // static async registerToken({ tokenId, name, symbol, logo }: {
+  //   tokenId: string,
+  //   name: string,
+  //   symbol: string,
+  //   logo: File[]
+  // }): Promise<Principal> {
+  //   const logoUrl = getUrlFromArrayBuffer(getImageArrayBuffer(logo[0]))
+
+  //   try {
+  //     return await agent().registerToken(tokenId, name, symbol, logoUrl) as Principal
+  //   } catch (error) {
+  //     console.error(error);
+  //     throw getErrorMessage(error)
+  //   }
+  // }
 
   static async mintTokenToUser({ user, tokenId, tokenAmount }: {
     user: string,

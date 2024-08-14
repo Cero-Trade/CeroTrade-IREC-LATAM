@@ -43,8 +43,8 @@
         @update:options="getData"
         >
           <template #[`item.token_id`]="{ item }">
-            <span class="acenter bold" style="color: #475467;">
-              {{ item.token_id }} 
+            <span class="acenter bold" style="color: #475467;" :title="item.token_id">
+              {{ shortString(item.token_id, {}) }} 
             </span>
           </template>
 
@@ -101,7 +101,7 @@
               <div class="divrow jspace acenter mb-6">
                 <div class="divcol astart" style="gap: 5px;">
                   <span style="color: #475467;">Asset id</span>
-                  <h6 class="mb-0 font700">{{ item.token_id }}</h6>
+                  <h6 class="mb-0 font700" :title="item.token_id">{{ shortString(item.token_id, {}) }}</h6>
                 </div>
 
                 <v-btn class="btn" @click="goDetails(item)">
@@ -237,6 +237,7 @@ import BiomeEnergyIcon from '@/assets/sources/energies/biome.svg'
 import WindEnergyIcon from '@/assets/sources/energies/wind-color.svg'
 import SolarEnergyIcon from '@/assets/sources/energies/solar-color.svg'
 import ChileIcon from '@/assets/sources/icons/CL.svg'
+import { shortString } from '@/plugins/functions'
 import { useRouter } from 'vue-router'
 import { computed, onBeforeMount, watch, ref } from 'vue'
 import { useToast } from 'vue-toastification'
@@ -255,15 +256,13 @@ timeline = ref('Timeline'),
 toggle = ref(0),
 
 energies = {
-  hydro: HydroEnergyIcon,
-  ocean: OceanEnergyIcon,
-  geothermal: GeothermalEnergyIcon,
-  biome: BiomeEnergyIcon,
-  wind: WindEnergyIcon,
-  sun: SolarEnergyIcon,
+  "Solar": SolarEnergyIcon,
+  "Wind": WindEnergyIcon,
+  "Hydro-Electric": HydroEnergyIcon,
+  "Thermal": GeothermalEnergyIcon,
 },
 countriesImg = {
-  chile: ChileIcon
+  CL: ChileIcon
 },
 
 dialogFilters = ref(false),
@@ -329,9 +328,9 @@ async function getData() {
     for (const item of marketplace) {
       list.push({
         token_id: item.tokenId,
-        energy_source: item.assetInfo.assetType,
+        energy_source: item.assetInfo.deviceDetails.deviceType,
         country: item.assetInfo.specifications.country,
-        price: item.lowerPriceICP.e8s === item.higherPriceICP.e8s ? item.higherPriceICP.e8s : `${item.lowerPriceICP.e8s} - ${item.higherPriceICP.e8s}`,
+        price: item.lowerPriceE8S === item.higherPriceE8S ? item.higherPriceE8S : `${item.lowerPriceE8S} - ${item.higherPriceE8S}`,
         mwh: item.mwh,
         volume: item.assetInfo.volumeProduced,
       })

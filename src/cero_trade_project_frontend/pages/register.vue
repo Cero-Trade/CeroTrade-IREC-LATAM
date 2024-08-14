@@ -23,6 +23,7 @@
                 v-model="companyForm.companyLogo" id="compnay-logo" variant="solo"
                 border="1px solid #EAECF0"
                 rounded="10px"
+                accept="image/*"
                 sizes="120px"
                 prepend-icon=""
                 style="max-width: max-content !important;"
@@ -39,7 +40,7 @@
                 ></v-text-field>
               </v-col>
               <v-col xl="6" lg="6" md="6" sm="12" cols="12">
-                <label for="companey-id">Company ID</label>
+                <label for="company-id">Company ID</label>
                 <v-text-field 
                 v-model="companyForm.companyId"
                 id="company-id" class="input" variant="solo" flat elevation="0" 
@@ -52,8 +53,21 @@
                 </v-text-field>
               </v-col>
               <v-col xl="6" lg="6" md="6" sm="12" cols="12">
+                <label for="evident-id">Evident Account ID</label>
+                <v-text-field 
+                v-model="companyForm.evidentId"
+                id="evident-id" class="input" variant="solo" flat elevation="0" 
+                placeholder="ET5T6GHO"
+                :rules="[globalRules.required]"
+                >
+                  <template #append-inner>
+                    <img src="@/assets/sources/icons/help-circle.svg" alt="help-circle icon">
+                  </template>
+                </v-text-field>
+              </v-col>
+              <v-col xl="6" lg="6" md="6" sm="12" cols="12">
                 <label for="country">Country</label>
-                <v-select
+                <v-autocomplete
                 v-model="companyForm.country"
                 id="country" class="input" variant="solo" flat 
                 :items="countries"
@@ -70,7 +84,7 @@
                       :style="`transform: ${isFocused.value ? 'rotate(180deg)' : 'none'};`"
                     >
                   </template>
-                </v-select>
+                </v-autocomplete>
               </v-col>
               <v-col xl="6" lg="6" md="6" sm="12" cols="12">
                 <label for="city">City</label>
@@ -114,6 +128,15 @@
                 @click:append-inner="show_password = !show_password"
                 ></v-text-field>
               </v-col> -->
+
+              <v-col cols="12" class="mt-4">
+                <label for="beneficiary">Beneficiary id</label>
+                <v-text-field
+                  v-model="beneficiary" id="beneficiary" class="input" variant="solo" flat elevation="0" placeholder="Enter beneficiary id (optional)"
+                  :rules="[beneficiary ? globalRules.principalId : true]"
+                ></v-text-field>
+              </v-col>
+
 
               <v-col cols="12">
                 <v-btn class="center btn2" :disabled="loadingBtn" @click="createII">
@@ -179,13 +202,15 @@ import '@/assets/styles/pages/home.scss'
 import countries from '@/assets/sources/json/countries-all.json'
 import { ref, onBeforeMount } from 'vue'
 import { AgentCanister } from '@/repository/agent-canister';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import variables from '@/mixins/variables';
 import { useToast } from 'vue-toastification';
 import { AuthClientApi } from '@/repository/auth-client-api';
+import { storageCollection } from '@/plugins/vue3-storage-secure';
 
 const
   router = useRouter(),
+  route = useRoute(),
   toast = useToast(),
   { globalRules } = variables,
 
@@ -193,6 +218,7 @@ windowStep = ref(1),
 companyFormRef = ref(),
 companyForm = ref({
   companyId: null,
+  evidentId: null,
   companyName: null,
   companyLogo: null,
   country: null,
@@ -200,12 +226,20 @@ companyForm = ref({
   address: null,
   email: null,
 }),
+beneficiary = ref(null),
 otp = ref(''),
 loadingBtn = ref(false)
 
 onBeforeMount(getData)
 
-function getData() {}
+function getData() {
+  // get beneficiary id provided
+  const beneficiaryId = route.query.beneficiary || localStorage.getItem(storageCollection.beneficiaryId)
+  if (beneficiaryId) {
+    localStorage.setItem(storageCollection.beneficiaryId, beneficiaryId)
+    beneficiary.value = beneficiaryId
+  }
+}
 
 function previousStep() {
   otp.value = ''
@@ -235,7 +269,8 @@ async function register() {
   loadingBtn.value = true
 
   try {
-    await AgentCanister.register(companyForm.value)
+    await AgentCanister.register(companyForm.value, beneficiary.value)
+    localStorage.removeItem(storageCollection.beneficiaryId)
 
     router.push('/')
     toast.success("You have registered successfuly")

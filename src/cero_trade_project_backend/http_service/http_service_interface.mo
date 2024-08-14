@@ -1,10 +1,18 @@
 import Error "mo:base/Error";
 import Nat "mo:base/Nat";
+import Principal "mo:base/Principal";
 
-module {
-  public let apiUrl = "https://api.cerotrade.cl/";
+// types
+import ENV "../env";
+
+module HttpServiceInterface {
+  public let canister: HttpService = actor (ENV.CANISTER_ID_HTTP_SERVICE);
+  public let apiUrl: Text = ENV.VITE_API_URL;
   public let headerName = "http_service_canister";
-  public let port = ":443";
+
+  public func tokenAuth(token: Text): { name: Text; value: Text; } {
+    { name = "token"; value = token; }
+  };
 
   public type HttpError = {
     status : Nat;
@@ -87,5 +95,10 @@ module {
   //3. Declaring the management canister which you use to make the HTTPS outcall
   public type IC = actor {
     http_request : HttpRequestArgs -> async HttpResponsePayload;
+  };
+
+  public type HttpService = actor {
+    get: ({ url: Text; port: ?Text; uid: ?Principal; headers: [HttpHeader]; }) -> async Text;
+    post: ({ url: Text; port: ?Text; uid: ?Principal; headers: [HttpHeader]; bodyJson: Text }) -> async Text;
   };
 }

@@ -1,7 +1,7 @@
 import { AssetInfoModel } from "./token-model";
-import { UserProfileModel } from "./user-profile-model";
 
-export type TokensICP = { e8s: number };
+export type TokensICP = number;
+export type Tokens = { e8s: number };
 
 export enum TxMethod {
   blockchainTransfer = 'blockchainTransfer',
@@ -10,7 +10,9 @@ export enum TxMethod {
 export type TxMethodDef = keyof typeof TxMethod
 
 export enum TxType {
-  transfer = 'transfer',
+  putOnSale = 'putOnSale',
+  purchase = 'purchase',
+  takeOffMarketplace = 'takeOffMarketplace',
   redemption = 'redemption',
 }
 export type TxTypeDef = keyof typeof TxType
@@ -19,24 +21,26 @@ export interface TransactionInfo {
   transactionId: string;
   blockHash: number;
   from: string;
-  to: string;
+  to?: string;
   tokenId: string;
   txType: TxTypeDef;
   tokenAmount: number;
-  priceICP: TokensICP;
+  priceE8S?: TokensICP;
   date: Date;
   method: TxMethodDef;
+  redemptionPdf?: string;
 }
 
 export interface TransactionHistoryInfo {
   transactionId: string;
   blockHash: number;
   from: string;
-  to: string;
-  assetInfo: AssetInfoModel;
+  to?: string;
+  assetInfo?: AssetInfoModel;
   txType: TxTypeDef;
   tokenAmount: number;
-  priceICP: TokensICP;
+  priceE8S?: TokensICP;
   date: Date;
   method: TxMethodDef;
+  redemptionPdf?: string;
 }

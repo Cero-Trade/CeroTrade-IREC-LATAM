@@ -4,6 +4,7 @@ import { app as vueApp } from "@/main";
 
 // canisters
 import * as agentCanister from "../../../.dfx/local/canisters/agent"
+import * as ledgerCanister from "../../declarations/nns-ledger"
 
 
 export const canisterImpl = { canisterId: process.env.CANISTER_ID_CERO_TRADE_PROJECT_FRONTEND }
@@ -11,11 +12,11 @@ export const canisterImpl = { canisterId: process.env.CANISTER_ID_CERO_TRADE_PRO
 export const createActor = (canisterId, idlFactory, options) => {
   const isDevelopment = process.env.DFX_NETWORK !== "ic",
   identity = vueApp._context.provides.authClient.getIdentity(),
-  agent = new HttpAgent({ identity: isDevelopment ? null : identity, ...options?.agentOptions });
+  agent = new HttpAgent({ identity, ...options?.agentOptions });
 
   // Fetch root key for certificate validation during development
   if (isDevelopment) {
-    agent.fetchRootKey().catch(err=>{
+    agent.fetchRootKey().catch(err => {
       console.warn("Unable to fetch root key. Check to ensure that your local replica is running");
       console.error(err);
     });
@@ -59,6 +60,7 @@ export const getErrorMessage = (error) => {
   return message.split(httpBody)[1].trim()
 }
 
+export const getLedgerCanister = () => createActor('ryjl3-tyaaa-aaaaa-aaaba-cai', ledgerCanister.idlFactory)
 
 export const useAgentCanister = () => createActor(agentCanister.canisterId, agentCanister.idlFactory)
 

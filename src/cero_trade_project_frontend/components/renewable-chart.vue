@@ -11,16 +11,17 @@ const
     height: String,
     categories: {
       type: Array,
-      default: ["", "", "", "", ""]
+      default: []
     },
     series: {
       type: Array,
       default: []
     }
   }),
-  series = computed(() => props.series),
-  categories = computed(() => props.categories),
 
+totalLength = 6,
+series = computed(() => props.series),
+categories = computed(() => props.categories),
 options = computed(() => ({
   chart: {
     type: 'bar',
@@ -51,7 +52,13 @@ options = computed(() => ({
     bar: {
       horizontal: false,
       borderRadius: 10,
-      columnWidth: '70%',
+      columnWidth: '52px',
+      borderRadiusWhenStacked: 'all',
+      colors: {
+        backgroundBarColors: ['#F2F4F7'],
+        backgroundBarOpacity: 1,
+        backgroundBarRadius: 10,
+      },
       dataLabels: {
         enabled: false,
       }
@@ -63,21 +70,21 @@ options = computed(() => ({
   xaxis: {
     type: 'category',
     categories: categories.value,
-      floating: true,
-      position: 'bottom',
-      labels: { 
-        show: true,
-        rotate: -90,
-        rotateAlways: true,
-        style: {
-            fontSize: '12px',
-            fontFamily: 'Grotesk, sans-serif',
-            fontWeight: 700,
-            cssClass: 'apexcharts-xaxis-label',
-        },
-        offsetX: 0,
-        offsetY: -80,
+    floating: true,
+    position: 'bottom',
+    labels: {
+      show: categories.value.length,
+      rotate: -90,
+      rotateAlways: true,
+      style: {
+          fontSize: '12px',
+          fontFamily: 'Grotesk, sans-serif',
+          fontWeight: 700,
+          cssClass: 'apexcharts-xaxis-label',
       },
+      offsetX: 0,
+      offsetY: -100,
+    },
   },
   dataLabels: {
     enabled: false

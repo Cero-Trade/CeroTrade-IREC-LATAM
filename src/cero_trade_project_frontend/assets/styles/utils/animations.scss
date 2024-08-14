@@ -4,6 +4,11 @@
 //---------------------------------------------------------------------------------------------//
 //======================================== animations =========================================//
 //---------------------------------------------------------------------------------------------//
+.rotate-infinite { animation: rotate-infinite 2s linear infinite !important; }
+@keyframes rotate-infinite {
+  0% { transform: rotate(0); }
+  100% { transform: rotate(360deg); }
+}
 @keyframes aparecer {
   0% {opacity: 50%}
   100% {opacity: 100%}

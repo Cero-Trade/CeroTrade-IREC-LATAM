@@ -36,12 +36,12 @@
       <v-col xl="2" lg="2" md="4" cols="12" class="delete-mobile d-flex flex-column" style="gap: 20px;">
         <v-card class="card card-mwh d-flex flex-column-jcenter flex-grow-1">
           <h6>Total MWh</h6>
-          <h5 >{{ totalMwh }}MWh</h5>
+          <h5 >{{ totalMwh }} MWh</h5>
         </v-card>
 
         <v-card class="card card-mwh d-flex flex-column-jcenter flex-grow-1">
           <h6>Redeemed MWh</h6>
-          <h5>{{ totalRedeemed }}MWh</h5>
+          <h5>{{ totalRedeemed }} MWh</h5>
         </v-card>
       </v-col>
     </v-row>
@@ -130,7 +130,7 @@
             <v-card class="card cards-marketplace">
               <div class="divrow jspace acenter mb-6">
                 <div class="divrow center" style="gap: 5px;">
-                  <h6 class="mb-0 font700">Asset # {{ item.token_id }}</h6>
+                  <h6 class="mb-0 font700" :title="item.token_id">Asset # {{ shortString(item.token_id, {}) }}</h6>
                 </div>
 
                 <v-chip @click="goDetails(item)" color="white" class="chip-table" style="border-radius: 10px!important;">
@@ -255,8 +255,6 @@
 <script setup>
 import '@/assets/styles/pages/my-portfolio.scss'
 import countries from '@/assets/sources/json/countries-all.json'
-import checkboxCheckedIcon from '@/assets/sources/icons/checkbox-checked.svg'
-import checkboxBaseIcon from '@/assets/sources/icons/checkbox-base.svg'
 import RenewableChart from "@/components/renewable-chart.vue"
 import HydroEnergyIcon from '@/assets/sources/energies/hydro-color.svg'
 import OceanEnergyIcon from '@/assets/sources/energies/ocean.svg'
@@ -272,6 +270,7 @@ import { AgentCanister } from '@/repository/agent-canister'
 import { ref, computed, watch, onBeforeMount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
+import { shortString } from '@/plugins/functions'
 // import { closeLoader, showLoader } from '@/plugins/functions'
 
 const
@@ -289,15 +288,13 @@ filters = ref({
 }),
 
 energies = {
-  hydro: HydroEnergyIcon,
-  ocean: OceanEnergyIcon,
-  geothermal: GeothermalEnergyIcon,
-  biome: BiomeEnergyIcon,
-  wind: WindEnergyIcon,
-  sun: SolarEnergyIcon,
+  "Solar": SolarEnergyIcon,
+  "Wind": WindEnergyIcon,
+  "Hydro-Electric": HydroEnergyIcon,
+  "Thermal": GeothermalEnergyIcon,
 },
 countriesImg = {
-  chile: ChileIcon
+  CL: ChileIcon
 },
 
 headers = [
@@ -380,7 +377,7 @@ async function getData() {
     for (const item of tokensInfo.data) {
       list.push({
         token_id: item.tokenId,
-        energy_source: item.assetInfo.assetType,
+        energy_source: item.assetInfo.deviceDetails.deviceType,
         country: item.assetInfo.specifications.country,
         mwh: item.totalAmount,
       })
@@ -401,7 +398,7 @@ async function getData() {
     }, []);
 
     const groupedRedemptions = tokensRedemption.reduce((acc, item) => {
-      let existenceElement = acc.find(elem => elem.tokenId === item.tokenId);
+      let existenceElement = acc.find(elem => elem.energy_source === item.energy_source);
 
       if (existenceElement) {
         existenceElement.tokenAmount += item.tokenAmount;

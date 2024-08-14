@@ -42,7 +42,7 @@ RUN npm install
 EXPOSE 8000
 
 # Give execute permissions to the build script
-COPY build_script.sh /app/build_script.sh
+COPY scripts/build_script.sh /app/build_script.sh
 RUN chmod +x /app/build_script.sh
 
 CMD ["bash", "/app/build_script.sh"]

@@ -1,28 +1,62 @@
-import { fileCompression, getUrlFromArrayBuffer, getImageArrayBuffer } from "@/plugins/functions";
+import { fileCompression, getUrlFromArrayBuffer, getImageArrayBuffer, convertE8SToICP } from "@/plugins/functions";
 import { useAgentCanister as agent, getErrorMessage } from "@/services/icp-provider";
 import avatar from '@/assets/sources/images/avatar-online.svg'
 import store from "@/store";
 import { UserProfileModel } from "@/models/user-profile-model";
-import { AssetType, TokenModel } from "@/models/token-model";
-import { TokensICP, TransactionHistoryInfo, TransactionInfo, TxMethodDef, TxTypeDef } from "@/models/transaction-model";
+import { AssetInfoModel, AssetType, TokenModel } from "@/models/token-model";
+import { Tokens, TokensICP, TransactionHistoryInfo, TransactionInfo, TxMethodDef, TxTypeDef } from "@/models/transaction-model";
 import { MarketplaceInfo, MarketplaceSellersInfo } from "@/models/marketplace-model";
 import { Principal } from "@dfinity/principal";
 import moment from "moment";
 import variables from "@/mixins/variables";
+import { NotificationEventStatusDef, NotificationInfo, NotificationStatusDef, NotificationTypeDef } from "@/models/notifications-model";
+import { AssetStatistic } from "@/models/statistics-model";
 
 export class AgentCanister {
   static async register(data: {
     companyId: string,
+    evidentId: string,
     companyName: string,
     companyLogo: File[],
     country: string,
     city: string,
     address: string,
     email: string,
-  }): Promise<void> {
+  }, beneficiary?: string): Promise<void> {
     try {
       // store user
       await agent().register({
+        companyId: data.companyId,
+        evidentId: data.evidentId,
+        companyName: data.companyName,
+        country: data.country,
+        city: data.city,
+        address: data.address,
+        email: data.email,
+      }, beneficiary ? [Principal.fromText(beneficiary)] : [])
+
+      // store user company logo
+      const fileCompressed = await fileCompression(data.companyLogo[0]),
+      arrayBuffer = await getImageArrayBuffer(fileCompressed)
+      await AgentCanister.storeCompanyLogo(arrayBuffer)
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+  static async updateUserInfo(data: {
+    companyId: string,
+    companyName: string,
+    companyLogo?: File[],
+    country: string,
+    city: string,
+    address: string,
+    email: string,
+  }): Promise<void> {
+    try {
+      // update user
+      await agent().updateUserInfo({
         companyId: data.companyId,
         companyName: data.companyName,
         country: data.country,
@@ -31,10 +65,14 @@ export class AgentCanister {
         email: data.email,
       })
 
-      // store user company logo
-      const fileCompressed = await fileCompression(data.companyLogo[0]),
-      arrayBuffer = await getImageArrayBuffer(fileCompressed)
-      await AgentCanister.storeCompanyLogo(arrayBuffer)
+      if (data.companyLogo?.length) {
+        // store user company logo
+        const fileCompressed = await fileCompression(data.companyLogo[0]),
+        arrayBuffer = await getImageArrayBuffer(fileCompressed)
+        await AgentCanister.storeCompanyLogo(arrayBuffer)
+      }
+
+      await this.getProfile()
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)
@@ -75,9 +113,12 @@ export class AgentCanister {
   static async getProfile(uid?: Principal): Promise<UserProfileModel> {
     try {
       const userProfile = await agent().getProfile(uid ? [uid] : []) as UserProfileModel
+      userProfile.principalId = Principal.fromText(userProfile.principalId.toString())
       userProfile.companyLogo = getUrlFromArrayBuffer(userProfile.companyLogo) || avatar
+      userProfile.createdAt = new Date(userProfile.createdAt)
+      userProfile.updatedAt = new Date(userProfile.updatedAt)
 
-      store.commit('setProfile', userProfile)
+      if (!uid) store.commit('setProfile', userProfile)
       return userProfile
     } catch (error) {
       console.error(error);
@@ -88,12 +129,20 @@ export class AgentCanister {
 
   static async checkUserToken(tokenId: string): Promise<boolean> {
     try {
-      return await agent().checkUserToken(tokenId) as boolean
+      const balance = await agent().balanceOf(tokenId) as bigint
+      return balance > BigInt(0)
     } catch (_) {
       return false
     }
   }
 
+  static async checkUserTokenInMarket(tokenId: string): Promise<boolean> {
+    try {
+      return await agent().checkUserTokenInMarket(tokenId) as boolean
+    } catch (_) {
+      return false
+    }
+  }
 
   static async getPortfolio({ page, length, assetTypes, country, mwhRange }:
     {
@@ -120,7 +169,7 @@ export class AgentCanister {
 
       for (const item of response.tokensInfo.data) {
         // format record value
-        item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
+        item.assetInfo.deviceDetails.deviceType = Object.values(item.assetInfo.deviceDetails.deviceType)[0] as AssetType
         item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
         item.totalAmount = Number(item.totalAmount)
         item.inMarket = Number(item.inMarket)
@@ -137,6 +186,7 @@ export class AgentCanister {
         item.txType = Object.values(item.txType)[0] as TxTypeDef
         item.to = Object.values(item.to)[0] as string
         item.tokenAmount = Number(item.tokenAmount)
+        item.redemptionPdf = await getUrlFromArrayBuffer(item.redemptionPdf)
       }
 
       return response
@@ -156,7 +206,113 @@ export class AgentCanister {
       token.inMarket = Number(token.inMarket)
       token.assetInfo.specifications.capacity = Number(token.assetInfo.specifications.capacity)
       // format dates
-      token.assetInfo.assetType = Object.values(token.assetInfo.assetType)[0] as AssetType
+      token.assetInfo.deviceDetails.deviceType = Object.values(token.assetInfo.deviceDetails.deviceType)[0] as AssetType
+      token.assetInfo.startDate = new Date(token.assetInfo.startDate)
+      token.assetInfo.endDate = new Date(token.assetInfo.endDate)
+
+      const dates: Date[] = [];
+      for (const date of token.assetInfo.dates) dates.push(new Date(date))
+      token.assetInfo.dates = dates
+
+      return token
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+  static async filterUsers(user: string): Promise<UserProfileModel[]> {
+    try {
+      const users = await agent().filterUsers(user) as UserProfileModel[]
+
+      const profile = UserProfileModel.get(),
+      profileIndex = users.findIndex(e => e.principalId.toString() == profile.principalId.toString())
+      if (profileIndex != -1) users.splice(profileIndex, 1)
+
+      for (const user of users) {
+        user.principalId = Principal.fromText(user.principalId.toString())
+        user.companyLogo = getUrlFromArrayBuffer(user.companyLogo) || avatar
+        user.createdAt = new Date(user.createdAt)
+        user.updatedAt = new Date(user.updatedAt)
+      }
+
+      return users
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+  static async getBeneficiaries(): Promise<UserProfileModel[]> {
+    try {
+      const users = await agent().getBeneficiaries() as UserProfileModel[]
+
+      for (const user of users) user.companyLogo = getUrlFromArrayBuffer(user.companyLogo) || avatar
+
+      return users
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+  static async addBeneficiaryRequested(notificationId: string): Promise<void> {
+    try {
+      await agent().addBeneficiaryRequested(notificationId)
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+  static async requestBeneficiary(beneficiaryId: Principal): Promise<void> {
+    try {
+      await agent().requestBeneficiary(beneficiaryId)
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+  static async importUserTokens(): Promise<{ mwh: number, assetInfo: AssetInfoModel }[]> {
+    try {
+      const transactions = await agent().importUserTokens() as { mwh: number, assetInfo: AssetInfoModel }[]
+
+      for (const transaction of transactions) {
+        // format record value
+        transaction.mwh = Number(transaction.mwh)
+        transaction.assetInfo.volumeProduced = Number(transaction.assetInfo.volumeProduced)
+        transaction.assetInfo.specifications.capacity = Number(transaction.assetInfo.specifications.capacity)
+        // format dates
+        transaction.assetInfo.deviceDetails.deviceType = Object.values(transaction.assetInfo.deviceDetails.deviceType)[0] as AssetType
+        transaction.assetInfo.startDate = new Date(transaction.assetInfo.startDate)
+        transaction.assetInfo.endDate = new Date(transaction.assetInfo.endDate)
+  
+        const dates: Date[] = [];
+        for (const date of transaction.assetInfo.dates) dates.push(new Date(date))
+        transaction.assetInfo.dates = dates
+      }
+
+      console.log(transactions);
+
+      return transactions
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+  static async getTokenDetails(tokenId: string): Promise<TokenModel> {
+    try {
+      const token = await agent().getTokenDetails(tokenId) as TokenModel
+
+      // format record value
+      token.assetInfo.volumeProduced = Number(token.assetInfo.volumeProduced)
+      token.totalAmount = Number(token.totalAmount)
+      token.inMarket = Number(token.inMarket)
+      token.assetInfo.specifications.capacity = Number(token.assetInfo.specifications.capacity)
+      // format dates
+      token.assetInfo.deviceDetails.deviceType = Object.values(token.assetInfo.deviceDetails.deviceType)[0] as AssetType
       token.assetInfo.startDate = new Date(token.assetInfo.startDate)
       token.assetInfo.endDate = new Date(token.assetInfo.endDate)
 
@@ -172,25 +328,9 @@ export class AgentCanister {
   }
 
 
-  static async getTokenDetails(tokenId: string): Promise<TokenModel> {
+  static async getTokenCanister(tokenId: string): Promise<Principal> {
     try {
-      const token = await agent().getTokenDetails(tokenId) as TokenModel
-
-      // format record value
-      token.assetInfo.volumeProduced = Number(token.assetInfo.volumeProduced)
-      token.totalAmount = Number(token.totalAmount)
-      token.inMarket = Number(token.inMarket)
-      token.assetInfo.specifications.capacity = Number(token.assetInfo.specifications.capacity)
-      // format dates
-      token.assetInfo.assetType = Object.values(token.assetInfo.assetType)[0] as AssetType
-      token.assetInfo.startDate = new Date(token.assetInfo.startDate)
-      token.assetInfo.endDate = new Date(token.assetInfo.endDate)
-
-      const dates: Date[] = [];
-      for (const date of token.assetInfo.dates) dates.push(new Date(date))
-      token.assetInfo.dates = dates
-
-      return token
+      return await agent().getTokenCanister(tokenId) as Principal
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)
@@ -219,10 +359,14 @@ export class AgentCanister {
 
       for (const item of response.data) {
         // format record value
-        item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
+        item.assetInfo.deviceDetails.deviceType = Object.values(item.assetInfo.deviceDetails.deviceType)[0] as AssetType
         item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
         item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
         item.mwh = Number(item.mwh)
+
+        // convert e8s to icp
+        item.lowerPriceE8S = convertE8SToICP(Number(item.lowerPriceE8S['e8s']))
+        item.higherPriceE8S = convertE8SToICP(Number(item.higherPriceE8S['e8s']))
       }
 
       response.totalPages = Number(response.totalPages)
@@ -262,9 +406,12 @@ export class AgentCanister {
 
         // get nullable object
         item.assetInfo = item.assetInfo[0]
-        item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
+        item.assetInfo.deviceDetails.deviceType = Object.values(item.assetInfo.deviceDetails.deviceType)[0] as AssetType
         item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
         item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
+
+        // convert e8s to icp
+        item.priceE8S = convertE8SToICP(Number(item.priceE8S['e8s']))
       }
 
       response.totalPages = Number(response.totalPages)
@@ -277,14 +424,13 @@ export class AgentCanister {
   }
 
 
-  static async purchaseToken(tokenId: string, recipent: string, amount: number, price: number): Promise<TransactionInfo> {
+  static async purchaseToken(tokenId: string, recipent: Principal, amount: number): Promise<TransactionInfo> {
     try {
-      /* TODO replace in future for recipent */
-      const testingRecipent = Principal.fromText("2vxsx-fae");
-
-      const tx = await agent().purchaseToken(tokenId, testingRecipent, amount, price) as TransactionInfo
+      const tx = await agent().purchaseToken(tokenId, recipent, amount) as TransactionInfo
       tx.txType = Object.values(tx.txType)[0] as TxTypeDef
-      tx.to = Object.values(tx.to)[0] as string
+      tx.to = tx.to[0] as string
+      tx.method = Object.values(tx.method)[0] as TxMethodDef
+      tx.priceE8S = tx.priceE8S[0] ? convertE8SToICP(Number(tx.priceE8S[0]['e8s'])) : null
 
       return tx
     } catch (error) {
@@ -294,7 +440,7 @@ export class AgentCanister {
   }
 
 
-  static async putOnSale(tokenId: string, quantity: number, price: number): Promise<void> {
+  static async putOnSale(tokenId: string, quantity: number, price: TokensICP): Promise<void> {
     try {
       const res = await agent().sellToken(tokenId, quantity, price)
       console.log(res);
@@ -315,14 +461,59 @@ export class AgentCanister {
   }
 
 
-  static async redeemToken(tokenId: string, beneficiary: string, amount: number): Promise<TransactionInfo> {
+  static async requestRedeemToken({ tokenId, amount, beneficiary, periodStart, periodEnd, locale }: {
+    tokenId: string,
+    amount: number,
+    beneficiary: Principal,
+    periodStart: Date,
+    periodEnd: Date,
+    locale: string,
+  }): Promise<void> {
     try {
-      /* TODO replace in future for beneficiary */
-      const testingBeneficiary = Principal.fromText("2vxsx-fae");
+      await agent().requestRedeemToken(
+        tokenId,
+        amount,
+        beneficiary,
+        moment(periodStart).format(variables.dateFormat),
+        moment(periodEnd).format(variables.dateFormat),
+        locale
+      )
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
 
-      const tx = await agent().redeemToken(tokenId, testingBeneficiary, amount) as TransactionInfo
+
+  static async redeemTokenRequested(notificationId: string): Promise<void> {
+    try {
+      await agent().redeemTokenRequested(notificationId)
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+
+  static async redeemToken({ tokenId, amount, periodStart, periodEnd, locale }: {
+    tokenId: string,
+    amount: number,
+    periodStart: Date,
+    periodEnd: Date,
+    locale: string,
+  }): Promise<TransactionInfo> {
+    try {
+      const tx = await agent().redeemToken(
+        tokenId,
+        amount,
+        moment(periodStart).format(variables.dateFormat),
+        moment(periodEnd).format(variables.dateFormat),
+        locale
+      ) as TransactionInfo
       tx.txType = Object.values(tx.txType)[0] as TxTypeDef
-      tx.to = Object.values(tx.to)[0] as string
+      tx.to = tx.to[0] as string
+      tx.method = Object.values(tx.method)[0] as TxMethodDef
+      tx.priceE8S = tx.priceE8S[0] ? convertE8SToICP(Number(tx.priceE8S[0]['e8s'])) : null
 
       return tx
     } catch (error) {
@@ -337,7 +528,7 @@ export class AgentCanister {
     length?: number,
     txType?: TxTypeDef,
     country?: string,
-    priceRange?: TokensICP[],
+    priceRange?: Tokens[],
     mwhRange?: number[],
     assetTypes?: AssetType[],
     method?: TxMethodDef,
@@ -367,17 +558,113 @@ export class AgentCanister {
         item.txType = Object.values(item.txType)[0] as TxTypeDef
         item.method = Object.values(item.method)[0] as TxMethodDef
         item.date = new Date(item.date)
+        item.redemptionPdf = await getUrlFromArrayBuffer(item.redemptionPdf)
 
         // get nullable object
+        item.to = item.to[0]
         item.assetInfo = item.assetInfo[0]
-        item.assetInfo.assetType = Object.values(item.assetInfo.assetType)[0] as AssetType
+        item.assetInfo.deviceDetails.deviceType = Object.values(item.assetInfo.deviceDetails.deviceType)[0] as AssetType
         item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
         item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
+
+        // convert e8s to icp
+        item.priceE8S = item.priceE8S[0] ? convertE8SToICP(Number(item.priceE8S[0]['e8s'])) : null
       }
 
       response.totalPages = Number(response.totalPages)
 
       return response
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+
+  static async getAllAssetStatistics(): Promise<[string, AssetStatistic][]> {
+    try {
+      const res = await agent().getAllAssetStatistics() as [string, AssetStatistic][]
+
+      for (const item of res) {
+        item[1].mwh = Number(item[1].mwh)
+        item[1].assetType = Object.values(item[1].assetType)[0] as AssetType
+        item[1].redemptions = Number(item[1].redemptions)
+      }
+
+      return res
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+
+  static async getAssetStatistics(tokenId: string): Promise<AssetStatistic> {
+    try {
+      const res = await agent().getAssetStatistics(tokenId) as AssetStatistic
+
+      res.mwh = Number(res.mwh)
+      res.assetType = Object.values(res.assetType)[0] as AssetType
+      res.redemptions = Number(res.redemptions)
+
+      return res
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+
+  static async getNotifications(page?: number, length?: number, notificationTypes?: NotificationTypeDef[]): Promise<NotificationInfo[]> {
+    try {
+      const res = await agent().getNotifications(
+        page ? [page] : [],
+        length ? [length] : [],
+        notificationTypes?.map(e => ({[e]: e})) ?? [],
+      ) as NotificationInfo[]
+
+      for (const item of res) {
+        item.notificationType = Object.values(item.notificationType)[0] as NotificationTypeDef
+        item.eventStatus = item.eventStatus[0] ? Object.values(item.eventStatus[0])[0] as NotificationEventStatusDef : null
+        item.status = item.status[0] ? Object.values(item.status[0])[0] as NotificationStatusDef : null
+        item.content = item.content[0]
+        item.triggeredBy = item.triggeredBy[0]
+        item.tokenId = item.tokenId[0]
+        item.quantity = Number(item.quantity[0]) || null
+        item.createdAt = new Date(item.createdAt)
+      }
+
+      return res
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
+  // update general notifications
+  static async updateGeneralNotifications(notificationIds: [string]): Promise<void> {
+    try {
+      await agent().updateGeneralNotifications(notificationIds);
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  };
+
+  // clear general notifications
+  static async clearGeneralNotifications(notificationIds: [Text]): Promise<void> {
+    try {
+      await agent().clearGeneralNotifications(notificationIds);
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  };
+
+  // update event notification
+  static async updateEventNotification(notificationId: string, receiverEventStatus?: NotificationEventStatusDef): Promise<void> {
+    try {
+      await agent().updateEventNotification(notificationId, receiverEventStatus ? [{[receiverEventStatus]: receiverEventStatus}] : [])
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)

@@ -13,14 +13,14 @@ import DateTime "mo:datetime/DateTime";
 import T "../types";
 
 shared({ caller = transactionIndexCaller }) actor class Transactions() {
-  var transactions: HM.HashMap<T.TransactionId, T.TransactionInfo> = HM.HashMap(16, Text.equal, Text.hash);
+  var transactions: HM.HashMap<T.TransactionId, T.TransactionInfo> = HM.HashMap(50, Text.equal, Text.hash);
   stable var transactionsEntries : [(T.TransactionId, T.TransactionInfo)] = [];
 
 
   /// funcs to persistent collection state
   system func preupgrade() { transactionsEntries := Iter.toArray(transactions.entries()) };
   system func postupgrade() {
-    transactions := HM.fromIter<T.TransactionId, T.TransactionInfo>(transactionsEntries.vals(), 16, Text.equal, Text.hash);
+    transactions := HM.fromIter<T.TransactionId, T.TransactionInfo>(transactionsEntries.vals(), 50, Text.equal, Text.hash);
     transactionsEntries := [];
   };
 
@@ -30,7 +30,7 @@ shared({ caller = transactionIndexCaller }) actor class Transactions() {
   public query func length(): async Nat { transactions.size() };
 
 
-  /// register transaction to cero trade
+  /// register transaction to Cero Trade
   public shared({ caller }) func registerTransaction(txInfo: T.TransactionInfo): async T.TransactionId {
     _callValidation(caller);
 
@@ -59,7 +59,12 @@ shared({ caller = transactionIndexCaller }) actor class Transactions() {
           // filter priceRange
           let filterPrice: Bool = switch(priceRange) {
             case(null) true;
-            case(?range) txInfo.priceICP.e8s >= range[0].e8s and txInfo.priceICP.e8s <= range[1].e8s;
+            case(?range) {
+              switch(txInfo.priceE8S) {
+                case(null) true;
+                case(?priceE8S) priceE8S.e8s >= range[0].e8s and priceE8S.e8s <= range[1].e8s;
+              };
+            };
           };
 
           // filter by txType

@@ -1,4 +1,24 @@
 <template>
+  <modal-approve
+    ref="modalApprove"
+    :token-id="tokenId"
+    :amount-in-icp="amountInIcp"
+    :fee-in-e8s="feeInE8S"
+    @approve="() => {
+      if (dialogPurchaseReview)
+        purchaseToken()
+      else if (dialogRedeem || dialogRedeemCertificates)
+        redeemToken()
+    }"
+  ></modal-approve>
+
+  <modal-confirm
+    ref="modalRequestRedeem"
+    title="Do you want to send redeem request"
+    :content="`you agree to send a request to ${beneficiaries?.find(e => e.principalId === formRedeem.beneficiary)?.companyName ?? 'your beneficiary'} to redeem ${(tokenAmount ?? 0) > 1 ? 'tokens' : 'token'} in his name`"
+    @accept="requestRedeemToken"
+  />
+
   <div id="token-details">
     <span class="mb-10 acenter" style="color: #475467; font-size: 16px; font-weight: 700;">
       <img src="@/assets/sources/icons/home-layout.svg" alt="Home Icon" style="width: 20px;">
@@ -7,13 +27,13 @@
       <img src="@/assets/sources/icons/chevron-right-light.svg" alt="arrow right icon" class="mx-1">
       <span style="color: #00555B;">Asset # {{ tokenId }}</span>
     </span>
-    <h3 class="acenter mb-4">
+    <h3 class="acenter mb-4" :title="tokenId" style="width: max-content">
       <company-logo
-        :energy-src="energies[tokenDetail?.assetInfo.assetType]"
+        :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
         :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
         class="mr-4"
       ></company-logo>
-      Asset # {{ tokenId }}
+      Asset # {{ shortString(tokenId, {}) }}
     </h3>
 
     <v-row>
@@ -24,8 +44,8 @@
               <div class="jspace divrow mb-1">
                 <span style="color: #475467;">Type</span>
                 <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-                  <img :src="energiesColored[tokenDetail?.assetInfo.assetType]" :alt="`${tokenDetail?.assetInfo.assetType} icon`" style="width: 20px;">
-                  {{ tokenDetail?.assetInfo.assetType }} energy
+                  <img :src="energiesColored[tokenDetail?.assetInfo.deviceDetails.deviceType]" :alt="`${tokenDetail?.assetInfo.deviceDetails.deviceType} icon`" style="width: 20px;">
+                  {{ tokenDetail?.assetInfo.deviceDetails.deviceType }} energy
                 </span>
               </div>
 
@@ -48,14 +68,19 @@
                 <span style="color: #475467;">Radioactivity emission</span>
                 <span>{{ tokenDetail?.assetInfo.radioactivityEmnission }}%</span>
               </div>
+
+              <div class="jspace divrow mt-3 mb-1">
+                <span style="color: #475467;">Total volume produced</span>
+                <span>{{ tokenDetail?.assetInfo.volumeProduced }}</span>
+              </div>
             </v-card>
           </v-col>
 
           <v-col xl="4" lg="4" cols="12">
             <v-card class="card relative" style="min-height: 100%!important;">
-              <span>Amount owned/produced</span>
+              <span>Amount minted in CT / total produced</span>
               <div id="chart">
-                <apexchart type="radialBar" :options="chartOptions" :series="seriesOwnedVsProduced"></apexchart>
+                <apexchart type="radialBar" :options="chartOptions" :series="seriesMintedVsProduced"></apexchart>
               </div>
             </v-card>
           </v-col>
@@ -110,8 +135,8 @@
                       <div class="jspace divrow mt-3 mb-1">
                         <span style="color: #475467;">Device group</span>
                         <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-                          <img :src="energiesColored[tokenDetail?.assetInfo.assetType]" :alt="`${tokenDetail?.assetInfo.assetType} icon`" style="width: 20px;">
-                          {{ tokenDetail?.assetInfo.assetType }}
+                          <img :src="energiesColored[tokenDetail?.assetInfo.deviceDetails.deviceType]" :alt="`${tokenDetail?.assetInfo.deviceDetails.deviceType} icon`" style="width: 20px;">
+                          {{ tokenDetail?.assetInfo.deviceDetails.deviceType }}
                         </span>
                       </div>
 
@@ -221,31 +246,31 @@
             >
               <template #[`item.seller`]="{ item }">
                 <v-menu :close-on-content-click="false" @update:model-value="(value) => getSellerProfile(value, item.seller)">
-                    <template #activator="{ props }">
-                      <a v-bind="props" class="text-capitalize pointer flex-acenter" style="gap: 5px; text-wrap: nowrap">{{ item.seller }}</a>
-                    </template>
+                  <template #activator="{ props }">
+                    <a v-bind="props" class="pointer flex-acenter" style="gap: 5px; max-width: 200px">{{ shortPrincipalId(item.seller?.toString()) }}</a>
+                  </template>
 
-                    <v-card class="px-4 py-2 bg-secondary d-flex">
-                      <v-progress-circular
-                        v-if="!previewSeller"
-                        indeterminate
-                        color="rgb(var(--v-theme-primary))"
-                        class="mx-auto"
-                      ></v-progress-circular>
+                  <v-card class="px-4 py-2 bg-secondary d-flex flex-column">
+                    <v-progress-circular
+                      v-if="!previewSeller"
+                      indeterminate
+                      color="rgb(var(--v-theme-primary))"
+                      class="mx-auto"
+                    ></v-progress-circular>
 
-                      <span v-else class="flex-acenter" style="gap: 10px; text-wrap: nowrap">
-                        <v-img-load
-                          :src="previewSeller.companyLogo"
-                          :alt="`${previewSeller.companyName} logo`"
-                          cover
-                          sizes="30px"
-                          rounded="50%"
-                          class="flex-grow-0"
-                        />
-                        {{ previewSeller.companyName }}
-                      </span>
-                    </v-card>
-                  </v-menu>
+                    <span v-else class="flex-acenter" style="gap: 10px; text-wrap: nowrap">
+                      <v-img-load
+                        :src="previewSeller.companyLogo"
+                        :alt="`${previewSeller.companyName} logo`"
+                        cover
+                        sizes="30px"
+                        rounded="50%"
+                        class="flex-grow-0"
+                      />
+                      {{ previewSeller.companyName }}
+                    </span>
+                  </v-card>
+                </v-menu>
               </template>
 
               <template #[`item.price`]="{ item }">
@@ -295,7 +320,7 @@
 
                   <v-menu :close-on-content-click="false" @update:model-value="(value) => getSellerProfile(value, item.seller)">
                     <template #activator="{ props }">
-                      <a v-bind="props" style="color: #475467;" class="acenter pointer text-capitalize">{{ item.seller }}</a>
+                      <a v-bind="props" style="color: #475467;" class="acenter pointer text-capitalize">{{ shortPrincipalId(item.seller?.toString()) }}</a>
                     </template>
 
                     <v-card class="px-4 py-2 bg-secondary d-flex">
@@ -383,7 +408,7 @@
                 Sell
               </v-btn>
 
-              <v-btn v-if="haveToken" class="btn btn2" @click="showDialog('takeOff')" style="flex: 1 1 calc(50% - 10px)">
+              <v-btn v-if="haveTokenInMarket" class="btn btn2" @click="showDialog('takeOff')" style="flex: 1 1 calc(50% - 10px)">
                 Take off market
               </v-btn>
 
@@ -391,7 +416,7 @@
                 Buy
               </v-btn>
 
-              <v-btn v-if="haveToken" class="btn" @click="showDialog('redeem')" style="flex: 1 1 calc(50% - 10px)">
+              <v-btn v-if="haveToken" :loading="!beneficiaries" class="btn" @click="showDialog('redeem')" style="flex: 1 1 calc(50% - 10px)">
                 Redeem Token
               </v-btn>
             </div>
@@ -460,21 +485,21 @@
           <v-divider class="mb-3 mt-4"  thickness="2" style="width: 150%; position: relative; left: -50px;"></v-divider>
           
           <div class="jspace divrow mb-4 acenter">
-            <h5 class="acenter mb-0 bold h5-mobile">
+            <h5 class="acenter mb-0 bold h5-mobile" :title="tokenId">
               <company-logo
-                :energy-src="energies[tokenDetail?.assetInfo.assetType]"
+                :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
                 :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
                 class="mr-4"
               ></company-logo>
-              #{{ tokenId }}
+              #{{ shortString(tokenId, {}) }}
             </h5>
           </div>
           
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Energy source type</span>
             <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-              <img :src="energiesColored[tokenDetail?.assetInfo.assetType]" :alt="`${tokenDetail?.assetInfo.assetType} icon`" style="width: 20px;">
-              {{ tokenDetail?.assetInfo.assetType }}
+              <img :src="energiesColored[tokenDetail?.assetInfo.deviceDetails.deviceType]" :alt="`${tokenDetail?.assetInfo.deviceDetails.deviceType} icon`" style="width: 20px;">
+              {{ tokenDetail?.assetInfo.deviceDetails.deviceType }}
             </span>
           </div>
 
@@ -488,7 +513,7 @@
 
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Amount</span>
-            <span>{{ tokenAmount }}MWh</span>
+            <span>{{ tokenAmount }} MWh</span>
           </div>
         </v-card>
 
@@ -520,7 +545,7 @@
 
     <!-- Dialog Redeem -->
     <v-dialog v-model="dialogRedeem" persistent>
-      <v-form ref="formRedeem" @submit.prevent>
+      <v-form ref="formRedeemRef" @submit.prevent>
         <v-card class="card dialog-card-detokenize">
           <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="dialogRedeem = false">
           <v-sheet class="mb-6 double-sheet">
@@ -529,45 +554,142 @@
             </v-sheet>
           </v-sheet>
           <h6>IREC redemption details</h6>
-          <span class="tertiary">Please check all information on your tokenized assets’ redemption. You can redeem them to your own name, or to another company’s name by deeming them a beneficiary of yours.</span>
+          <span class="tertiary mb-4">Please check all information on your tokenized assets’ redemption. You can redeem them to your own name, or to another company’s name by deeming them a beneficiary of yours.</span>
 
-          <div class="flex-column mt-4" style="gap: 5px">
-            <label for="beneficiary">Beneficiary account (company)</label>
-            <v-text-field
-              v-model="redeemBeneficiary"
-              id="beneficiary"
-              variant="solo"
-              flat
-              class="select mb-8"
+          <label :for="formRedeem.periodStart ? 'periodEnd' : 'periodStart'" class="mb-1">Redemption period dates</label>
+          <div class="d-flex mb-4" style="gap: 20px;">
+            <v-menu v-model="periodStartMenu" :close-on-content-click="false">
+              <template v-slot:activator="{ props }">
+                <v-text-field
+                  id="periodStart"
+                  v-model="formRedeem.periodStart"
+                  placeholder="Select period start (required)"
+                  readonly v-bind="props"
+                  variant="outlined"
+                  density="compact"
+                  class="select mb-2"
+                  style="flex-basis: 50%;"
+                  :rules="[globalRules.required, (v) => {
+                    const periodEnd = formRedeem.periodEnd
+                    if (periodEnd && moment(v).isAfter(periodEnd)) return 'Period start cant be major than period end'
+                    return null
+                  }]"
+                >
+                  <template #append-inner>
+                    <img
+                      v-if="formRedeem.periodStart"
+                      src="@/assets/sources/icons/close.svg"
+                      alt="close icon"
+                      class="pointer"
+                      @click="formRedeem.periodStart = null"
+                    >
+                  </template>
+                </v-text-field>
+              </template>
+
+              <v-date-picker
+                title=""
+                color="rgb(var(--v-theme-secondary))"
+                hide-actions
+                @update:model-value="(v) => { formRedeem.periodStart = moment(v).format('YYYY/MM/DD') }"
+              >
+                <template v-slot:header></template>
+              </v-date-picker>
+            </v-menu>
+
+
+            <v-menu v-model="periodEndMenu" :close-on-content-click="false">
+              <template v-slot:activator="{ props }">
+                <v-text-field
+                  id="periodEnd"
+                  v-model="formRedeem.periodEnd"
+                  placeholder="Select period end (required)"
+                  readonly v-bind="props"
+                  variant="outlined"
+                  density="compact"
+                  class="select mb-2"
+                  style="flex-basis: 50%;"
+                  :rules="[globalRules.required, (v) => {
+                    const periodStart = formRedeem.periodStart
+                    if (periodStart && moment(v).isBefore(periodStart)) return 'Period end cant be minor than period start'
+                    return null
+                  }]"
+                >
+                  <template #append-inner>
+                    <img
+                      v-if="formRedeem.periodEnd"
+                      src="@/assets/sources/icons/close.svg" alt="close icon"
+                      class="pointer"
+                      @click="formRedeem.periodEnd = null"
+                    >
+                  </template>
+                </v-text-field>
+              </template>
+
+              <v-date-picker
+                title=""
+                color="rgb(var(--v-theme-secondary))"
+                hide-actions
+                @update:model-value="(v) => { formRedeem.periodEnd = moment(v).format('YYYY/MM/DD') }"
+              >
+                <template v-slot:header></template>
+              </v-date-picker>
+            </v-menu>
+          </div>
+
+          <div class="flex-column mb-4" style="gap: 5px">
+            <label for="locale" class="mb-1">Locale assigned to redemption</label>
+            <v-select
+              v-model="formRedeem.locale"
+              id="locale"
+              variant="solo" flat
+              :items="locales"
+              class="select mb-2"
               bg-color="transparent"
-              placeholder="beneficiary account"
+              placeholder="locale (required)"
               :rules="[globalRules.required]"
-            ></v-text-field>
+            ></v-select>
+          </div>
+
+          <div class="flex-column mb-4" style="gap: 5px">
+            <label for="beneficiary" class="mb-1">Beneficiary account (company)</label>
+            <v-select
+              v-model="formRedeem.beneficiary"
+              id="beneficiary"
+              variant="solo" flat
+              :items="beneficiaries"
+              item-title="companyName"
+              item-value="principalId"
+              class="select mb-2"
+              bg-color="transparent"
+              placeholder="beneficiary account (optional)"
+              :rules="[true]"
+            ></v-select>
           </div>
 
           <!-- <v-btn class="btn2" style="width: max-content !important">Add beneficiary</v-btn> -->
 
-          <v-card class="card cards-rec mt-6 pa-6">
+          <v-card class="card cards-rec pa-6">
             <span class="bold mt-3">Checkout review</span>
 
             <v-divider class="mb-3 mt-4"  thickness="2" style="width: 150%; position: relative; left: -50px;"></v-divider>
             
             <div class="jspace divrow mb-2 acenter">
-              <h5 class="acenter h5-mobile">
+              <h5 class="acenter h5-mobile" :title="tokenId">
                 <company-logo
-                  :energy-src="energies[tokenDetail?.assetInfo.assetType]"
+                  :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
                   :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
                   class="mr-4"
                 ></company-logo>
-                #{{ tokenId }}
+                #{{ shortString(tokenId, {}) }}
               </h5>
             </div>
 
             <div class="jspace divrow mb-1">
               <span style="color: #475467;">Energy source type</span>
               <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-                <img :src="energiesColored[tokenDetail?.assetInfo.assetType]" :alt="`${tokenDetail?.assetInfo.assetType} icon`" style="width: 20px;">
-                {{ tokenDetail?.assetInfo.assetType }}
+                <img :src="energiesColored[tokenDetail?.assetInfo.deviceDetails.deviceType]" :alt="`${tokenDetail?.assetInfo.deviceDetails.deviceType} icon`" style="width: 20px;">
+                {{ tokenDetail?.assetInfo.deviceDetails.deviceType }}
               </span>
             </div>
 
@@ -581,22 +703,22 @@
 
             <div class="jspace divrow mb-1">
               <span style="color: #475467;">Amount</span>
-              <span>{{ tokenAmount }}MWh</span>
+              <span>{{ tokenAmount }} MWh</span>
             </div>
 
             <v-divider class="mb-3 mt-4"  thickness="2" style="width: 100%;"></v-divider>
 
-            <div class="jspace divrow mt-4">
-              <span>Subtotal</span>
-              <span>$124.05</span>
+            <div class="jspace divrow mt-1">
+              <span>Transaction fee</span>
+              <span>{{ convertE8SToICP(feeInE8S) }} ICP</span>
             </div>
             <div class="jspace divrow mt-1">
-              <span>IVA (19%)</span>
-              <span>$12.41</span>
+              <span>Cero trade comission</span>
+              <span>{{ convertE8SToICP(ceroComisison) }} ICP</span>
             </div>
             <div class="jspace divrow mt-1">
               <span class="bold">Total</span>
-              <span class="bold">$136.46</span>
+              <span class="bold">{{ maxDecimals(amountInIcp + convertE8SToICP(feeInE8S) + convertE8SToICP(ceroComisison), 4) }} ICP</span>
             </div>
           </v-card>
 
@@ -622,10 +744,16 @@
           <div class="divrow center mt-6" style="gap: 10px;">
             <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogRedeem = false">Cancel</v-btn>
             <v-btn class="btn" @click="async () => {
-              if (!(await formRedeem.validate()).valid) return
+              if (!(await formRedeemRef.validate()).valid) return
 
-              dialogRedeem = false;
-              redeemToken()
+              // if beneficiary provided
+              if (formRedeem.beneficiary) {
+                modalRequestRedeem.model = true
+
+              // if beneficiary not provided
+              } else {
+                modalApprove.model = true
+              }
             }" style="border: none!important;">Redeem</v-btn>
           </div>
         </v-card>
@@ -724,13 +852,13 @@
           <v-divider class="mb-3 mt-4"  thickness="2" style="width: 150%; position: relative; left: -50px;"></v-divider>
           
           <div class="jspace divrow mb-4 acenter">
-            <h5 class="acenter mb-0 bold h5-mobile">
+            <h5 class="acenter mb-0 bold h5-mobile" :title="tokenId">
               <company-logo
-                :energy-src="energies[tokenDetail?.assetInfo.assetType]"
+                :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
                 :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
                 class="mr-4"
               ></company-logo>
-              #{{ tokenId }}
+              #{{ shortString(tokenId, {}) }}
             </h5>
             <div class="divrow mb-0 astart acenter">
               <h5 class="mb-0 mr-2 h5-mobile">
@@ -744,8 +872,8 @@
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Energy source type</span>
             <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-              <img :src="energiesColored[tokenDetail?.assetInfo.assetType]" :alt="`${tokenDetail?.assetInfo.assetType} icon`" style="width: 20px;">
-              {{ tokenDetail?.assetInfo.assetType }}
+              <img :src="energiesColored[tokenDetail?.assetInfo.deviceDetails.deviceType]" :alt="`${tokenDetail?.assetInfo.deviceDetails.deviceType} icon`" style="width: 20px;">
+              {{ tokenDetail?.assetInfo.deviceDetails.deviceType }}
             </span>
           </div>
 
@@ -759,7 +887,7 @@
 
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Amount</span>
-            <span>{{ tokenAmount }}MWh</span>
+            <span>{{ tokenAmount }} MWh</span>
           </div>
         </v-card>
 
@@ -804,7 +932,32 @@
           @update:options="getMarketPlace"
           >
             <template #[`item.seller`]="{ item }">
-              <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">{{ item.seller }}</span>
+              <v-menu :close-on-content-click="false" @update:model-value="(value) => getSellerProfile(value, item.seller)">
+                <template #activator="{ props }">
+                  <a v-bind="props" class="pointer flex-acenter" style="gap: 5px; max-width: 200px">{{ shortPrincipalId(item.seller?.toString()) }}</a>
+                </template>
+
+                <v-card class="px-4 py-2 bg-secondary d-flex flex-column">
+                  <v-progress-circular
+                    v-if="!previewSeller"
+                    indeterminate
+                    color="rgb(var(--v-theme-primary))"
+                    class="mx-auto"
+                  ></v-progress-circular>
+
+                  <span v-else class="flex-acenter" style="gap: 10px; text-wrap: nowrap">
+                    <v-img-load
+                      :src="previewSeller.companyLogo"
+                      :alt="`${previewSeller.companyName} logo`"
+                      cover
+                      sizes="30px"
+                      rounded="50%"
+                      class="flex-grow-0"
+                    />
+                    {{ previewSeller.companyName }}
+                  </span>
+                </v-card>
+              </v-menu>
             </template>
 
             <template #[`item.price`]="{ item }">
@@ -863,13 +1016,13 @@
           <v-divider class="mb-3 mt-4"  thickness="2" style="width: 150%; position: relative; left: -50px;"></v-divider>
           
           <div class="jspace divrow mb-2 acenter">
-            <h5 class="acenter h5-mobile">
+            <h5 class="acenter h5-mobile" :title="tokenId">
               <company-logo
-                :energy-src="energies[tokenDetail?.assetInfo.assetType]"
+                :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
                 :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
                 class="mr-4"
               ></company-logo>
-              #{{ tokenId }}
+              #{{ shortString(tokenId, {}) }}
             </h5>
             <div class="divrow astart acenter">
               <h5 class="mr-2 h5-mobile">
@@ -882,8 +1035,8 @@
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Energy source type</span>
             <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-              <img :src="energiesColored[tokenDetail?.assetInfo.assetType]" :alt="`${tokenDetail?.assetInfo.assetType} icon`" style="width: 20px;">
-              {{ tokenDetail?.assetInfo.assetType }}
+              <img :src="energiesColored[tokenDetail?.assetInfo.deviceDetails.deviceType]" :alt="`${tokenDetail?.assetInfo.deviceDetails.deviceType} icon`" style="width: 20px;">
+              {{ tokenDetail?.assetInfo.deviceDetails.deviceType }}
             </span>
           </div>
 
@@ -894,21 +1047,17 @@
 
           <v-divider class="mb-3 mt-4"  thickness="2" style="width: 100%;"></v-divider>
 
-          <div class="jspace divrow mt-4">
-            <span>Subtotal</span>
-            <span>$124.05</span>
+          <div class="jspace divrow mt-1">
+            <span>Transaction fee</span>
+            <span>{{ convertE8SToICP(feeInE8S) }} ICP</span>
           </div>
           <div class="jspace divrow mt-1">
-            <span>Transaction fee (10%)</span>
-            <span>$12.41</span>
-          </div>
-          <div class="jspace divrow mt-1">
-            <span>IVA (19%)</span>
-            <span>$12.41</span>
+            <span>Cero trade comission</span>
+            <span>{{ convertE8SToICP(ceroComisison) }} ICP</span>
           </div>
           <div class="jspace divrow mt-1">
             <span class="bold">Total</span>
-            <span class="bold">$136.46</span>
+            <span class="bold">{{ maxDecimals(amountInIcp + convertE8SToICP(feeInE8S) + convertE8SToICP(ceroComisison), 4) }} ICP</span>
           </div>
         </v-card>
 
@@ -933,7 +1082,7 @@
 
         <div class="divrow center mt-6" style="gap: 10px;">
           <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogPurchaseReview = false">Cancel</v-btn>
-          <v-btn class="btn" @click="purchaseToken()" style="border: none!important;">Proceed with payment</v-btn>
+          <v-btn class="btn" @click="modalApprove.model = true" style="border: none!important;">Proceed with payment</v-btn>
         </div>
       </v-card>
     </v-dialog>
@@ -952,13 +1101,13 @@
 
         <v-card class="card mt-6 pa-6">
           <div class="jspace divrow mb-1 acenter">
-            <h5 class="acenter h5-mobile">
+            <h5 class="acenter h5-mobile" :title="tokenId">
               <company-logo
-                :energy-src="energies[tokenDetail?.assetInfo.assetType]"
+                :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
                 :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
                 class="mr-4"
               ></company-logo>
-              #{{ tokenId }}
+              #{{ shortString(tokenId, {}) }}
             </h5>
             <div class="divrow astart acenter">
               <h5 class="mr-2 h5-mobile">
@@ -971,8 +1120,8 @@
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Energy source type</span>
             <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-              <img :src="energiesColored[tokenDetail?.assetInfo.assetType]" :alt="`${tokenDetail?.assetInfo.assetType} icon`" style="width: 20px;">
-              {{ tokenDetail?.assetInfo.assetType }}
+              <img :src="energiesColored[tokenDetail?.assetInfo.deviceDetails.deviceType]" :alt="`${tokenDetail?.assetInfo.deviceDetails.deviceType} icon`" style="width: 20px;">
+              {{ tokenDetail?.assetInfo.deviceDetails.deviceType }}
             </span>
           </div>
 
@@ -1031,7 +1180,7 @@
 
         <div class="divrow center mt-6" style="gap: 10px;">
           <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogRedeemCertificates = false">Not Now</v-btn>
-          <v-btn class="btn" @click="redeemToken()" style="border: none!important;">Yes, redeem</v-btn>
+          <v-btn class="btn" @click="modalApprove.model = true" style="border: none!important;">Yes, redeem</v-btn>
         </div>
       </v-card>
     </v-dialog>
@@ -1103,19 +1252,9 @@
 
 <script setup>
 import '@/assets/styles/pages/token-details.scss'
+import ModalApprove from '@/components/modals/modal-approve.vue'
 import countries from '@/assets/sources/json/countries-all.json'
 import Apexchart from "vue3-apexcharts"
-import SphereIcon from '@/assets/sources/companies/sphere.svg'
-import KapidagIcon from '@/assets/sources/companies/kapidag.svg'
-import SisyphusIcon from '@/assets/sources/companies/sisyphus.svg'
-import FocalPointIcon from '@/assets/sources/companies/focal-point.svg'
-import SilverStoneIcon from '@/assets/sources/companies/silverstone.svg'
-import GeneralElectricIcon from '@/assets/sources/companies/general-electric.svg'
-import BlueSkyIcon from '@/assets/sources/companies/bluesky.svg'
-import ZenithIcon from '@/assets/sources/companies/zenith.svg'
-import LibertyIcon from '@/assets/sources/companies/liberty.svg'
-import SunshineIcon from '@/assets/sources/companies/sunshine.svg'
-import PrimeIcon from '@/assets/sources/companies/prime.svg'
 
 import HydroEnergyIcon from '@/assets/sources/energies/hydro.svg'
 import OceanEnergyIcon from '@/assets/sources/energies/ocean.svg'
@@ -1134,45 +1273,30 @@ import { computed, onBeforeMount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import variables from '@/mixins/variables'
-import { closeLoader, showLoader } from '@/plugins/functions'
+import moment from 'moment'
+import { closeLoader, convertE8SToICP, showLoader, maxDecimals, shortPrincipalId, shortString } from '@/plugins/functions'
+import { Principal } from '@dfinity/principal'
 
 const
   route = useRoute(),
   router = useRouter(),
   toast = useToast(),
-  { globalRules } = variables,
+  { globalRules, ceroComisison } = variables,
 
-companies = ref({
-  'Sphere': SphereIcon,
-  'KAPIDAĞ RES': KapidagIcon,
-  'Sisyphus': SisyphusIcon,
-  'Focal Point': FocalPointIcon,
-  'SIlverstone': SilverStoneIcon,
-  'General Electric': GeneralElectricIcon,
-  'BlueSky': BlueSkyIcon,
-  'Zenith': ZenithIcon,
-  'Liberty': LibertyIcon,
-  'Sunshine': SunshineIcon,
-  'Prime': PrimeIcon,
-}),
 energiesColored = {
-  hydro: HydroEnergyColorIcon,
-  ocean: OceanEnergyIcon,
-  geothermal: GeothermalEnergyIcon,
-  biome: BiomeEnergyIcon,
-  wind: WindEnergyColorIcon,
-  sun: SolarEnergyColorIcon,
+  "Solar": SolarEnergyColorIcon,
+  "Wind": WindEnergyColorIcon,
+  "Hydro-Electric": HydroEnergyColorIcon,
+  "Thermal": GeothermalEnergyIcon,
 },
 energies = {
-  hydro: HydroEnergyIcon,
-  ocean: OceanEnergyIcon,
-  geothermal: GeothermalEnergyIcon,
-  biome: BiomeEnergyIcon,
-  wind: WindEnergyIcon,
-  sun: SolarEnergyIcon,
+  "Solar": SolarEnergyIcon,
+  "Wind": WindEnergyIcon,
+  "Hydro-Electric": HydroEnergyIcon,
+  "Thermal": GeothermalEnergyIcon,
 },
 countriesImg = {
-  chile: ChileIcon
+  CL: ChileIcon
 },
 tokenDetail = ref(undefined),
 headers = [
@@ -1205,7 +1329,7 @@ formStaticPrice = ref(),
 radioSell = ref(null),
 dialogSellOptions = ref(false),
 dialogRedeem = ref(false),
-formRedeem = ref(),
+formRedeemRef = ref(),
 dialogRedeemSure = ref(false),
 dialogDetokenize = ref(false),
 tabsSpecifications = ref(null),
@@ -1249,7 +1373,7 @@ tokenBenefits = [
 
 time_selection = 'Year',
 
-seriesOwnedVsProduced = ref([]),
+seriesMintedVsProduced = ref([]),
 chartOptions = {
   colors: ['#C6F221'],
   chart: {
@@ -1306,14 +1430,25 @@ chartOptions = {
   fill: {
     type: 'solid',
   },
-  labels: ['Available'],
+  labels: ['Minted'],
 },
+beneficiaries = ref(null),
+periodStartMenu = ref(false),
+periodEndMenu = ref(false),
+locales = ref(["en", "es"]),
+
 haveToken = ref(false),
+haveTokenInMarket = ref(false),
 amountSelected = ref(),
 sellerSelected = ref(undefined),
 tokenPrice = ref(null),
 tokenAmount = ref(undefined),
-redeemBeneficiary = ref(undefined),
+formRedeem = ref({
+  beneficiary: null,
+  periodStart: null,
+  periodEnd: null,
+  locale: null,
+}),
 
 filters = ref({
   country: null,
@@ -1322,6 +1457,9 @@ filters = ref({
 }),
 
 previewSeller = ref(null),
+
+modalApprove = ref(),
+modalRequestRedeem = ref(),
 
 
 tokenId = computed(() => route.query.tokenId),
@@ -1334,8 +1472,11 @@ prevRoutePatch  = computed(() => {
   } catch (error) {
     router.replace('/')
   }
-})
+}),
 
+
+amountInIcp = computed(() => dialogPurchaseReview.value ? Number(tokenPrice.value) * Number(tokenAmount.value) : 0),
+feeInE8S = computed(() => dialogPurchaseReview.value ? 30_000 : 20_000)
 
 // dialogs state management
 
@@ -1372,7 +1513,7 @@ watch(dialogSellingDetailsReview, (value) => {
 
 // redeem flow
 watch(dialogRedeem, (value) => {
-  if (!value) redeemBeneficiary.value = null
+  if (!value) formRedeem.value.beneficiary = null
 })
 
 
@@ -1399,16 +1540,30 @@ onBeforeMount(() => {
 
 async function getData() {
   try {
-    const [checkToken, token, _] = await Promise.allSettled([
+    const [checkToken, checkTokenInMarket, token, statistics, _, __] = await Promise.allSettled([
       AgentCanister.checkUserToken(tokenId.value),
+      AgentCanister.checkUserTokenInMarket(tokenId.value),
       AgentCanister.getTokenDetails(tokenId.value),
-      getMarketPlace()
+      AgentCanister.getAssetStatistics(tokenId.value),
+      getMarketPlace(),
+      getBeneficiaries()
     ])
 
-    haveToken.value = checkToken
+    haveToken.value = checkToken.value
+    haveTokenInMarket.value = checkTokenInMarket.value
     tokenDetail.value = token.value
-    seriesOwnedVsProduced.value = [token.value.totalAmount / token.value.assetInfo.volumeProduced || 0]
+    seriesMintedVsProduced.value = [(statistics.value.mwh || 1) / (token.value.assetInfo.volumeProduced || 1) * 100]
   } catch (error) {
+    console.error(error);
+    toast.error(error)
+  }
+}
+
+async function getBeneficiaries() {
+  try {
+    beneficiaries.value = await AgentCanister.getBeneficiaries()
+  } catch (error) {
+    beneficiaries.value = []
     console.error(error);
     toast.error(error)
   }
@@ -1425,7 +1580,7 @@ async function getMarketPlace() {
       country: filters.value.country?.toLowerCase(),
       priceRange: filters.value.priceRange,
       page: currentPage.value,
-      excludeCaller: false,
+      excludeCaller: true,
     }),
     list = []
 
@@ -1434,7 +1589,7 @@ async function getMarketPlace() {
       list.push({
         seller: item.sellerId,
         country: item.assetInfo.specifications.country,
-        price: item.priceICP.e8s,
+        price: item.priceE8S,
         mwh: item.mwh,
       })
     }
@@ -1455,7 +1610,7 @@ function selectSeller(item) {
   dialogPurchaseReview.value = true
   dialogChooseSeller.value = false;
 
-  sellerSelected.value = item.userProfile.principalId;
+  sellerSelected.value = item.seller;
   tokenPrice.value = item.price;
 }
 
@@ -1477,7 +1632,7 @@ function showDialog(input) {
 async function purchaseToken() {
   try {
     showLoader()
-    const tx = await AgentCanister.purchaseToken(tokenId.value, sellerSelected.value.toString(), Number(tokenAmount.value), Number(tokenPrice.value))
+    const tx = await AgentCanister.purchaseToken(tokenId.value, sellerSelected.value, Number(tokenAmount.value))
     await getData()
 
     closeLoader()
@@ -1528,13 +1683,47 @@ async function takeOffMarket() {
   }
 }
 
-async function redeemToken() {
+async function requestRedeemToken() {
+  modalRequestRedeem.value.model = false
+  showLoader()
+
   try {
-    showLoader()
-    const tx = await AgentCanister.redeemToken(tokenId.value, redeemBeneficiary.value, Number(tokenAmount.value))
+    await AgentCanister.requestRedeemToken({
+      tokenId: tokenId.value,
+      amount: Number(tokenAmount.value),
+      beneficiary: Principal.fromText(formRedeem.value.beneficiary),
+      periodStart: formRedeem.value.periodStart,
+      periodEnd: formRedeem.value.periodEnd,
+      locale: formRedeem.value.locale,
+    })
+    closeLoader()
+    dialogRedeem.value = false;
+    dialogRedeemCertificates.value = false;
+
+    toast.success(`you have send redemption request to beneficiary ${beneficiaries.value.find(e => e.principalId === formRedeem.value.beneficiary).companyName}`)
+  } catch (error) {
+    closeLoader()
+    console.error(error);
+    toast.error(error)
+  }
+}
+
+async function redeemToken() {
+  showLoader()
+
+  try {
+    const tx = await AgentCanister.redeemToken({
+      tokenId: tokenId.value,
+      amount: Number(tokenAmount.value),
+      periodStart: formRedeem.value.periodStart,
+      periodEnd: formRedeem.value.periodEnd,
+      locale: formRedeem.value.locale,
+    })
+
     await getData()
 
     closeLoader()
+    dialogRedeem.value = false;
     dialogRedeemCertificates.value = false;
 
     console.log("redeem token", tx);
