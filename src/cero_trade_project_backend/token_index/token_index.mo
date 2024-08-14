@@ -418,13 +418,13 @@ shared({ caller = owner }) actor class TokenIndex() = this {
 
     let transactions = Iter.toArray(assetsMetadata.vals());
 
-    // if (transactions.size() > 0) {
-    //   // update user portfolio
-    //   await updatePortfolio(uid, Array.map<{
-    //     mwh: T.TokenAmount;
-    //     assetInfo: T.AssetInfo
-    //   }, T.TokenId>(transactions, func x = x.assetInfo.tokenId)/* , { delete = false } */);
-    // };
+    if (transactions.size() > 0) {
+      // update user portfolio
+      await updatePortfolio(uid, Array.map<{
+        mwh: T.TokenAmount;
+        assetInfo: T.AssetInfo
+      }, T.TokenId>(transactions, func x = x.assetInfo.tokenId)/* , { delete = false } */);
+    };
 
     transactions
   };
@@ -664,18 +664,18 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   /// update user portfolio
   private func updatePortfolio(uid: T.UID, tokenIds: [T.TokenId]/* , { delete: Bool } */) : async() {
 
-    let _ = await HTTP.canister.post({
-        url = HTTP.apiUrl # "users/portfolio";
-        port = null;
-        uid = ?uid;
-        headers = [];
-        bodyJson = switch(Serde.JSON.toText(to_candid({
-          tokenIds;
-        }), ["tokenIds"], null)) {
-          case(#err(error)) throw Error.reject("Cannot serialize data");
-          case(#ok(value)) value;
-        };
-      });
+    // let _ = await HTTP.canister.post({
+    //     url = HTTP.apiUrl # "users/portfolio";
+    //     port = null;
+    //     uid = ?uid;
+    //     headers = [];
+    //     bodyJson = switch(Serde.JSON.toText(to_candid({
+    //       tokenIds;
+    //     }), ["tokenIds"], null)) {
+    //       case(#err(error)) throw Error.reject("Cannot serialize data");
+    //       case(#ok(value)) value;
+    //     };
+    //   });
   };
 
   public shared({ caller }) func getTokensInfo(tokenIds: [T.TokenId]): async [T.AssetInfo] {
