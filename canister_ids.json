@@ -2,6 +2,9 @@
   "agent": {
     "ic": "z5nar-oiaaa-aaaak-qihba-cai"
   },
+  "bucket_index": {
+    "ic": "yrcmf-wiaaa-aaaak-qitsa-cai"
+  },
   "cero_trade_project_frontend": {
     "ic": "z2mgf-dqaaa-aaaak-qihbq-cai"
   },
@@ -10,6 +13,12 @@
   },
   "marketplace": {
     "ic": "zikr4-paaaa-aaaak-qihcq-cai"
+  },
+  "notification_index": {
+    "ic": "yef5i-xaaaa-aaaak-qitrq-cai"
+  },
+  "statistics": {
+    "ic": "yde34-2yaaa-aaaak-qitra-cai"
   },
   "token": {
     "ic": "zbj2a-ziaaa-aaaak-qihda-cai"

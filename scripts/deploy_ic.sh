@@ -26,9 +26,10 @@ cp src/declarations/bucket_index/* .dfx/local/canisters/bucket_index/
 
 # Generate env.mo and deploy canisters
 echo "====-Generate env.mo and deploy canisters-===="
-dfx build cero_trade_project_frontend
-dfx build http_service
-dfx build agent
+npm install
+dfx build cero_trade_project_frontend --network ic
+dfx build http_service --network ic
+dfx build agent --network ic
 
 dfx canister install cero_trade_project_frontend --mode upgrade
 dfx canister install http_service --mode upgrade
@@ -45,19 +46,19 @@ dfx canister install agent --mode upgrade
 echo "====-Update canister controllers-===="
 controller=$(dfx identity get-principal)
 
-dfx canister update-settings agent --add-controller $controller
-dfx canister update-settings token_index --add-controller $controller
-dfx canister update-settings user_index --add-controller $controller
-dfx canister update-settings transaction_index --add-controller $controller
-dfx canister update-settings notification_index --add-controller $controller
-dfx canister update-settings bucket_index --add-controller $controller
+dfx canister update-settings agent --add-controller $controller --network ic
+dfx canister update-settings token_index --add-controller $controller --network ic
+dfx canister update-settings user_index --add-controller $controller --network ic
+dfx canister update-settings transaction_index --add-controller $controller --network ic
+dfx canister update-settings notification_index --add-controller $controller --network ic
+dfx canister update-settings bucket_index --add-controller $controller --network ic
 
-dfx canister call agent registerControllers
+dfx canister call agent registerControllers --network ic
 
 # Register wasm module into backend canisters
 echo "====-Register wasm module into backend canisters-===="
-dfx canister call agent registerWasmModule '(variant { "token" = "token" })'
-dfx canister call agent registerWasmModule '(variant { "users" = "users" })'
-dfx canister call agent registerWasmModule '(variant { "transactions" = "transactions" })'
-dfx canister call agent registerWasmModule '(variant { "notifications" = "notifications" })'
-dfx canister call agent registerWasmModule '(variant { "bucket" = "bucket" })'
+dfx canister call agent registerWasmModule '(variant { "token" = "token" })' --network ic
+dfx canister call agent registerWasmModule '(variant { "users" = "users" })' --network ic
+dfx canister call agent registerWasmModule '(variant { "transactions" = "transactions" })' --network ic
+dfx canister call agent registerWasmModule '(variant { "notifications" = "notifications" })' --network ic
+dfx canister call agent registerWasmModule '(variant { "bucket" = "bucket" })' --network ic

@@ -11,6 +11,7 @@
     "generate-wasm": "bash scripts/generate_wasm.sh",
     "generate-env.mo": "bash scripts/generate_env.mo.sh",
     "deploy": "bash scripts/deploy_replica.sh",
+    "deploy-ic": "bash scripts/deploy_ic.sh",
     "upgrade-controllers": "bash scripts/upgrade_controllers.sh"
   },
   "dependencies": {
