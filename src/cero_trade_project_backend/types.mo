@@ -22,7 +22,7 @@ import ENV "./env";
 
 module {
   public let cycles: Nat = 20_000_000;
-  public let cyclesHttpOutcall: Nat = 20_850_346_400;
+  public let cyclesHttpOutcall: Nat = 20_860_000_000;
   public let cyclesCreateCanister: Nat = 300_000_000_000;
 
   // TODO try to change to simplest format to better filtering

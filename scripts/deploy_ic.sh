@@ -24,15 +24,19 @@ cp src/declarations/notification_index/* .dfx/local/canisters/notification_index
 cp src/declarations/bucket/* .dfx/local/canisters/bucket/
 cp src/declarations/bucket_index/* .dfx/local/canisters/bucket_index/
 
-# Generate env.mo and deploy canisters
-echo "====-Generate env.mo and deploy canisters-===="
+# Generate env.mo and build canisters
 if [ "$flag" != "backend" ]; then
+  echo "====-Generate env.mo and build canisters-===="
   npm install
   dfx build cero_trade_project_frontend --network ic
+else
+  echo "====-Build backend canisters-===="
 fi
 dfx build http_service --network ic
 dfx build agent --network ic
 
+# Install canisters code
+echo "====-Install canisters code-===="
 if [ "$flag" != "backend" ]; then
   dfx canister install cero_trade_project_frontend --mode upgrade --network ic
 fi
