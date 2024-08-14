@@ -461,9 +461,23 @@ export class AgentCanister {
   }
 
 
-  static async requestRedeemToken(tokenId: string, amount: number, beneficiary: Principal): Promise<void> {
+  static async requestRedeemToken({ tokenId, amount, beneficiary, periodStart, periodEnd, locale }: {
+    tokenId: string,
+    amount: number,
+    beneficiary: Principal,
+    periodStart: Date,
+    periodEnd: Date,
+    locale: string,
+  }): Promise<void> {
     try {
-      await agent().requestRedeemToken(tokenId, amount, beneficiary)
+      await agent().requestRedeemToken(
+        tokenId,
+        amount,
+        beneficiary,
+        moment(periodStart).format(variables.dateFormat),
+        moment(periodEnd).format(variables.dateFormat),
+        locale
+      )
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)
@@ -481,7 +495,7 @@ export class AgentCanister {
   }
 
 
-  static async redeemToken({ tokenId, amount, periodStart, periodEnd, locale}: {
+  static async redeemToken({ tokenId, amount, periodStart, periodEnd, locale }: {
     tokenId: string,
     amount: number,
     periodStart: Date,
@@ -489,7 +503,13 @@ export class AgentCanister {
     locale: string,
   }): Promise<TransactionInfo> {
     try {
-      const tx = await agent().redeemToken(tokenId, amount, periodStart, periodEnd, locale) as TransactionInfo
+      const tx = await agent().redeemToken(
+        tokenId,
+        amount,
+        moment(periodStart).format(variables.dateFormat),
+        moment(periodEnd).format(variables.dateFormat),
+        locale
+      ) as TransactionInfo
       tx.txType = Object.values(tx.txType)[0] as TxTypeDef
       tx.to = tx.to[0] as string
       tx.method = Object.values(tx.method)[0] as TxMethodDef

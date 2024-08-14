@@ -83,7 +83,7 @@ options = computed(() => ({
           cssClass: 'apexcharts-xaxis-label',
       },
       offsetX: 0,
-      offsetY: -80,
+      offsetY: -100,
     },
   },
   dataLabels: {

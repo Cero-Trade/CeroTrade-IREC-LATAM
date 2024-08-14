@@ -15,7 +15,7 @@
   <modal-confirm
     ref="modalRequestRedeem"
     title="Do you want to send redeem request"
-    :content="`you agree to send a request to ${beneficiaries?.find(e => e.principalId === redeemBeneficiary)?.companyName ?? 'your beneficiary'} to redeem ${(tokenAmount ?? 0) > 1 ? 'tokens' : 'token'} in his name`"
+    :content="`you agree to send a request to ${beneficiaries?.find(e => e.principalId === formRedeem.beneficiary)?.companyName ?? 'your beneficiary'} to redeem ${(tokenAmount ?? 0) > 1 ? 'tokens' : 'token'} in his name`"
     @accept="requestRedeemToken"
   />
 
@@ -27,7 +27,7 @@
       <img src="@/assets/sources/icons/chevron-right-light.svg" alt="arrow right icon" class="mx-1">
       <span style="color: #00555B;">Asset # {{ tokenId }}</span>
     </span>
-    <h3 class="acenter mb-4" :title="tokenId">
+    <h3 class="acenter mb-4" :title="tokenId" style="width: max-content">
       <company-logo
         :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
         :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
@@ -545,7 +545,7 @@
 
     <!-- Dialog Redeem -->
     <v-dialog v-model="dialogRedeem" persistent>
-      <v-form ref="formRedeem" @submit.prevent>
+      <v-form ref="formRedeemRef" @submit.prevent>
         <v-card class="card dialog-card-detokenize">
           <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="dialogRedeem = false">
           <v-sheet class="mb-6 double-sheet">
@@ -554,18 +554,113 @@
             </v-sheet>
           </v-sheet>
           <h6>IREC redemption details</h6>
-          <span class="tertiary">Please check all information on your tokenized assets’ redemption. You can redeem them to your own name, or to another company’s name by deeming them a beneficiary of yours.</span>
+          <span class="tertiary mb-4">Please check all information on your tokenized assets’ redemption. You can redeem them to your own name, or to another company’s name by deeming them a beneficiary of yours.</span>
 
-          <div class="flex-column mt-4" style="gap: 5px">
-            <label for="beneficiary">Beneficiary account (company)</label>
+          <label :for="formRedeem.periodStart ? 'periodEnd' : 'periodStart'" class="mb-1">Redemption period dates</label>
+          <div class="d-flex mb-4" style="gap: 20px;">
+            <v-menu v-model="periodStartMenu" :close-on-content-click="false">
+              <template v-slot:activator="{ props }">
+                <v-text-field
+                  id="periodStart"
+                  v-model="formRedeem.periodStart"
+                  placeholder="Select period start (required)"
+                  readonly v-bind="props"
+                  variant="outlined"
+                  density="compact"
+                  class="select mb-2"
+                  style="flex-basis: 50%;"
+                  :rules="[globalRules.required, (v) => {
+                    const periodEnd = formRedeem.periodEnd
+                    if (periodEnd && moment(v).isAfter(periodEnd)) return 'Period start cant be major than period end'
+                    return null
+                  }]"
+                >
+                  <template #append-inner>
+                    <img
+                      v-if="formRedeem.periodStart"
+                      src="@/assets/sources/icons/close.svg"
+                      alt="close icon"
+                      class="pointer"
+                      @click="formRedeem.periodStart = null"
+                    >
+                  </template>
+                </v-text-field>
+              </template>
+
+              <v-date-picker
+                title=""
+                color="rgb(var(--v-theme-secondary))"
+                hide-actions
+                @update:model-value="(v) => { formRedeem.periodStart = moment(v).format('YYYY/MM/DD') }"
+              >
+                <template v-slot:header></template>
+              </v-date-picker>
+            </v-menu>
+
+
+            <v-menu v-model="periodEndMenu" :close-on-content-click="false">
+              <template v-slot:activator="{ props }">
+                <v-text-field
+                  id="periodEnd"
+                  v-model="formRedeem.periodEnd"
+                  placeholder="Select period end (required)"
+                  readonly v-bind="props"
+                  variant="outlined"
+                  density="compact"
+                  class="select mb-2"
+                  style="flex-basis: 50%;"
+                  :rules="[globalRules.required, (v) => {
+                    const periodStart = formRedeem.periodStart
+                    if (periodStart && moment(v).isBefore(periodStart)) return 'Period end cant be minor than period start'
+                    return null
+                  }]"
+                >
+                  <template #append-inner>
+                    <img
+                      v-if="formRedeem.periodEnd"
+                      src="@/assets/sources/icons/close.svg" alt="close icon"
+                      class="pointer"
+                      @click="formRedeem.periodEnd = null"
+                    >
+                  </template>
+                </v-text-field>
+              </template>
+
+              <v-date-picker
+                title=""
+                color="rgb(var(--v-theme-secondary))"
+                hide-actions
+                @update:model-value="(v) => { formRedeem.periodEnd = moment(v).format('YYYY/MM/DD') }"
+              >
+                <template v-slot:header></template>
+              </v-date-picker>
+            </v-menu>
+          </div>
+
+          <div class="flex-column mb-4" style="gap: 5px">
+            <label for="locale" class="mb-1">Locale assigned to redemption</label>
             <v-select
-              v-model="redeemBeneficiary"
+              v-model="formRedeem.locale"
+              id="locale"
+              variant="solo" flat
+              :items="locales"
+              class="select mb-2"
+              bg-color="transparent"
+              placeholder="locale (required)"
+              :rules="[globalRules.required]"
+            ></v-select>
+          </div>
+
+          <div class="flex-column mb-4" style="gap: 5px">
+            <label for="beneficiary" class="mb-1">Beneficiary account (company)</label>
+            <v-select
+              v-model="formRedeem.beneficiary"
               id="beneficiary"
               variant="solo" flat
               :items="beneficiaries"
               item-title="companyName"
               item-value="principalId"
-              class="select mb-8"
+              class="select mb-2"
               bg-color="transparent"
               placeholder="beneficiary account (optional)"
               :rules="[true]"
@@ -574,7 +669,7 @@
 
           <!-- <v-btn class="btn2" style="width: max-content !important">Add beneficiary</v-btn> -->
 
-          <v-card class="card cards-rec mt-6 pa-6">
+          <v-card class="card cards-rec pa-6">
             <span class="bold mt-3">Checkout review</span>
 
             <v-divider class="mb-3 mt-4"  thickness="2" style="width: 150%; position: relative; left: -50px;"></v-divider>
@@ -649,10 +744,10 @@
           <div class="divrow center mt-6" style="gap: 10px;">
             <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogRedeem = false">Cancel</v-btn>
             <v-btn class="btn" @click="async () => {
-              if (!(await formRedeem.validate()).valid) return
+              if (!(await formRedeemRef.validate()).valid) return
 
               // if beneficiary provided
-              if (redeemBeneficiary) {
+              if (formRedeem.beneficiary) {
                 modalRequestRedeem.model = true
 
               // if beneficiary not provided
@@ -1178,6 +1273,7 @@ import { computed, onBeforeMount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import variables from '@/mixins/variables'
+import moment from 'moment'
 import { closeLoader, convertE8SToICP, showLoader, maxDecimals, shortPrincipalId, shortString } from '@/plugins/functions'
 import { Principal } from '@dfinity/principal'
 
@@ -1233,7 +1329,7 @@ formStaticPrice = ref(),
 radioSell = ref(null),
 dialogSellOptions = ref(false),
 dialogRedeem = ref(false),
-formRedeem = ref(),
+formRedeemRef = ref(),
 dialogRedeemSure = ref(false),
 dialogDetokenize = ref(false),
 tabsSpecifications = ref(null),
@@ -1337,6 +1433,9 @@ chartOptions = {
   labels: ['Minted'],
 },
 beneficiaries = ref(null),
+periodStartMenu = ref(false),
+periodEndMenu = ref(false),
+locales = ref(["en", "es"]),
 
 haveToken = ref(false),
 haveTokenInMarket = ref(false),
@@ -1344,7 +1443,12 @@ amountSelected = ref(),
 sellerSelected = ref(undefined),
 tokenPrice = ref(null),
 tokenAmount = ref(undefined),
-redeemBeneficiary = ref(undefined),
+formRedeem = ref({
+  beneficiary: null,
+  periodStart: null,
+  periodEnd: null,
+  locale: null,
+}),
 
 filters = ref({
   country: null,
@@ -1409,7 +1513,7 @@ watch(dialogSellingDetailsReview, (value) => {
 
 // redeem flow
 watch(dialogRedeem, (value) => {
-  if (!value) redeemBeneficiary.value = null
+  if (!value) formRedeem.value.beneficiary = null
 })
 
 
@@ -1584,12 +1688,19 @@ async function requestRedeemToken() {
   showLoader()
 
   try {
-    await AgentCanister.requestRedeemToken(tokenId.value, Number(tokenAmount.value), Principal.fromText(redeemBeneficiary.value))
+    await AgentCanister.requestRedeemToken({
+      tokenId: tokenId.value,
+      amount: Number(tokenAmount.value),
+      beneficiary: Principal.fromText(formRedeem.value.beneficiary),
+      periodStart: formRedeem.value.periodStart,
+      periodEnd: formRedeem.value.periodEnd,
+      locale: formRedeem.value.locale,
+    })
     closeLoader()
     dialogRedeem.value = false;
     dialogRedeemCertificates.value = false;
 
-    toast.success(`you have send redemption request to beneficiary ${beneficiaries.value.find(e => e.principalId === redeemBeneficiary.value).companyName}`)
+    toast.success(`you have send redemption request to beneficiary ${beneficiaries.value.find(e => e.principalId === formRedeem.value.beneficiary).companyName}`)
   } catch (error) {
     closeLoader()
     console.error(error);
@@ -1601,7 +1712,13 @@ async function redeemToken() {
   showLoader()
 
   try {
-    const tx = await AgentCanister.redeemToken(tokenId.value, Number(tokenAmount.value), null)
+    const tx = await AgentCanister.redeemToken({
+      tokenId: tokenId.value,
+      amount: Number(tokenAmount.value),
+      periodStart: formRedeem.value.periodStart,
+      periodEnd: formRedeem.value.periodEnd,
+      locale: formRedeem.value.locale,
+    })
 
     await getData()
 

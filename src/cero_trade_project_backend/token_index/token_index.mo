@@ -928,7 +928,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
         headers = [];
         bodyJson = switch(Serde.JSON.toText(to_candid({
           volume = amount;
-          beneficiary = owner;
+          beneficiary = Principal.toText(owner);
           items = tokenId;
           periodStart;
           periodEnd;
