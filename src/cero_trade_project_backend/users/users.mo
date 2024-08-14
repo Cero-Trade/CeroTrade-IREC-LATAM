@@ -3,8 +3,6 @@ import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import Nat "mo:base/Nat";
 import Error "mo:base/Error";
-import Bool "mo:base/Bool";
-import Buffer "mo:base/Buffer";
 import Iter "mo:base/Iter";
 
 
@@ -55,7 +53,7 @@ shared({ caller = userIndexCaller }) actor class Users() {
 
 
   /// store user company logo to Cero Trade
-  public shared({ caller }) func storeCompanyLogo(uid: T.UID, avatar: T.CompanyLogo): async() {
+  public shared({ caller }) func storeCompanyLogo(uid: T.UID, avatar: T.ArrayFile): async() {
     _callValidation(caller);
 
     let userInfo = switch (users.get(uid)) {
@@ -70,7 +68,7 @@ shared({ caller = userIndexCaller }) actor class Users() {
 
 
   /// get user from usersAvatar collection
-  public shared({ caller }) func getCompanyLogo(uid: T.UID) : async T.CompanyLogo {
+  public shared({ caller }) func getCompanyLogo(uid: T.UID) : async T.ArrayFile {
     _callValidation(caller);
 
     let companyLogo = switch (users.get(uid)) {

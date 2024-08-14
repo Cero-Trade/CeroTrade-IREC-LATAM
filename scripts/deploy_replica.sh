@@ -35,6 +35,8 @@ cp src/declarations/http_service/* .dfx/local/canisters/http_service/
 cp src/declarations/statistics/* .dfx/local/canisters/statistics/
 cp src/declarations/notifications/* .dfx/local/canisters/notifications/
 cp src/declarations/notification_index/* .dfx/local/canisters/notification_index/
+cp src/declarations/bucket/* .dfx/local/canisters/bucket/
+cp src/declarations/bucket_index/* .dfx/local/canisters/bucket_index/
 
 # Generate env.mo and deploy canisters
 echo "====-Generate env.mo and deploy canisters-===="
@@ -48,6 +50,7 @@ if [ "$flag" = "clean" ]; then
 else
   dfx canister install cero_trade_project_frontend --mode upgrade
 fi
+dfx deploy http_service
 dfx deploy agent
 
 # Update canister controllers
@@ -65,6 +68,8 @@ if [ "$flag" = "modules" ] || [ "$flag" = "clean" ]; then
   dfx build transactions
   dfx canister create notifications
   dfx build notifications
+  dfx canister create bucket
+  dfx build bucket
 
   # Generate the wasm module like array
   echo "====-Generate the wasm module like array-===="
@@ -72,6 +77,7 @@ if [ "$flag" = "modules" ] || [ "$flag" = "clean" ]; then
   npm run generate-wasm users
   npm run generate-wasm transactions
   npm run generate-wasm notifications
+  npm run generate-wasm bucket
 
   # Push the current ./wasm_modules commit folder to github
   echo "====-Push the current ./wasm_modules commit folder to github-===="
@@ -87,3 +93,4 @@ dfx canister call agent registerWasmModule '(variant { "token" = "token" })'
 dfx canister call agent registerWasmModule '(variant { "users" = "users" })'
 dfx canister call agent registerWasmModule '(variant { "transactions" = "transactions" })'
 dfx canister call agent registerWasmModule '(variant { "notifications" = "notifications" })'
+dfx canister call agent registerWasmModule '(variant { "bucket" = "bucket" })'

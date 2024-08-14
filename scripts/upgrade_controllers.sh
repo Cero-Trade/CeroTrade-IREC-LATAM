@@ -11,6 +11,7 @@ do
   dfx canister update-settings user_index --add-controller $controller
   dfx canister update-settings transaction_index --add-controller $controller
   dfx canister update-settings notification_index --add-controller $controller
+  dfx canister update-settings bucket_index --add-controller $controller
 done
 
 # Register controllers into canisters

@@ -1,6 +1,7 @@
 <!-- TODO subdomain integration with `cerotrade.cl/alfa` -->
 <!-- TODO review about decimal amounts precision in backend web2 and web3 -->
-<!-- TODO redemptions flow need storage pdf, review this cases -->
+<!-- TODO make frontend interface to redemptions flow -->
+<!-- TODO checkout timeout requests on API Web2 -->
 
 # Cero Trade
 
@@ -65,6 +66,8 @@ cp src/declarations/http_service/* .dfx/local/canisters/http_service/
 cp src/declarations/statistics/* .dfx/local/canisters/statistics/
 cp src/declarations/notifications/* .dfx/local/canisters/notifications/
 cp src/declarations/notification_index/* .dfx/local/canisters/notification_index/
+cp src/declarations/bucket/* .dfx/local/canisters/bucket/
+cp src/declarations/bucket_index/* .dfx/local/canisters/bucket_index/
 ```
 
 Generate env.mo and deploy canisters
@@ -73,6 +76,7 @@ Generate env.mo and deploy canisters
 dfx canister create --all
 dfx build cero_trade_project_frontend
 dfx canister install cero_trade_project_frontend
+dfx deploy http_service
 dfx deploy agent
 ```
 

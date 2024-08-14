@@ -20,6 +20,7 @@ import TransactionIndex "canister:transaction_index";
 import Marketplace "canister:marketplace";
 import Statistics "canister:statistics";
 import NotificationIndex "canister:notification_index";
+import BucketIndex "canister:notification_index";
 
 // interfaces
 import IC_MANAGEMENT "../ic_management_canister_interface";
@@ -37,7 +38,7 @@ actor class Agent() = this {
   /// login user into Cero Trade
   public shared({ caller }) func login(): async() {
     // WARN just for debug
-    Debug.print(Principal.toText(caller));
+    Debug.print("logged user with principal --> " # Principal.toText(caller));
 
     let exists = await UserIndex.checkPrincipal(caller);
     if (not exists) throw Error.reject(notExists);
@@ -51,7 +52,7 @@ actor class Agent() = this {
 
 
   /// store user avatar into users collection
-  public shared({ caller }) func storeCompanyLogo(avatar: T.CompanyLogo): async() { await UserIndex.storeCompanyLogo(caller, avatar) };
+  public shared({ caller }) func storeCompanyLogo(avatar: T.ArrayFile): async() { await UserIndex.storeCompanyLogo(caller, avatar) };
 
   /// update user into Cero Trade
   public shared({ caller }) func updateUserInfo(form: T.UpdateUserForm): async() { await UserIndex.updateUserInfo(caller, form) };
@@ -75,10 +76,11 @@ actor class Agent() = this {
     await TokenIndex.registerControllers();
     await TransactionIndex.registerControllers();
     await NotificationIndex.registerControllers();
+    await BucketIndex.registerControllers();
   };
 
   /// register a canister wasm module
-  public shared({ caller }) func registerWasmModule(moduleName: T.WasmModuleName): async() {
+  public shared({ caller }) func registerWasmModule(moduleName: IC_MANAGEMENT.WasmModuleName): async() {
     IC_MANAGEMENT.adminValidation(caller, controllers);
 
     switch(moduleName) {
@@ -86,6 +88,7 @@ actor class Agent() = this {
       case(#users("users")) await UserIndex.registerWasmArray();
       case(#transactions("transactions")) await TransactionIndex.registerWasmArray();
       case(#notifications("notifications")) await NotificationIndex.registerWasmArray();
+      case(#bucket("bucket")) await BucketIndex.registerWasmArray();
       case _ throw Error.reject("Module name doesn't exists");
     };
   };
@@ -194,6 +197,9 @@ actor class Agent() = this {
       createdAt = DateTime.now().toText();
       status = null;
       eventStatus = ?#pending("pending");
+      redeemPeriodStart = null;
+      redeemPeriodEnd = null;
+      redeemLocale = null;
     });
   };
 
@@ -486,6 +492,7 @@ actor class Agent() = this {
       priceE8S = ?totalPriceE8S;
       date = DateTime.now().toText();
       method = #blockchainTransfer("blockchainTransfer");
+      redemptionPdf = null;
     };
 
     // register transaction
@@ -538,6 +545,7 @@ actor class Agent() = this {
       priceE8S = ?priceE8S;
       date = DateTime.now().toText();
       method = #blockchainTransfer("blockchainTransfer");
+      redemptionPdf = null;
     };
 
     // register transaction
@@ -587,6 +595,7 @@ actor class Agent() = this {
       priceE8S = null;
       date = DateTime.now().toText();
       method = #blockchainTransfer("blockchainTransfer");
+      redemptionPdf = null;
     };
 
     // register transaction
@@ -602,7 +611,7 @@ actor class Agent() = this {
   };
 
 
-  public shared({ caller }) func requestRedeemToken(tokenId: T.TokenId, quantity: T.TokenAmount, beneficiary: T.BID): async T.TxIndex {
+  public shared({ caller }) func requestRedeemToken(tokenId: T.TokenId, quantity: T.TokenAmount, beneficiary: T.BID, periodStart: Text, periodEnd: Text, locale: Text): async T.TxIndex {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
@@ -622,6 +631,9 @@ actor class Agent() = this {
       createdAt = DateTime.now().toText();
       status = null;
       eventStatus = ?#pending("pending");
+      redeemPeriodStart = ?periodStart;
+      redeemPeriodEnd = ?periodEnd;
+      redeemLocale = ?locale;
     });
 
     txIndex
@@ -662,7 +674,7 @@ actor class Agent() = this {
     };
 
     // redeem tokens
-    let txIndex = await TokenIndex.redeemRequested(notification);
+    let { txIndex; redemptionPdf } = await TokenIndex.redeemRequested(notification);
 
     // build transaction
     let txInfo: T.TransactionInfo = {
@@ -673,9 +685,11 @@ actor class Agent() = this {
       tokenId;
       txType = #redemption("redemption");
       tokenAmount = quantity;
+      /// cero trade comission + transaction fee estimated
       priceE8S = ?{ e8s = T.getCeroComission() + 20_000 };
       date = DateTime.now().toText();
       method = #blockchainTransfer("blockchainTransfer");
+      redemptionPdf = ?redemptionPdf;
     };
 
     // register transaction
@@ -694,7 +708,7 @@ actor class Agent() = this {
   };
 
   // redeem certificate by burning user tokens
-  public shared({ caller }) func redeemToken(tokenId: T.TokenId, quantity: T.TokenAmount): async T.TransactionInfo {
+  public shared({ caller }) func redeemToken(tokenId: T.TokenId, quantity: T.TokenAmount, periodStart: Text, periodEnd: Text, locale: Text): async T.TransactionInfo {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
@@ -708,7 +722,7 @@ actor class Agent() = this {
     if (availableTokens < quantity) throw Error.reject("Not enough tokens");
 
     // ask token to burn the tokens
-    let txIndex = await TokenIndex.redeem(caller, tokenId, quantity);
+    let { txIndex; redemptionPdf; } = await TokenIndex.redeem(caller, tokenId, quantity, periodStart, periodEnd, locale);
 
     // build transaction
     let txInfo: T.TransactionInfo = {
@@ -719,9 +733,11 @@ actor class Agent() = this {
       tokenId;
       txType = #redemption("redemption");
       tokenAmount = quantity;
+      /// cero trade comission + transaction fee estimated
       priceE8S = ?{ e8s = T.getCeroComission() + 20_000 };
       date = DateTime.now().toText();
       method = #blockchainTransfer("blockchainTransfer");
+      redemptionPdf = ?redemptionPdf;
     };
 
     // register transaction
@@ -798,6 +814,7 @@ actor class Agent() = this {
         method = item.method;
         from = item.from;
         to = item.to;
+        redemptionPdf = item.redemptionPdf;
         assetInfo;
       }
     });

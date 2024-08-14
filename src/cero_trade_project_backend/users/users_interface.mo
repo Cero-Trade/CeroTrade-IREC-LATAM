@@ -10,8 +10,8 @@ module UsersInterface {
     length: query () -> async Nat;
     registerUser: (uid: T.UID, token: Text) -> async();
     deleteUser: (uid: T.UID) -> async();
-    storeCompanyLogo: (uid: T.UID, avatar: T.CompanyLogo) -> async();
-    getCompanyLogo: query (uid: T.UID) -> async T.CompanyLogo;
+    storeCompanyLogo: (uid: T.UID, avatar: T.ArrayFile) -> async();
+    getCompanyLogo: query (uid: T.UID) -> async T.ArrayFile;
     getUserToken: query (uid: T.UID) -> async T.UserToken;
     updateUserToken: (uid: T.UID, token: Text) -> async();
   };

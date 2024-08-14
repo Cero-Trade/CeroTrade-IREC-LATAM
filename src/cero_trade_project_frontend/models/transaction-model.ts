@@ -21,24 +21,26 @@ export interface TransactionInfo {
   transactionId: string;
   blockHash: number;
   from: string;
-  to: string;
+  to?: string;
   tokenId: string;
   txType: TxTypeDef;
   tokenAmount: number;
-  priceE8S: TokensICP;
+  priceE8S?: TokensICP;
   date: Date;
   method: TxMethodDef;
+  redemptionPdf?: string;
 }
 
 export interface TransactionHistoryInfo {
   transactionId: string;
   blockHash: number;
   from: string;
-  to: string;
-  assetInfo: AssetInfoModel;
+  to?: string;
+  assetInfo?: AssetInfoModel;
   txType: TxTypeDef;
   tokenAmount: number;
-  priceE8S: TokensICP;
+  priceE8S?: TokensICP;
   date: Date;
   method: TxMethodDef;
+  redemptionPdf?: string;
 }
