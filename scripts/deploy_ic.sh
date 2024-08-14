@@ -24,23 +24,31 @@ cp src/declarations/notification_index/* .dfx/local/canisters/notification_index
 cp src/declarations/bucket/* .dfx/local/canisters/bucket/
 cp src/declarations/bucket_index/* .dfx/local/canisters/bucket_index/
 
-# Generate env.mo and deploy canisters
-echo "====-Generate env.mo and deploy canisters-===="
-npm install
-dfx build cero_trade_project_frontend --network ic
+# Generate env.mo and build canisters
+if [ "$flag" != "backend" ]; then
+  echo "====-Generate env.mo and build canisters-===="
+  npm install
+  dfx build cero_trade_project_frontend --network ic
+else
+  echo "====-Build backend canisters-===="
+fi
 dfx build http_service --network ic
 dfx build agent --network ic
 
-dfx canister install cero_trade_project_frontend --mode upgrade
-dfx canister install http_service --mode upgrade
-dfx canister install user_index --mode upgrade
-dfx canister install token_index --mode upgrade
-dfx canister install notification_index --mode upgrade
-dfx canister install transaction_index --mode upgrade
-dfx canister install bucket_index --mode upgrade
-dfx canister install marketplace --mode upgrade
-dfx canister install statistics --mode upgrade
-dfx canister install agent --mode upgrade
+# Install canisters code
+echo "====-Install canisters code-===="
+if [ "$flag" != "backend" ]; then
+  dfx canister install cero_trade_project_frontend --mode upgrade --network ic
+fi
+dfx canister install http_service --mode upgrade --network ic
+dfx canister install user_index --mode upgrade --network ic
+dfx canister install token_index --mode upgrade --network ic
+dfx canister install notification_index --mode upgrade --network ic
+dfx canister install transaction_index --mode upgrade --network ic
+dfx canister install bucket_index --mode upgrade --network ic
+dfx canister install marketplace --mode upgrade --network ic
+dfx canister install statistics --mode upgrade --network ic
+dfx canister install agent --mode upgrade --network ic
 
 # Update canister controllers
 echo "====-Update canister controllers-===="

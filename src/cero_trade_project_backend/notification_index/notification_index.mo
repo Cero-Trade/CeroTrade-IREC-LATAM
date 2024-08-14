@@ -6,7 +6,6 @@ import Blob "mo:base/Blob";
 import Buffer "mo:base/Buffer";
 import Array "mo:base/Array";
 import Nat "mo:base/Nat";
-import Nat8 "mo:base/Nat8";
 import Iter "mo:base/Iter";
 import Error "mo:base/Error";
 import Serde "mo:serde";
