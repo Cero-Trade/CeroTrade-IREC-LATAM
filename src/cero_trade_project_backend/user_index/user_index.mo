@@ -564,17 +564,11 @@ actor class UserIndex() = this {
       case(?cid) await Users.canister(cid).getUserToken(uid);
     };
 
-    let beneficiaryExists = await HTTP.canister.post({
-        url = HTTP.apiUrl # "users/check-beneficiary";
+    let beneficiaryExists = await HTTP.canister.get({
+        url = HTTP.apiUrl # "users/check-beneficiary/" # Principal.toText(beneficiaryId);
         port = null;
         uid = null;
         headers = [HTTP.tokenAuth(currentToken)];
-        bodyJson = switch(Serde.JSON.toText(to_candid({
-          beneficiary = Principal.toText(beneficiaryId);
-        }), ["beneficiary"], null)) {
-          case(#err(error)) throw Error.reject("Cannot serialize data");
-          case(#ok(value)) value;
-        };
       });
 
     beneficiaryExists == "true";
