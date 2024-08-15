@@ -28,7 +28,7 @@ export interface TransactionInfo {
   priceE8S?: TokensICP;
   date: Date;
   method: TxMethodDef;
-  redemptionPdf?: string;
+  redemptionPdf?: File;
 }
 
 export interface TransactionHistoryInfo {
@@ -42,5 +42,5 @@ export interface TransactionHistoryInfo {
   priceE8S?: TokensICP;
   date: Date;
   method: TxMethodDef;
-  redemptionPdf?: string;
+  redemptionPdf?: File;
 }

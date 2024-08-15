@@ -1,4 +1,4 @@
-import { fileCompression, getUrlFromArrayBuffer, getImageArrayBuffer, convertE8SToICP } from "@/plugins/functions";
+import { fileCompression, getUrlFromArrayBuffer, getImageArrayBuffer, convertE8SToICP, getFileFromArrayBuffer } from "@/plugins/functions";
 import { useAgentCanister as agent, getErrorMessage } from "@/services/icp-provider";
 import avatar from '@/assets/sources/images/avatar-online.svg'
 import store from "@/store";
@@ -186,7 +186,7 @@ export class AgentCanister {
         item.txType = Object.values(item.txType)[0] as TxTypeDef
         item.to = Object.values(item.to)[0] as string
         item.tokenAmount = Number(item.tokenAmount)
-        item.redemptionPdf = await getUrlFromArrayBuffer(item.redemptionPdf)
+        item.redemptionPdf = await getFileFromArrayBuffer(item.redemptionPdf)
       }
 
       return response
@@ -558,7 +558,7 @@ export class AgentCanister {
         item.txType = Object.values(item.txType)[0] as TxTypeDef
         item.method = Object.values(item.method)[0] as TxMethodDef
         item.date = new Date(item.date)
-        item.redemptionPdf = await getUrlFromArrayBuffer(item.redemptionPdf)
+        item.redemptionPdf = await getFileFromArrayBuffer(item.redemptionPdf)
 
         // get nullable object
         item.to = item.to[0]
