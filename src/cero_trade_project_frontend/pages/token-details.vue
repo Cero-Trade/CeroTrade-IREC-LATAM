@@ -378,7 +378,7 @@
         </v-row>
       </v-col>
 
-      <v-col xl="4" lg="4" md="4" cols="12">
+      <v-col clasS="container-actions" xl="4" lg="4" md="4" cols="12">
         <v-col cols="12" class="pt-0 pl-0">
           <v-form v-model="amountSelected" @submit.prevent>
             <v-card class="card mb-6 divcol astart card-currency">
@@ -420,50 +420,36 @@
                 Redeem Token
               </v-btn>
             </div>
+          </v-form>
+        </v-col>
 
-            <!-- TODO commented until api connection -->
-            <!-- <div v-for="(item,index) in dataPdf" :key="index" class="border mb-2 jspace">
+
+        <aside class="container-redemptions">
+          <v-card v-for="(item, i) in redemptions" :key="i" class="card divcol pt-6">
+            <span style="color: #475467;">Redemption amount (MWh)</span>
+            <span class="mt-2 mb-4" style="color: #475467;">
+              <img src="@/assets/sources/icons/lightbulb.svg" alt="lightbulb icon" style="width: 15px">
+              {{ item.tokenAmount }}
+            </span>
+
+            <span style="color: #475467;">Redemption Date</span>
+            <span class="mt-2 mb-4">{{ item.date }}</span>
+
+            <div class="border mb-2 jspace">
               <div class="divrow acenter">
                 <img src="@/assets/sources/icons/pdf.svg" alt="PDF">
                 <div class="divcol ml-2">
-                  <span style="color: #475467; font-weight: 500;">{{ item.name }}</span>
-                  <span style="color: #475467;">{{ item.weight }}</span>
+                  <span style="color: #475467; font-weight: 500;">{{ item.redemptionPdf.name }}</span>
+                  <span style="color: #475467;">{{ formatBytes(item.redemptionPdf.size) }}</span>
                 </div>
               </div>
 
-              <v-card class="card center" style="width: max-content!important; border-radius: 10px!important;">
+              <v-card :href="item.url" :download="item.redemptionPdf.name" class="card center" style="width: max-content!important; border-radius: 10px!important;">
                 <img src="@/assets/sources/icons/download.svg" alt="download icon" style="width: 18px">
               </v-card>
-            </div> -->
-
-
-            <!-- TODO commented until api connection -->
-            <!-- <v-card class="card divcol pt-6">
-              <span style="color: #475467;">Redemption amount (MWh)</span>
-              <span class="mt-2 mb-4" style="color: #475467;">
-                <img src="@/assets/sources/icons/lightbulb.svg" alt="lightbulb icon" style="width: 15px">
-                420
-              </span>
-
-              <span style="color: #475467;">Redemption Date</span>
-              <span class="mt-2 mb-4">{{ date }}</span>
-
-              <div v-for="(item,index) in dataPdf" :key="index" class="border mb-2 jspace">
-                <div class="divrow acenter">
-                  <img src="@/assets/sources/icons/pdf.svg" alt="PDF">
-                  <div class="divcol ml-2">
-                    <span style="color: #475467; font-weight: 500;">{{ item.name }}</span>
-                    <span style="color: #475467;">{{ item.weight }}</span>
-                  </div>
-                </div>
-
-                <v-card class="card center" style="width: max-content!important; border-radius: 10px!important;">
-                  <img src="@/assets/sources/icons/download.svg" alt="download icon" style="width: 18px">
-                </v-card>
-              </div>
-            </v-card> -->
-          </v-form>
-        </v-col>
+            </div>
+          </v-card>
+        </aside>
       </v-col>
     </v-row>
     
@@ -1141,21 +1127,6 @@
           </div>
         </v-card>
 
-        <!-- TODO commented until api connection -->
-        <!-- <div v-for="(item,index) in dataPdfCofirm" :key="index" class="border mb-4 mt-6 jspace">
-          <div class="divrow acenter">
-            <img src="@/assets/sources/icons/pdf.svg" alt="PDF">
-            <div class="divcol ml-2">
-              <span style="color: #475467; font-weight: 500;">{{ item.name }}</span>
-              <span style="color: #475467;">{{ item.weight }}</span>
-            </div>
-          </div>
-
-          <v-card class="card center" style="width: max-content!important;">
-            <img src="@/assets/sources/icons/download.svg" alt="download icon" style="width: 22px">
-          </v-card>
-        </div> -->
-
         <div class="divrow center mt-6" style="gap: 10px;">
           <v-btn class="btn flex-grow-1" @click="dialogRedeemCertificates = true; dialogPaymentConfirm = false" style="border: none!important;">Continue</v-btn>
         </div>
@@ -1274,14 +1245,14 @@ import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import variables from '@/mixins/variables'
 import moment from 'moment'
-import { closeLoader, convertE8SToICP, showLoader, maxDecimals, shortPrincipalId, shortString } from '@/plugins/functions'
+import { closeLoader, convertE8SToICP, showLoader, maxDecimals, shortPrincipalId, shortString, formatBytes } from '@/plugins/functions'
 import { Principal } from '@dfinity/principal'
 
 const
   route = useRoute(),
   router = useRouter(),
   toast = useToast(),
-  { globalRules, ceroComisison } = variables,
+  { globalRules, ceroComisison, dateFormat } = variables,
 
 energiesColored = {
   "Solar": SolarEnergyColorIcon,
@@ -1318,60 +1289,16 @@ dialogChooseSeller = ref(false),
 formChooseSeller = ref(),
 dialogPurchaseReview = ref(false),
 dialogRedeemCertificates = ref(false),
-dialogParticipantBenefits = ref(false),
 dialogSellingDetailsReview = ref(false),
-dialogDynamicPrice = ref(false),
 dialogFilters = ref(false),
-itemsCurrency = ref(['USD', 'VES']),
-selectedCurrency = ref('USD'),
 dialogStaticPrice = ref(false),
 formStaticPrice = ref(),
-radioSell = ref(null),
-dialogSellOptions = ref(false),
 dialogRedeem = ref(false),
 formRedeemRef = ref(),
 dialogRedeemSure = ref(false),
-dialogDetokenize = ref(false),
 tabsSpecifications = ref(null),
-dataPdfRedeem = [
-  {
-    name: 'Certificate',
-    weight: '200 KB'
-  }
-],
-dataPdfCofirm = [
-  {
-    name: 'Download receipt',
-    weight: '200 KB'
-  }
-],
-dataPdf =[
-  {
-    name: 'Receipt',
-    weight: '148 KB',
-  },
-],
-date = '24/04/23',
-dialogAreYouSure = ref(false),
-tokenBenefits = [
-  {
-    name:"Lorem, ipsum dolor sit amet consectetur",
-  },
-  {
-    name:"Lorem, ipsum dolor sit amet consectetur",
-  },
-  {
-    name:"Lorem, ipsum dolor sit amet consectetur",
-  },
-  {
-    name:"Lorem, ipsum dolor sit amet consectetur",
-  },
-  {
-    name:"Lorem, ipsum dolor sit amet consectetur",
-  },
-],
 
-time_selection = 'Year',
+redemptions = ref([]),
 
 seriesMintedVsProduced = ref([]),
 chartOptions = {
@@ -1540,10 +1467,11 @@ onBeforeMount(() => {
 
 async function getData() {
   try {
-    const [checkToken, checkTokenInMarket, token, statistics, _, __] = await Promise.allSettled([
+    const [checkToken, checkTokenInMarket, token, txRedemptions, statistics, _, __] = await Promise.allSettled([
       AgentCanister.checkUserToken(tokenId.value),
       AgentCanister.checkUserTokenInMarket(tokenId.value),
       AgentCanister.getTokenDetails(tokenId.value),
+      AgentCanister.getTransactions({ txType: 'redemption', tokenId: tokenId.value }),
       AgentCanister.getAssetStatistics(tokenId.value),
       getMarketPlace(),
       getBeneficiaries()
@@ -1552,6 +1480,7 @@ async function getData() {
     haveToken.value = checkToken.value
     haveTokenInMarket.value = checkTokenInMarket.value
     tokenDetail.value = token.value
+    redemptions.value = txRedemptions.value
     seriesMintedVsProduced.value = [(statistics.value.mwh || 1) / (token.value.assetInfo.volumeProduced || 1) * 100]
   } catch (error) {
     console.error(error);

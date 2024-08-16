@@ -42,7 +42,7 @@ shared({ caller = transactionIndexCaller }) actor class Transactions() {
   };
 
 
-  public query func getTransactionsById(txIds: [T.TransactionId], txType: ?T.TxType, priceRange: ?[T.Price], mwhRange: ?[T.TokenAmount], method: ?T.TxMethod, rangeDates: ?[Text]): async [T.TransactionInfo] {
+  public query func getTransactionsById(txIds: [T.TransactionId], txType: ?T.TxType, priceRange: ?[T.Price], mwhRange: ?[T.TokenAmount], method: ?T.TxMethod, rangeDates: ?[Text], tokenId: ?T.TokenId): async [T.TransactionInfo] {
     let txs = Buffer.Buffer<T.TransactionInfo>(50);
 
     for(tx in txIds.vals()) {
@@ -102,8 +102,13 @@ shared({ caller = transactionIndexCaller }) actor class Transactions() {
             };
           };
 
+          // filter by tokenId
+          let filterTokenId: Bool = switch(tokenId) {
+            case(null) true;
+            case(?value) txInfo.tokenId == value;
+          };
 
-          if (filterType and filterPrice and filterRange and filterMethod and filterDates) txs.add(txInfo)
+          if (filterType and filterPrice and filterRange and filterMethod and filterDates and filterTokenId) txs.add(txInfo)
         };
       };
     };

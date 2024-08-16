@@ -1,7 +1,7 @@
 <template>
   <div id="home">
     <img src="@/assets/sources/images/side-img-1.png" alt="Side banner" class="side-banner">
-    <v-window v-model="windowStep" :show-arrows="false">
+    <v-window v-model="windowStep" :show-arrows="false" :touch="false">
       <!-- registration -->
       <v-window-item :value="1">
         <v-form ref="companyFormRef" class="container-windows-step" @submit.prevent="nextStep">

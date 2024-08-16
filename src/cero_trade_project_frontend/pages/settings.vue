@@ -90,7 +90,7 @@
       </v-col> -->
 
       <v-col xl="4" lg="4" md="4" sm="6" cols="12">
-        <v-card class="card flex-column" style="background-color: #F9FAFB!important; --h: 100%">
+        <v-card class="card flex-column" style="background-color: #D92D2099!important; --h: 100%">
           <img src="@/assets/sources/icons/trash.svg" alt="trash icon" class="mb-10" style="width: 20px">
           <h5 class="mb-6">Delete account</h5>
           <span class="tertiary" style="font-weight: 300;">

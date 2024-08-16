@@ -224,6 +224,24 @@
       display: grid;
     }
   }
+
+  .container-actions {
+    position: sticky;
+    top: 80px;
+    padding-top: 12px;
+    height: calc(100dvh - 100px) !important;
+
+    .container-redemptions {
+      overflow: auto;
+      padding: 1px;
+      height: calc(100% - 250px);
+      flex-grow: 1;
+
+      > *:not(:last-child) {
+        margin-bottom: 20px;
+      }
+    }
+  }
 }
 
 

@@ -8,6 +8,7 @@ import Iter "mo:base/Iter";
 import Error "mo:base/Error";
 import Debug "mo:base/Debug";
 import Buffer "mo:base/Buffer";
+import Array "mo:base/Array";
 
 // interfaces
 import IC_MANAGEMENT "../ic_management_canister_interface";
@@ -234,10 +235,10 @@ actor class TransactionIndex() = this {
   };
 
   /// get transactions by tx id
-  public shared({ caller }) func getTransactionsById(txIds: [T.TransactionId], txType: ?T.TxType, priceRange: ?[T.Price], mwhRange: ?[T.TokenAmount], method: ?T.TxMethod, rangeDates: ?[Text]) : async [T.TransactionInfo] {
+  public shared({ caller }) func getTransactionsById(txIds: [T.TransactionId], txType: ?T.TxType, priceRange: ?[T.Price], mwhRange: ?[T.TokenAmount], method: ?T.TxMethod, rangeDates: ?[Text], tokenId: ?T.TokenId) : async [T.TransactionInfo] {
     _callValidation(caller);
 
-    let txs = Buffer.Buffer<T.TransactionInfo>(50);
+    var txs: [T.TransactionInfo] = [];
 
     Debug.print(debug_show ("before getTransactionsById: " # Nat.toText(Cycles.balance())));
 
@@ -260,13 +261,13 @@ actor class TransactionIndex() = this {
 
     // iterate canisters to get transactions supplied
     for((cid, txIds) in directory.entries()) {
-      let transactions: [T.TransactionInfo] = await Transactions.canister(cid).getTransactionsById(txIds, txType, priceRange, mwhRange, method, rangeDates);
-      txs.append(Buffer.fromArray<T.TransactionInfo>(transactions));
+      let transactions: [T.TransactionInfo] = await Transactions.canister(cid).getTransactionsById(txIds, txType, priceRange, mwhRange, method, rangeDates, tokenId);
+      txs := Array.flatten<T.TransactionInfo>([txs, transactions]);
     };
 
     Debug.print(debug_show ("later getTransactionsById: " # Nat.toText(Cycles.balance())));
 
-    Buffer.toArray<T.TransactionInfo>(txs);
+    txs
   };
 
 
