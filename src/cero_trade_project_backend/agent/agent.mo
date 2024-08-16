@@ -222,7 +222,7 @@ actor class Agent() = this {
       totalPages: Nat;
     } = await TokenIndex.getPortfolio(caller, page, length, assetTypes, country, mwhRange);
 
-    let tokensRedemption: [T.TransactionInfo] = await TransactionIndex.getTransactionsById(tokensInfo.txIds, ?#redemption("redemption"), null, null, null, null);
+    let tokensRedemption: [T.TransactionInfo] = await TransactionIndex.getTransactionsById(tokensInfo.txIds, ?#redemption("redemption"), null, null, null, null, null);
 
     { 
       tokensInfo = { data = tokensInfo.tokens; totalPages = tokensInfo.totalPages; };
@@ -754,7 +754,7 @@ actor class Agent() = this {
 
 
   // get user transactions
-  public shared({ caller }) func getTransactionsByUser(page: ?Nat, length: ?Nat, txType: ?T.TxType, country: ?Text, priceRange: ?[T.Price], mwhRange: ?[T.TokenAmount], assetTypes: ?[T.AssetType], method: ?T.TxMethod, rangeDates: ?[Text]): async {
+  public shared({ caller }) func getTransactionsByUser(page: ?Nat, length: ?Nat, txType: ?T.TxType, country: ?Text, priceRange: ?[T.Price], mwhRange: ?[T.TokenAmount], assetTypes: ?[T.AssetType], method: ?T.TxMethod, rangeDates: ?[Text], tokenId: ?T.TokenId): async {
     data: [T.TransactionHistoryInfo];
     totalPages: Nat;
   } {
@@ -789,7 +789,7 @@ actor class Agent() = this {
     if (totalPages <= 0) totalPages := 1;
 
 
-    let transactionsInfo: [T.TransactionInfo] = await TransactionIndex.getTransactionsById(Buffer.toArray<T.TransactionId>(txIdsFiltered), txType, priceRange, mwhRange, method, rangeDates);
+    let transactionsInfo: [T.TransactionInfo] = await TransactionIndex.getTransactionsById(Buffer.toArray<T.TransactionId>(txIdsFiltered), txType, priceRange, mwhRange, method, rangeDates, tokenId);
 
     // get tokens info
     let tokensInfo: [T.AssetInfo] = await TokenIndex.getTokensInfo(Array.map<T.TransactionInfo, Text>(transactionsInfo, func x = x.tokenId));

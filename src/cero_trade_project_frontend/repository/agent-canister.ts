@@ -186,7 +186,8 @@ export class AgentCanister {
         item.txType = Object.values(item.txType)[0] as TxTypeDef
         item.to = Object.values(item.to)[0] as string
         item.tokenAmount = Number(item.tokenAmount)
-        item.redemptionPdf = await getFileFromArrayBuffer(item.redemptionPdf)
+        item.redemptionPdf = await getFileFromArrayBuffer(item.redemptionPdf, { fileName: 'certificate', fileType: 'application/pdf' })
+        item['url'] = URL.createObjectURL(item.redemptionPdf)
       }
 
       return response
@@ -523,7 +524,7 @@ export class AgentCanister {
   }
 
 
-  static async getTransactions({ page, length, txType, country, priceRange, mwhRange, assetTypes, method, rangeDates }: {
+  static async getTransactions({ page, length, txType, country, priceRange, mwhRange, assetTypes, method, rangeDates, tokenId }: {
     page?: number,
     length?: number,
     txType?: TxTypeDef,
@@ -533,6 +534,7 @@ export class AgentCanister {
     assetTypes?: AssetType[],
     method?: TxMethodDef,
     rangeDates?: Date[],
+    tokenId?: string,
   }): Promise<{ data: TransactionHistoryInfo[]; totalPages: number; }> {
     priceRange ??= []
     mwhRange ??= []
@@ -550,6 +552,7 @@ export class AgentCanister {
         assetTypes.length ? [assetTypes.map(energy => ({ [energy]: energy }))] : [],
         method ? [{[method]: method}] : [],
         rangeDates.length ? [rangeDates.map(e => moment(e).format(variables.dateFormat))] : [],
+        tokenId ? [tokenId] : [],
       ) as { data: TransactionHistoryInfo[]; totalPages: number; }
 
       for (const item of response.data) {
@@ -558,7 +561,8 @@ export class AgentCanister {
         item.txType = Object.values(item.txType)[0] as TxTypeDef
         item.method = Object.values(item.method)[0] as TxMethodDef
         item.date = new Date(item.date)
-        item.redemptionPdf = await getFileFromArrayBuffer(item.redemptionPdf)
+        item.redemptionPdf = await getFileFromArrayBuffer(item.redemptionPdf, { fileName: 'certificate', fileType: 'application/pdf' })
+        item['url'] = URL.createObjectURL(item.redemptionPdf)
 
         // get nullable object
         item.to = item.to[0]

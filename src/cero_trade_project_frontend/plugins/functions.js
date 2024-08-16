@@ -259,9 +259,9 @@ export async function getImageArrayBuffer(file) {
   });
 }
 
-export function getFileFromArrayBuffer(array, fileName) {
-  const blob = new Blob([array], { type: 'application/octet-stream' });
-  const file = new File([blob], fileName, { type: 'application/octet-stream' });
+export function getFileFromArrayBuffer(array, { fileName, fileType }) {
+  const blob = new Blob([array], { type: fileType || 'application/octet-stream' });
+  const file = new File([blob], fileName || 'file', { type: fileType ||'application/octet-stream' });
   return file;
 }
 
@@ -298,5 +298,6 @@ export function shortString(text, { from, to }) {
   from ||= 4
   to ||= 4
 
+  if (text.length <= from + to) return text
   return `${text.substring(0, from)}...${text.substring(text.length - to, text.length)}`
 }
