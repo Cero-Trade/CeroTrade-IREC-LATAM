@@ -191,4 +191,4 @@ https://mops.one/
 https://internetcomputer.org/docs/current/developer-docs/web-apps/custom-domains/using-custom-domains#custom-domains-on-the-boundary-nodes
 
 ### found canister
-dfx canister deposit-cycles 400000000000 --network ic user_index
+dfx canister deposit-cycles 20_860_000_000 --network ic http_service
