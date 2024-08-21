@@ -431,7 +431,7 @@ actor class UserIndex() = this {
     };
 
     let _ = await HTTP.canister.post({
-        url = HTTP.apiUrl # "users/ct-transactions";
+        url = HTTP.apiUrl # "transactions/cero-trade";
         port = null;
         uid = null;
         headers = [HTTP.tokenAuth(currentToken)];
@@ -502,7 +502,7 @@ actor class UserIndex() = this {
     };
 
     let transactions = await HTTP.canister.get({
-        url = HTTP.apiUrl # "users/ct-transactions";
+        url = HTTP.apiUrl # "transactions/cero-trade";
         port = null;
         uid = null;
         headers = [HTTP.tokenAuth(currentToken)];
@@ -535,7 +535,7 @@ actor class UserIndex() = this {
     };
 
     let beneficiaries = await HTTP.canister.get({
-        url = HTTP.apiUrl # "users/beneficiaries";
+        url = HTTP.apiUrl # "beneficiaries";
         port = null;
         uid = null;
         headers = [HTTP.tokenAuth(currentToken)];
@@ -565,7 +565,7 @@ actor class UserIndex() = this {
     };
 
     let beneficiaryExists = await HTTP.canister.get({
-        url = HTTP.apiUrl # "users/check-beneficiary/" # Principal.toText(beneficiaryId);
+        url = HTTP.apiUrl # "beneficiaries/check/" # Principal.toText(beneficiaryId);
         port = null;
         uid = null;
         headers = [HTTP.tokenAuth(currentToken)];
@@ -617,7 +617,7 @@ actor class UserIndex() = this {
     };
 
     let _ = await HTTP.canister.post({
-        url = HTTP.apiUrl # "users/benecifiaries";
+        url = HTTP.apiUrl # "beneficiaries";
         port = null;
         uid = null;
         headers = [HTTP.tokenAuth(currentToken)];
