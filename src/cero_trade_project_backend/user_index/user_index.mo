@@ -383,8 +383,7 @@ actor class UserIndex() = this {
 
   /// delete user to Cero Trade
   public shared({ caller }) func deleteUser(uid: T.UID): async() {
-    // TODO commented just for testing
-    // _callValidation(caller);
+    _callValidation(caller);
 
     let cid: T.CanisterId = switch(usersDirectory.get(uid)) {
       case(null) throw Error.reject(notExists);
