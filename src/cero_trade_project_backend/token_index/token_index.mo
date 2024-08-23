@@ -343,11 +343,12 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   public shared({ caller }) func importUserTokens(uid: T.UID): async [{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }] {
     _callValidation(caller);
 
-    let assetsJson = await HTTP.canister.get({
-      url = HTTP.apiUrl # "transactions/fetchByUser";
+    let assetsJson = await HTTP.canister.post({
+      url = HTTP.apiUrl # "transactions/import";
       port = null;
       uid = ?uid;
       headers = [];
+      bodyJson = "{}";
     });
 
     // used hashmap to find faster elements using Hash
