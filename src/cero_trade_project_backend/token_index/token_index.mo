@@ -72,6 +72,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     id: Nat;
     transactionId: Text;
     sourceAccountCode: Text;
+    destinationAccountCode: Text;
     transactionType: Text;
     volume: Text;
     timestamp: Text;
