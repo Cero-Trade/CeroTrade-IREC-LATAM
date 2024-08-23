@@ -431,7 +431,7 @@ actor class UserIndex() = this {
     };
 
     let _ = await HTTP.canister.post({
-        url = HTTP.apiUrl # "transactions/cero-trade";
+        url = HTTP.apiUrl # "/web3-transactions";
         port = null;
         uid = null;
         headers = [HTTP.tokenAuth(currentToken)];
@@ -502,13 +502,11 @@ actor class UserIndex() = this {
     };
 
     let transactions = await HTTP.canister.get({
-        url = HTTP.apiUrl # "transactions/cero-trade";
+        url = HTTP.apiUrl # "/web3-transactions";
         port = null;
         uid = null;
         headers = [HTTP.tokenAuth(currentToken)];
       });
-
-    Debug.print("here ------> " # debug_show (transactions));
 
     switch(Serde.JSON.fromText(transactions, null)) {
       case(#err(_)) throw Error.reject("cannot serialize transactions data");
