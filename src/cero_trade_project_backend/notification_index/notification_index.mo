@@ -217,7 +217,7 @@ actor class NotificationIndex() = this {
 
       // add notification to receiver user
       let _ = await HTTP.canister.post({
-        url = HTTP.apiUrl # "users/add-notification";
+        url = HTTP.apiUrl # "notifications/add";
         port = null;
         uid = null;
         headers = [];
@@ -232,7 +232,7 @@ actor class NotificationIndex() = this {
         case(?token) {
           // add notification to trigger user
           let _ = await HTTP.canister.post({
-            url = HTTP.apiUrl # "users/add-notification";
+            url = HTTP.apiUrl # "notifications/add";
             port = null;
             uid = null;
             headers = [];
@@ -260,7 +260,7 @@ actor class NotificationIndex() = this {
     _callValidation(caller);
 
     let notificationIdsJson = await HTTP.canister.get({
-      url = HTTP.apiUrl # "users/notifications/" # token;
+      url = HTTP.apiUrl # "notifications/" # token;
       port = null;
       uid = null;
       headers = [];
@@ -305,7 +305,7 @@ actor class NotificationIndex() = this {
     _callValidation(caller);
 
     let notificationIdsJson = await HTTP.canister.get({
-      url = HTTP.apiUrl # "users/notifications/" # token;
+      url = HTTP.apiUrl # "notifications/" # token;
       port = null;
       uid = null;
       headers = [];
@@ -340,7 +340,7 @@ actor class NotificationIndex() = this {
       if (filteredIds.size() > 0) {
         // clear notifications from records
         let _ = await HTTP.canister.post({
-            url = HTTP.apiUrl # "users/clear-notifications";
+            url = HTTP.apiUrl # "notifications/clear";
             port = null;
             uid = null;
             headers = [];
@@ -399,7 +399,7 @@ actor class NotificationIndex() = this {
 
     // checkout user notification existance
     let jsonResponse = await HTTP.canister.get({
-      url = HTTP.apiUrl # "users/notification/" # userToken # queryParameter;
+      url = HTTP.apiUrl # "notifications/check" # userToken # queryParameter;
       port = null;
       uid = null;
       headers = [];
@@ -409,7 +409,7 @@ actor class NotificationIndex() = this {
 
     // remove user notification register
     let _ = await HTTP.canister.post({
-        url = HTTP.apiUrl # "users/clear-notifications";
+        url = HTTP.apiUrl # "notifications/clear";
         port = null;
         uid = null;
         headers = [];
@@ -421,7 +421,7 @@ actor class NotificationIndex() = this {
 
     // checkout other user notification existance
     let otherJsonResponse = await HTTP.canister.get({
-      url = HTTP.apiUrl # "users/notification/" # otherUserToken # queryParameter;
+      url = HTTP.apiUrl # "notifications/check" # otherUserToken # queryParameter;
       port = null;
       uid = null;
       headers = [];
@@ -484,7 +484,7 @@ actor class NotificationIndex() = this {
 
     let queryParameters = "?page=" # pageParam # "&length=" # lengthParam;
     let notificationIdsJson = await HTTP.canister.get({
-      url = HTTP.apiUrl # "users/notifications/" # token # queryParameters;
+      url = HTTP.apiUrl # "notifications/" # token # queryParameters;
       port = null;
       uid = null;
       headers = [];

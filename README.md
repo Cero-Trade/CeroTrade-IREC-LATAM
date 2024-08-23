@@ -194,4 +194,4 @@ https://internetcomputer.org/docs/current/developer-docs/web-apps/custom-domains
 https://internetcomputer.org/docs/current/tutorials/developer-journey/level-2/2.5-unit-testing#motoko-unit-testing
 
 ### found canister
-dfx canister deposit-cycles 400000000000 --network ic user_index
+dfx canister deposit-cycles 20_860_000_000 --network ic http_service
