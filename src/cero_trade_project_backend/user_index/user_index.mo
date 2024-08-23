@@ -431,7 +431,7 @@ actor class UserIndex() = this {
     };
 
     let _ = await HTTP.canister.post({
-        url = HTTP.apiUrl # "/web3-transactions";
+        url = HTTP.apiUrl # "web3-transactions";
         port = null;
         uid = null;
         headers = [HTTP.tokenAuth(currentToken)];
@@ -502,7 +502,7 @@ actor class UserIndex() = this {
     };
 
     let transactions = await HTTP.canister.get({
-        url = HTTP.apiUrl # "/web3-transactions";
+        url = HTTP.apiUrl # "web3-transactions";
         port = null;
         uid = null;
         headers = [HTTP.tokenAuth(currentToken)];
