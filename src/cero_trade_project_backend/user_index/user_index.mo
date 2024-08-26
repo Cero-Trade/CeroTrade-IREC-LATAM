@@ -217,11 +217,12 @@ actor class UserIndex() = this {
   };
 
   private func _deleteUserWeb2(token: Text): async() {
-    let _ = await HTTP.canister.get({
+    let _ = await HTTP.canister.post({
         url = HTTP.apiUrl # "users/delete";
         port = null;
         uid = null;
         headers = [HTTP.tokenAuth(token)];
+        bodyJson = "{}";
       });
   };
 
