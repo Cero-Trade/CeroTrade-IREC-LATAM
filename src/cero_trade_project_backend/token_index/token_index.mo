@@ -39,33 +39,21 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   stable var tokenDirectoryEntries : [(T.TokenId, T.CanisterId)] = [];
 
   type AssetResponse = {
-    tokenId: Text;
+    assetId: Text;
+    co2Produced: Text;
+    volumeProduced: Text;
+    radioactiveProduced: Text;
     startDate: Text;
     endDate: Text;
-    co2Emission: Text;
-    radioactivityEmnission: Text;
-    volumeProduced: Text;
     // deviceDetails
-    name: Text;
+    deviceName: Text;
     deviceType: Text;
     description: Text;
     // specifications
-    deviceCode: Text;
-    capacity: Text;
-    location: Text;
-    latitude: Text;
-    longitude: Text;
-    address: Text;
-    stateProvince: Text;
     country: Text;
-    dates: [Text];
-  };
-
-  type ItemResponse = {
-    source: Text;
-    volume: Text;
-    assetId: Text;
-    assetDetails: AssetResponse;
+    latitude: Text;
+    location: Text;
+    longitude: Text;
   };
 
   type TransactionResponse = {
@@ -76,7 +64,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     transactionType: Text;
     volume: Text;
     timestamp: Text;
-    items: [ItemResponse];
+    items: [AssetResponse];
     processed: Bool;
     createdAt: Text;
     updatedAt: Text;
@@ -366,13 +354,14 @@ shared({ caller = owner }) actor class TokenIndex() = this {
         switch(transactionResponse) {
           case(null) throw Error.reject("cannot serialize asset data");
           case(?response) {
-            for({ items } in response.vals()) {
-              for(itemResponse in items.vals()) {
+            for({ volume; items } in response.vals()) {
+              for(assetResponse in items.vals()) {
                 index := index + 1;
 
+                // TODO review mwh value assignment
                 assetsMetadata.put(index, {
-                  mwh = await T.textToNat(itemResponse.volume);
-                  assetInfo = await buildAssetInfo(itemResponse.assetDetails);
+                  mwh = await T.textToNat(volume);
+                  assetInfo = await buildAssetInfo(assetResponse);
                 });
               };
             };
@@ -498,29 +487,29 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       case _ #Other("Other");
     };
 
+    // TODO review specification values assignment
     {
-      tokenId = asset.tokenId;
+      tokenId = asset.assetId;
       startDate = asset.startDate;
       endDate = asset.endDate;
-      co2Emission = asset.co2Emission;
-      radioactivityEmnission = asset.radioactivityEmnission;
+      co2Emission = asset.co2Produced;
+      radioactivityEmission = asset.radioactiveProduced;
       volumeProduced = await T.textToNat(asset.volumeProduced);
       deviceDetails = {
-        name = asset.name;
+        name = asset.deviceName;
         deviceType;
         description = asset.description;
       };
       specifications = {
-        deviceCode = asset.deviceCode;
-        capacity = await T.textToNat(asset.capacity);
+        deviceCode = "asset.deviceCode";
+        capacity = await T.textToNat(asset.volumeProduced);
         location = asset.location;
         latitude = asset.latitude;
         longitude = asset.longitude;
-        address = asset.address;
-        stateProvince = asset.stateProvince;
+        address = "asset.address";
+        stateProvince = "asset.stateProvince";
         country = asset.country;
       };
-      dates = asset.dates;
     };
   };
 

@@ -321,7 +321,7 @@ actor class Agent() = this {
               startDate = "2024-04-29T19:43:34.000Z";
               endDate = "2024-05-29T19:48:31.000Z";
               co2Emission = "11.22";
-              radioactivityEmnission = "10.20";
+              radioactivityEmission = "10.20";
               volumeProduced: T.TokenAmount = 1000;
               deviceDetails = {
                 name = "machine";
@@ -338,7 +338,6 @@ actor class Agent() = this {
                 stateProvince = "chile";
                 country = "CL";
               };
-              dates = ["2024-04-29T19:43:34.000Z", "2024-05-29T19:48:31.000Z", "2024-05-29T19:48:31.000Z"];
             };
           }
         };

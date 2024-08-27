@@ -66,7 +66,7 @@
 
               <div class="jspace divrow mt-3 mb-1">
                 <span style="color: #475467;">Radioactivity emission</span>
-                <span>{{ tokenDetail?.assetInfo.radioactivityEmnission }}%</span>
+                <span>{{ tokenDetail?.assetInfo.radioactivityEmission }}%</span>
               </div>
 
               <div class="jspace divrow mt-3 mb-1">
@@ -109,9 +109,6 @@
                 </v-tab>
                 <v-tab value="two" class="tab-btn" style="border: none!important; border-radius: 0px!important;">
                   Specifications
-                </v-tab>
-                <v-tab value="three" class="tab-btn delete-mobile" style="border: none!important; border-radius: 0px!important;">
-                  Dates
                 </v-tab>
               </v-tabs>
 
@@ -191,26 +188,6 @@
                       <div class="jspace divrow mt-3 mb-1">
                         <span style="color: #475467;">Country</span>
                         <span>{{ tokenDetail?.assetInfo.specifications.country }}</span>
-                      </div>
-                    </v-col>
-                  </v-row>
-                </v-window-item>
-
-                <v-window-item value="three">
-                  <h5 class="bold mb-6 mt-4">Dates</h5>
-
-                  <v-row class="mt-3">
-                    <v-col xl="8" lg="8" md="8" cols="12">
-                      <div
-                        v-for="(date, index) in tokenDetail?.assetInfo.dates" :key="index"
-                        class="jspace divrow mb-1"
-                      >
-                        <span style="color: #475467;">{{
-                          index === 0 ? "Registration Date"
-                          : index === 1 ? "Commissioning Date"
-                          : "Expire Date"
-                        }}</span>
-                        <span>{{ date.toDateString() }}</span>
                       </div>
                     </v-col>
                   </v-row>

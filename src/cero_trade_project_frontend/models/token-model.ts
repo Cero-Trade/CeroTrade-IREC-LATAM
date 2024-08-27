@@ -14,11 +14,10 @@ export interface AssetInfoModel {
   startDate: Date;
   endDate: Date;
   co2Emission: number;
-  radioactivityEmnission: number;
+  radioactivityEmission: number;
   volumeProduced: number;
   deviceDetails: DeviceDetailsModel;
   specifications: SpecificationsModel;
-  dates: Date[];
 };
 
 export interface DeviceDetailsModel {

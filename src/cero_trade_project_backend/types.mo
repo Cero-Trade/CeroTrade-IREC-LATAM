@@ -211,11 +211,10 @@ module {
     startDate: Text;
     endDate: Text;
     co2Emission: Text;
-    radioactivityEmnission: Text;
+    radioactivityEmission: Text;
     volumeProduced: TokenAmount;
     deviceDetails: DeviceDetails;
     specifications: Specifications;
-    dates: [Text];
   };
 
   //

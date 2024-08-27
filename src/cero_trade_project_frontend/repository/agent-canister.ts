@@ -177,7 +177,6 @@ export class AgentCanister {
         // format dates
         item.assetInfo.startDate = new Date(item.assetInfo.startDate)
         item.assetInfo.endDate = new Date(item.assetInfo.endDate)
-        item.assetInfo.dates.forEach(e => { e = new Date(e) })
       }
 
       response.tokensInfo.totalPages = Number(response.tokensInfo.totalPages)
@@ -210,10 +209,6 @@ export class AgentCanister {
       token.assetInfo.deviceDetails.deviceType = Object.values(token.assetInfo.deviceDetails.deviceType)[0] as AssetType
       token.assetInfo.startDate = new Date(token.assetInfo.startDate)
       token.assetInfo.endDate = new Date(token.assetInfo.endDate)
-
-      const dates: Date[] = [];
-      for (const date of token.assetInfo.dates) dates.push(new Date(date))
-      token.assetInfo.dates = dates
 
       return token
     } catch (error) {
@@ -288,10 +283,6 @@ export class AgentCanister {
         transaction.assetInfo.deviceDetails.deviceType = Object.values(transaction.assetInfo.deviceDetails.deviceType)[0] as AssetType
         transaction.assetInfo.startDate = new Date(transaction.assetInfo.startDate)
         transaction.assetInfo.endDate = new Date(transaction.assetInfo.endDate)
-  
-        const dates: Date[] = [];
-        for (const date of transaction.assetInfo.dates) dates.push(new Date(date))
-        transaction.assetInfo.dates = dates
       }
 
       console.log(transactions);
@@ -316,10 +307,6 @@ export class AgentCanister {
       token.assetInfo.deviceDetails.deviceType = Object.values(token.assetInfo.deviceDetails.deviceType)[0] as AssetType
       token.assetInfo.startDate = new Date(token.assetInfo.startDate)
       token.assetInfo.endDate = new Date(token.assetInfo.endDate)
-
-      const dates: Date[] = [];
-      for (const date of token.assetInfo.dates) dates.push(new Date(date))
-      token.assetInfo.dates = dates
 
       return token
     } catch (error) {
