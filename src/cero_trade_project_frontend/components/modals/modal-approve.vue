@@ -16,7 +16,7 @@
 
       <v-card-text>
         <p>
-          You must approve to spend {{ totalInICP }} ICP from token canister
+          You must approve to spend {{ totalPreview }} ICP from token canister
         </p>
       </v-card-text>
 
@@ -42,7 +42,7 @@ import { ref, computed, watch, getCurrentInstance } from 'vue'
 import { useToast } from 'vue-toastification';
 import variables from '@/mixins/variables'
 import { LedgerCanister } from '@/repository/ledger-canister';
-import { convertE8SToICP, convertICPToE8S } from '@/plugins/functions'
+import { icpToNumber, numberToIcp } from '@/plugins/functions'
 
 const
   props = defineProps({
@@ -51,13 +51,13 @@ const
     persistent: Boolean,
     contentClass: String,
     tokenId: String,
-    amountInIcp: {
+    amountInE8S: {
       type: Number,
-      default: 0
+      default: 0n
     },
     feeTxInE8s: {
       type: Number,
-      default: 20_000
+      default: 20_000n
     },
     maxWidth: {
       type: String,
@@ -75,8 +75,13 @@ loading = ref(false),
 hasCancelEmit = !!instance?.vnode.props?.onCancel,
 
 tokenId = computed(() => props.tokenId),
-totalInICP = computed(() => convertE8SToICP(convertICPToE8S(props.amountInIcp) + props.feeTxInE8s + ceroComisison)),
-totalInE8S = computed(() => convertICPToE8S(props.amountInIcp) + props.feeTxInE8s + ceroComisison)
+totalPreview = computed(() => {
+  // TODO here <-------
+  console.log(props.amountInE8S + props.feeTxInE8s + ceroComisison);
+
+  return icpToNumber(props.amountInE8S + props.feeTxInE8s + ceroComisison)
+}),
+totalInE8S = computed(() => props.amountInE8S + props.feeTxInE8s + ceroComisison)
 
 function showModal(parameter) {
   modelParameter.value = parameter
@@ -102,7 +107,7 @@ async function approve() {
 
     loading.value = false
     model.value = false
-    toast.info(`You have approved to spend ${totalInICP.value} ICP`)
+    toast.info(`You have approved to spend ${totalPreview.value} ICP`)
 
     emit('approve', modelParameter.value)
   } catch (error) {

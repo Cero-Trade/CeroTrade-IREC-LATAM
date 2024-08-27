@@ -2,8 +2,8 @@
   <modal-approve
     ref="modalApprove"
     :token-id="tokenId"
-    :amount-in-icp="amountInIcp"
-    :fee-in-e8s="feeInE8S"
+    :amount-in-e8s="numberToIcp(totalPrice)"
+    :fee-tx-in-e8s="feeInE8S"
     @approve="() => {
       if (dialogPurchaseReview)
         purchaseToken()
@@ -673,15 +673,15 @@
 
             <div class="jspace divrow mt-1">
               <span>Transaction fee</span>
-              <span>{{ convertE8SToICP(feeInE8S) }} ICP</span>
+              <span>{{ icpToNumber(feeInE8S) }} ICP</span>
             </div>
             <div class="jspace divrow mt-1">
               <span>Cero trade comission</span>
-              <span>{{ convertE8SToICP(ceroComisison) }} ICP</span>
+              <span>{{ icpToNumber(ceroComisison) }} ICP</span>
             </div>
             <div class="jspace divrow mt-1">
               <span class="bold">Total</span>
-              <span class="bold">{{ maxDecimals(amountInIcp + convertE8SToICP(feeInE8S) + convertE8SToICP(ceroComisison), 4) }} ICP</span>
+              <span class="bold">{{ maxDecimals(totalPrice + icpToNumber(feeInE8S) + icpToNumber(ceroComisison), 4) }} ICP</span>
             </div>
           </v-card>
 
@@ -1012,15 +1012,15 @@
 
           <div class="jspace divrow mt-1">
             <span>Transaction fee</span>
-            <span>{{ convertE8SToICP(feeInE8S) }} ICP</span>
+            <span>{{ icpToNumber(feeInE8S) }} ICP</span>
           </div>
           <div class="jspace divrow mt-1">
             <span>Cero trade comission</span>
-            <span>{{ convertE8SToICP(ceroComisison) }} ICP</span>
+            <span>{{ icpToNumber(ceroComisison) }} ICP</span>
           </div>
           <div class="jspace divrow mt-1">
             <span class="bold">Total</span>
-            <span class="bold">{{ maxDecimals(amountInIcp + convertE8SToICP(feeInE8S) + convertE8SToICP(ceroComisison), 4) }} ICP</span>
+            <span class="bold">{{ maxDecimals(totalPrice + icpToNumber(feeInE8S) + icpToNumber(ceroComisison), 4) }} ICP</span>
           </div>
         </v-card>
 
@@ -1222,7 +1222,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import variables from '@/mixins/variables'
 import moment from 'moment'
-import { closeLoader, convertE8SToICP, showLoader, maxDecimals, shortPrincipalId, shortString, formatBytes } from '@/plugins/functions'
+import { closeLoader, icpToNumber, numberToIcp, showLoader, maxDecimals, shortPrincipalId, shortString, formatBytes } from '@/plugins/functions'
 import { Principal } from '@dfinity/principal'
 
 const
@@ -1379,8 +1379,8 @@ prevRoutePatch  = computed(() => {
 }),
 
 
-amountInIcp = computed(() => dialogPurchaseReview.value ? Number(tokenPrice.value) * Number(tokenAmount.value) : 0),
-feeInE8S = computed(() => dialogPurchaseReview.value ? 30_000 : 20_000)
+totalPrice = computed(() => dialogPurchaseReview.value ? Number(tokenPrice.value) * Number(tokenAmount.value) : 0),
+feeInE8S = computed(() => dialogPurchaseReview.value ? 30_000n : 20_000n)
 
 // dialogs state management
 

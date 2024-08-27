@@ -360,7 +360,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
 
                 // TODO review mwh value assignment
                 assetsMetadata.put(index, {
-                  mwh = await T.textToNat(volume);
+                  mwh = await T.textToToken(volume, null);
                   assetInfo = await buildAssetInfo(assetResponse);
                 });
               };
@@ -494,7 +494,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       endDate = asset.endDate;
       co2Emission = asset.co2Produced;
       radioactivityEmission = asset.radioactiveProduced;
-      volumeProduced = await T.textToNat(asset.volumeProduced);
+      volumeProduced = await T.textToToken(asset.volumeProduced, null);
       deviceDetails = {
         name = asset.deviceName;
         deviceType;
@@ -502,7 +502,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       };
       specifications = {
         deviceCode = "asset.deviceCode";
-        capacity = await T.textToNat(asset.volumeProduced);
+        capacity = await T.textToToken(asset.volumeProduced, null);
         location = asset.location;
         latitude = asset.latitude;
         longitude = asset.longitude;
@@ -548,14 +548,27 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       headers = [];
     });
 
+    Debug.print("portfolioJson " # debug_show (portfolioJson));
     let portfolioIds: { tokenIds: [T.TokenId]; txIds: [T.TransactionId] } = switch(Serde.JSON.fromText(portfolioJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize asset data");
       case(#ok(blob)) {
-        let portfolio: ?{ tokenIds: [T.TokenId]; txIds: [T.TransactionId] } = from_candid(blob);
+        let portfolio: ?{ tokenIds: ?[T.TokenId]; txIds: ?[T.TransactionId]; } = from_candid(blob);
+        Debug.print("portfolio " # debug_show (portfolio));
 
         switch(portfolio) {
           case(null) throw Error.reject("cannot serialize asset data");
-          case(?value) value;
+          case(?value) {
+            {
+              tokenIds = switch(value.tokenIds) {
+                case(null) [];
+                case(?value) value;
+              };
+              txIds = switch(value.txIds) {
+                case(null) [];
+                case(?value) value;
+              };
+            }
+          };
         };
       };
     };

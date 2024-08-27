@@ -8,8 +8,6 @@ import Array "mo:base/Array";
 import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
 import Nat64 "mo:base/Nat64";
-import Float "mo:base/Float";
-import Int64 "mo:base/Int64";
 import Buffer "mo:base/Buffer";
 import DateTime "mo:datetime/DateTime";
 
@@ -508,12 +506,12 @@ actor class Agent() = this {
 
 
   /// ask market to put on sale token
-  public shared({ caller }) func sellToken(tokenId: T.TokenId, quantity: T.TokenAmount, priceICP: Float): async T.TransactionInfo {
+  public shared({ caller }) func sellToken(tokenId: T.TokenId, quantity: T.TokenAmount, priceE8S: T.Price): async T.TransactionInfo {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
     // check price higher than 0
-    if (priceICP < 0) throw Error.reject("Price Must be higher than 0");
+    if (priceE8S.e8s < 0) throw Error.reject("Price Must be higher than 0");
 
     // check balance
     let balance = await TokenIndex.balanceOf(caller, tokenId);
@@ -528,9 +526,6 @@ actor class Agent() = this {
 
     // transfer tokens from user to marketplace
     let txIndex = await TokenIndex.sellInMarketplace(caller, tokenId, quantity);
-
-    // transform icp to e8s
-    let priceE8S = { e8s: Nat64 = Int64.toNat64(Float.toInt64(priceICP)) * T.getE8sEquivalence() };
 
     // build transaction
     let txInfo: T.TransactionInfo = {

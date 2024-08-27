@@ -25,6 +25,8 @@ module {
   public let cyclesHttpOutcall: Nat = 20_860_000_000;
   public let cyclesCreateCanister: Nat = 300_000_000_000;
 
+  public let tokenDecimals: Nat = 8;
+
   // TODO try to change to simplest format to better filtering
   // global date format variable
   public let dateFormat: Text = "YYYY-MM-DDTHH:mm:ss.sssssssssZ";
@@ -42,9 +44,9 @@ module {
       case(?value) value;
     });
   };
-
-  /// helper function to convert Text to Nat
-  public func textToNat(t: Text): async Nat {
+  
+  /// helper function to convert Text to Float
+  public func textToFloat(t: Text): async Float {
     var i : Float = 1;
     var f : Float = 0;
     var isDecimal : Bool = false;
@@ -72,7 +74,27 @@ module {
       };
     };
 
-    Int.abs(Float.toInt(f));
+    f
+  };
+
+  /// helper function to convert Text to Nat
+  public func textToNat(t: Text): async Nat {
+    let f = await textToFloat(t);
+    let rounded = f + 0.5;
+    Int.abs(Float.toInt(rounded));
+  };
+
+  /// helper function to convert Text to Token Balance
+  public func textToToken(t: Text, decimals: ?Nat): async ICPTypes.Balance {
+    let f = await textToFloat(t);
+    
+    let decimalsValue : Float = Float.fromInt64(Int64.fromNat64(Nat64.fromNat(switch(decimals) {
+      case(null) tokenDecimals;
+      case(?value) value;
+    })));
+
+    let float = f * Float.pow(10.0, decimalsValue);
+    Int.abs(Float.toInt(float))
   };
 
   public type UID = Principal;
