@@ -28,12 +28,10 @@ export default {
   },
   dateFormat: 'YYYY-MM-DDTHH:mm:ss.sssssssssZ',
   // amount in e8s equal to 1 ICP
-  e8sEquivalence: BigInt(process.env.E8S_EQUIVALENCE),
   ceroComisison: BigInt(process.env.CERO_COMISSION),
   isProduction: process.env.NODE_ENV === 'production',
   beneficiaryUrl: computed(() => `${process.env.NODE_ENV === 'production' ? 'https://z2mgf-dqaaa-aaaak-qihbq-cai.icp0.io' : 'http://localhost:5173'}/auth/register?canisterId=z2mgf-dqaaa-aaaak-qihbq-cai&beneficiary=${store.state.profile?.principalId.toString()}`),
   defaultMaxDecimals: 8,
-  e8sDecimals: 12,
   defaultLocale: 'en-US',
 
   isSafari: /^((?!chrome|android).)*safari/i.test(navigator.userAgent),

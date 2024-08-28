@@ -623,7 +623,7 @@ actor class UserIndex() = this {
         bodyJson = switch(Serde.JSON.toText(to_candid({
           caller = Principal.toText(uid);
           beneficiary = Principal.toText(beneficiaryId);
-          remove = deleteBeneficiary;
+          remove = deleteBeneficiary.delete;
         }), ["caller", "beneficiary", "remove"], null)) {
           case(#err(error)) throw Error.reject("Cannot serialize data");
           case(#ok(value)) value;

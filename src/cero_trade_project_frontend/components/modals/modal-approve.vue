@@ -42,7 +42,7 @@ import { ref, computed, watch, getCurrentInstance } from 'vue'
 import { useToast } from 'vue-toastification';
 import variables from '@/mixins/variables'
 import { LedgerCanister } from '@/repository/ledger-canister';
-import { icpToNumber, numberToIcp } from '@/plugins/functions'
+import { tokenToNumber } from '@/plugins/functions'
 
 const
   props = defineProps({
@@ -51,12 +51,12 @@ const
     persistent: Boolean,
     contentClass: String,
     tokenId: String,
-    amountInE8S: {
-      type: Number,
+    amountInE8s: {
+      type: BigInt,
       default: 0n
     },
     feeTxInE8s: {
-      type: Number,
+      type: BigInt,
       default: 20_000n
     },
     maxWidth: {
@@ -75,13 +75,8 @@ loading = ref(false),
 hasCancelEmit = !!instance?.vnode.props?.onCancel,
 
 tokenId = computed(() => props.tokenId),
-totalPreview = computed(() => {
-  // TODO here <---------
-  console.log(props.amountInE8S + props.feeTxInE8s + ceroComisison);
-
-  return icpToNumber(props.amountInE8S + props.feeTxInE8s + ceroComisison)
-}),
-totalInE8S = computed(() => props.amountInE8S + props.feeTxInE8s + ceroComisison)
+totalInE8S = computed(() => props.amountInE8s + props.feeTxInE8s + ceroComisison),
+totalPreview = computed(() => tokenToNumber(totalInE8S.value))
 
 function showModal(parameter) {
   modelParameter.value = parameter

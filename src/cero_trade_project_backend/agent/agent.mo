@@ -8,6 +8,7 @@ import Array "mo:base/Array";
 import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
 import Nat64 "mo:base/Nat64";
+import Nat8 "mo:base/Nat8";
 import Buffer "mo:base/Buffer";
 import DateTime "mo:datetime/DateTime";
 
@@ -469,7 +470,11 @@ actor class Agent() = this {
 
     // get seller token price in marketplace
     let priceE8S: T.Price = await Marketplace.getTokenPrice(tokenId, recipent);
-    let totalPriceE8S = { priceE8S with e8s = priceE8S.e8s * Nat64.fromNat(tokenAmount) };
+
+    // calc price based on how many tokens will be purchased
+    let totalPriceE8S = {
+      priceE8S with e8s: Nat64 = (priceE8S.e8s * Nat64.fromNat(tokenAmount)) / Nat64.pow(10, Nat64.fromNat(Nat8.toNat(T.tokenDecimals)))
+    };
 
     // performe ICP transfer and update token canister
     let txIndex = await TokenIndex.purchaseToken(caller, recipent, tokenId, tokenAmount, totalPriceE8S);
@@ -516,6 +521,8 @@ actor class Agent() = this {
 
     // check if user is already selling
     let tokensInSale = await Marketplace.getUserTokensOnSale(caller, tokenId);
+
+    if (balance < tokensInSale) throw Error.reject("Not enough tokens to sell");
     let availableTokens: T.TokenAmount = balance - tokensInSale;
 
     // check if user has enough tokens
@@ -708,9 +715,10 @@ actor class Agent() = this {
 
     // check if user has enough tokens
     let tokensInSale = await Marketplace.getUserTokensOnSale(caller, tokenId);
-    let availableTokens: T.TokenAmount = tokenPortofolio.totalAmount - tokensInSale;
 
-    if (availableTokens < quantity) throw Error.reject("Not enough tokens");
+    if (tokenPortofolio.totalAmount < tokensInSale) throw Error.reject("Not enough tokens in portfolio");
+    let availableTokens: T.TokenAmount = tokenPortofolio.totalAmount - tokensInSale;
+    if (availableTokens < quantity) throw Error.reject("Not enough tokens in portfolio");
 
     // ask token to burn the tokens
     let { txIndex; redemptionPdf; } = await TokenIndex.redeem(caller, tokenId, quantity, periodStart, periodEnd, locale);

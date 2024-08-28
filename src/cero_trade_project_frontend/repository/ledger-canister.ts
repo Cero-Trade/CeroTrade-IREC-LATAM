@@ -33,6 +33,8 @@ export class LedgerCanister {
     tokenId: string,
     amount: Tokens
   }): Promise<Icrc1BlockIndex> {
+    console.log("amount", amount.e8s);
+
     try {
       const tokenCanister = await AgentCanister.getTokenCanister(tokenId),
       result = await ledger().icrc2_approve({

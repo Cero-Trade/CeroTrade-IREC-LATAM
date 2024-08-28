@@ -32,13 +32,6 @@ module {
   // global date format variable
   public let dateFormat: Text = "YYYY-MM-DDTHH:mm:ss.sssssssssZ";
 
-  // amount in e8s equal to 1 ICP
-  public func getE8sEquivalence(): Nat64 {
-    Nat64.fromNat(switch(Nat.fromText(ENV.VITE_E8S_EQUIVALENCE)) {
-      case(null) 0;
-      case(?value) value;
-    });
-  };
   public func getCeroComission(): Nat64 {
     Nat64.fromNat(switch(Nat.fromText(ENV.VITE_CERO_COMISSION)) {
       case(null) 0;

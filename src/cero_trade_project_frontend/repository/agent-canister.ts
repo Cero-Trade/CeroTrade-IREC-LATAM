@@ -1,4 +1,4 @@
-import { fileCompression, getUrlFromArrayBuffer, getImageArrayBuffer, getFileFromArrayBuffer, tokenToNumber, numberToToken, numberToIcp, icpToNumber } from "@/plugins/functions";
+import { fileCompression, getUrlFromArrayBuffer, getImageArrayBuffer, getFileFromArrayBuffer, tokenToNumber, numberToToken } from "@/plugins/functions";
 import { useAgentCanister as agent, getErrorMessage } from "@/services/icp-provider";
 import avatar from '@/assets/sources/images/avatar-online.svg'
 import store from "@/store";
@@ -338,7 +338,7 @@ export class AgentCanister {
         length ? [length] : [],
         assetTypes.length ? [assetTypes.map(energy => ({ [energy]: energy }))] : [],
         country ? [country] : [],
-        priceRange.length ? [priceRange.map(price => ({ e8s: numberToIcp(price) }))] : [],
+        priceRange.length ? [priceRange.map(price => ({ e8s: numberToToken(price) }))] : [],
       ) as { data: MarketplaceInfo[], totalPages: number }
 
       for (const item of response.data) {
@@ -348,8 +348,8 @@ export class AgentCanister {
         item.mwh = tokenToNumber(item.mwh)
 
         // convert e8s to icp
-        item.lowerPriceE8S = icpToNumber(item.lowerPriceE8S['e8s'])
-        item.higherPriceE8S = icpToNumber(item.higherPriceE8S['e8s'])
+        item.lowerPriceE8S = tokenToNumber(item.lowerPriceE8S['e8s'])
+        item.higherPriceE8S = tokenToNumber(item.higherPriceE8S['e8s'])
       }
 
       response.totalPages = Number(response.totalPages)
@@ -379,13 +379,13 @@ export class AgentCanister {
         length ? [length] : [],
         tokenId ? [tokenId] : [],
         country ? [country] : [],
-        priceRange.length ? [priceRange.map(price => ({ e8s: numberToIcp(price) }))] : [],
+        priceRange.length ? [priceRange.map(price => ({ e8s: numberToToken(price) }))] : [],
         excludeCaller,
       ) as { data: MarketplaceSellersInfo[], totalPages: number }
 
       for (const item of response.data) {
         // format record value
-        item.mwh = Number(item.mwh)
+        item.mwh = tokenToNumber(item.mwh)
 
         // get nullable object
         item.assetInfo = item.assetInfo[0]
@@ -393,7 +393,7 @@ export class AgentCanister {
         item.assetInfo.volumeProduced = tokenToNumber(item.assetInfo.volumeProduced)
 
         // convert e8s to icp
-        item.priceE8S = icpToNumber(item.priceE8S['e8s'])
+        item.priceE8S = tokenToNumber(item.priceE8S['e8s'])
       }
 
       response.totalPages = Number(response.totalPages)
@@ -412,7 +412,7 @@ export class AgentCanister {
       tx.txType = Object.values(tx.txType)[0] as TxTypeDef
       tx.to = tx.to[0] as string
       tx.method = Object.values(tx.method)[0] as TxMethodDef
-      tx.priceE8S = tx.priceE8S[0] ? icpToNumber(tx.priceE8S[0]['e8s']) : null
+      tx.priceE8S = tx.priceE8S[0] ? tokenToNumber(tx.priceE8S[0]['e8s']) : null
 
       return tx
     } catch (error) {
@@ -424,7 +424,7 @@ export class AgentCanister {
 
   static async putOnSale(tokenId: string, quantity: number, price: TokensICP): Promise<void> {
     try {
-      const res = await agent().sellToken(tokenId, numberToToken(quantity), { e8s: numberToIcp(price) })
+      const res = await agent().sellToken(tokenId, numberToToken(quantity), { e8s: numberToToken(price) })
       console.log(res);
     } catch (error) {
       console.error(error);
@@ -495,7 +495,7 @@ export class AgentCanister {
       tx.txType = Object.values(tx.txType)[0] as TxTypeDef
       tx.to = tx.to[0] as string
       tx.method = Object.values(tx.method)[0] as TxMethodDef
-      tx.priceE8S = tx.priceE8S[0] ? icpToNumber(tx.priceE8S[0]['e8s']) : null
+      tx.priceE8S = tx.priceE8S[0] ? tokenToNumber(tx.priceE8S[0]['e8s']) : null
 
       return tx
     } catch (error) {
@@ -528,7 +528,7 @@ export class AgentCanister {
         length ? [length] : [],
         txType ? [{[txType]: txType}] : [],
         country ? [country] : [],
-        priceRange.length ? [priceRange.map(price => ({ e8s: numberToIcp(price) }))] : [],
+        priceRange.length ? [priceRange.map(price => ({ e8s: numberToToken(price) }))] : [],
         mwhRange.length ? [mwhRange] : [],
         assetTypes.length ? [assetTypes.map(energy => ({ [energy]: energy }))] : [],
         method ? [{[method]: method}] : [],
@@ -552,7 +552,7 @@ export class AgentCanister {
         item.assetInfo.volumeProduced = tokenToNumber(item.assetInfo.volumeProduced)
 
         // convert e8s to icp
-        item.priceE8S = item.priceE8S[0] ? icpToNumber(item.priceE8S[0]['e8s']) : null
+        item.priceE8S = item.priceE8S[0] ? tokenToNumber(item.priceE8S[0]['e8s']) : null
       }
 
       response.totalPages = Number(response.totalPages)
