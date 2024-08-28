@@ -13,7 +13,7 @@ wasmFile=".dfx/${dfxNetwork}/canisters/${moduleName}/${moduleName}.wasm.gz"
 data=$(node -e "const fs = require('fs'); const data = fs.readFileSync('${wasmFile}'); console.log(JSON.stringify(Array.from(data)));")
 
 # Define json file root
-jsonFile="./wasm_modules/${dfxNetwork}/${moduleName}.json"
+jsonFile="./wasm_modules/${moduleName}.json"
 
 # Write array into json file
 echo $data > $jsonFile
