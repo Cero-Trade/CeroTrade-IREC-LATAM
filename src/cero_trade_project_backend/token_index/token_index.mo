@@ -39,21 +39,21 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   stable var tokenDirectoryEntries : [(T.TokenId, T.CanisterId)] = [];
 
   type AssetResponse = {
-    assetId: Text;
-    co2Produced: Text;
-    volumeProduced: Text;
-    radioactiveProduced: Text;
-    startDate: Text;
-    endDate: Text;
-    // deviceDetails
-    deviceName: Text;
-    deviceType: Text;
-    description: Text;
-    // specifications
-    country: Text;
-    latitude: Text;
-    location: Text;
-    longitude: Text;
+    item_volume: Text;
+    asset_assetId: Text;
+    asset_endDate: Text;
+    asset_location: Text;
+    asset_maxVolume: Text;
+    asset_startDate: Text;
+    asset_co2Produced: Text;
+    asset_radioactiveProduced: Text;
+    device_code: Text;
+    device_name: Text;
+    device_type: Text;
+    device_longitude: Text;
+    device_latitude: Text;
+    device_description: Text;
+    device_country: Text;
   };
 
   type TransactionResponse = {
@@ -354,13 +354,13 @@ shared({ caller = owner }) actor class TokenIndex() = this {
         switch(transactionResponse) {
           case(null) throw Error.reject("cannot serialize asset data");
           case(?response) {
-            for({ volume; items } in response.vals()) {
+            for({ items } in response.vals()) {
               for(assetResponse in items.vals()) {
                 index := index + 1;
 
                 // TODO review mwh value assignment
                 assetsMetadata.put(index, {
-                  mwh = await T.textToToken(volume, null);
+                  mwh = await T.textToToken(assetResponse.item_volume, null);
                   assetInfo = await buildAssetInfo(assetResponse);
                 });
               };
@@ -479,7 +479,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
 
   // helper function used to build [AssetInfo] from AssetResponse
   private func buildAssetInfo(asset: AssetResponse): async T.AssetInfo {
-    let deviceType: T.AssetType = switch(asset.deviceType) {
+    let deviceType: T.AssetType = switch(asset.device_type) {
       case("Solar") #Solar("Solar");
       case("Wind") #Wind("Wind");
       case("Hydro-Electric") #HydroElectric("Hydro-Electric");
@@ -489,26 +489,23 @@ shared({ caller = owner }) actor class TokenIndex() = this {
 
     // TODO review specification values assignment
     {
-      tokenId = asset.assetId;
-      startDate = asset.startDate;
-      endDate = asset.endDate;
-      co2Emission = asset.co2Produced;
-      radioactivityEmission = asset.radioactiveProduced;
-      volumeProduced = await T.textToToken(asset.volumeProduced, null);
+      tokenId = asset.asset_assetId;
+      startDate = asset.asset_startDate;
+      endDate = asset.asset_endDate;
+      co2Emission = asset.asset_co2Produced;
+      radioactivityEmission = asset.asset_radioactiveProduced;
+      volumeProduced = await T.textToToken(asset.asset_maxVolume, null);
       deviceDetails = {
-        name = asset.deviceName;
+        name = asset.device_name;
         deviceType;
-        description = asset.description;
+        description = asset.device_description;
       };
       specifications = {
-        deviceCode = "asset.deviceCode";
-        capacity = await T.textToToken(asset.volumeProduced, null);
-        location = asset.location;
-        latitude = asset.latitude;
-        longitude = asset.longitude;
-        address = "asset.address";
-        stateProvince = "asset.stateProvince";
-        country = asset.country;
+        deviceCode = asset.device_code;
+        location = asset.asset_location;
+        latitude = asset.device_latitude;
+        longitude = asset.device_longitude;
+        country = asset.device_country;
       };
     };
   };

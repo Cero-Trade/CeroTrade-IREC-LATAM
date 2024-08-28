@@ -328,12 +328,9 @@ actor class Agent() = this {
               };
               specifications = {
                 deviceCode = "200";
-                capacity: T.TokenAmount = 1000;
                 location = "location";
                 latitude = "0.1";
                 longitude = "1.0";
-                address = "address anywhere";
-                stateProvince = "chile";
                 country = "CL";
               };
             };

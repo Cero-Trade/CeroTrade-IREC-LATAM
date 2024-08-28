@@ -173,7 +173,6 @@ export class AgentCanister {
         item.assetInfo.volumeProduced = tokenToNumber(item.assetInfo.volumeProduced)
         item.totalAmount = tokenToNumber(item.totalAmount)
         item.inMarket = tokenToNumber(item.inMarket)
-        item.assetInfo.specifications.capacity = tokenToNumber(item.assetInfo.specifications.capacity)
         // format dates
         item.assetInfo.startDate = new Date(item.assetInfo.startDate)
         item.assetInfo.endDate = new Date(item.assetInfo.endDate)
@@ -204,7 +203,6 @@ export class AgentCanister {
       token.assetInfo.volumeProduced = tokenToNumber(token.assetInfo.volumeProduced)
       token.totalAmount = tokenToNumber(token.totalAmount)
       token.inMarket = tokenToNumber(token.inMarket)
-      token.assetInfo.specifications.capacity = tokenToNumber(token.assetInfo.specifications.capacity)
       // format dates
       token.assetInfo.deviceDetails.deviceType = Object.values(token.assetInfo.deviceDetails.deviceType)[0] as AssetType
       token.assetInfo.startDate = new Date(token.assetInfo.startDate)
@@ -278,7 +276,6 @@ export class AgentCanister {
         // format record value
         transaction.mwh = tokenToNumber(transaction.mwh)
         transaction.assetInfo.volumeProduced = tokenToNumber(transaction.assetInfo.volumeProduced)
-        transaction.assetInfo.specifications.capacity = tokenToNumber(transaction.assetInfo.specifications.capacity)
         // format dates
         transaction.assetInfo.deviceDetails.deviceType = Object.values(transaction.assetInfo.deviceDetails.deviceType)[0] as AssetType
         transaction.assetInfo.startDate = new Date(transaction.assetInfo.startDate)
@@ -302,7 +299,6 @@ export class AgentCanister {
       token.assetInfo.volumeProduced = tokenToNumber(token.assetInfo.volumeProduced)
       token.totalAmount = tokenToNumber(token.totalAmount)
       token.inMarket = tokenToNumber(token.inMarket)
-      token.assetInfo.specifications.capacity = tokenToNumber(token.assetInfo.specifications.capacity)
       // format dates
       token.assetInfo.deviceDetails.deviceType = Object.values(token.assetInfo.deviceDetails.deviceType)[0] as AssetType
       token.assetInfo.startDate = new Date(token.assetInfo.startDate)
@@ -349,7 +345,6 @@ export class AgentCanister {
         // format record value
         item.assetInfo.deviceDetails.deviceType = Object.values(item.assetInfo.deviceDetails.deviceType)[0] as AssetType
         item.assetInfo.volumeProduced = tokenToNumber(item.assetInfo.volumeProduced)
-        item.assetInfo.specifications.capacity = tokenToNumber(item.assetInfo.specifications.capacity)
         item.mwh = tokenToNumber(item.mwh)
 
         // convert e8s to icp
@@ -396,7 +391,6 @@ export class AgentCanister {
         item.assetInfo = item.assetInfo[0]
         item.assetInfo.deviceDetails.deviceType = Object.values(item.assetInfo.deviceDetails.deviceType)[0] as AssetType
         item.assetInfo.volumeProduced = tokenToNumber(item.assetInfo.volumeProduced)
-        item.assetInfo.specifications.capacity = tokenToNumber(item.assetInfo.specifications.capacity)
 
         // convert e8s to icp
         item.priceE8S = icpToNumber(item.priceE8S['e8s'])
@@ -556,7 +550,6 @@ export class AgentCanister {
         item.assetInfo = item.assetInfo[0]
         item.assetInfo.deviceDetails.deviceType = Object.values(item.assetInfo.deviceDetails.deviceType)[0] as AssetType
         item.assetInfo.volumeProduced = tokenToNumber(item.assetInfo.volumeProduced)
-        item.assetInfo.specifications.capacity = tokenToNumber(item.assetInfo.specifications.capacity)
 
         // convert e8s to icp
         item.priceE8S = item.priceE8S[0] ? icpToNumber(item.priceE8S[0]['e8s']) : null

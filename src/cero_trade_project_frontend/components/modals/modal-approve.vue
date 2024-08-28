@@ -76,7 +76,7 @@ hasCancelEmit = !!instance?.vnode.props?.onCancel,
 
 tokenId = computed(() => props.tokenId),
 totalPreview = computed(() => {
-  // TODO here <-------
+  // TODO here <---------
   console.log(props.amountInE8S + props.feeTxInE8s + ceroComisison);
 
   return icpToNumber(props.amountInE8S + props.feeTxInE8s + ceroComisison)

@@ -155,11 +155,6 @@
                         <span>{{ tokenDetail?.assetInfo.specifications.deviceCode }}</span>
                       </div>
 
-                      <div class="jspace divrow mb-1">
-                        <span style="color: #475467;">Capacity</span>
-                        <span>{{ tokenDetail?.assetInfo.specifications.capacity }}</span>
-                      </div>
-
                       <div class="jspace divrow mt-3 mb-1">
                         <span style="color: #475467;">Location</span>
                         <span>{{ tokenDetail?.assetInfo.specifications.location }}</span>
@@ -173,16 +168,6 @@
                       <div class="jspace divrow mt-3 mb-1">
                         <span style="color: #475467;">Longitude</span>
                         <span>{{ tokenDetail?.assetInfo.specifications.longitude }}</span>
-                      </div>
-
-                      <div class="jspace divrow mt-3 mb-1">
-                        <span style="color: #475467;">Address</span>
-                        <span>{{ tokenDetail?.assetInfo.specifications.address }}</span>
-                      </div>
-
-                      <div class="jspace divrow mt-3 mb-1">
-                        <span style="color: #475467;">State/Province</span>
-                        <span>{{ tokenDetail?.assetInfo.specifications.stateProvince }}</span>
                       </div>
 
                       <div class="jspace divrow mt-3 mb-1">

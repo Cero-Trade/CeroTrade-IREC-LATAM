@@ -7,6 +7,7 @@ import Int64 "mo:base/Int64";
 import Char "mo:base/Char";
 import Nat32 "mo:base/Nat32";
 import Nat64 "mo:base/Nat64";
+import Nat8 "mo:base/Nat8";
 import Blob "mo:base/Blob";
 import Principal "mo:base/Principal";
 import Text "mo:base/Text";
@@ -25,7 +26,7 @@ module {
   public let cyclesHttpOutcall: Nat = 20_860_000_000;
   public let cyclesCreateCanister: Nat = 300_000_000_000;
 
-  public let tokenDecimals: Nat = 8;
+  public let tokenDecimals: Nat8 = 8;
 
   // TODO try to change to simplest format to better filtering
   // global date format variable
@@ -85,13 +86,13 @@ module {
   };
 
   /// helper function to convert Text to Token Balance
-  public func textToToken(t: Text, decimals: ?Nat): async ICPTypes.Balance {
+  public func textToToken(t: Text, decimals: ?Nat8): async ICPTypes.Balance {
     let f = await textToFloat(t);
     
-    let decimalsValue : Float = Float.fromInt64(Int64.fromNat64(Nat64.fromNat(switch(decimals) {
+    let decimalsValue : Float = Float.fromInt64(Int64.fromNat64(Nat64.fromNat(Nat8.toNat(switch(decimals) {
       case(null) tokenDecimals;
       case(?value) value;
-    })));
+    }))));
 
     let float = f * Float.pow(10.0, decimalsValue);
     Int.abs(Float.toInt(float))
@@ -219,12 +220,9 @@ module {
 
   public type Specifications = {
     deviceCode: Text;
-    capacity: TokenAmount;
     location: Text;
     latitude: Text;
     longitude: Text;
-    address: Text;
-    stateProvince: Text;
     country: Text;
   };
 

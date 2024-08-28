@@ -28,11 +28,8 @@ export interface DeviceDetailsModel {
 
 export interface SpecificationsModel {
   deviceCode: string;
-  capacity: number;
   location: string;
   latitude: number;
   longitude: number;
-  address: string;
-  stateProvince: string;
   country: string;
 };

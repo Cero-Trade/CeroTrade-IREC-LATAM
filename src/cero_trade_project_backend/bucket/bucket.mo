@@ -4,7 +4,7 @@ import Text "mo:base/Text";
 import Nat "mo:base/Nat";
 import Buffer "mo:base/Buffer";
 import Iter "mo:base/Iter";
-import Source "mo:uuid/async/SourceV4";
+// import Source "mo:uuid/async/SourceV4";
 import Error "mo:base/Error";
 
 
