@@ -534,7 +534,7 @@ actor class UserIndex() = this {
     };
 
     let beneficiaries = await HTTP.canister.get({
-        url = HTTP.apiUrl # "beneficiaries";
+        url = HTTP.apiUrl # "users/beneficiaries";
         port = null;
         uid = null;
         headers = [HTTP.tokenAuth(currentToken)];
@@ -564,7 +564,7 @@ actor class UserIndex() = this {
     };
 
     let beneficiaryExists = await HTTP.canister.get({
-        url = HTTP.apiUrl # "beneficiaries/check/" # Principal.toText(beneficiaryId);
+        url = HTTP.apiUrl # "users/beneficiaries/check/" # Principal.toText(beneficiaryId);
         port = null;
         uid = null;
         headers = [HTTP.tokenAuth(currentToken)];
@@ -616,14 +616,14 @@ actor class UserIndex() = this {
     };
 
     let _ = await HTTP.canister.post({
-        url = HTTP.apiUrl # "beneficiaries";
+        url = HTTP.apiUrl # "users/beneficiaries";
         port = null;
         uid = null;
         headers = [HTTP.tokenAuth(currentToken)];
         bodyJson = switch(Serde.JSON.toText(to_candid({
           caller = Principal.toText(uid);
           beneficiary = Principal.toText(beneficiaryId);
-          remove = deleteBeneficiary;
+          remove = deleteBeneficiary.delete;
         }), ["caller", "beneficiary", "remove"], null)) {
           case(#err(error)) throw Error.reject("Cannot serialize data");
           case(#ok(value)) value;

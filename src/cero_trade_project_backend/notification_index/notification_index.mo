@@ -399,7 +399,7 @@ actor class NotificationIndex() = this {
 
     // checkout user notification existance
     let jsonResponse = await HTTP.canister.get({
-      url = HTTP.apiUrl # "notifications/check" # userToken # queryParameter;
+      url = HTTP.apiUrl # "notifications/check/" # userToken # queryParameter;
       port = null;
       uid = null;
       headers = [];
@@ -421,7 +421,7 @@ actor class NotificationIndex() = this {
 
     // checkout other user notification existance
     let otherJsonResponse = await HTTP.canister.get({
-      url = HTTP.apiUrl # "notifications/check" # otherUserToken # queryParameter;
+      url = HTTP.apiUrl # "notifications/check/" # otherUserToken # queryParameter;
       port = null;
       uid = null;
       headers = [];

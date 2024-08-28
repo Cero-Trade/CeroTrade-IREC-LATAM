@@ -2,8 +2,8 @@
   <modal-approve
     ref="modalApprove"
     :token-id="tokenId"
-    :amount-in-icp="amountInIcp"
-    :fee-in-e8s="feeInE8S"
+    :amount-in-e8s="numberToToken(totalPrice)"
+    :fee-tx-in-e8s="feeInE8S"
     @approve="() => {
       if (dialogPurchaseReview)
         purchaseToken()
@@ -29,8 +29,8 @@
     </span>
     <h3 class="acenter mb-4" :title="tokenId" style="width: max-content">
       <company-logo
-        :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
-        :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
+        :energy-src="energies[tokenDetail.assetInfo.deviceDetails?.deviceType]"
+        :country-src="countriesImg[tokenDetail.assetInfo.specifications?.country]"
         class="mr-4"
       ></company-logo>
       Asset # {{ shortString(tokenId, {}) }}
@@ -44,34 +44,34 @@
               <div class="jspace divrow mb-1">
                 <span style="color: #475467;">Type</span>
                 <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-                  <img :src="energiesColored[tokenDetail?.assetInfo.deviceDetails.deviceType]" :alt="`${tokenDetail?.assetInfo.deviceDetails.deviceType} icon`" style="width: 20px;">
-                  {{ tokenDetail?.assetInfo.deviceDetails.deviceType }} energy
+                  <img :src="energiesColored[tokenDetail.assetInfo.deviceDetails?.deviceType]" :alt="`${tokenDetail.assetInfo.deviceDetails?.deviceType} icon`" style="width: 20px;">
+                  {{ tokenDetail.assetInfo.deviceDetails?.deviceType }} energy
                 </span>
               </div>
 
               <div class="jspace divrow mt-3 mb-1">
                 <span style="color: #475467;">Start date of production</span>
-                <span>{{ tokenDetail?.assetInfo.startDate.toDateString() }}</span>
+                <span>{{ tokenDetail.assetInfo.startDate?.toDateString() }}</span>
               </div>
 
               <div class="jspace divrow mt-3 mb-1">
                 <span style="color: #475467;">End date of production</span>
-                <span>{{ tokenDetail?.assetInfo.endDate.toDateString() }}</span>
+                <span>{{ tokenDetail.assetInfo.endDate?.toDateString() }}</span>
               </div>
 
               <div class="jspace divrow mt-3 mb-1">
                 <span style="color: #475467;">CO2 Emission</span>
-                <span>{{ tokenDetail?.assetInfo.co2Emission }}%</span>
+                <span>{{ tokenDetail.assetInfo.co2Emission }}%</span>
               </div>
 
               <div class="jspace divrow mt-3 mb-1">
                 <span style="color: #475467;">Radioactivity emission</span>
-                <span>{{ tokenDetail?.assetInfo.radioactivityEmnission }}%</span>
+                <span>{{ tokenDetail.assetInfo.radioactivityEmission }}%</span>
               </div>
 
               <div class="jspace divrow mt-3 mb-1">
                 <span style="color: #475467;">Total volume produced</span>
-                <span>{{ tokenDetail?.assetInfo.volumeProduced }}</span>
+                <span>{{ tokenDetail.assetInfo.volumeProduced }}</span>
               </div>
             </v-card>
           </v-col>
@@ -88,12 +88,12 @@
           <v-col xl="3" lg="3" cols="12">
             <v-card class="card divcol jspace absolute-card-portfolio mb-2">
               <span>Total amount owned</span>
-              <h5 class="bold" style="position: absolute; bottom: 0; left: 20px;">{{ tokenDetail?.totalAmount }} MWh</h5>
+              <h5 class="bold" style="position: absolute; bottom: 0; left: 20px;">{{ tokenDetail.totalAmount }} MWh</h5>
             </v-card>
 
             <v-card class="card divcol jspace absolute-card-portfolio">
               <span>Amount for sale</span>
-              <h5 class="bold" style="position: absolute; bottom: 0; left: 20px;">{{ tokenDetail?.inMarket }} MWh</h5>
+              <h5 class="bold" style="position: absolute; bottom: 0; left: 20px;">{{ tokenDetail.inMarket }} MWh</h5>
             </v-card>
           </v-col>
           <v-col cols="12">
@@ -110,9 +110,6 @@
                 <v-tab value="two" class="tab-btn" style="border: none!important; border-radius: 0px!important;">
                   Specifications
                 </v-tab>
-                <v-tab value="three" class="tab-btn delete-mobile" style="border: none!important; border-radius: 0px!important;">
-                  Dates
-                </v-tab>
               </v-tabs>
 
               <hr style="border-bottom: 2px solid rgba(0,0,0,0.25)!important; width: 100%!important; position: relative; top: -2px;">
@@ -124,25 +121,25 @@
                     <v-col xl="8" lg="8" md="8" cols="12">
                       <div class="jspace divrow mt-3 mb-1">
                         <span style="color: #475467;">Name</span>
-                        <span>{{ tokenDetail?.assetInfo.deviceDetails.name }}</span>
+                        <span>{{ tokenDetail.assetInfo.deviceDetails?.name }}</span>
                       </div>
 
                       <div class="jspace divrow mb-1">
                         <span style="color: #475467;">Type</span>
-                        <span>{{ tokenDetail?.assetInfo.deviceDetails.deviceType }}</span>
+                        <span>{{ tokenDetail.assetInfo.deviceDetails?.deviceType }}</span>
                       </div>
 
                       <div class="jspace divrow mt-3 mb-1">
                         <span style="color: #475467;">Device group</span>
                         <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-                          <img :src="energiesColored[tokenDetail?.assetInfo.deviceDetails.deviceType]" :alt="`${tokenDetail?.assetInfo.deviceDetails.deviceType} icon`" style="width: 20px;">
-                          {{ tokenDetail?.assetInfo.deviceDetails.deviceType }}
+                          <img :src="energiesColored[tokenDetail.assetInfo.deviceDetails?.deviceType]" :alt="`${tokenDetail.assetInfo.deviceDetails?.deviceType} icon`" style="width: 20px;">
+                          {{ tokenDetail.assetInfo.deviceDetails?.deviceType }}
                         </span>
                       </div>
 
                       <div class="jspace divrow mt-3 mb-1" style="gap: 20px;">
                         <span style="color: #475467;">Description</span>
-                        <span style="text-align: right; max-width: 60%;">{{ tokenDetail?.assetInfo.deviceDetails.description }}</span>
+                        <span style="text-align: right; max-width: 60%;">{{ tokenDetail.assetInfo.deviceDetails?.description }}</span>
                       </div>
                     </v-col>
                   </v-row>
@@ -155,62 +152,30 @@
                     <v-col xl="8" lg="8" md="8" cols="12">
                       <div class="jspace divrow mt-3 mb-1">
                         <span style="color: #475467;">Device Code</span>
-                        <span>{{ tokenDetail?.assetInfo.specifications.deviceCode }}</span>
-                      </div>
-
-                      <div class="jspace divrow mb-1">
-                        <span style="color: #475467;">Capacity</span>
-                        <span>{{ tokenDetail?.assetInfo.specifications.capacity }}</span>
+                        <span>{{ tokenDetail.assetInfo.specifications?.deviceCode }}</span>
                       </div>
 
                       <div class="jspace divrow mt-3 mb-1">
                         <span style="color: #475467;">Location</span>
-                        <span>{{ tokenDetail?.assetInfo.specifications.location }}</span>
+                        <span>{{ tokenDetail.assetInfo.specifications?.location }}</span>
                       </div>
 
                       <div class="jspace divrow mt-3 mb-1">
                         <span style="color: #475467;">Latitude</span>
-                        <span>{{ tokenDetail?.assetInfo.specifications.latitude }}</span>
+                        <span>{{ tokenDetail.assetInfo.specifications?.latitude }}</span>
                       </div>
 
                       <div class="jspace divrow mt-3 mb-1">
                         <span style="color: #475467;">Longitude</span>
-                        <span>{{ tokenDetail?.assetInfo.specifications.longitude }}</span>
-                      </div>
-
-                      <div class="jspace divrow mt-3 mb-1">
-                        <span style="color: #475467;">Address</span>
-                        <span>{{ tokenDetail?.assetInfo.specifications.address }}</span>
-                      </div>
-
-                      <div class="jspace divrow mt-3 mb-1">
-                        <span style="color: #475467;">State/Province</span>
-                        <span>{{ tokenDetail?.assetInfo.specifications.stateProvince }}</span>
+                        <span>{{ tokenDetail.assetInfo.specifications?.longitude }}</span>
                       </div>
 
                       <div class="jspace divrow mt-3 mb-1">
                         <span style="color: #475467;">Country</span>
-                        <span>{{ tokenDetail?.assetInfo.specifications.country }}</span>
-                      </div>
-                    </v-col>
-                  </v-row>
-                </v-window-item>
-
-                <v-window-item value="three">
-                  <h5 class="bold mb-6 mt-4">Dates</h5>
-
-                  <v-row class="mt-3">
-                    <v-col xl="8" lg="8" md="8" cols="12">
-                      <div
-                        v-for="(date, index) in tokenDetail?.assetInfo.dates" :key="index"
-                        class="jspace divrow mb-1"
-                      >
-                        <span style="color: #475467;">{{
-                          index === 0 ? "Registration Date"
-                          : index === 1 ? "Commissioning Date"
-                          : "Expire Date"
-                        }}</span>
-                        <span>{{ date.toDateString() }}</span>
+                        <div>
+                          <img :src="countriesImg[tokenDetail.assetInfo.specifications?.country]" :alt="`${tokenDetail.assetInfo.specifications?.country} flag`">
+                          <span>{{ tokenDetail.assetInfo.specifications?.country }}</span>
+                        </div>
                       </div>
                     </v-col>
                   </v-row>
@@ -423,7 +388,6 @@
           </v-form>
         </v-col>
 
-
         <aside class="container-redemptions">
           <v-card v-for="(item, i) in redemptions" :key="i" class="card divcol pt-6">
             <span style="color: #475467;">Redemption amount (MWh)</span>
@@ -473,8 +437,8 @@
           <div class="jspace divrow mb-4 acenter">
             <h5 class="acenter mb-0 bold h5-mobile" :title="tokenId">
               <company-logo
-                :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
-                :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
+                :energy-src="energies[tokenDetail.assetInfo.deviceDetails?.deviceType]"
+                :country-src="countriesImg[tokenDetail.assetInfo.specifications?.country]"
                 class="mr-4"
               ></company-logo>
               #{{ shortString(tokenId, {}) }}
@@ -484,16 +448,16 @@
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Energy source type</span>
             <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-              <img :src="energiesColored[tokenDetail?.assetInfo.deviceDetails.deviceType]" :alt="`${tokenDetail?.assetInfo.deviceDetails.deviceType} icon`" style="width: 20px;">
-              {{ tokenDetail?.assetInfo.deviceDetails.deviceType }}
+              <img :src="energiesColored[tokenDetail.assetInfo.deviceDetails?.deviceType]" :alt="`${tokenDetail.assetInfo.deviceDetails?.deviceType} icon`" style="width: 20px;">
+              {{ tokenDetail.assetInfo.deviceDetails?.deviceType }}
             </span>
           </div>
 
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Country</span>
             <span class="flex-center" style="gap: 5px">
-              <img :src="countriesImg[tokenDetail?.assetInfo.specifications.country]" :alt="`${tokenDetail?.assetInfo.specifications.country} flag`">
-              {{ tokenDetail?.assetInfo.specifications.country }}
+              <img :src="countriesImg[tokenDetail.assetInfo.specifications?.country]" :alt="`${tokenDetail.assetInfo.specifications?.country} flag`">
+              {{ tokenDetail.assetInfo.specifications?.country }}
             </span>
           </div>
 
@@ -558,7 +522,7 @@
                   :rules="[globalRules.required, (v) => {
                     const periodEnd = formRedeem.periodEnd
                     if (periodEnd && moment(v).isAfter(periodEnd)) return 'Period start cant be major than period end'
-                    return null
+                    return true
                   }]"
                 >
                   <template #append-inner>
@@ -598,7 +562,7 @@
                   :rules="[globalRules.required, (v) => {
                     const periodStart = formRedeem.periodStart
                     if (periodStart && moment(v).isBefore(periodStart)) return 'Period end cant be minor than period start'
-                    return null
+                    return true
                   }]"
                 >
                   <template #append-inner>
@@ -663,8 +627,8 @@
             <div class="jspace divrow mb-2 acenter">
               <h5 class="acenter h5-mobile" :title="tokenId">
                 <company-logo
-                  :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
-                  :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
+                  :energy-src="energies[tokenDetail.assetInfo.deviceDetails?.deviceType]"
+                  :country-src="countriesImg[tokenDetail.assetInfo.specifications?.country]"
                   class="mr-4"
                 ></company-logo>
                 #{{ shortString(tokenId, {}) }}
@@ -674,16 +638,16 @@
             <div class="jspace divrow mb-1">
               <span style="color: #475467;">Energy source type</span>
               <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-                <img :src="energiesColored[tokenDetail?.assetInfo.deviceDetails.deviceType]" :alt="`${tokenDetail?.assetInfo.deviceDetails.deviceType} icon`" style="width: 20px;">
-                {{ tokenDetail?.assetInfo.deviceDetails.deviceType }}
+                <img :src="energiesColored[tokenDetail.assetInfo.deviceDetails?.deviceType]" :alt="`${tokenDetail.assetInfo.deviceDetails?.deviceType} icon`" style="width: 20px;">
+                {{ tokenDetail.assetInfo.deviceDetails?.deviceType }}
               </span>
             </div>
 
             <div class="jspace divrow mb-1">
               <span style="color: #475467;">Country</span>
               <span class="flex-center" style="gap: 5px">
-                <img :src="countriesImg[tokenDetail?.assetInfo.specifications.country]" :alt="`${tokenDetail?.assetInfo.specifications.country} flag`">
-                {{ tokenDetail?.assetInfo.country }}
+                <img :src="countriesImg[tokenDetail.assetInfo.specifications?.country]" :alt="`${tokenDetail.assetInfo.specifications?.country} flag`">
+                {{ tokenDetail.assetInfo.country }}
               </span>
             </div>
 
@@ -696,15 +660,15 @@
 
             <div class="jspace divrow mt-1">
               <span>Transaction fee</span>
-              <span>{{ convertE8SToICP(feeInE8S) }} ICP</span>
+              <span>{{ tokenToNumber(feeInE8S) }} ICP</span>
             </div>
             <div class="jspace divrow mt-1">
               <span>Cero trade comission</span>
-              <span>{{ convertE8SToICP(ceroComisison) }} ICP</span>
+              <span>{{ tokenToNumber(ceroComisison) }} ICP</span>
             </div>
             <div class="jspace divrow mt-1">
               <span class="bold">Total</span>
-              <span class="bold">{{ maxDecimals(amountInIcp + convertE8SToICP(feeInE8S) + convertE8SToICP(ceroComisison), 4) }} ICP</span>
+              <span class="bold">{{ maxDecimals(totalPrice + tokenToNumber(feeInE8S) + tokenToNumber(ceroComisison)) }} ICP</span>
             </div>
           </v-card>
 
@@ -840,8 +804,8 @@
           <div class="jspace divrow mb-4 acenter">
             <h5 class="acenter mb-0 bold h5-mobile" :title="tokenId">
               <company-logo
-                :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
-                :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
+                :energy-src="energies[tokenDetail.assetInfo.deviceDetails?.deviceType]"
+                :country-src="countriesImg[tokenDetail.assetInfo.specifications?.country]"
                 class="mr-4"
               ></company-logo>
               #{{ shortString(tokenId, {}) }}
@@ -858,16 +822,16 @@
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Energy source type</span>
             <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-              <img :src="energiesColored[tokenDetail?.assetInfo.deviceDetails.deviceType]" :alt="`${tokenDetail?.assetInfo.deviceDetails.deviceType} icon`" style="width: 20px;">
-              {{ tokenDetail?.assetInfo.deviceDetails.deviceType }}
+              <img :src="energiesColored[tokenDetail.assetInfo.deviceDetails?.deviceType]" :alt="`${tokenDetail.assetInfo.deviceDetails?.deviceType} icon`" style="width: 20px;">
+              {{ tokenDetail.assetInfo.deviceDetails?.deviceType }}
             </span>
           </div>
 
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Country</span>
             <span class="flex-center" style="gap: 5px">
-              <img :src="countriesImg[tokenDetail?.assetInfo.specifications.country]" :alt="`${tokenDetail?.assetInfo.country} flag`">
-              {{ tokenDetail?.assetInfo.country }}
+              <img :src="countriesImg[tokenDetail.assetInfo.specifications?.country]" :alt="`${tokenDetail.assetInfo.country} flag`">
+              {{ tokenDetail.assetInfo.country }}
             </span>
           </div>
 
@@ -1004,8 +968,8 @@
           <div class="jspace divrow mb-2 acenter">
             <h5 class="acenter h5-mobile" :title="tokenId">
               <company-logo
-                :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
-                :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
+                :energy-src="energies[tokenDetail.assetInfo.deviceDetails?.deviceType]"
+                :country-src="countriesImg[tokenDetail.assetInfo.specifications?.country]"
                 class="mr-4"
               ></company-logo>
               #{{ shortString(tokenId, {}) }}
@@ -1021,29 +985,29 @@
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Energy source type</span>
             <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-              <img :src="energiesColored[tokenDetail?.assetInfo.deviceDetails.deviceType]" :alt="`${tokenDetail?.assetInfo.deviceDetails.deviceType} icon`" style="width: 20px;">
-              {{ tokenDetail?.assetInfo.deviceDetails.deviceType }}
+              <img :src="energiesColored[tokenDetail.assetInfo.deviceDetails?.deviceType]" :alt="`${tokenDetail.assetInfo.deviceDetails?.deviceType} icon`" style="width: 20px;">
+              {{ tokenDetail.assetInfo.deviceDetails?.deviceType }}
             </span>
           </div>
 
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Region</span>
-            <span>{{ tokenDetail?.assetInfo.specifications.region }}</span>
+            <span>{{ tokenDetail.assetInfo.specifications?.region }}</span>
           </div>
 
           <v-divider class="mb-3 mt-4"  thickness="2" style="width: 100%;"></v-divider>
 
           <div class="jspace divrow mt-1">
             <span>Transaction fee</span>
-            <span>{{ convertE8SToICP(feeInE8S) }} ICP</span>
+            <span>{{ tokenToNumber(feeInE8S) }} ICP</span>
           </div>
           <div class="jspace divrow mt-1">
             <span>Cero trade comission</span>
-            <span>{{ convertE8SToICP(ceroComisison) }} ICP</span>
+            <span>{{ tokenToNumber(ceroComisison) }} ICP</span>
           </div>
           <div class="jspace divrow mt-1">
             <span class="bold">Total</span>
-            <span class="bold">{{ maxDecimals(amountInIcp + convertE8SToICP(feeInE8S) + convertE8SToICP(ceroComisison), 4) }} ICP</span>
+            <span class="bold">{{ maxDecimals(totalPrice + tokenToNumber(feeInE8S) + tokenToNumber(ceroComisison)) }} ICP</span>
           </div>
         </v-card>
 
@@ -1089,8 +1053,8 @@
           <div class="jspace divrow mb-1 acenter">
             <h5 class="acenter h5-mobile" :title="tokenId">
               <company-logo
-                :energy-src="energies[tokenDetail?.assetInfo.deviceDetails.deviceType]"
-                :country-src="countriesImg[tokenDetail?.assetInfo.specifications.country]"
+                :energy-src="energies[tokenDetail.assetInfo.deviceDetails?.deviceType]"
+                :country-src="countriesImg[tokenDetail.assetInfo.specifications?.country]"
                 class="mr-4"
               ></company-logo>
               #{{ shortString(tokenId, {}) }}
@@ -1106,24 +1070,24 @@
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Energy source type</span>
             <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-              <img :src="energiesColored[tokenDetail?.assetInfo.deviceDetails.deviceType]" :alt="`${tokenDetail?.assetInfo.deviceDetails.deviceType} icon`" style="width: 20px;">
-              {{ tokenDetail?.assetInfo.deviceDetails.deviceType }}
+              <img :src="energiesColored[tokenDetail.assetInfo.deviceDetails?.deviceType]" :alt="`${tokenDetail.assetInfo.deviceDetails?.deviceType} icon`" style="width: 20px;">
+              {{ tokenDetail.assetInfo.deviceDetails?.deviceType }}
             </span>
           </div>
 
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Region</span>
-            <span>{{ tokenDetail?.assetInfo.specifications.region }}</span>
+            <span>{{ tokenDetail.assetInfo.specifications?.region }}</span>
           </div>
 
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Start date</span>
-            <span>{{ tokenDetail?.assetInfo.startDate.toDateString() }}</span>
+            <span>{{ tokenDetail.assetInfo.startDate?.toDateString() }}</span>
           </div>
 
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">End date</span>
-            <span>{{ tokenDetail?.assetInfo.endDate.toDateString() }}</span>
+            <span>{{ tokenDetail.assetInfo.endDate?.toDateString() }}</span>
           </div>
         </v-card>
 
@@ -1245,14 +1209,14 @@ import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import variables from '@/mixins/variables'
 import moment from 'moment'
-import { closeLoader, convertE8SToICP, showLoader, maxDecimals, shortPrincipalId, shortString, formatBytes } from '@/plugins/functions'
+import { closeLoader, tokenToNumber, numberToToken, showLoader, maxDecimals, exponentToString, shortPrincipalId, shortString, formatBytes } from '@/plugins/functions'
 import { Principal } from '@dfinity/principal'
 
 const
   route = useRoute(),
   router = useRouter(),
   toast = useToast(),
-  { globalRules, ceroComisison, dateFormat } = variables,
+  { globalRules, ceroComisison, dateFormat, defaultMaxDecimals } = variables,
 
 energiesColored = {
   "Solar": SolarEnergyColorIcon,
@@ -1269,7 +1233,31 @@ energies = {
 countriesImg = {
   CL: ChileIcon
 },
-tokenDetail = ref(undefined),
+tokenDetail = ref({
+  tokenId: null,
+  inMarket: null,
+  totalAmount: null,
+  assetInfo: {
+    co2Emission: null,
+    specifications: {
+      latitude: null,
+      country: null,
+      longitude: null,
+      deviceCode: null,
+      location: null
+    },
+    deviceDetails: {
+      name: null,
+      description: null,
+      deviceType: null
+    },
+    tokenId: null,
+    endDate: null,
+    volumeProduced: null,
+    radioactivityEmission: null,
+    startDate: null
+  }
+}),
 headers = [
   { title: 'Seller ID', key: 'seller', sortable: false },
   { title: 'Country', key: 'country', sortable: false },
@@ -1402,8 +1390,8 @@ prevRoutePatch  = computed(() => {
 }),
 
 
-amountInIcp = computed(() => dialogPurchaseReview.value ? Number(tokenPrice.value) * Number(tokenAmount.value) : 0),
-feeInE8S = computed(() => dialogPurchaseReview.value ? 30_000 : 20_000)
+totalPrice = computed(() => dialogPurchaseReview.value ? Number(tokenPrice.value) * Number(tokenAmount.value) : 0),
+feeInE8S = computed(() => dialogPurchaseReview.value ? 30_000n : 20_000n)
 
 // dialogs state management
 
@@ -1480,7 +1468,7 @@ async function getData() {
     haveToken.value = checkToken.value
     haveTokenInMarket.value = checkTokenInMarket.value
     tokenDetail.value = token.value
-    redemptions.value = txRedemptions.value
+    redemptions.value = txRedemptions.value.data
     seriesMintedVsProduced.value = [(statistics.value.mwh || 1) / (token.value.assetInfo.volumeProduced || 1) * 100]
   } catch (error) {
     console.error(error);

@@ -1,7 +1,7 @@
 import Blob "mo:base/Blob";
 import Int "mo:base/Int";
 import Nat64 "mo:base/Nat64";
-import Array "mo:base/Array";
+// import Array "mo:base/Array";
 import Buffer "mo:base/Buffer";
 import Error "mo:base/Error";
 import D "mo:base/Debug";
@@ -39,7 +39,7 @@ shared ({ caller = _owner }) actor class Token(
     name = ?init_args.name;
     symbol = ?init_args.symbol;
     logo = ?init_args.logo;
-    decimals = 8;
+    decimals = T.tokenDecimals;
     fee = ? #Fixed(0);
     minting_account = ?{
       owner = _owner;
@@ -55,7 +55,7 @@ shared ({ caller = _owner }) actor class Token(
         ("startDate", #Text(init_args.assetMetadata.startDate)),
         ("endDate", #Text(init_args.assetMetadata.endDate)),
         ("co2Emission", #Text(init_args.assetMetadata.co2Emission)),
-        ("radioactivityEmnission", #Text(init_args.assetMetadata.radioactivityEmnission)),
+        ("radioactivityEmission", #Text(init_args.assetMetadata.radioactivityEmission)),
         ("volumeProduced", #Nat(init_args.assetMetadata.volumeProduced)),
         ("deviceDetails", #Map([
           ("name", #Text(init_args.assetMetadata.deviceDetails.name)),
@@ -70,15 +70,11 @@ shared ({ caller = _owner }) actor class Token(
         ])),
         ("specifications", #Map([
           ("deviceCode", #Text(init_args.assetMetadata.specifications.deviceCode)),
-          ("capacity", #Nat(init_args.assetMetadata.specifications.capacity)),
           ("location", #Text(init_args.assetMetadata.specifications.location)),
           ("latitude", #Text(init_args.assetMetadata.specifications.latitude)),
           ("longitude", #Text(init_args.assetMetadata.specifications.longitude)),
-          ("address", #Text(init_args.assetMetadata.specifications.address)),
-          ("stateProvince", #Text(init_args.assetMetadata.specifications.stateProvince)),
           ("country", #Text(init_args.assetMetadata.specifications.country))
-        ])),
-        ("dates", #Array(Array.map<Text, { #Text : Text }>(init_args.assetMetadata.dates, func x = #Text(x))))
+        ]))
       ]))
     ]);
     fee_collector = null;
@@ -383,7 +379,7 @@ shared ({ caller = _owner }) actor class Token(
             case (#Text(text)) text;
             case (_) throw Error.reject("cannot find assetMetadata");
           };
-          radioactivityEmnission = switch (map.get(4).1) {
+          radioactivityEmission = switch (map.get(4).1) {
             case (#Text(text)) text;
             case (_) throw Error.reject("cannot find assetMetadata");
           };
@@ -438,18 +434,9 @@ shared ({ caller = _owner }) actor class Token(
               };
               case (_) throw Error.reject("cannot find assetMetadata");
             };
-            capacity = switch (map.get(7).1) {
-              case (#Map(childMap)) {
-                switch (childMap.get(1).1) {
-                  case (#Nat(nat)) nat;
-                  case (_) throw Error.reject("cannot find assetMetadata");
-                };
-              };
-              case (_) throw Error.reject("cannot find assetMetadata");
-            };
             location = switch (map.get(7).1) {
               case (#Map(childMap)) {
-                switch (childMap.get(2).1) {
+                switch (childMap.get(1).1) {
                   case (#Text(text)) text;
                   case (_) throw Error.reject("cannot find assetMetadata");
                 };
@@ -458,7 +445,7 @@ shared ({ caller = _owner }) actor class Token(
             };
             latitude = switch (map.get(7).1) {
               case (#Map(childMap)) {
-                switch (childMap.get(3).1) {
+                switch (childMap.get(2).1) {
                   case (#Text(text)) text;
                   case (_) throw Error.reject("cannot find assetMetadata");
                 };
@@ -467,25 +454,7 @@ shared ({ caller = _owner }) actor class Token(
             };
             longitude = switch (map.get(7).1) {
               case (#Map(childMap)) {
-                switch (childMap.get(4).1) {
-                  case (#Text(text)) text;
-                  case (_) throw Error.reject("cannot find assetMetadata");
-                };
-              };
-              case (_) throw Error.reject("cannot find assetMetadata");
-            };
-            address = switch (map.get(7).1) {
-              case (#Map(childMap)) {
-                switch (childMap.get(5).1) {
-                  case (#Text(text)) text;
-                  case (_) throw Error.reject("cannot find assetMetadata");
-                };
-              };
-              case (_) throw Error.reject("cannot find assetMetadata");
-            };
-            stateProvince = switch (map.get(7).1) {
-              case (#Map(childMap)) {
-                switch (childMap.get(6).1) {
+                switch (childMap.get(3).1) {
                   case (#Text(text)) text;
                   case (_) throw Error.reject("cannot find assetMetadata");
                 };
@@ -494,28 +463,13 @@ shared ({ caller = _owner }) actor class Token(
             };
             country = switch (map.get(7).1) {
               case (#Map(childMap)) {
-                switch (childMap.get(7).1) {
+                switch (childMap.get(4).1) {
                   case (#Text(text)) text;
                   case (_) throw Error.reject("cannot find assetMetadata");
                 };
               };
               case (_) throw Error.reject("cannot find assetMetadata");
             };
-          };
-          dates = switch (map.get(8).1) {
-            case (#Array(array)) {
-              let newArray = Buffer.Buffer<Text>(3);
-
-              for (item in array.vals()) {
-                switch (item) {
-                  case (#Text(text)) newArray.add(text);
-                  case (_) throw Error.reject("cannot find assetMetadata");
-                };
-              };
-
-              Buffer.toArray<Text>(newArray);
-            };
-            case (_) throw Error.reject("cannot find assetMetadata");
           };
         };
       };

@@ -165,7 +165,9 @@ export function unformatAmount(formattedValue, {
   return parseFloat(formattedValue)
 }
 
-export function maxDecimals(value, max = 3) {
+export function maxDecimals(value, max) {
+  max ||= variables.defaultMaxDecimals
+
   if (!value || value === '0') return 0
   else if (Number(value) % 1 == 0) return value
 
@@ -283,10 +285,6 @@ export async function fileCompression(file, options) {
   return new File([blob], blob.name)
 }
 
-export function convertE8SToICP(e8s) { return e8s / variables.e8sEquivalence }
-
-export function convertICPToE8S(icp) { return icp * variables.e8sEquivalence }
-
 export function shortPrincipalId(principalId) {
   const splitted = principalId?.split('-');
   if (!splitted) return ''
@@ -300,4 +298,22 @@ export function shortString(text, { from, to }) {
 
   if (text.length <= from + to) return text
   return `${text.substring(0, from)}...${text.substring(text.length - to, text.length)}`
+}
+
+export function tokenToNumber(bigInt, decimals, toFixedDecimals) {
+  decimals ||= variables.defaultMaxDecimals
+
+  const value = Number(bigInt) / Math.pow(10, decimals)
+
+  if (toFixedDecimals) return exponentToString(value, toFixedDecimals)
+  return value;
+}
+
+export function numberToToken(number, decimals) {
+  decimals ||= variables.defaultMaxDecimals
+  return BigInt((number * Math.pow(10, decimals)).toFixed(0));
+}
+
+export function exponentToString(number, decimals) {
+  return number.toFixed(decimals || number.toString().split("-")[1])
 }
