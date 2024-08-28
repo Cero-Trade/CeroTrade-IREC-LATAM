@@ -34,3 +34,28 @@ else
 fi
 dfx build http_service --network ic
 dfx build agent --network ic
+
+if [ "$flag" = "modules" ]; then
+  # Register wasm modules
+  echo "====-Register wasm modules-===="
+  dfx build token --network ic
+  dfx build users --network ic
+  dfx build transactions --network ic
+  dfx build notifications --network ic
+  dfx build bucket --network ic
+
+  # Generate the wasm module like array
+  echo "====-Generate the wasm module like array-===="
+  npm run generate-wasm token ic
+  npm run generate-wasm users ic
+  npm run generate-wasm transactions ic
+  npm run generate-wasm notifications ic
+  npm run generate-wasm bucket ic
+
+  # Push the current ./wasm_modules commit folder to github
+  echo "====-Push the current ./wasm_modules commit folder to github-===="
+  git pull
+  git add ./wasm_modules
+  git commit -m "config/new-wasm-modules"
+  git push
+fi

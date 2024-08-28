@@ -73,11 +73,11 @@ if [ "$flag" = "modules" ] || [ "$flag" = "clean" ]; then
 
   # Generate the wasm module like array
   echo "====-Generate the wasm module like array-===="
-  npm run generate-wasm token
-  npm run generate-wasm users
-  npm run generate-wasm transactions
-  npm run generate-wasm notifications
-  npm run generate-wasm bucket
+  npm run generate-wasm token local
+  npm run generate-wasm users local
+  npm run generate-wasm transactions local
+  npm run generate-wasm notifications local
+  npm run generate-wasm bucket local
 
   # Push the current ./wasm_modules commit folder to github
   echo "====-Push the current ./wasm_modules commit folder to github-===="
