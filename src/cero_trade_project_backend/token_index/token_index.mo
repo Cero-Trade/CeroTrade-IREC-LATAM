@@ -39,33 +39,21 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   stable var tokenDirectoryEntries : [(T.TokenId, T.CanisterId)] = [];
 
   type AssetResponse = {
-    tokenId: Text;
-    startDate: Text;
-    endDate: Text;
-    co2Emission: Text;
-    radioactivityEmnission: Text;
-    volumeProduced: Text;
-    // deviceDetails
-    name: Text;
-    deviceType: Text;
-    description: Text;
-    // specifications
-    deviceCode: Text;
-    capacity: Text;
-    location: Text;
-    latitude: Text;
-    longitude: Text;
-    address: Text;
-    stateProvince: Text;
-    country: Text;
-    dates: [Text];
-  };
-
-  type ItemResponse = {
-    source: Text;
-    volume: Text;
-    assetId: Text;
-    assetDetails: AssetResponse;
+    item_volume: Text;
+    asset_assetId: Text;
+    asset_endDate: Text;
+    asset_location: Text;
+    asset_maxVolume: Text;
+    asset_startDate: Text;
+    asset_co2Produced: Text;
+    asset_radioactiveProduced: Text;
+    device_code: Text;
+    device_name: Text;
+    device_type: Text;
+    device_longitude: Text;
+    device_latitude: Text;
+    device_description: Text;
+    device_country: Text;
   };
 
   type TransactionResponse = {
@@ -76,7 +64,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     transactionType: Text;
     volume: Text;
     timestamp: Text;
-    items: [ItemResponse];
+    items: [AssetResponse];
     processed: Bool;
     createdAt: Text;
     updatedAt: Text;
@@ -367,12 +355,13 @@ shared({ caller = owner }) actor class TokenIndex() = this {
           case(null) throw Error.reject("cannot serialize asset data");
           case(?response) {
             for({ items } in response.vals()) {
-              for(itemResponse in items.vals()) {
+              for(assetResponse in items.vals()) {
                 index := index + 1;
 
+                // TODO review mwh value assignment
                 assetsMetadata.put(index, {
-                  mwh = await T.textToNat(itemResponse.volume);
-                  assetInfo = await buildAssetInfo(itemResponse.assetDetails);
+                  mwh = await T.textToToken(assetResponse.item_volume, null);
+                  assetInfo = await buildAssetInfo(assetResponse);
                 });
               };
             };
@@ -490,7 +479,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
 
   // helper function used to build [AssetInfo] from AssetResponse
   private func buildAssetInfo(asset: AssetResponse): async T.AssetInfo {
-    let deviceType: T.AssetType = switch(asset.deviceType) {
+    let deviceType: T.AssetType = switch(asset.device_type) {
       case("Solar") #Solar("Solar");
       case("Wind") #Wind("Wind");
       case("Hydro-Electric") #HydroElectric("Hydro-Electric");
@@ -498,29 +487,26 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       case _ #Other("Other");
     };
 
+    // TODO review specification values assignment
     {
-      tokenId = asset.tokenId;
-      startDate = asset.startDate;
-      endDate = asset.endDate;
-      co2Emission = asset.co2Emission;
-      radioactivityEmnission = asset.radioactivityEmnission;
-      volumeProduced = await T.textToNat(asset.volumeProduced);
+      tokenId = asset.asset_assetId;
+      startDate = asset.asset_startDate;
+      endDate = asset.asset_endDate;
+      co2Emission = asset.asset_co2Produced;
+      radioactivityEmission = asset.asset_radioactiveProduced;
+      volumeProduced = await T.textToToken(asset.asset_maxVolume, null);
       deviceDetails = {
-        name = asset.name;
+        name = asset.device_name;
         deviceType;
-        description = asset.description;
+        description = asset.device_description;
       };
       specifications = {
-        deviceCode = asset.deviceCode;
-        capacity = await T.textToNat(asset.capacity);
-        location = asset.location;
-        latitude = asset.latitude;
-        longitude = asset.longitude;
-        address = asset.address;
-        stateProvince = asset.stateProvince;
-        country = asset.country;
+        deviceCode = asset.device_code;
+        location = asset.asset_location;
+        latitude = asset.device_latitude;
+        longitude = asset.device_longitude;
+        country = asset.device_country;
       };
-      dates = asset.dates;
     };
   };
 
@@ -559,14 +545,27 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       headers = [];
     });
 
+    Debug.print("portfolioJson " # debug_show (portfolioJson));
     let portfolioIds: { tokenIds: [T.TokenId]; txIds: [T.TransactionId] } = switch(Serde.JSON.fromText(portfolioJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize asset data");
       case(#ok(blob)) {
-        let portfolio: ?{ tokenIds: [T.TokenId]; txIds: [T.TransactionId] } = from_candid(blob);
+        let portfolio: ?{ tokenIds: ?[T.TokenId]; txIds: ?[T.TransactionId]; } = from_candid(blob);
+        Debug.print("portfolio " # debug_show (portfolio));
 
         switch(portfolio) {
           case(null) throw Error.reject("cannot serialize asset data");
-          case(?value) value;
+          case(?value) {
+            {
+              tokenIds = switch(value.tokenIds) {
+                case(null) [];
+                case(?value) value;
+              };
+              txIds = switch(value.txIds) {
+                case(null) [];
+                case(?value) value;
+              };
+            }
+          };
         };
       };
     };
@@ -928,35 +927,39 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     // - items: Un url identificador de los items. Esta información debe traerse al momento de hacer el importe de los IRECs.
     // - periodStart y periodEnd: Las fechas de inicio y fin del periodo de redención. Esto debe ser un input del usuario.
     // - locale: El idioma en que se quiere obtener el "redemption statement" (ej. "en", "es"). Este debe ser un input del usuario.
-    let pdfJson = await HTTP.canister.post({
-        url = HTTP.apiUrl # "redemption";
-        port = null;
-        uid = ?owner;
-        headers = [];
-        bodyJson = switch(Serde.JSON.toText(to_candid({
-          volume = amount;
-          beneficiary = Principal.toText(owner);
-          items = tokenId;
-          periodStart;
-          periodEnd;
-          locale;
-        }), ["volume", "beneficiary", "items", "periodStart", "periodEnd", "locale"], null)) {
-          case(#err(error)) throw Error.reject("Cannot serialize data");
-          case(#ok(value)) value;
-        };
-      });
 
-    let redemptionPdf: T.ArrayFile = switch(Serde.JSON.fromText(pdfJson, null)) {
-      case(#err(_)) throw Error.reject("cannot serialize asset data");
-      case(#ok(blob)) {
-        let response: ?{ pdf: T.ArrayFile } = from_candid(blob);
+    let redemptionPdf: T.ArrayFile = [1,2,3,4,5,6,7,8];
 
-        switch(response) {
-          case(null) throw Error.reject("cannot serialize PDF file data");
-          case(?value) value.pdf;
-        };
-      };
-    };
+    // TODO commented while resolve troubles with request 👇
+    // let pdfJson = await HTTP.canister.post({
+    //     url = HTTP.apiUrl # "transactions/redemption";
+    //     port = null;
+    //     uid = ?owner;
+    //     headers = [];
+    //     bodyJson = switch(Serde.JSON.toText(to_candid({
+    //       volume = amount;
+    //       beneficiary = Principal.toText(owner);
+    //       items = tokenId;
+    //       periodStart;
+    //       periodEnd;
+    //       locale;
+    //     }), ["volume", "beneficiary", "items", "periodStart", "periodEnd", "locale"], null)) {
+    //       case(#err(error)) throw Error.reject("Cannot serialize data");
+    //       case(#ok(value)) value;
+    //     };
+    //   });
+
+    // let redemptionPdf: T.ArrayFile = switch(Serde.JSON.fromText(pdfJson, null)) {
+    //   case(#err(_)) throw Error.reject("cannot serialize asset data");
+    //   case(#ok(blob)) {
+    //     let response: ?{ pdf: T.ArrayFile } = from_candid(blob);
+
+    //     switch(response) {
+    //       case(null) throw Error.reject("cannot serialize PDF file data");
+    //       case(?value) value.pdf;
+    //     };
+    //   };
+    // };
 
     let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");

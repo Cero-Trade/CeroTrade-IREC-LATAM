@@ -14,11 +14,10 @@ export interface AssetInfoModel {
   startDate: Date;
   endDate: Date;
   co2Emission: number;
-  radioactivityEmnission: number;
+  radioactivityEmission: number;
   volumeProduced: number;
   deviceDetails: DeviceDetailsModel;
   specifications: SpecificationsModel;
-  dates: Date[];
 };
 
 export interface DeviceDetailsModel {
@@ -29,11 +28,8 @@ export interface DeviceDetailsModel {
 
 export interface SpecificationsModel {
   deviceCode: string;
-  capacity: number;
   location: string;
   latitude: number;
   longitude: number;
-  address: string;
-  stateProvince: string;
   country: string;
 };

@@ -1,4 +1,4 @@
-import { fileCompression, getUrlFromArrayBuffer, getImageArrayBuffer, convertE8SToICP, getFileFromArrayBuffer } from "@/plugins/functions";
+import { fileCompression, getUrlFromArrayBuffer, getImageArrayBuffer, getFileFromArrayBuffer, tokenToNumber, numberToToken } from "@/plugins/functions";
 import { useAgentCanister as agent, getErrorMessage } from "@/services/icp-provider";
 import avatar from '@/assets/sources/images/avatar-online.svg'
 import store from "@/store";
@@ -170,14 +170,12 @@ export class AgentCanister {
       for (const item of response.tokensInfo.data) {
         // format record value
         item.assetInfo.deviceDetails.deviceType = Object.values(item.assetInfo.deviceDetails.deviceType)[0] as AssetType
-        item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
-        item.totalAmount = Number(item.totalAmount)
-        item.inMarket = Number(item.inMarket)
-        item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
+        item.assetInfo.volumeProduced = tokenToNumber(item.assetInfo.volumeProduced)
+        item.totalAmount = tokenToNumber(item.totalAmount)
+        item.inMarket = tokenToNumber(item.inMarket)
         // format dates
         item.assetInfo.startDate = new Date(item.assetInfo.startDate)
         item.assetInfo.endDate = new Date(item.assetInfo.endDate)
-        item.assetInfo.dates.forEach(e => { e = new Date(e) })
       }
 
       response.tokensInfo.totalPages = Number(response.tokensInfo.totalPages)
@@ -185,7 +183,7 @@ export class AgentCanister {
       for (const item of response.tokensRedemption) {
         item.txType = Object.values(item.txType)[0] as TxTypeDef
         item.to = Object.values(item.to)[0] as string
-        item.tokenAmount = Number(item.tokenAmount)
+        item.tokenAmount = tokenToNumber(item.tokenAmount)
         item.redemptionPdf = await getFileFromArrayBuffer(item.redemptionPdf, { fileName: 'certificate', fileType: 'application/pdf' })
         item['url'] = URL.createObjectURL(item.redemptionPdf)
       }
@@ -202,18 +200,13 @@ export class AgentCanister {
       const token = await agent().getSinglePortfolio(tokenId) as TokenModel
 
       // format record value
-      token.assetInfo.volumeProduced = Number(token.assetInfo.volumeProduced)
-      token.totalAmount = Number(token.totalAmount)
-      token.inMarket = Number(token.inMarket)
-      token.assetInfo.specifications.capacity = Number(token.assetInfo.specifications.capacity)
+      token.assetInfo.volumeProduced = tokenToNumber(token.assetInfo.volumeProduced)
+      token.totalAmount = tokenToNumber(token.totalAmount)
+      token.inMarket = tokenToNumber(token.inMarket)
       // format dates
       token.assetInfo.deviceDetails.deviceType = Object.values(token.assetInfo.deviceDetails.deviceType)[0] as AssetType
       token.assetInfo.startDate = new Date(token.assetInfo.startDate)
       token.assetInfo.endDate = new Date(token.assetInfo.endDate)
-
-      const dates: Date[] = [];
-      for (const date of token.assetInfo.dates) dates.push(new Date(date))
-      token.assetInfo.dates = dates
 
       return token
     } catch (error) {
@@ -281,17 +274,12 @@ export class AgentCanister {
 
       for (const transaction of transactions) {
         // format record value
-        transaction.mwh = Number(transaction.mwh)
-        transaction.assetInfo.volumeProduced = Number(transaction.assetInfo.volumeProduced)
-        transaction.assetInfo.specifications.capacity = Number(transaction.assetInfo.specifications.capacity)
+        transaction.mwh = tokenToNumber(transaction.mwh)
+        transaction.assetInfo.volumeProduced = tokenToNumber(transaction.assetInfo.volumeProduced)
         // format dates
         transaction.assetInfo.deviceDetails.deviceType = Object.values(transaction.assetInfo.deviceDetails.deviceType)[0] as AssetType
         transaction.assetInfo.startDate = new Date(transaction.assetInfo.startDate)
         transaction.assetInfo.endDate = new Date(transaction.assetInfo.endDate)
-  
-        const dates: Date[] = [];
-        for (const date of transaction.assetInfo.dates) dates.push(new Date(date))
-        transaction.assetInfo.dates = dates
       }
 
       console.log(transactions);
@@ -308,18 +296,13 @@ export class AgentCanister {
       const token = await agent().getTokenDetails(tokenId) as TokenModel
 
       // format record value
-      token.assetInfo.volumeProduced = Number(token.assetInfo.volumeProduced)
-      token.totalAmount = Number(token.totalAmount)
-      token.inMarket = Number(token.inMarket)
-      token.assetInfo.specifications.capacity = Number(token.assetInfo.specifications.capacity)
+      token.assetInfo.volumeProduced = tokenToNumber(token.assetInfo.volumeProduced)
+      token.totalAmount = tokenToNumber(token.totalAmount)
+      token.inMarket = tokenToNumber(token.inMarket)
       // format dates
       token.assetInfo.deviceDetails.deviceType = Object.values(token.assetInfo.deviceDetails.deviceType)[0] as AssetType
       token.assetInfo.startDate = new Date(token.assetInfo.startDate)
       token.assetInfo.endDate = new Date(token.assetInfo.endDate)
-
-      const dates: Date[] = [];
-      for (const date of token.assetInfo.dates) dates.push(new Date(date))
-      token.assetInfo.dates = dates
 
       return token
     } catch (error) {
@@ -355,19 +338,18 @@ export class AgentCanister {
         length ? [length] : [],
         assetTypes.length ? [assetTypes.map(energy => ({ [energy]: energy }))] : [],
         country ? [country] : [],
-        priceRange.length ? [priceRange.map(price => ({ e8s: price }))] : [],
+        priceRange.length ? [priceRange.map(price => ({ e8s: numberToToken(price) }))] : [],
       ) as { data: MarketplaceInfo[], totalPages: number }
 
       for (const item of response.data) {
         // format record value
         item.assetInfo.deviceDetails.deviceType = Object.values(item.assetInfo.deviceDetails.deviceType)[0] as AssetType
-        item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
-        item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
-        item.mwh = Number(item.mwh)
+        item.assetInfo.volumeProduced = tokenToNumber(item.assetInfo.volumeProduced)
+        item.mwh = tokenToNumber(item.mwh)
 
         // convert e8s to icp
-        item.lowerPriceE8S = convertE8SToICP(Number(item.lowerPriceE8S['e8s']))
-        item.higherPriceE8S = convertE8SToICP(Number(item.higherPriceE8S['e8s']))
+        item.lowerPriceE8S = tokenToNumber(item.lowerPriceE8S['e8s'])
+        item.higherPriceE8S = tokenToNumber(item.higherPriceE8S['e8s'])
       }
 
       response.totalPages = Number(response.totalPages)
@@ -397,22 +379,21 @@ export class AgentCanister {
         length ? [length] : [],
         tokenId ? [tokenId] : [],
         country ? [country] : [],
-        priceRange.length ? [priceRange.map(price => ({ e8s: price }))] : [],
+        priceRange.length ? [priceRange.map(price => ({ e8s: numberToToken(price) }))] : [],
         excludeCaller,
       ) as { data: MarketplaceSellersInfo[], totalPages: number }
 
       for (const item of response.data) {
         // format record value
-        item.mwh = Number(item.mwh)
+        item.mwh = tokenToNumber(item.mwh)
 
         // get nullable object
         item.assetInfo = item.assetInfo[0]
         item.assetInfo.deviceDetails.deviceType = Object.values(item.assetInfo.deviceDetails.deviceType)[0] as AssetType
-        item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
-        item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
+        item.assetInfo.volumeProduced = tokenToNumber(item.assetInfo.volumeProduced)
 
         // convert e8s to icp
-        item.priceE8S = convertE8SToICP(Number(item.priceE8S['e8s']))
+        item.priceE8S = tokenToNumber(item.priceE8S['e8s'])
       }
 
       response.totalPages = Number(response.totalPages)
@@ -427,11 +408,11 @@ export class AgentCanister {
 
   static async purchaseToken(tokenId: string, recipent: Principal, amount: number): Promise<TransactionInfo> {
     try {
-      const tx = await agent().purchaseToken(tokenId, recipent, amount) as TransactionInfo
+      const tx = await agent().purchaseToken(tokenId, recipent, numberToToken(amount)) as TransactionInfo
       tx.txType = Object.values(tx.txType)[0] as TxTypeDef
       tx.to = tx.to[0] as string
       tx.method = Object.values(tx.method)[0] as TxMethodDef
-      tx.priceE8S = tx.priceE8S[0] ? convertE8SToICP(Number(tx.priceE8S[0]['e8s'])) : null
+      tx.priceE8S = tx.priceE8S[0] ? tokenToNumber(tx.priceE8S[0]['e8s']) : null
 
       return tx
     } catch (error) {
@@ -443,7 +424,7 @@ export class AgentCanister {
 
   static async putOnSale(tokenId: string, quantity: number, price: TokensICP): Promise<void> {
     try {
-      const res = await agent().sellToken(tokenId, quantity, price)
+      const res = await agent().sellToken(tokenId, numberToToken(quantity), { e8s: numberToToken(price) })
       console.log(res);
     } catch (error) {
       console.error(error);
@@ -454,7 +435,7 @@ export class AgentCanister {
 
   static async takeTokenOffMarket(tokenId: string, quantity: number): Promise<void> {
     try {
-      await agent().takeTokenOffMarket(tokenId, quantity)
+      await agent().takeTokenOffMarket(tokenId, numberToToken(quantity))
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)
@@ -473,7 +454,7 @@ export class AgentCanister {
     try {
       await agent().requestRedeemToken(
         tokenId,
-        amount,
+        numberToToken(amount),
         beneficiary,
         moment(periodStart).format(variables.dateFormat),
         moment(periodEnd).format(variables.dateFormat),
@@ -506,7 +487,7 @@ export class AgentCanister {
     try {
       const tx = await agent().redeemToken(
         tokenId,
-        amount,
+        numberToToken(amount),
         moment(periodStart).format(variables.dateFormat),
         moment(periodEnd).format(variables.dateFormat),
         locale
@@ -514,7 +495,7 @@ export class AgentCanister {
       tx.txType = Object.values(tx.txType)[0] as TxTypeDef
       tx.to = tx.to[0] as string
       tx.method = Object.values(tx.method)[0] as TxMethodDef
-      tx.priceE8S = tx.priceE8S[0] ? convertE8SToICP(Number(tx.priceE8S[0]['e8s'])) : null
+      tx.priceE8S = tx.priceE8S[0] ? tokenToNumber(tx.priceE8S[0]['e8s']) : null
 
       return tx
     } catch (error) {
@@ -547,7 +528,7 @@ export class AgentCanister {
         length ? [length] : [],
         txType ? [{[txType]: txType}] : [],
         country ? [country] : [],
-        priceRange.length ? [priceRange.map(price => ({ e8s: price }))] : [],
+        priceRange.length ? [priceRange.map(price => ({ e8s: numberToToken(price) }))] : [],
         mwhRange.length ? [mwhRange] : [],
         assetTypes.length ? [assetTypes.map(energy => ({ [energy]: energy }))] : [],
         method ? [{[method]: method}] : [],
@@ -557,7 +538,7 @@ export class AgentCanister {
 
       for (const item of response.data) {
         // format record value
-        item.tokenAmount = Number(item.tokenAmount)
+        item.tokenAmount = tokenToNumber(item.tokenAmount)
         item.txType = Object.values(item.txType)[0] as TxTypeDef
         item.method = Object.values(item.method)[0] as TxMethodDef
         item.date = new Date(item.date)
@@ -568,11 +549,10 @@ export class AgentCanister {
         item.to = item.to[0]
         item.assetInfo = item.assetInfo[0]
         item.assetInfo.deviceDetails.deviceType = Object.values(item.assetInfo.deviceDetails.deviceType)[0] as AssetType
-        item.assetInfo.volumeProduced = Number(item.assetInfo.volumeProduced)
-        item.assetInfo.specifications.capacity = Number(item.assetInfo.specifications.capacity)
+        item.assetInfo.volumeProduced = tokenToNumber(item.assetInfo.volumeProduced)
 
         // convert e8s to icp
-        item.priceE8S = item.priceE8S[0] ? convertE8SToICP(Number(item.priceE8S[0]['e8s'])) : null
+        item.priceE8S = item.priceE8S[0] ? tokenToNumber(item.priceE8S[0]['e8s']) : null
       }
 
       response.totalPages = Number(response.totalPages)
@@ -590,9 +570,9 @@ export class AgentCanister {
       const res = await agent().getAllAssetStatistics() as [string, AssetStatistic][]
 
       for (const item of res) {
-        item[1].mwh = Number(item[1].mwh)
+        item[1].mwh = tokenToNumber(item[1].mwh)
         item[1].assetType = Object.values(item[1].assetType)[0] as AssetType
-        item[1].redemptions = Number(item[1].redemptions)
+        item[1].redemptions = tokenToNumber(item[1].redemptions)
       }
 
       return res
@@ -607,9 +587,9 @@ export class AgentCanister {
     try {
       const res = await agent().getAssetStatistics(tokenId) as AssetStatistic
 
-      res.mwh = Number(res.mwh)
+      res.mwh = tokenToNumber(res.mwh)
       res.assetType = Object.values(res.assetType)[0] as AssetType
-      res.redemptions = Number(res.redemptions)
+      res.redemptions = tokenToNumber(res.redemptions)
 
       return res
     } catch (error) {
@@ -634,7 +614,7 @@ export class AgentCanister {
         item.content = item.content[0]
         item.triggeredBy = item.triggeredBy[0]
         item.tokenId = item.tokenId[0]
-        item.quantity = Number(item.quantity[0]) || null
+        item.quantity = tokenToNumber(item.quantity[0]) || null
         item.createdAt = new Date(item.createdAt)
       }
 
