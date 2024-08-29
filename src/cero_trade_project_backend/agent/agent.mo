@@ -549,11 +549,11 @@ actor class Agent() = this {
     // register transaction
     let txId = await TransactionIndex.registerTransaction(txInfo);
 
-    // store to caller
-    await UserIndex.updateTransactions(caller, null, txId);
-
     // put tokens on marketplace reference
     await Marketplace.putOnSale(tokenId, quantity, caller, priceE8S);
+
+    // store to caller
+    await UserIndex.updateTransactions(caller, null, txId);
 
     { txInfo with transactionId = txId }
   };
