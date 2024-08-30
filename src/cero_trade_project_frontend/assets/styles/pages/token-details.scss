@@ -225,10 +225,18 @@
     }
   }
 
+  .container-info {
+    flex-grow: 1;
+    @media (width <= 880px) {
+      flex-basis: 100%;
+    }
+  }
+
   .container-actions {
     position: sticky;
     top: 80px;
     padding-top: 12px;
+    flex-basis: 300px;
     height: calc(100dvh - 100px) !important;
 
     .container-redemptions {

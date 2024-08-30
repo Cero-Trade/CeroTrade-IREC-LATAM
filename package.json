@@ -11,9 +11,10 @@
     "generate-wasm": "bash scripts/generate_wasm.sh",
     "generate-env.mo": "bash scripts/generate_env.mo.sh",
     "deploy": "bash scripts/deploy_replica.sh",
-    "build-ic": "bash scripts/build_ic.sh",
-    "install-ic": "bash scripts/install_ic.sh",
-    "upgrade-controllers": "bash scripts/upgrade_controllers.sh"
+    "build-ic": "chmod a+x scripts/build_ic.exp && scripts/build_ic.exp",
+    "install-ic": "chmod a+x scripts/install_ic.exp && scripts/install_ic.exp",
+    "upgrade-controllers": "bash scripts/upgrade_controllers.sh",
+    "canister-status-ic": "chmod a+x scripts/canister_status_ic.exp && scripts/canister_status_ic.exp"
   },
   "dependencies": {
     "@connect2ic/core": "^0.1.6",
