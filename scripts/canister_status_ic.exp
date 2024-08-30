@@ -1,0 +1,28 @@
+#!/usr/bin/expect -f
+
+set timeout -1
+
+# Identity changed to cerotrade
+spawn dfx identity use cerotrade
+expect eof
+puts "Identity changed to cerotrade"
+
+# Request identity passphrase
+send_user "Please enter the passphrase for your identity: "
+expect_user -re "(.*)\n"
+set passphrase $expect_out(1,string)
+
+# Get all canisters status
+set canisters {cero_trade_project_frontend agent http_service user_index token_index notification_index transaction_index bucket_index marketplace statistics}
+
+foreach canister $canisters {
+	puts "⬇️====-$canister-====⬇️"
+	spawn dfx canister status $canister --network ic
+	expect {
+		"Please enter the passphrase for your identity:" {
+			send "$passphrase\r"
+			exp_continue
+		}
+		eof
+	}
+}
