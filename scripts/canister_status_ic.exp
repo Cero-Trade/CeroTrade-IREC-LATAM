@@ -7,10 +7,15 @@ spawn dfx identity use cerotrade
 expect eof
 puts "Identity changed to cerotrade"
 
-# Request identity passphrase
-send_user "Please enter the passphrase for your identity: "
-expect_user -re "(.*)\n"
-set passphrase $expect_out(1,string)
+# Get passphrase from environment and checkout
+if {[info exists env(INTERNET_IDENTITY_PASSPHRASE)]} {
+	set passphrase $env(INTERNET_IDENTITY_PASSPHRASE)
+} else {
+	# Request identity passphrase
+	send_user "Please enter the passphrase for your identity: "
+	expect_user -re "(.*)\n"
+	set passphrase $expect_out(1,string)
+}
 
 # Get all canisters status
 set canisters {cero_trade_project_frontend agent http_service user_index token_index notification_index transaction_index bucket_index marketplace statistics}
