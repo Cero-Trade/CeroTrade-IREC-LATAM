@@ -37,7 +37,7 @@
     </h3>
 
     <v-row>
-      <v-col xl="8" lg="8" md="8" cols="12">
+      <v-col class="container-info">
         <v-row>
           <v-col xl="5" lg="5" cols="12">
             <v-card class="card cards-rec">
@@ -722,8 +722,6 @@
           </v-sheet>
           <h6 class="bold">Price</h6>
           <span class="tertiary mb-4">Set the price you want to sell every MWh of your tokenized asset for. The price is set in ICP.</span>
-
-          <label for="sale_amount">Sale amount</label>
 
           <v-text-field
             v-model="tokenPrice"
@@ -1468,7 +1466,21 @@ async function getData() {
     haveToken.value = checkToken.value
     haveTokenInMarket.value = checkTokenInMarket.value
     tokenDetail.value = token.value
-    redemptions.value = txRedemptions.value.data
+    redemptions.value = [
+      {
+        transactionId: "string",
+        blockHash: "number",
+        from: "string",
+        to: "string",
+        assetInfo: "AssetInfoModel",
+        txType: "TxTypeDef",
+        tokenAmount: "number",
+        priceE8S: "TokensICP",
+        date: "Date",
+        method: "TxMethodDef",
+        redemptionPdf: "File",
+      }
+    ]
     seriesMintedVsProduced.value = [(statistics.value.mwh || 1) / (token.value.assetInfo.volumeProduced || 1) * 100]
   } catch (error) {
     console.error(error);

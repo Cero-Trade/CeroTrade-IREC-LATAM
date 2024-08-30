@@ -1,0 +1,91 @@
+#!/usr/bin/expect -f
+
+set timeout -1
+set args [lrange $argv 0 end]
+set mode "upgrade"
+
+foreach arg $args {
+  if {[string match --help $arg]} {
+    puts "Welcome, this are args available:\n1) backend -> used to build only backend canisters\n\nHere flags available:\n1) -- --mode=upgrade -> used to install canister code without lose data\n2) -- --mode=reinstall -> used to install canister code cleaning data"
+    exit 0
+  }
+
+  if {[string match --mode=* $arg]} {
+    set mode [string range $arg 7 end]
+  }
+}
+
+# Changed git branch to main
+spawn git checkout main
+expect eof
+puts "Changed git branch to main"
+
+# Identity changed to cerotrade
+spawn dfx identity use cerotrade
+expect eof
+puts "Identity changed to cerotrade"
+
+# Request identity passphrase
+send_user "Please enter the passphrase for your identity: "
+expect_user -re "(.*)\n"
+set passphrase $expect_out(1,string)
+
+# Install canisters code
+puts "====-Install canisters code-===="
+set canisters {http_service user_index token_index notification_index transaction_index bucket_index marketplace statistics agent}
+
+if {[lsearch -exact $args "--backend"] != -1 || [lsearch -exact $args "backend"] != -1} {
+  set canisters [linsert $canisters 0 "cero_trade_project_frontend"]
+}
+
+foreach canister $canisters {
+  spawn dfx canister install $canister --mode $mode --network ic
+  expect {
+    "Please enter the passphrase for your identity:" {
+      send "$passphrase\r"
+      exp_continue
+    }
+    eof
+  }
+}
+
+# Update canister controllers
+puts "====-Update canister controllers-===="
+set controller [exec dfx identity get-principal]
+set indexCanisters {agent token_index user_index transaction_index notification_index bucket_index}
+
+foreach canister $indexCanisters {
+  spawn dfx canister update-settings $canister --add-controller $controller --network ic
+  expect {
+    "Please enter the passphrase for your identity:" {
+      send "$passphrase\r"
+      exp_continue
+    }
+    eof
+  }
+}
+
+spawn dfx canister call agent registerControllers --network ic
+expect {
+  "Please enter the passphrase for your identity:" {
+    send "$passphrase\r"
+    exp_continue
+  }
+  eof
+}
+
+# Register wasm module into backend canisters
+puts "====-Register wasm module into backend canisters-===="
+set dynamicCanisters {token users transactions notifications bucket}
+
+foreach canister $dynamicCanisters {
+  set command "dfx canister call agent registerWasmModule \"(variant { \\\"$canister\\\" = \\\"$canister\\\" })\" --network ic"
+  spawn bash -c $command
+  expect {
+    "Please enter the passphrase for your identity:" {
+      send "$passphrase\r"
+      exp_continue
+    }
+    eof
+  }
+}
