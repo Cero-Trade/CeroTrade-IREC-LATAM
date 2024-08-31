@@ -1,0 +1,66 @@
+#!/usr/bin/expect -f
+
+set timeout -1
+
+# Initialize variables
+set network "local"
+set help_flag 0
+set remaining_args {}
+
+# Get arguments
+foreach arg $argv {
+  if {[string match --help $arg]} {
+    set help_flag 1
+  } elseif {[string match --network=* $arg]} {
+    set network [string range $arg 10 end]
+  } else {
+    lappend remaining_args $arg
+  }
+}
+
+# Help message
+if {$help_flag} {
+  puts "Welcome, these are the flags:\n1) -- --network=ic -> used to upgrade controllers on ic network\n2) -- --network=local -> used to upgrade controllers on local replica"
+  exit 0
+}
+
+# Identity changed to cerotrade
+if {[string match ic $network]} {
+  spawn dfx identity use cerotrade
+  expect eof
+  puts "Identity changed to cerotrade"
+
+  # Request identity passphrase
+  send_user "Please enter the passphrase for your identity: "
+  expect_user -re "(.*)\n"
+  set passphrase $expect_out(1,string)
+} else {
+  spawn dfx identity use default
+  expect eof
+  puts "Identity changed to default"
+}
+
+proc expectPassphrase {passphrase} {
+  expect {
+    "Please enter the passphrase for your identity:" {
+      send "$passphrase\r"
+      exp_continue
+    }
+    eof
+  }
+}
+
+set canisters {agent token_index user_index transaction_index notification_index bucket_index}
+
+# Get Controllers
+foreach controller $remaining_args {
+  # update controllers
+  foreach canister $canisters {
+    spawn dfx canister --network $network update-settings $canister --add-controller $controller
+    expectPassphrase $passphrase
+  }
+}
+
+# Register controllers in canisters
+spawn dfx canister --network $network call agent registerControllers
+expectPassphrase $passphrase

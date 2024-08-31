@@ -30,6 +30,16 @@ send_user "Please enter the passphrase for your identity: "
 expect_user -re "(.*)\n"
 set passphrase $expect_out(1,string)
 
+proc expectPassphrase {passphrase} {
+  expect {
+    "Please enter the passphrase for your identity:" {
+      send "$passphrase\r"
+      exp_continue
+    }
+    eof
+  }
+}
+
 # Install canisters code
 puts "====-Install canisters code-===="
 set canisters {http_service user_index token_index notification_index transaction_index bucket_index marketplace statistics agent}
@@ -40,13 +50,7 @@ if {[lsearch -exact $args "--backend"] != -1 || [lsearch -exact $args "backend"]
 
 foreach canister $canisters {
   spawn dfx canister install $canister --mode $mode --network ic
-  expect {
-    "Please enter the passphrase for your identity:" {
-      send "$passphrase\r"
-      exp_continue
-    }
-    eof
-  }
+  expectPassphrase $passphrase
 }
 
 # Update canister controllers
@@ -56,23 +60,11 @@ set indexCanisters {agent token_index user_index transaction_index notification_
 
 foreach canister $indexCanisters {
   spawn dfx canister update-settings $canister --add-controller $controller --network ic
-  expect {
-    "Please enter the passphrase for your identity:" {
-      send "$passphrase\r"
-      exp_continue
-    }
-    eof
-  }
+  expectPassphrase $passphrase
 }
 
 spawn dfx canister call agent registerControllers --network ic
-expect {
-  "Please enter the passphrase for your identity:" {
-    send "$passphrase\r"
-    exp_continue
-  }
-  eof
-}
+expectPassphrase $passphrase
 
 # Register wasm module into backend canisters
 puts "====-Register wasm module into backend canisters-===="
@@ -81,11 +73,5 @@ set dynamicCanisters {token users transactions notifications bucket}
 foreach canister $dynamicCanisters {
   set command "dfx canister call agent registerWasmModule \"(variant { \\\"$canister\\\" = \\\"$canister\\\" })\" --network ic"
   spawn bash -c $command
-  expect {
-    "Please enter the passphrase for your identity:" {
-      send "$passphrase\r"
-      exp_continue
-    }
-    eof
-  }
+  expectPassphrase $passphrase
 }

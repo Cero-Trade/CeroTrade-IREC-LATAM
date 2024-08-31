@@ -92,6 +92,32 @@ actor class Agent() = this {
     };
   };
 
+  /// delete all deployed canisters
+  ///
+  /// only delete one if provide canister id
+  ///
+  /// when provide moduleName null all canisters will be deleted
+  public shared({ caller }) func deleteDeployedCanister(moduleName: ?IC_MANAGEMENT.WasmModuleName, cid: ?T.CanisterId): async() {
+    IC_MANAGEMENT.adminValidation(caller, controllers);
+
+    switch(moduleName) {
+      case(null) {
+        await TokenIndex.deleteDeployedCanister(null);
+        await UserIndex.deleteDeployedCanister(null);
+        await TransactionIndex.deleteDeployedCanister(null);
+        await NotificationIndex.deleteDeployedCanister(null);
+        await BucketIndex.deleteDeployedCanister(null);
+      };
+      case(?value) switch(value) {
+        case(#token("token")) await TokenIndex.deleteDeployedCanister(cid);
+        case(#users("users")) await UserIndex.deleteDeployedCanister(cid);
+        case(#transactions("transactions")) await TransactionIndex.deleteDeployedCanister(cid);
+        case(#notifications("notifications")) await NotificationIndex.deleteDeployedCanister(cid);
+        case(#bucket("bucket")) await BucketIndex.deleteDeployedCanister(cid);
+        case _ throw Error.reject("Module name doesn't exists");
+      };
+    };
+  };
 
   // /// register token on platform
   // public shared({ caller }) func registerToken(tokenId: Text, name: Text, symbol: Text, logo: Text): async (T.CanisterId, T.AssetInfo) {

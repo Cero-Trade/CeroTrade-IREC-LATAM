@@ -25,6 +25,16 @@ send_user "Please enter the passphrase for your identity: "
 expect_user -re "(.*)\n"
 set passphrase $expect_out(1,string)
 
+proc expectPassphrase {passphrase} {
+  expect {
+    "Please enter the passphrase for your identity:" {
+      send "$passphrase\r"
+      exp_continue
+    }
+    eof
+  }
+}
+
 # Generate declarations
 puts "====-Generate declarations-===="
 spawn mkdir -p .dfx/local/canisters/cero_trade_project_frontend && cp assetstorage.did .dfx/local/canisters/cero_trade_project_frontend/assetstorage.did
@@ -54,13 +64,7 @@ if {[lsearch -exact $args "--backend"] != -1 || [lsearch -exact $args "backend"]
 
 foreach canister $canisters {
   spawn dfx build $canister --network ic
-  expect {
-    "Please enter the passphrase for your identity:" {
-      send "$passphrase\r"
-      exp_continue
-    }
-    eof
-  }
+  expectPassphrase $passphrase
 }
 
 if {[lsearch -exact $args "--modules"] != -1 || [lsearch -exact $args "modules"] != -1} {
@@ -71,13 +75,7 @@ if {[lsearch -exact $args "--modules"] != -1 || [lsearch -exact $args "modules"]
   foreach canister $dynamicCanisters {
     puts "====-$canister-===="
     spawn dfx build $canister --network ic
-    expect {
-      "Please enter the passphrase for your identity:" {
-        send "$passphrase\r"
-        exp_continue
-      }
-      eof
-    }
+    expectPassphrase $passphrase
   }
 
   # Generate the wasm module like array
@@ -85,13 +83,7 @@ if {[lsearch -exact $args "--modules"] != -1 || [lsearch -exact $args "modules"]
   foreach canister $dynamicCanisters {
     puts "====-$canister-===="
     spawn npm run generate-wasm $canister ic
-    expect {
-      "Please enter the passphrase for your identity:" {
-        send "$passphrase\r"
-        exp_continue
-      }
-      eof
-    }
+    expectPassphrase $passphrase
   }
 
   # Push the current ./wasm_modules commit folder to github

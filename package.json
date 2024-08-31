@@ -13,7 +13,7 @@
     "deploy": "bash scripts/deploy_replica.sh",
     "build-ic": "chmod a+x scripts/build_ic.exp && scripts/build_ic.exp",
     "install-ic": "chmod a+x scripts/install_ic.exp && scripts/install_ic.exp",
-    "upgrade-controllers": "bash scripts/upgrade_controllers.sh",
+    "upgrade-controllers": "chmod a+x scripts/upgrade_controllers.exp && scripts/upgrade_controllers.exp",
     "canister-status-ic": "chmod a+x scripts/canister_status_ic.exp && scripts/canister_status_ic.exp"
   },
   "dependencies": {
