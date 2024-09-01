@@ -57,7 +57,51 @@ actor class Agent() = this {
   public shared({ caller }) func updateUserInfo(form: T.UpdateUserForm): async() { await UserIndex.updateUserInfo(caller, form) };
 
   /// delete user into Cero Trade
-  public shared({ caller }) func deleteUser(): async() { await UserIndex.deleteUser(caller) };
+  public shared({ caller }) func deleteUser(): async() {
+    let portfolio: {
+      tokens: [T.TokenInfo];
+      txIds: [T.TransactionId];
+      totalPages: Nat;
+    } = await TokenIndex.getPortfolio(caller, null, null, null, null, null);
+
+    for({ tokenId; totalAmount; assetInfo; } in portfolio.tokens.vals()) {
+      // check if user has enough tokens
+      let tokensInSale = await Marketplace.getUserTokensOnSale(caller, tokenId);
+      if (tokensInSale > 0) {
+        // take off tokens on marketplace reference
+        await Marketplace.takeOffSale(tokenId, tokensInSale, caller);
+      };
+
+      // burn user tokens
+      let txs = await TokenIndex.burnUserTokens(caller, tokenId, totalAmount, tokensInSale);
+
+      for({ tokenAmount; txIndex; } in txs.vals()) {
+        // build transaction
+        let txInfo: T.TransactionInfo = {
+          transactionId = "0";
+          txIndex;
+          from = caller;
+          to = null;
+          tokenId;
+          txType = #burn("burn");
+          tokenAmount;
+          priceE8S = null;
+          date = DateTime.now().toText();
+          method = #blockchainTransfer("blockchainTransfer");
+          redemptionPdf = null;
+        };
+
+        // register transaction
+        let txId = await TransactionIndex.registerTransaction(txInfo);
+      };
+
+      // remove tokens from statistics
+      await Statistics.removeAssetStatistic(tokenId, totalAmount);
+    };
+
+    // delete user
+    await UserIndex.deleteUser(caller)
+  };
 
   /// get canister controllers
   public shared({ caller }) func getControllers(): async ?[Principal] {
@@ -92,6 +136,32 @@ actor class Agent() = this {
     };
   };
 
+  /// delete all deployed canisters
+  ///
+  /// only delete one if provide canister id
+  ///
+  /// when provide moduleName null all canisters will be deleted
+  public shared({ caller }) func deleteDeployedCanister(moduleName: ?IC_MANAGEMENT.WasmModuleName, cid: ?T.CanisterId): async() {
+    IC_MANAGEMENT.adminValidation(caller, controllers);
+
+    switch(moduleName) {
+      case(null) {
+        await TokenIndex.deleteDeployedCanister(null);
+        await UserIndex.deleteDeployedCanister(null);
+        await TransactionIndex.deleteDeployedCanister(null);
+        await NotificationIndex.deleteDeployedCanister(null);
+        await BucketIndex.deleteDeployedCanister(null);
+      };
+      case(?value) switch(value) {
+        case(#token("token")) await TokenIndex.deleteDeployedCanister(cid);
+        case(#users("users")) await UserIndex.deleteDeployedCanister(cid);
+        case(#transactions("transactions")) await TransactionIndex.deleteDeployedCanister(cid);
+        case(#notifications("notifications")) await NotificationIndex.deleteDeployedCanister(cid);
+        case(#bucket("bucket")) await BucketIndex.deleteDeployedCanister(cid);
+        case _ throw Error.reject("Module name doesn't exists");
+      };
+    };
+  };
 
   // /// register token on platform
   // public shared({ caller }) func registerToken(tokenId: Text, name: Text, symbol: Text, logo: Text): async (T.CanisterId, T.AssetInfo) {
@@ -565,27 +635,27 @@ actor class Agent() = this {
   };
 
 
-  // ask market to take off market
-  public shared ({ caller }) func takeTokenOffMarket(tokenId: T.TokenId, quantity: T.TokenAmount): async T.TransactionInfo {
+  // herlper function to ask market to take off market
+  private func _takeTokenOffMarket(uid: T.UID, tokenId: T.TokenId, quantity: T.TokenAmount): async T.TransactionInfo {
     // check if user exists
-    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
+    if (not (await UserIndex.checkPrincipal(uid))) throw Error.reject(notExists);
 
     // check if user is already selling
-    let isSelling = await Marketplace.isSellingToken(caller, tokenId);
+    let isSelling = await Marketplace.isSellingToken(uid, tokenId);
     if (not isSelling) throw Error.reject("User is not selling this token");
 
     // check if user has enough tokens
-    let tokenInSale = await Marketplace.getUserTokensOnSale(caller, tokenId);
+    let tokenInSale = await Marketplace.getUserTokensOnSale(uid, tokenId);
     if (tokenInSale < quantity) throw Error.reject("Not enough tokens owned in market");
 
     // transfer tokens from marketplace to user
-    let txIndex = await TokenIndex.takeOffMarketplace(caller, tokenId, quantity);
+    let txIndex = await TokenIndex.takeOffMarketplace(uid, tokenId, quantity);
 
     // build transaction
     let txInfo: T.TransactionInfo = {
       transactionId = "0";
       txIndex;
-      from = caller;
+      from = uid;
       to = null;
       tokenId;
       txType = #takeOffMarketplace("takeOffMarketplace");
@@ -599,13 +669,24 @@ actor class Agent() = this {
     // register transaction
     let txId = await TransactionIndex.registerTransaction(txInfo);
 
-    // store to caller
-    await UserIndex.updateTransactions(caller, null, txId);
+    // store to uid
+    await UserIndex.updateTransactions(uid, null, txId);
 
     // take off tokens on marketplace reference
-    await Marketplace.takeOffSale(tokenId, quantity, caller);
+    await Marketplace.takeOffSale(tokenId, quantity, uid);
 
     { txInfo with transactionId = txId }
+  };
+  
+  // ask market to take off market
+  public shared ({ caller }) func takeTokenOffMarket(tokenId: T.TokenId, quantity: T.TokenAmount): async T.TransactionInfo {
+    await _takeTokenOffMarket(caller, tokenId, quantity);
+  };
+
+  // force user to take off market
+  public shared ({ caller }) func forceTakeTokenOffMarket(uid: T.UID, tokenId: T.TokenId, quantity: T.TokenAmount): async T.TransactionInfo {
+    IC_MANAGEMENT.adminValidation(caller, controllers);
+    await _takeTokenOffMarket(uid, tokenId, quantity);
   };
 
 

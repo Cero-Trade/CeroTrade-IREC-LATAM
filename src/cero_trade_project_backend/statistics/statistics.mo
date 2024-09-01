@@ -65,6 +65,23 @@ shared({ caller = owner }) actor class Statistics() {
     };
   };
 
+  /// remove statistic
+  public shared({ caller }) func removeAssetStatistic(tokenId: T.TokenId, mwh: T.TokenAmount): async () {
+    _callValidation(caller);
+
+    switch(assetStatistics.get(tokenId)) {
+      case(null) {};
+
+      case(?{ assetType; mwh = currentMwh; redemptions; }) {
+        assetStatistics.put(tokenId, {
+          mwh = currentMwh - mwh;
+          assetType;
+          redemptions;
+        });
+      };
+    };
+  };
+
   // get all asset statistics
   public query func getAllAssetStatistics(): async [(T.TokenId, T.AssetStatistic)] { Iter.toArray(assetStatistics.entries()) };
 

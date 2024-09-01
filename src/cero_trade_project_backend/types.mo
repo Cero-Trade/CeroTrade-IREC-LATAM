@@ -192,6 +192,7 @@ module {
     #putOnSale: Text;
     #takeOffMarketplace: Text;
     #redemption: Text;
+    #burn: Text;
   };
 
   //

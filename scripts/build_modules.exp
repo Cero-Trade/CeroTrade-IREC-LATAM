@@ -1,0 +1,80 @@
+#!/usr/bin/expect -f
+
+set timeout -1
+
+# Initialize variables
+set args [lrange $argv 0 end]
+set network "local"
+set passphrase ""
+
+foreach arg $args {
+  if {[string match --help $arg]} {
+    puts "Welcome, Here flags available:\n1) -- --network=ic -> used to build modules on ic network\n2) -- --network=local -> used to build modules on local replica"
+    exit 0
+  }
+
+  if {[string match --network=* $arg]} {
+    set network [string range $arg 10 end]
+  }
+}
+
+if {[string match ic $network]} {
+  # Changed git branch to main
+  spawn git checkout main
+  expect eof
+  puts "Changed git branch to main"
+
+  # Identity changed to cerotrade
+  spawn dfx identity use cerotrade
+  expect eof
+  puts "Identity changed to cerotrade"
+  
+  # Request identity passphrase
+  send_user "Please enter the passphrase for your identity: "
+  expect_user -re "(.*)\n"
+  set passphrase $expect_out(1,string)
+} else {
+  # Identity changed to default
+  spawn dfx identity use default
+  expect eof
+  puts "Identity changed to default"
+}
+
+proc expectPassphrase {passphrase} {
+  expect {
+    "Please enter the passphrase for your identity:" {
+      send "$passphrase\r"
+      exp_continue
+    }
+    eof
+  }
+}
+
+set dynamicCanisters {token users transactions notifications bucket}
+
+# Build wasm modules
+puts "====-Register wasm modules-===="
+foreach canister $dynamicCanisters {
+  puts "⬇️====-$canister-====⬇️"
+  spawn dfx build $canister --network $network
+  expectPassphrase $passphrase
+}
+
+# Generate the wasm module like array
+puts "====-Generate the wasm module like array-===="
+foreach canister $dynamicCanisters {
+  puts "⬇️====-$canister-====⬇️"
+  spawn npm run generate-wasm $canister $network
+  expectPassphrase $passphrase
+}
+
+# Push the current ./wasm_modules commit folder to github
+puts "====-Push the current ./wasm_modules commit folder to github-===="
+spawn git pull
+expect eof
+spawn git add ./wasm_modules
+expect eof
+spawn git commit -m "config/new-wasm-modules"
+expect eof
+spawn git push
+expect eof

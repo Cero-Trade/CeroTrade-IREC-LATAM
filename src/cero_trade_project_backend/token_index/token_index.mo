@@ -306,6 +306,28 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     };
   };
 
+  /// stop all deployed canisters and delete
+  ///
+  /// only delete one if provide canister id
+  public shared({ caller }) func deleteDeployedCanister<system>(cid: ?T.CanisterId): async () {
+    _callValidation(caller);
+
+    switch(cid) {
+      case(?canister_id) {
+        Cycles.add<system>(T.cycles);
+        await IC_MANAGEMENT.ic.stop_canister({ canister_id });
+        await IC_MANAGEMENT.ic.delete_canister({ canister_id });
+      };
+      case(null) {
+        for(canister_id in tokenDirectory.vals()) {
+          Cycles.add<system>(T.cycles);
+          await IC_MANAGEMENT.ic.stop_canister({ canister_id });
+          await IC_MANAGEMENT.ic.delete_canister({ canister_id });
+        };
+      };
+    };
+  };
+
   public shared({ caller }) func getTokensInCeroTrade(): async [(T.TokenId, T.CanisterId)] {
     IC_MANAGEMENT.adminValidation(caller, controllers);
     Iter.toArray(tokenDirectory.entries())
@@ -635,7 +657,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
 
 
     Debug.print(debug_show ("later getPortfolio: " # Nat.toText(Cycles.balance())));
-    
+
     var totalPages: Nat = i / maxLength;
     if (totalPages <= 0) totalPages := 1;
 
@@ -858,35 +880,39 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     // - items: Un url identificador de los items. Esta información debe traerse al momento de hacer el importe de los IRECs.
     // - periodStart y periodEnd: Las fechas de inicio y fin del periodo de redención. Esto debe ser un input del usuario.
     // - locale: El idioma en que se quiere obtener el "redemption statement" (ej. "en", "es"). Este debe ser un input del usuario.
-    let pdfJson = await HTTP.canister.post({
-        url = HTTP.apiUrl # "redemption";
-        port = null;
-        uid = ?notification.receivedBy;
-        headers = [];
-        bodyJson = switch(Serde.JSON.toText(to_candid({
-          volume = amount;
-          beneficiary = Principal.toText(notification.receivedBy);
-          items = tokenId;
-          periodStart;
-          periodEnd;
-          locale;
-        }), ["volume", "beneficiary", "items", "periodStart", "periodEnd", "locale"], null)) {
-          case(#err(error)) throw Error.reject("Cannot serialize data");
-          case(#ok(value)) value;
-        };
-      });
 
-    let redemptionPdf: T.ArrayFile = switch(Serde.JSON.fromText(pdfJson, null)) {
-      case(#err(_)) throw Error.reject("cannot serialize asset data");
-      case(#ok(blob)) {
-        let response: ?{ pdf: T.ArrayFile } = from_candid(blob);
+    let redemptionPdf: T.ArrayFile = [1,2,3,4,5,6,7,8];
 
-        switch(response) {
-          case(null) throw Error.reject("cannot serialize PDF file data");
-          case(?value) value.pdf;
-        };
-      };
-    };
+    // TODO commented while resolve troubles with request 👇
+    // let pdfJson = await HTTP.canister.post({
+    //     url = HTTP.apiUrl # "redemption";
+    //     port = null;
+    //     uid = ?notification.receivedBy;
+    //     headers = [];
+    //     bodyJson = switch(Serde.JSON.toText(to_candid({
+    //       volume = amount;
+    //       beneficiary = Principal.toText(notification.receivedBy);
+    //       items = tokenId;
+    //       periodStart;
+    //       periodEnd;
+    //       locale;
+    //     }), ["volume", "beneficiary", "items", "periodStart", "periodEnd", "locale"], null)) {
+    //       case(#err(error)) throw Error.reject("Cannot serialize data");
+    //       case(#ok(value)) value;
+    //     };
+    //   });
+
+    // let redemptionPdf: T.ArrayFile = switch(Serde.JSON.fromText(pdfJson, null)) {
+    //   case(#err(_)) throw Error.reject("cannot serialize asset data");
+    //   case(#ok(blob)) {
+    //     let response: ?{ pdf: T.ArrayFile } = from_candid(blob);
+
+    //     switch(response) {
+    //       case(null) throw Error.reject("cannot serialize PDF file data");
+    //       case(?value) value.pdf;
+    //     };
+    //   };
+    // };
 
     let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
@@ -987,5 +1013,75 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     };
 
     { txIndex; redemptionPdf }
+  };
+
+  type BurnedTokenIndex = {
+    tokenAmount: T.TokenAmount;
+    txIndex: T.TxIndex;
+  };
+
+  public shared ({ caller }) func burnUserTokens(owner: T.UID, tokenId: T.TokenId, amount: T.TokenAmount, amountInMarket: T.TokenAmount) : async [BurnedTokenIndex] {
+    _callValidation(caller);
+
+    let cid = switch (tokenDirectory.get(tokenId)) {
+      case (null) throw Error.reject("Token not found");
+      case (?value) value;
+    };
+
+    let txs = Buffer.Buffer<BurnedTokenIndex>(2);
+
+    if (amount > 0) {
+      let transferResult: ICRC1.TransferResult = await Token.canister(cid).burnUserTokens({
+        owner = {
+          owner = owner;
+          subaccount = null;
+        };
+        amount;
+      });
+
+      let txIndex = switch(transferResult) {
+        case(#Err(error)) throw Error.reject(switch(error) {
+          case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
+          case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
+          case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
+          case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
+          case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
+          case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
+          case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
+          case (#TooOld) "#TooOld";
+        });
+        case(#Ok(value)) value;
+      };
+
+      txs.add({ tokenAmount = amount; txIndex });
+    };
+
+    if (amountInMarket > 0) {
+      let transferResult: ICRC1.TransferResult = await Token.canister(cid).burnUserTokens({
+        owner = {
+          owner = Principal.fromText(ENV.CANISTER_ID_MARKETPLACE);
+          subaccount = null;
+        };
+        amount = amountInMarket;
+      });
+
+      let txIndex = switch(transferResult) {
+        case(#Err(error)) throw Error.reject(switch(error) {
+          case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
+          case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
+          case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
+          case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
+          case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
+          case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
+          case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
+          case (#TooOld) "#TooOld";
+        });
+        case(#Ok(value)) value;
+      };
+
+      txs.add({ tokenAmount = amount; txIndex });
+    };
+
+    Buffer.toArray<BurnedTokenIndex>(txs);
   };
 }
