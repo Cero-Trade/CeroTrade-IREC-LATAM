@@ -62,7 +62,8 @@ proc expectPassphrase {passphrase} {
 
 # Generate declarations
 puts "====-Generate declarations-===="
-spawn mkdir -p .dfx/local/canisters/cero_trade_project_frontend && cp assetstorage.did .dfx/local/canisters/cero_trade_project_frontend/assetstorage.did
+set command "mkdir -p .dfx/local/canisters/cero_trade_project_frontend && cp assetstorage.did .dfx/local/canisters/cero_trade_project_frontend/assetstorage.did"
+spawn bash -c $command
 expect eof
 
 spawn dfx generate
@@ -71,7 +72,8 @@ expect eof
 set canisterDeclarations {users user_index token token_index transactions transaction_index agent marketplace http_service statistics notifications notification_index bucket bucket_index}
 
 foreach canister $canisterDeclarations {
-  spawn cp src/declarations/$canister/* .dfx/local/canisters/$canister/
+  set command "cp src/declarations/$canister/* .dfx/local/canisters/$canister/"
+  spawn bash -c $command
   expect eof
 }
 

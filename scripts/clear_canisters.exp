@@ -56,8 +56,34 @@ proc expectPassphrase {passphrase} {
 }
 
 if {!$buildless_found} {
-  # Build canisters
-  spawn npm run build-canisters -- --network=$network --modules
+  # Generate declarations
+  puts "====-Generate declarations-===="
+  set command "mkdir -p .dfx/local/canisters/cero_trade_project_frontend && cp assetstorage.did .dfx/local/canisters/cero_trade_project_frontend/assetstorage.did"
+  spawn bash -c $command
+  expect eof
+
+  spawn dfx generate
+  expect eof
+
+  set canisterDeclarations {users user_index token token_index transactions transaction_index agent marketplace http_service statistics notifications notification_index bucket bucket_index}
+
+  foreach canister $canisterDeclarations {
+    set command "cp src/declarations/$canister/* .dfx/local/canisters/$canister/"
+    spawn bash -c $command
+    expect eof
+  }
+
+  # Generate env.mo and build canisters
+  puts "====-Build backend canisters-===="
+  set canisters {http_service agent}
+
+  foreach canister $canisters {
+    spawn dfx build $canister --network $network
+    expectPassphrase $passphrase
+  }
+
+  # Build wasm modules
+  spawn npm run build-modules -- --network=$network
   expect eof
 }
 
