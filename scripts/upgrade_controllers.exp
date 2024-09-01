@@ -6,6 +6,7 @@ set timeout -1
 set network "local"
 set help_flag 0
 set remaining_args {}
+set passphrase ""
 
 # Get arguments
 foreach arg $argv {
@@ -30,11 +31,15 @@ if {[string match ic $network]} {
   expect eof
   puts "Identity changed to cerotrade"
 
-  if {![info exists env(INTERNET_IDENTITY_PASSPHRASE)]} {
+  # Get passphrase from environment and checkout
+  if {[info exists env(INTERNET_IDENTITY_PASSPHRASE)]} {
+    set passphrase $env(INTERNET_IDENTITY_PASSPHRASE)
+  } else {
     # Request identity passphrase
     send_user "Please enter the passphrase for your identity: "
     expect_user -re "(.*)\n"
     set env(INTERNET_IDENTITY_PASSPHRASE) $expect_out(1,string)
+    set passphrase $env(INTERNET_IDENTITY_PASSPHRASE)
   }
 } else {
   # Identity changed to default
@@ -60,10 +65,10 @@ foreach controller $remaining_args {
   # update controllers
   foreach canister $canisters {
     spawn dfx canister --network $network update-settings $canister --add-controller $controller
-    expectPassphrase $env(INTERNET_IDENTITY_PASSPHRASE)
+    expectPassphrase passphrase
   }
 }
 
 # Register controllers in canisters
 spawn dfx canister --network $network call agent registerControllers
-expectPassphrase $env(INTERNET_IDENTITY_PASSPHRASE)
+expectPassphrase passphrase

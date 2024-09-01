@@ -5,6 +5,7 @@ set timeout -1
 # Initialize variables
 set args [lrange $argv 0 end]
 set network "local"
+set passphrase ""
 set backend_found 0
 set modules_found 0
 
@@ -38,11 +39,15 @@ if {[string match ic $network]} {
   expect eof
   puts "Identity changed to cerotrade"
 
-  if {![info exists env(INTERNET_IDENTITY_PASSPHRASE)]} {
+  # Get passphrase from environment and checkout
+  if {[info exists env(INTERNET_IDENTITY_PASSPHRASE)]} {
+    set passphrase $env(INTERNET_IDENTITY_PASSPHRASE)
+  } else {
     # Request identity passphrase
     send_user "Please enter the passphrase for your identity: "
     expect_user -re "(.*)\n"
     set env(INTERNET_IDENTITY_PASSPHRASE) $expect_out(1,string)
+    set passphrase $env(INTERNET_IDENTITY_PASSPHRASE)
   }
 } else {
   # Identity changed to default
@@ -92,7 +97,7 @@ if {$backend_found} {
 
 foreach canister $canisters {
   spawn dfx build $canister --network $network
-  expectPassphrase $env(INTERNET_IDENTITY_PASSPHRASE)
+  expectPassphrase passphrase
 }
 
 if {$modules_found} {
