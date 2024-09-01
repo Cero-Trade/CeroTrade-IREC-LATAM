@@ -43,11 +43,17 @@ if {[string match ic $network]} {
   spawn dfx identity use cerotrade
   expect eof
   puts "Identity changed to cerotrade"
-  
-  # Request identity passphrase
-  send_user "Please enter the passphrase for your identity: "
-  expect_user -re "(.*)\n"
-  set passphrase $expect_out(1,string)
+
+  # Get passphrase from environment and checkout
+  if {[info exists env(INTERNET_IDENTITY_PASSPHRASE)]} {
+    set passphrase $env(INTERNET_IDENTITY_PASSPHRASE)
+  } else {
+    # Request identity passphrase
+    send_user "Please enter the passphrase for your identity: "
+    expect_user -re "(.*)\n"
+    set env(INTERNET_IDENTITY_PASSPHRASE) $expect_out(1,string)
+    set passphrase $env(INTERNET_IDENTITY_PASSPHRASE)
+  }
 } else {
   # Identity changed to default
   spawn dfx identity use default
@@ -79,7 +85,7 @@ if {$backend_found} {
 
 foreach canister $canisters {
   spawn dfx canister install $canister --mode $mode --network $network
-  expectPassphrase $passphrase
+  expectPassphrase passphrase
 }
 
 # Update canister controllers
@@ -89,11 +95,11 @@ set indexCanisters {agent token_index user_index transaction_index notification_
 
 foreach canister $indexCanisters {
   spawn dfx canister update-settings $canister --add-controller $controller --network $network
-  expectPassphrase $passphrase
+  expectPassphrase passphrase
 }
 
 spawn dfx canister call agent registerControllers --network $network
-expectPassphrase $passphrase
+expectPassphrase passphrase
 
 if {$modules_found} {
   # Register wasm module into backend canisters

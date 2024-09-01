@@ -28,11 +28,17 @@ if {[string match ic $network]} {
   spawn dfx identity use cerotrade
   expect eof
   puts "Identity changed to cerotrade"
-  
-  # Request identity passphrase
-  send_user "Please enter the passphrase for your identity: "
-  expect_user -re "(.*)\n"
-  set passphrase $expect_out(1,string)
+
+  # Get passphrase from environment and checkout
+  if {[info exists env(INTERNET_IDENTITY_PASSPHRASE)]} {
+    set passphrase $env(INTERNET_IDENTITY_PASSPHRASE)
+  } else {
+    # Request identity passphrase
+    send_user "Please enter the passphrase for your identity: "
+    expect_user -re "(.*)\n"
+    set env(INTERNET_IDENTITY_PASSPHRASE) $expect_out(1,string)
+    set passphrase $env(INTERNET_IDENTITY_PASSPHRASE)
+  }
 } else {
   # Identity changed to default
   spawn dfx identity use default
@@ -57,5 +63,5 @@ set dynamicCanisters {token users transactions notifications bucket}
 foreach canister $dynamicCanisters {
   set command "dfx canister call agent registerWasmModule \"(variant { \\\"$canister\\\" = \\\"$canister\\\" })\" --network $network"
   spawn bash -c $command
-  expectPassphrase $passphrase
+  expectPassphrase passphrase
 }

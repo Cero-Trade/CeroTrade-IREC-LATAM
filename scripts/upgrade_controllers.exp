@@ -31,10 +31,16 @@ if {[string match ic $network]} {
   expect eof
   puts "Identity changed to cerotrade"
 
-  # Request identity passphrase
-  send_user "Please enter the passphrase for your identity: "
-  expect_user -re "(.*)\n"
-  set passphrase $expect_out(1,string)
+  # Get passphrase from environment and checkout
+  if {[info exists env(INTERNET_IDENTITY_PASSPHRASE)]} {
+    set passphrase $env(INTERNET_IDENTITY_PASSPHRASE)
+  } else {
+    # Request identity passphrase
+    send_user "Please enter the passphrase for your identity: "
+    expect_user -re "(.*)\n"
+    set env(INTERNET_IDENTITY_PASSPHRASE) $expect_out(1,string)
+    set passphrase $env(INTERNET_IDENTITY_PASSPHRASE)
+  }
 } else {
   # Identity changed to default
   spawn dfx identity use default
@@ -59,10 +65,10 @@ foreach controller $remaining_args {
   # update controllers
   foreach canister $canisters {
     spawn dfx canister --network $network update-settings $canister --add-controller $controller
-    expectPassphrase $passphrase
+    expectPassphrase passphrase
   }
 }
 
 # Register controllers in canisters
 spawn dfx canister --network $network call agent registerControllers
-expectPassphrase $passphrase
+expectPassphrase passphrase
