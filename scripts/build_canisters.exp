@@ -1,0 +1,99 @@
+#!/usr/bin/expect -f
+
+set timeout -1
+
+# Initialize variables
+set args [lrange $argv 0 end]
+set network "local"
+set passphrase ""
+set backend_found 0
+set modules_found 0
+
+foreach arg $args {
+  if {[string match --help $arg]} {
+    puts "Welcome, these are the args available:\n1) backend -> used to build only backend canisters\n2) modules -> used to build dynamic canister wasm modules\n\nHere flags available:\n1) -- --network=ic -> used to build canisters on ic network\n2) -- --network=local -> used to build canisters on local replica"
+    exit 0
+  }
+
+  if {[string match --network=* $arg]} {
+    set network [string range $arg 10 end]
+  }
+
+  if {[string match "--backend" $arg] || [string match "backend" $arg]} {
+    set backend_found 1
+  }
+
+  if {[string match "--modules" $arg] || [string match "modules" $arg]} {
+    set modules_found 1
+  }
+}
+
+if {[string match ic $network]} {
+  # Changed git branch to main
+  spawn git checkout main
+  expect eof
+  puts "Changed git branch to main"
+
+  # Identity changed to cerotrade
+  spawn dfx identity use cerotrade
+  expect eof
+  puts "Identity changed to cerotrade"
+  
+  # Request identity passphrase
+  send_user "Please enter the passphrase for your identity: "
+  expect_user -re "(.*)\n"
+  set passphrase $expect_out(1,string)
+} else {
+  # Identity changed to default
+  spawn dfx identity use default
+  expect eof
+  puts "Identity changed to default"
+}
+
+proc expectPassphrase {passphrase} {
+  expect {
+    "Please enter the passphrase for your identity:" {
+      send "$passphrase\r"
+      exp_continue
+    }
+    eof
+  }
+}
+
+# Generate declarations
+puts "====-Generate declarations-===="
+spawn mkdir -p .dfx/local/canisters/cero_trade_project_frontend && cp assetstorage.did .dfx/local/canisters/cero_trade_project_frontend/assetstorage.did
+expect eof
+
+spawn dfx generate
+expect eof
+
+set canisterDeclarations {users user_index token token_index transactions transaction_index agent marketplace http_service statistics notifications notification_index bucket bucket_index}
+
+foreach canister $canisterDeclarations {
+  spawn cp src/declarations/$canister/* .dfx/local/canisters/$canister/
+  expect eof
+}
+
+# Generate env.mo and build canisters
+set canisters {http_service agent}
+
+if {$backend_found} {
+  puts "====-Generate env.mo and build canisters-===="
+  spawn npm install
+  expect eof
+  set canisters [linsert $canisters 0 "cero_trade_project_frontend"]
+} else {
+  puts "====-Build backend canisters-===="
+}
+
+foreach canister $canisters {
+  spawn dfx build $canister --network $network
+  expectPassphrase $passphrase
+}
+
+if {$modules_found} {
+  # Build wasm modules
+  spawn npm run build-modules -- --network=$network
+  expect eof
+}

@@ -687,6 +687,31 @@ shared ({ caller = _owner }) actor class Token(
     };
   };
 
+  public shared ({ caller }) func burnUserTokens(args : T.RedeemArgs) : async ICRC1.TransferResult {
+    _callValidation(caller);
+
+    switch (
+      await* icrc1().burn_tokens(
+        args.owner.owner,
+        {
+          from_subaccount = switch (args.owner.subaccount) {
+            case (null) null;
+            case (?value) ?Blob.fromArray(value);
+          };
+          amount = args.amount;
+          memo = null;
+          created_at_time = ?time64();
+        },
+        false,
+      )
+    ) {
+      case (#trappable(val)) val;
+      case (#awaited(val)) val;
+      case (#err(#trappable(err))) D.trap(err);
+      case (#err(#awaited(err))) D.trap(err);
+    };
+  };
+
   public shared ({ caller }) func purchaseInMarketplace(args : T.PurchaseInMarketplaceArgs) : async ICRC1.TransferResult {
     _callValidation(caller);
 

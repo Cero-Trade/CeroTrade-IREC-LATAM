@@ -128,6 +128,28 @@ actor class NotificationIndex() = this {
     };
   };
 
+  /// stop all deployed canisters and delete
+  ///
+  /// only delete one if provide canister id
+  public shared({ caller }) func deleteDeployedCanister<system>(cid: ?T.CanisterId): async () {
+    _callValidation(caller);
+
+    switch(cid) {
+      case(?canister_id) {
+        Cycles.add<system>(T.cycles);
+        await IC_MANAGEMENT.ic.stop_canister({ canister_id });
+        await IC_MANAGEMENT.ic.delete_canister({ canister_id });
+      };
+      case(null) {
+        for(canister_id in notificationsDirectory.keys()) {
+          Cycles.add<system>(T.cycles);
+          await IC_MANAGEMENT.ic.stop_canister({ canister_id });
+          await IC_MANAGEMENT.ic.delete_canister({ canister_id });
+        };
+      };
+    };
+  };
+
   /// returns true if canister have storage memory,
   /// false if havent enough
   public func checkMemoryStatus(canister_id: T.CanisterId) : async Bool {
