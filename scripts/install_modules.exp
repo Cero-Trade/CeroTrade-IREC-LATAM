@@ -63,5 +63,5 @@ set dynamicCanisters {token users transactions notifications bucket}
 foreach canister $dynamicCanisters {
   set command "dfx canister call agent registerWasmModule \"(variant { \\\"$canister\\\" = \\\"$canister\\\" })\" --network $network"
   spawn bash -c $command
-  expectPassphrase passphrase
+  expectPassphrase $passphrase
 }

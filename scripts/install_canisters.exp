@@ -67,10 +67,6 @@ proc expectPassphrase {passphrase} {
       send "$passphrase\r"
       exp_continue
     }
-    "Do you want to proceed? yes/No" {
-      send "yes\r"
-      exp_continue
-    }
     eof
   }
 }
@@ -79,27 +75,40 @@ proc expectPassphrase {passphrase} {
 puts "====-Install canisters code-===="
 set canisters {http_service user_index token_index notification_index transaction_index bucket_index marketplace statistics agent}
 
-if {$backend_found} {
+if {!$backend_found} {
   set canisters [linsert $canisters 0 "cero_trade_project_frontend"]
 }
 
 foreach canister $canisters {
-  spawn dfx canister install $canister --mode $mode --network $network
-  expectPassphrase passphrase
+  spawn dfx canister install $canister --mode $mode --network $network --yes
+  expectPassphrase $passphrase
 }
 
 # Update canister controllers
 puts "====-Update canister controllers-===="
-set controller [exec dfx identity get-principal]
+
+# Redirect output to file
+set command "dfx identity get-principal > principal.txt"
+spawn bash -c $command
+expectPassphrase $passphrase
+
+# Read file content
+set file_id [open "principal.txt" r]
+set controller [string trim [read $file_id]]
+close $file_id
+
+# Delete file after read it
+file delete "principal.txt"
+
 set indexCanisters {agent token_index user_index transaction_index notification_index bucket_index}
 
 foreach canister $indexCanisters {
   spawn dfx canister update-settings $canister --add-controller $controller --network $network
-  expectPassphrase passphrase
+  expectPassphrase $passphrase
 }
 
 spawn dfx canister call agent registerControllers --network $network
-expectPassphrase passphrase
+expectPassphrase $passphrase
 
 if {$modules_found} {
   # Register wasm module into backend canisters
