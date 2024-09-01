@@ -71,7 +71,7 @@ if {!$buildless_found} {
 puts "====-Delete dynamic canisters-===="
 set command "dfx canister call agent deleteDeployedCanister \"(null, null)\" --network $network"
 spawn bash -c $command
-expectPassphrase passphrase
+expectPassphrase $passphrase
 
 # Reinstall canisters
 spawn npm run install-canisters -- --network=$network --mode=reinstall --modules

@@ -63,7 +63,7 @@ puts "====-Register wasm modules-===="
 foreach canister $dynamicCanisters {
   puts "⬇️====-$canister-====⬇️"
   spawn dfx build $canister --network $network
-  expectPassphrase passphrase
+  expectPassphrase $passphrase
 }
 
 # Generate the wasm module like array
@@ -71,7 +71,7 @@ puts "====-Generate the wasm module like array-===="
 foreach canister $dynamicCanisters {
   puts "⬇️====-$canister-====⬇️"
   spawn npm run generate-wasm $canister $network
-  expectPassphrase passphrase
+  expectPassphrase $passphrase
 }
 
 # Push the current ./wasm_modules commit folder to github

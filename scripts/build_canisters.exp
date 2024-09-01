@@ -97,7 +97,7 @@ if {$backend_found} {
 
 foreach canister $canisters {
   spawn dfx build $canister --network $network
-  expectPassphrase passphrase
+  expectPassphrase $passphrase
 }
 
 if {$modules_found} {
