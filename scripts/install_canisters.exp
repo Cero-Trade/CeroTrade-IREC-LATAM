@@ -67,10 +67,6 @@ proc expectPassphrase {passphrase} {
       send "$passphrase\r"
       exp_continue
     }
-    "Do you want to proceed? yes/No" {
-      send "yes\r"
-      exp_continue
-    }
     eof
   }
 }
