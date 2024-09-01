@@ -1,0 +1,61 @@
+#!/usr/bin/expect -f
+
+set timeout -1
+
+# Initialize variables
+set args [lrange $argv 0 end]
+set network "local"
+set passphrase ""
+
+foreach arg $args {
+  if {[string match --help $arg]} {
+    puts "Welcome, Here flags available:\n1) -- --network=ic -> used to install modules on ic network\n2) -- --network=local -> used to install modules on local replica"
+    exit 0
+  }
+
+  if {[string match --network=* $arg]} {
+    set network [string range $arg 10 end]
+  }
+}
+
+if {[string match ic $network]} {
+  # Changed git branch to main
+  spawn git checkout main
+  expect eof
+  puts "Changed git branch to main"
+
+  # Identity changed to cerotrade
+  spawn dfx identity use cerotrade
+  expect eof
+  puts "Identity changed to cerotrade"
+  
+  # Request identity passphrase
+  send_user "Please enter the passphrase for your identity: "
+  expect_user -re "(.*)\n"
+  set passphrase $expect_out(1,string)
+} else {
+  # Identity changed to default
+  spawn dfx identity use default
+  expect eof
+  puts "Identity changed to default"
+}
+
+proc expectPassphrase {passphrase} {
+  expect {
+    "Please enter the passphrase for your identity:" {
+      send "$passphrase\r"
+      exp_continue
+    }
+    eof
+  }
+}
+
+# Register wasm module into backend canisters
+puts "====-Register wasm module into backend canisters-===="
+set dynamicCanisters {token users transactions notifications bucket}
+
+foreach canister $dynamicCanisters {
+  set command "dfx canister call agent registerWasmModule \"(variant { \\\"$canister\\\" = \\\"$canister\\\" })\" --network $network"
+  spawn bash -c $command
+  expectPassphrase $passphrase
+}

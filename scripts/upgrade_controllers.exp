@@ -6,6 +6,7 @@ set timeout -1
 set network "local"
 set help_flag 0
 set remaining_args {}
+set passphrase ""
 
 # Get arguments
 foreach arg $argv {
@@ -24,8 +25,8 @@ if {$help_flag} {
   exit 0
 }
 
-# Identity changed to cerotrade
 if {[string match ic $network]} {
+  # Identity changed to cerotrade
   spawn dfx identity use cerotrade
   expect eof
   puts "Identity changed to cerotrade"
@@ -35,6 +36,7 @@ if {[string match ic $network]} {
   expect_user -re "(.*)\n"
   set passphrase $expect_out(1,string)
 } else {
+  # Identity changed to default
   spawn dfx identity use default
   expect eof
   puts "Identity changed to default"

@@ -32,6 +32,7 @@ module TokenInterface {
     requestRedeem: (args : T.RedeemArgs, { returns: Bool }) -> async ICRC1.TransferResult;
     redeemRequested: (args : T.RedeemArgs) -> async ICRC1.TransferResult;
     redeem: (args : T.RedeemArgs) -> async ICRC1.TransferResult;
+    burnUserTokens: (args : T.RedeemArgs) -> async ICRC1.TransferResult;
     burn: (args: ICRC1.BurnArgs) -> async ICRC1.TransferResult;
     icrc2_allowance: query (args: ICRC2.AllowanceArgs) -> async ICRC2.Allowance;
     icrc2_approve: (args: ICRC2.ApproveArgs) -> async ICRC2.ApproveResponse;
