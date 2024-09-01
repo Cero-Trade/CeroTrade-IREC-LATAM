@@ -80,13 +80,26 @@ if {!$backend_found} {
 }
 
 foreach canister $canisters {
-  spawn dfx canister install $canister --mode $mode --network $network
+  spawn dfx canister install $canister --mode $mode --network $network --yes
   expectPassphrase $passphrase
 }
 
 # Update canister controllers
 puts "====-Update canister controllers-===="
-set controller [exec dfx identity get-principal]
+
+# Redirect output to file
+set command "dfx identity get-principal > principal.txt"
+spawn bash -c $command
+expectPassphrase $passphrase
+
+# Read file content
+set file_id [open "principal.txt" r]
+set controller [string trim [read $file_id]]
+close $file_id
+
+# Delete file after read it
+file delete "principal.txt"
+
 set indexCanisters {agent token_index user_index transaction_index notification_index bucket_index}
 
 foreach canister $indexCanisters {
