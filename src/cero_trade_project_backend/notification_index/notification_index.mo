@@ -139,12 +139,14 @@ actor class NotificationIndex() = this {
         Cycles.add<system>(T.cycles);
         await IC_MANAGEMENT.ic.stop_canister({ canister_id });
         await IC_MANAGEMENT.ic.delete_canister({ canister_id });
+        notificationsDirectory.remove(canister_id);
       };
       case(null) {
         for(canister_id in notificationsDirectory.keys()) {
           Cycles.add<system>(T.cycles);
           await IC_MANAGEMENT.ic.stop_canister({ canister_id });
           await IC_MANAGEMENT.ic.delete_canister({ canister_id });
+          notificationsDirectory.remove(canister_id);
         };
       };
     };

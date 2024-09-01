@@ -152,12 +152,14 @@ actor class TransactionIndex() = this {
         Cycles.add<system>(T.cycles);
         await IC_MANAGEMENT.ic.stop_canister({ canister_id });
         await IC_MANAGEMENT.ic.delete_canister({ canister_id });
+        transactionsDirectory.remove(canister_id);
       };
       case(null) {
         for(canister_id in transactionsDirectory.vals()) {
           Cycles.add<system>(T.cycles);
           await IC_MANAGEMENT.ic.stop_canister({ canister_id });
           await IC_MANAGEMENT.ic.delete_canister({ canister_id });
+          transactionsDirectory.remove(canister_id);
         };
       };
     };

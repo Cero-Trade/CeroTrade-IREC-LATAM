@@ -181,12 +181,14 @@ actor class UserIndex() = this {
         Cycles.add<system>(T.cycles);
         await IC_MANAGEMENT.ic.stop_canister({ canister_id });
         await IC_MANAGEMENT.ic.delete_canister({ canister_id });
+        usersDirectory.remove(canister_id);
       };
       case(null) {
         for(canister_id in usersDirectory.vals()) {
           Cycles.add<system>(T.cycles);
           await IC_MANAGEMENT.ic.stop_canister({ canister_id });
           await IC_MANAGEMENT.ic.delete_canister({ canister_id });
+          usersDirectory.remove(canister_id);
         };
       };
     };
