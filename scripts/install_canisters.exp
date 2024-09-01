@@ -79,7 +79,7 @@ proc expectPassphrase {passphrase} {
 puts "====-Install canisters code-===="
 set canisters {http_service user_index token_index notification_index transaction_index bucket_index marketplace statistics agent}
 
-if {$backend_found} {
+if {!$backend_found} {
   set canisters [linsert $canisters 0 "cero_trade_project_frontend"]
 }
 

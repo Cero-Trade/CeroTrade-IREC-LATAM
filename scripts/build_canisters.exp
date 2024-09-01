@@ -86,7 +86,7 @@ foreach canister $canisterDeclarations {
 # Generate env.mo and build canisters
 set canisters {http_service agent}
 
-if {$backend_found} {
+if {!$backend_found} {
   puts "====-Generate env.mo and build canisters-===="
   spawn npm install
   expect eof
