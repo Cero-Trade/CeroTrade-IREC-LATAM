@@ -152,14 +152,24 @@ actor class TransactionIndex() = this {
         Cycles.add<system>(T.cycles);
         await IC_MANAGEMENT.ic.stop_canister({ canister_id });
         await IC_MANAGEMENT.ic.delete_canister({ canister_id });
-        transactionsDirectory.remove(canister_id);
+
+        for((txId, cid) in transactionsDirectory.entries()) {
+          if (cid == canister_id) let _ = transactionsDirectory.remove(txId);
+        };
       };
       case(null) {
-        for(canister_id in transactionsDirectory.vals()) {
-          Cycles.add<system>(T.cycles);
-          await IC_MANAGEMENT.ic.stop_canister({ canister_id });
-          await IC_MANAGEMENT.ic.delete_canister({ canister_id });
-          transactionsDirectory.remove(canister_id);
+        let deletedCanisters = Buffer.Buffer<T.CanisterId>(16);
+
+        for((txId, canister_id) in transactionsDirectory.entries()) {
+          let canisterIsDeleted = Buffer.contains<T.CanisterId>(deletedCanisters, canister_id, Principal.equal);
+          if (not canisterIsDeleted) {
+            Cycles.add<system>(T.cycles);
+            await IC_MANAGEMENT.ic.stop_canister({ canister_id });
+            await IC_MANAGEMENT.ic.delete_canister({ canister_id });
+            deletedCanisters.add(canister_id);
+          };
+
+          let _ = transactionsDirectory.remove(txId);
         };
       };
     };

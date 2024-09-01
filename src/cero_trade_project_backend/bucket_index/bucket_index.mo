@@ -137,14 +137,14 @@ actor class BucketIndex() = this {
         Cycles.add<system>(T.cycles);
         await IC_MANAGEMENT.ic.stop_canister({ canister_id });
         await IC_MANAGEMENT.ic.delete_canister({ canister_id });
-        bucketDirectory.remove(canister_id);
+        let _ = bucketDirectory.remove(canister_id);
       };
       case(null) {
         for(canister_id in bucketDirectory.keys()) {
           Cycles.add<system>(T.cycles);
           await IC_MANAGEMENT.ic.stop_canister({ canister_id });
           await IC_MANAGEMENT.ic.delete_canister({ canister_id });
-          bucketDirectory.remove(canister_id);
+          let _ = bucketDirectory.remove(canister_id);
         };
       };
     };

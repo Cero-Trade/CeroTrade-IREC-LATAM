@@ -317,14 +317,17 @@ shared({ caller = owner }) actor class TokenIndex() = this {
         Cycles.add<system>(T.cycles);
         await IC_MANAGEMENT.ic.stop_canister({ canister_id });
         await IC_MANAGEMENT.ic.delete_canister({ canister_id });
-        tokenDirectory.remove(canister_id);
+
+        for((tokenId, cid) in tokenDirectory.entries()) {
+          if (cid == canister_id) let _ = tokenDirectory.remove(tokenId);
+        };
       };
       case(null) {
-        for(canister_id in tokenDirectory.vals()) {
+        for((tokenId, canister_id) in tokenDirectory.entries()) {
           Cycles.add<system>(T.cycles);
           await IC_MANAGEMENT.ic.stop_canister({ canister_id });
           await IC_MANAGEMENT.ic.delete_canister({ canister_id });
-          tokenDirectory.remove(canister_id);
+          let _ = tokenDirectory.remove(tokenId);
         };
       };
     };
