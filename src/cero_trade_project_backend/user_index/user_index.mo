@@ -284,6 +284,15 @@ actor class UserIndex() = this {
     _callValidation(caller);
 
     if (usersDirectory.get(uid) != null) throw Error.reject(alreadyExists);
+    
+    let checkedBeneficiary: ?T.BID = switch(beneficiary) {
+      case(null) null;
+      case(?value) {
+        // check if user exists
+        if (await checkPrincipal(value)) ?value
+        else throw Error.reject("Beneficiary provided not exists in Cero Trade")
+      };
+    };
 
     let formData = {
       principalId = Principal.toText(uid);
@@ -350,12 +359,9 @@ actor class UserIndex() = this {
 
       usersDirectory.put(uid, cid);
 
-      switch(beneficiary) {
+      switch(checkedBeneficiary) {
         case(null) {};
-        case(?value) {
-          // check if user exists
-          if (await checkPrincipal(value)) await updateBeneficiaries(uid, value, { delete = false });
-        };
+        case(?value) await updateBeneficiaries(uid, value, { delete = false });
       };
     } catch (error) {
       Debug.print("error here: " # debug_show(Error.message(error)));
