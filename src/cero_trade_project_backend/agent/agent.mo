@@ -241,7 +241,7 @@ actor class Agent() = this {
       case(?value) value;
     };
 
-    await UserIndex.updateBeneficiaries(notification.receivedBy, triggeredBy, { delete = false });
+    await UserIndex.addBeneficiary(notification.receivedBy, triggeredBy);
 
     // change notification status
     let _ = await _updateEventNotification(caller, notificationId, ?#accepted("accepted"));
@@ -952,7 +952,7 @@ actor class Agent() = this {
   private func _addNotification(notification: T.NotificationInfo): async() {
     let receiverToken = await UserIndex.getUserToken(notification.receivedBy);
 
-    let triggerToken: ?T.UserToken = switch(notification.triggeredBy) {
+    let triggerToken: ?T.UserTokenAuth = switch(notification.triggeredBy) {
       case(null) null;
       case(?triggerUser) {
         if (notification.notificationType == #general("general")) { null } else {
@@ -989,7 +989,7 @@ actor class Agent() = this {
 
     let receiver = await UserIndex.getUserToken(notification.receivedBy);
 
-    let trigger: ?T.UserToken = switch(notification.triggeredBy) {
+    let trigger: ?T.UserTokenAuth = switch(notification.triggeredBy) {
       case(null) null;
       case(?triggerUser) {
         if (notification.notificationType == #general("general")) { null } else {

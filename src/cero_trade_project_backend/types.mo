@@ -103,7 +103,7 @@ module {
   public type TxIndex = Nat;
   public type TokenAmount = Nat;
   public type Price = { e8s: Nat64 };
-  public type UserToken = Text;
+  public type UserTokenAuth = Text;
   
 
   //
@@ -130,7 +130,13 @@ module {
 
   public type UserInfo = {
     companyLogo: ?ArrayFile;
-    vaultToken: Text;
+    companyId: Text;
+    companyName: Text;
+    country: Text;
+    city: Text;
+    address: Text;
+    email: Text;
+    vaultToken: UserTokenAuth;
     principal: Principal;
   };
 
@@ -143,8 +149,11 @@ module {
     country: Text;
     address: Text;
     email: Text;
-    createdAt: Text;
-    updatedAt: Text;
+  };
+
+  public type SinglePortfolio = {
+    tokenInfo: TokenInfo;
+    redemptions: [TransactionInfo];
   };
 
   public type TokenInfo = {

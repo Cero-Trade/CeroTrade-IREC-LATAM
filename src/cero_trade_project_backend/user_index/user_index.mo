@@ -156,15 +156,12 @@ actor class UserIndex() = this {
       };
       case(null) {
         let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
-        for (cid in usersDirectory.vals()) {
-          if (not(Buffer.contains<T.CanisterId>(deployedCanisters, cid, Principal.equal))) {
-            deployedCanisters.append(Buffer.fromArray<T.CanisterId>([cid]));
+        for (canister_id in usersDirectory.vals()) {
+          if (not(Buffer.contains<T.CanisterId>(deployedCanisters, canister_id, Principal.equal))) {
+            Cycles.add<system>(T.cycles);
+            await IC_MANAGEMENT.ic.stop_canister({ canister_id });
+            deployedCanisters.add(canister_id);
           };
-        };
-
-        for(canister_id in deployedCanisters.vals()) {
-          Cycles.add<system>(T.cycles);
-          await IC_MANAGEMENT.ic.stop_canister({ canister_id });
         };
       };
     };
@@ -250,6 +247,34 @@ actor class UserIndex() = this {
     return ?canister_id
   };
 
+  public shared({ caller }) func getUsersInCeroTrade(): async [{
+    principal: T.UID;
+    canister: T.CanisterId;
+    token: T.UserTokenAuth;
+  }] {
+    IC_MANAGEMENT.adminValidation(caller, controllers);
+
+    let users = Buffer.Buffer<{ principal: T.UID; canister: T.CanisterId; token: T.UserTokenAuth; }>(16);
+
+    for((principal, canister) in usersDirectory.entries()) {
+      let token = await Users.canister(canister).getUserToken();
+      users.add({ principal; canister; token })
+    };
+
+    Buffer.toArray<{ principal: T.UID; canister: T.CanisterId; token: T.UserTokenAuth; }>(users);
+  };
+
+  /// get canister id that allow current user
+  private func getUserCanister(uid: T.UID): async Users.Users {
+    switch (usersDirectory.get(uid)) {
+      case (null) throw Error.reject(notExists);
+      case (?cid) Users.canister(cid);
+    };
+  };
+
+  // ======================================================================================================== //
+  // ======================================== Profile ===================================================== //
+  // ======================================================================================================== //
   private func _deleteUserWeb2(token: Text): async() {
     let _ = await HTTP.canister.post({
         url = HTTP.apiUrl # "users/delete";
@@ -260,25 +285,13 @@ actor class UserIndex() = this {
       });
   };
 
-  public shared({ caller }) func getUsersInCeroTrade(): async [{
-    principal: T.UID;
-    canister: T.CanisterId;
-    token: T.UserToken;
-  }] {
-    IC_MANAGEMENT.adminValidation(caller, controllers);
-
-    let users = Buffer.Buffer<{ principal: T.UID; canister: T.CanisterId; token: T.UserToken; }>(16);
-
-    for((principal, canister) in usersDirectory.entries()) {
-      let token = await Users.canister(canister).getUserToken(principal);
-      users.add({ principal; canister; token })
-    };
-
-    Buffer.toArray<{ principal: T.UID; canister: T.CanisterId; token: T.UserToken; }>(users);
+  /// store user avatar into users collection
+  public shared({ caller }) func storeCompanyLogo(uid: T.UID, avatar: T.ArrayFile): async() {
+    _callValidation(caller);
+    await (await getUserCanister(uid)).storeCompanyLogo(avatar);
   };
 
-  // ======================================================================================================== //
-
+  //! TODO here
   /// register [usersDirectory] collection
   public shared({ caller }) func registerUser(uid: T.UID, form: T.RegisterForm, beneficiary: ?T.BID) : async() {
     _callValidation(caller);
@@ -355,13 +368,13 @@ actor class UserIndex() = this {
       };
 
       // register user
-      await Users.canister(cid).registerUser(uid, trimmedToken);
+      // await Users.canister(cid).registerUser(uid, trimmedToken);
 
       usersDirectory.put(uid, cid);
 
       switch(checkedBeneficiary) {
         case(null) {};
-        case(?value) await updateBeneficiaries(uid, value, { delete = false });
+        case(?value) await addBeneficiary(uid, value);
       };
     } catch (error) {
       Debug.print("error here: " # debug_show(Error.message(error)));
@@ -372,16 +385,7 @@ actor class UserIndex() = this {
     };
   };
 
-  /// store user avatar into users collection
-  public shared({ caller }) func storeCompanyLogo(uid: T.UID, avatar: T.ArrayFile): async() {
-    _callValidation(caller);
-
-    switch(usersDirectory.get(uid)) {
-      case(null) throw Error.reject(notExists);
-      case(?cid) await Users.canister(cid).storeCompanyLogo(uid, avatar);
-    };
-  };
-
+  //! TODO here
   /// update user into Cero Trade
   public shared({ caller }) func updateUserInfo(uid: T.UID, form: T.UpdateUserForm) : async() {
     _callValidation(caller);
@@ -406,7 +410,7 @@ actor class UserIndex() = this {
 
     let token = switch(usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
-      case(?cid) await Users.canister(cid).getUserToken(uid);
+      case(?cid) await Users.canister(cid).getUserToken();
     };
 
     // update user info in web2 database
@@ -422,6 +426,7 @@ actor class UserIndex() = this {
       });
   };
 
+  //! TODO here
   /// delete user to Cero Trade
   public shared({ caller }) func deleteUser(uid: T.UID): async() {
     _callValidation(caller);
@@ -431,244 +436,121 @@ actor class UserIndex() = this {
       case(?cid) cid;
     };
 
-    let token = await Users.canister(cid).getUserToken(uid);
+    let token = await Users.canister(cid).getUserToken();
 
     await _deleteUserWeb2(token);
 
-    await Users.canister(cid).deleteUser(uid);
+    // await Users.canister(cid).deleteUser(uid);
 
     let _ = usersDirectory.remove(uid);
   };
   
   /// get user token
-  public shared({ caller }) func getUserToken(uid: T.UID): async T.UserToken {
+  public shared({ caller }) func getUserToken(uid: T.UID): async T.UserTokenAuth {
     _callValidation(caller);
-
-    let cid: T.CanisterId = switch(usersDirectory.get(uid)) {
-      case(null) throw Error.reject(notExists);
-      case(?cid) cid;
-    };
-
-    await Users.canister(cid).getUserToken(uid);
-  };
-
-  /// get canister id that allow current user
-  public shared({ caller }) func getUserCanister(uid: T.UID) : async T.CanisterId {
-    _callValidation(caller);
-
-    switch (usersDirectory.get(uid)) {
-      case (null) throw Error.reject(notExists);
-      case (?cid) cid;
-    };
-  };
-
-  // update user transactions
-  public shared({ caller }) func updateTransactions(uid: T.UID, recipent: ?T.BID, txId: T.TransactionId) : async() {
-    _callValidation(caller);
-
-    let currentToken = switch(usersDirectory.get(uid)) {
-      case (null) throw Error.reject(notExists);
-      case(?cid) await Users.canister(cid).getUserToken(uid);
-    };
-
-    let _ = await HTTP.canister.post({
-        url = HTTP.apiUrl # "web3-transactions";
-        port = null;
-        uid = null;
-        headers = [HTTP.tokenAuth(currentToken)];
-        bodyJson = switch(Serde.JSON.toText(to_candid({
-          recipent = switch(recipent) {
-            case(null) "";
-            case(?value) Principal.toText(value);
-          };
-          txId;
-        }), ["recipent", "txId"], null)) {
-          case(#err(error)) throw Error.reject("Cannot serialize data");
-          case(#ok(value)) value;
-        };
-      });
+    await (await getUserCanister(uid)).getUserToken();
   };
 
 
   /// get profile information
   public shared({ caller }) func getProfile(uid: T.UID): async T.UserProfile {
     _callValidation(caller);
-
-    let cid: T.CanisterId = switch(usersDirectory.get(uid)) {
-      case (null) throw Error.reject(notExists);
-      case(?cid) cid;
-    };
-
-    let currentToken = await Users.canister(cid).getUserToken(uid);
-    let profileJson = await HTTP.canister.get({
-      url = HTTP.apiUrl # "users/retrieve/";
-      port = null;
-      uid = null;
-      headers = [HTTP.tokenAuth(currentToken)]
-    });
-    let companyLogo = await Users.canister(cid).getCompanyLogo(uid);
-
-    switch(Serde.JSON.fromText(profileJson, null)) {
-      case(#err(_)) throw Error.reject("cannot serialize profile data");
-
-      case(#ok(blob)) {
-        let profilePart: ?ProfilePart = from_candid(blob);
-
-        switch(profilePart) {
-          case(null) throw Error.reject("cannot serialize profile data");
-          case(?profile) return {
-            companyLogo;
-            principalId = profile.principalId;
-            companyId = profile.companyId;
-            companyName = profile.companyName;
-            city = profile.city;
-            country = profile.country;
-            address = profile.address;
-            email = profile.email;
-            createdAt = profile.createdAt;
-            updatedAt = profile.updatedAt;
-          };
-        };
-      };
-    };
+    await (await getUserCanister(uid)).getProfile();
   };
 
-  /// get transaction user ids
-  public shared({ caller }) func getTransactionIds(uid: T.UID): async [T.TransactionId] {
+
+
+  // ======================================================================================================== //
+  // ======================================== Portfolio ===================================================== //
+  // ======================================================================================================== //
+  
+
+
+  
+  // ======================================================================================================== //
+  // ======================================== Notifications ===================================================== //
+  // ======================================================================================================== //
+  // get notification
+  public shared({ caller }) func getNotification(uid: T.UID, notificationId: T.NotificationId): async T.NotificationInfo {
     _callValidation(caller);
+    await (await getUserCanister(uid)).getNotification(notificationId);
+  };
 
-    let currentToken = switch(usersDirectory.get(uid)) {
-      case (null) throw Error.reject(notExists);
-      case(?cid) await Users.canister(cid).getUserToken(uid);
-    };
+  // get notifications
+  public shared({ caller }) func getNotifications(uid: T.UID): async [T.NotificationInfo] {
+    _callValidation(caller);
+    await (await getUserCanister(uid)).getNotifications();
+  };
 
-    let transactions = await HTTP.canister.get({
-        url = HTTP.apiUrl # "web3-transactions";
-        port = null;
-        uid = null;
-        headers = [HTTP.tokenAuth(currentToken)];
-      });
+  // add notification
+  public shared({ caller }) func addNotification(uid: T.UID, notification: T.NotificationInfo): async T.NotificationId {
+    _callValidation(caller);
+    await (await getUserCanister(uid)).addNotification(notification);
+  };
 
-    switch(Serde.JSON.fromText(transactions, null)) {
-      case(#err(_)) throw Error.reject("cannot serialize transactions data");
+  // update general
+  public shared({ caller }) func updateGeneral(uid: T.UID, notificationIds: [T.NotificationId]): async() {
+    _callValidation(caller);
+    await (await getUserCanister(uid)).updateGeneral(notificationIds);
+  };
 
-      case(#ok(blob)) {
-        let transactionIds: ?{transactions: [T.TransactionId]} = from_candid(blob);
+  // update event
+  public shared({ caller }) func updateEvent(uid: T.UID, notificationId: T.NotificationId, eventStatus: T.NotificationEventStatus): async() {
+    _callValidation(caller);
+    await (await getUserCanister(uid)).updateEvent(notificationId, eventStatus);
+  };
 
-        switch(transactionIds) {
-          case(null) throw Error.reject("cannot serialize transactions data");
-          case(?txs) txs.transactions;
-        };
-      };
-    };
+  // clear notifications
+  public shared({ caller }) func clearNotifications(uid: T.UID, notificationIds: [T.NotificationId]): async() {
+    _callValidation(caller);
+    await (await getUserCanister(uid)).clearNotifications(notificationIds);
+  };
+
+  // clear notification
+  public shared({ caller }) func clearNotification(uid: T.UID, notificationId: T.NotificationId): async() {
+    _callValidation(caller);
+    await (await getUserCanister(uid)).clearNotification(notificationId);
   };
 
 
+
+  // ======================================================================================================== //
+  // ======================================== Beneficiaries ===================================================== //
+  // ======================================================================================================== //
   /// get beneficiaries
   public shared({ caller }) func getBeneficiaries(uid: T.UID): async [T.UserProfile] {
     _callValidation(caller);
 
-    let currentToken = switch(usersDirectory.get(uid)) {
-      case (null) throw Error.reject(notExists);
-      case(?cid) await Users.canister(cid).getUserToken(uid);
+    let beneficiaryIds = await (await getUserCanister(uid)).getBeneficiaries();
+    let beneficiaries = Buffer.Buffer<T.UserProfile>(16);
+
+    for(beneficiaryId in beneficiaryIds.vals()) {
+      let beneficiary: T.UserProfile = await (await getUserCanister(beneficiaryId)).getProfile();
+      beneficiaries.add(beneficiary);
     };
 
-    let beneficiaries = await HTTP.canister.get({
-        url = HTTP.apiUrl # "users/beneficiaries";
-        port = null;
-        uid = null;
-        headers = [HTTP.tokenAuth(currentToken)];
-      });
-
-
-    switch(Serde.JSON.fromText(beneficiaries, null)) {
-      case(#err(_)) throw Error.reject("cannot serialize profile data");
-
-      case(#ok(blob)) {
-        let profileParts: ?{beneficiaries: [ProfilePart]} = from_candid(blob);
-
-        switch(profileParts) {
-          case(null) throw Error.reject("cannot serialize profile data");
-          case(?profiles) await buildUserProfiles(profiles.beneficiaries);
-        };
-      };
-    };
+    Buffer.toArray<T.UserProfile>(beneficiaries);
   };
 
   public shared({ caller }) func checkBeneficiary(uid: T.UID, beneficiaryId: T.BID): async Bool {
     _callValidation(caller);
-
-    let currentToken = switch(usersDirectory.get(uid)) {
-      case (null) throw Error.reject(notExists);
-      case(?cid) await Users.canister(cid).getUserToken(uid);
-    };
-
-    let beneficiaryExists = await HTTP.canister.get({
-        url = HTTP.apiUrl # "users/beneficiaries/check/" # Principal.toText(beneficiaryId);
-        port = null;
-        uid = null;
-        headers = [HTTP.tokenAuth(currentToken)];
-      });
-
-    beneficiaryExists == "true";
+    await (await getUserCanister(uid)).checkBeneficiary(beneficiaryId);
   };
 
-
-  // build [T.UserProfile] array from [ProfilePart]
-  private func buildUserProfiles(profiles: [ProfilePart]): async [T.UserProfile] {
-    let users = HM.HashMap<Text, T.UserProfile>(16, Text.equal, Text.hash);
-
-    for(profile in profiles.vals()) {
-      let uid = Principal.fromText(profile.principalId);
-
-      switch(usersDirectory.get(uid)) {
-        case (null) {};
-        case(?cid) {
-          let companyLogo = await Users.canister(cid).getCompanyLogo(uid);
-
-          users.put(profile.principalId, {
-            companyLogo;
-            principalId = profile.principalId;
-            companyId = profile.companyId;
-            companyName = profile.companyName;
-            city = profile.city;
-            country = profile.country;
-            address = profile.address;
-            email = profile.email;
-            createdAt = profile.createdAt;
-            updatedAt = profile.updatedAt;
-          });
-        };
-      };
-    };
-
-    Iter.toArray(users.vals())
-  };
-
-
-  /// update user beneficiaries
-  public shared({ caller }) func updateBeneficiaries(uid: T.UID, beneficiaryId: T.BID, deleteBeneficiary: { delete: Bool }): async() {
+  /// add beneficiary to user
+  public shared({ caller }) func addBeneficiary(uid: T.UID, beneficiaryId: T.BID): async() {
     _callValidation(caller);
 
-    let currentToken = switch(usersDirectory.get(uid)) {
-      case (null) throw Error.reject(notExists);
-      case(?cid) await Users.canister(cid).getUserToken(uid);
-    };
+    await (await getUserCanister(uid)).addBeneficiary(beneficiaryId);
+    await (await getUserCanister(beneficiaryId)).addBeneficiary(uid);
+  };
 
-    let _ = await HTTP.canister.post({
-        url = HTTP.apiUrl # "users/beneficiaries";
-        port = null;
-        uid = null;
-        headers = [HTTP.tokenAuth(currentToken)];
-        bodyJson = switch(Serde.JSON.toText(to_candid({
-          caller = Principal.toText(uid);
-          beneficiary = Principal.toText(beneficiaryId);
-          remove = deleteBeneficiary.delete;
-        }), ["caller", "beneficiary", "remove"], null)) {
-          case(#err(error)) throw Error.reject("Cannot serialize data");
-          case(#ok(value)) value;
-        };
-      });
+  /// remove beneficiary from user
+  public shared({ caller }) func removeBeneficiary(uid: T.UID, beneficiaryId: T.BID): async() {
+    _callValidation(caller);
+
+    await (await getUserCanister(uid)).removeBeneficiary(beneficiaryId);
+    await (await getUserCanister(beneficiaryId)).removeBeneficiary(uid);
   };
 
 
@@ -676,29 +558,45 @@ actor class UserIndex() = this {
   public shared({ caller }) func filterUsers(uid: T.UID, user: Text): async [T.UserProfile] {
     _callValidation(caller);
 
-    let currentToken = switch(usersDirectory.get(uid)) {
-      case (null) throw Error.reject(notExists);
-      case(?cid) await Users.canister(cid).getUserToken(uid);
+    let beneficiaryIds = await (await getUserCanister(uid)).getBeneficiaries();
+    let beneficiaries = Buffer.Buffer<T.UserProfile>(16);
+
+    for(beneficiaryId in beneficiaryIds.vals()) {
+      let beneficiary: T.UserProfile = await (await getUserCanister(beneficiaryId)).getProfile();
+
+      let input = Text.toLowercase(user);
+      let containsCompanyName = Text.contains(Text.toLowercase(beneficiary.companyName), #text input);
+      let containsPrincipal = Text.contains(Text.toLowercase(beneficiary.principalId), #text input);
+
+      if (containsCompanyName or containsPrincipal) { beneficiaries.add(beneficiary); };
     };
-    let usersJson = await HTTP.canister.post({
-        url = HTTP.apiUrl # "users/filter";
-        port = null;
-        uid = null;
-        headers = [HTTP.tokenAuth(currentToken)];
-        bodyJson = "{\"user\": \"" # user # "\"}";
-      });
 
-    switch(Serde.JSON.fromText(usersJson, null)) {
-      case(#err(_)) throw Error.reject("cannot serialize profile data");
+    Buffer.toArray<T.UserProfile>(beneficiaries);
+  };
 
-      case(#ok(blob)) {
-        let profileParts: ?{ users: [ProfilePart] } = from_candid(blob);
 
-        switch(profileParts) {
-          case(null) throw Error.reject("cannot serialize profile data");
-          case(?value) await buildUserProfiles(value.users);
-        };
-      };
+
+  // ======================================================================================================== //
+  // ======================================== Transactions ===================================================== //
+  // ======================================================================================================== //
+  /// get transactionIds from user
+  public shared({ caller }) func getTransactionIds(uid: T.UID, page: ?Nat, length: ?Nat): async {
+    data: [T.TransactionId];
+    totalPages: Nat;
+  } {
+    _callValidation(caller);
+    await (await getUserCanister(uid)).getTransactions(page, length);
+  };
+
+  /// add transactionId to user
+  public shared({ caller }) func updateTransactions(uid: T.UID, recipent: ?T.BID, transactionId: T.TransactionId): async() {
+    _callValidation(caller);
+
+    await (await getUserCanister(uid)).addTransaction(transactionId);
+
+    switch(recipent) {
+      case(null) {};
+      case(?value) await (await getUserCanister(value)).addTransaction(transactionId);
     };
   };
 }

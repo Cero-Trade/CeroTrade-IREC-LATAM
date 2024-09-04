@@ -202,7 +202,7 @@ actor class NotificationIndex() = this {
   // ======================================================================================================== //
 
   /// add notification to [notificationsDirectory] collection
-  public shared({ caller }) func addNotification(receiverToken: T.UserToken, triggerToken: ?T.UserToken, notification: T.NotificationInfo) : async() {
+  public shared({ caller }) func addNotification(receiverToken: T.UserTokenAuth, triggerToken: ?T.UserTokenAuth, notification: T.NotificationInfo) : async() {
     _callValidation(caller);
 
     try {
@@ -280,7 +280,7 @@ actor class NotificationIndex() = this {
 
 
   /// mark general notifications status as seen
-  public shared({ caller }) func updateGeneralNotifications(token: T.UserToken, notificationIds: [T.NotificationId]) : async() {
+  public shared({ caller }) func updateGeneralNotifications(token: T.UserTokenAuth, notificationIds: [T.NotificationId]) : async() {
     _callValidation(caller);
 
     let notificationIdsJson = await HTTP.canister.get({
@@ -325,7 +325,7 @@ actor class NotificationIndex() = this {
 
 
   /// clear general notifications from [notificationsDirectory] collection
-  public shared({ caller }) func clearGeneralNotifications(token: T.UserToken, notificationIds: [T.NotificationId]) : async() {
+  public shared({ caller }) func clearGeneralNotifications(token: T.UserTokenAuth, notificationIds: [T.NotificationId]) : async() {
     _callValidation(caller);
 
     let notificationIdsJson = await HTTP.canister.get({
@@ -395,11 +395,11 @@ actor class NotificationIndex() = this {
 
 
   /// update event notification from [notificationsDirectory] collection
-  public shared({ caller }) func updateEventNotification(userCaller: T.UID, token: { receiver: T.UserToken; trigger: ?T.UserToken }, (cid: T.CanisterId, notification: T.NotificationInfo), eventStatus: ?T.NotificationEventStatus) : async Bool {
+  public shared({ caller }) func updateEventNotification(userCaller: T.UID, token: { receiver: T.UserTokenAuth; trigger: ?T.UserTokenAuth }, (cid: T.CanisterId, notification: T.NotificationInfo), eventStatus: ?T.NotificationEventStatus) : async Bool {
     _callValidation(caller);
 
     // get user and other user
-    let userToken: T.UserToken = switch(userCaller == notification.receivedBy) {
+    let userToken: T.UserTokenAuth = switch(userCaller == notification.receivedBy) {
       case(true) token.receiver;
       case(false) {
         switch(token.trigger) {
@@ -409,7 +409,7 @@ actor class NotificationIndex() = this {
       }
     };
 
-    let otherUserToken: T.UserToken = switch(userCaller == notification.receivedBy) {
+    let otherUserToken: T.UserTokenAuth = switch(userCaller == notification.receivedBy) {
       case(true) {
         switch(token.trigger) {
           case(null) throw Error.reject("triggeredBy not provided");
@@ -494,7 +494,7 @@ actor class NotificationIndex() = this {
   };
 
   // get user notifications
-  public shared({ caller }) func getNotifications(token: T.UserToken, page: ?Nat, length: ?Nat, notificationTypes: [T.NotificationType]): async [T.NotificationInfo] {
+  public shared({ caller }) func getNotifications(token: T.UserTokenAuth, page: ?Nat, length: ?Nat, notificationTypes: [T.NotificationType]): async [T.NotificationInfo] {
     _callValidation(caller);
 
     let pageParam = switch(page) {
