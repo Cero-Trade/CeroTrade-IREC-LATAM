@@ -27,7 +27,7 @@ module TokenInterface {
     icrc1_transfer: (args: ICRC1.TransferArgs) -> async ICRC1.TransferResult;
     mint: (args: ICRC1.Mint) -> async ICRC1.TransferResult;
     transferInMarketplace: (args : T.TransferInMarketplaceArgs) -> async ICRC1.TransferResult;
-    purchaseInMarketplace: (args : T.PurchaseInMarketplaceArgs) -> async ICRC1.TransferResult;
+    purchaseInMarketplace: (args : T.PurchaseInMarketplaceArgs) -> async (ICRC1.TransferResult, T.AssetInfo);
     requestRedeem: (args : T.RedeemArgs, { returns: Bool }) -> async ICRC1.TransferResult;
     redeemRequested: (args : T.RedeemArgs) -> async ICRC1.TransferResult;
     redeem: (args : T.RedeemArgs) -> async ICRC1.TransferResult;

@@ -449,17 +449,17 @@ actor class UserIndex() = this {
   };
 
   /// add portfolio
-  public shared({ caller }) func addPortfolio(uid: T.UID, assetInfo: T.AssetInfo): async() {
+  public shared({ caller }) func addTokensPortfolio(uid: T.UID, assets: [T.AssetInfo]): async() {
     _callValidation(caller);
 
-    await (await getUserCanister(uid)).addPortfolio(assetInfo);
+    await (await getUserCanister(uid)).addTokensPortfolio(assets);
   };
 
   /// remove portfolio
-  public shared({ caller }) func removePortfolio(uid: T.UID, tokenId: T.TokenId): async() {
+  public shared({ caller }) func removeTokensPortfolio(uid: T.UID, tokenIds: [T.TokenId]): async() {
     _callValidation(caller);
 
-    await (await getUserCanister(uid)).removePortfolio(tokenId);
+    await (await getUserCanister(uid)).removeTokensPortfolio(tokenIds);
   };
 
   /// update portfolio
@@ -648,21 +648,21 @@ actor class UserIndex() = this {
   };
 
   /// add transactionId to user and update marketplace amount
-  public shared({ caller }) func updateMarketplace(uid: T.UID, { tokenId: T.TokenId; amountInMarket: T.TokenAmount; recipent: ?T.BID; transactionId: T.TransactionId }): async() {
+  public shared({ caller }) func updateMarketplace(uid: T.UID, { tokenId: T.TokenId; amountInMarket: T.TokenAmount; transactionId: T.TransactionId }, buyer: ?{ recipent: T.BID; assetInfo: T.AssetInfo }): async() {
     _callValidation(caller);
 
-    // if not provide recipent will be updated marketplace + transactions of user
+    // if not provide buyer will be updated [marketplace + transactions] of user
     //
-    // else will be updated recipent marketplace and user transactions
-    switch(recipent) {
-      case(null) await (await getUserCanister(uid)).updateMarketplace(tokenId, amountInMarket, transactionId);
+    // else will be updated recipent marketplace and user [portfolio + transactions]
+    switch(buyer) {
+      case(null) await (await getUserCanister(uid)).updateMarketplaceWithTransaction(tokenId, amountInMarket, transactionId);
 
-      case(?value) {
+      case(?{ recipent; assetInfo; }) {
         // update marketplace of recipent
-        await (await getUserCanister(value)).updatePortfolio({ tokenId; inMarket = ?amountInMarket; redemption = null });
+        await (await getUserCanister(recipent)).updatePortfolio({ tokenId; inMarket = ?amountInMarket; redemption = null });
 
-        // update transactions of user
-        await (await getUserCanister(uid)).addTransaction(transactionId);
+        // update portfolio + transactions of user
+        await (await getUserCanister(uid)).addTokensWithTransaction(assetInfo, transactionId);
       }
     };
   };

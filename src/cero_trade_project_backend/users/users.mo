@@ -218,26 +218,37 @@ shared({ caller = userIndexCaller }) actor class Users() = this {
   };
 
   /// add single portfolio
-  public shared({ caller }) func addPortfolio(assetInfo: T.AssetInfo): async() {
+  public shared({ caller }) func addTokensPortfolio(assets: [T.AssetInfo]): async() {
     _callValidation(caller);
 
-    let tokenId = assetInfo.tokenId;
+    for(assetInfo in assets.vals()) {
+      let tokenId = assetInfo.tokenId;
 
-    portfolio.put(tokenId, {
-      tokenInfo = {
-        tokenId;
-        assetInfo;
-        totalAmount = 0;
-        inMarket = 0;
+      switch(portfolio.get(tokenId)) {
+        case(?portfolioInfo) {};
+
+        case(null) {
+          portfolio.put(tokenId, {
+            tokenInfo = {
+              tokenId;
+              assetInfo;
+              totalAmount = 0;
+              inMarket = 0;
+            };
+            redemptions = [];
+          });
+        };
       };
-      redemptions = [];
-    });
+    };
   };
 
   /// remove single portfolio
-  public shared({ caller }) func removePortfolio(tokenId: T.TokenId): async() {
+  public shared({ caller }) func removeTokensPortfolio(tokenIds: [T.TokenId]): async() {
     _callValidation(caller);
-    portfolio.delete(tokenId);
+
+    for(tokenId in tokenIds.vals()) {
+      portfolio.delete(tokenId);
+    };
   };
 
   /// update portfolio
@@ -511,10 +522,19 @@ shared({ caller = userIndexCaller }) actor class Users() = this {
     transactions := Array.flatten<T.TransactionId>([transactions, [transactionId]]);
   };
 
-  public shared({ caller }) func updateMarketplace(tokenId: T.TokenId, inMarket: T.TokenAmount, transactionId: T.TransactionId): async() {
+
+  public shared({ caller }) func updateMarketplaceWithTransaction(tokenId: T.TokenId, inMarket: T.TokenAmount, transactionId: T.TransactionId): async() {
     _callValidation(caller);
 
     await updatePortfolio({ tokenId; inMarket = ?inMarket; redemption = null });
+
+    await addTransaction(transactionId);
+  };
+
+  public shared({ caller }) func addTokensWithTransaction(assets: T.AssetInfo, transactionId: T.TransactionId): async() {
+    _callValidation(caller);
+
+    await addTokensPortfolio([assets]);
 
     await addTransaction(transactionId);
   };

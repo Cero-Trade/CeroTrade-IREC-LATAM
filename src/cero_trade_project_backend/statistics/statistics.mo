@@ -27,10 +27,8 @@ shared({ caller = owner }) actor class Statistics() {
   private func _callValidation(caller: Principal) { assert Principal.fromText(ENV.CANISTER_ID_AGENT) == caller };
 
 
-  /// register statistic
-  public shared({ caller }) func registerAssetStatistic(tokenId: T.TokenId, statistics: { mwh: ?T.TokenAmount; redemptions: ?T.TokenAmount }): async () {
-    _callValidation(caller);
-
+  // helper function to register asset statistics
+  private func _registerAssetStatistic(tokenId: T.TokenId, statistics: { mwh: ?T.TokenAmount; redemptions: ?T.TokenAmount }): async() {
     switch(assetStatistics.get(tokenId)) {
       case(null) {
         let assetInfo = await TokenIndex.getAssetInfo(tokenId);
@@ -62,6 +60,21 @@ shared({ caller = owner }) actor class Statistics() {
           redemptions = currentRedemptions + redemptions;
         });
       };
+    };
+  };
+  
+  /// register statistic
+  public shared({ caller }) func registerAssetStatistic(tokenId: T.TokenId, { mwh: ?T.TokenAmount; redemptions: ?T.TokenAmount }): async () {
+    _callValidation(caller);
+    await _registerAssetStatistic(tokenId, { mwh; redemptions });
+  };
+
+  /// register statistics
+  public shared({ caller }) func registerAssetStatistics(assets: [{ tokenId: T.TokenId; statistics: { mwh: ?T.TokenAmount; redemptions: ?T.TokenAmount } }]): async () {
+    _callValidation(caller);
+
+    for({ tokenId; statistics; } in assets.vals()) {
+      await _registerAssetStatistic(tokenId, { mwh = statistics.mwh; redemptions = statistics.redemptions });
     };
   };
 

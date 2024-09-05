@@ -9,6 +9,8 @@ import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
 import Nat64 "mo:base/Nat64";
 import Nat8 "mo:base/Nat8";
+import Buffer "mo:base/Buffer";
+import List "mo:base/List";
 import DateTime "mo:datetime/DateTime";
 
 // canisters
@@ -169,10 +171,23 @@ actor class Agent() = this {
     // performe import of tokens
     let transactions = await TokenIndex.importUserTokens(caller);
 
-    for(tx in transactions.vals()) {
-      // register asset statistic
-      await Statistics.registerAssetStatistic(tx.assetInfo.tokenId, { mwh = ?tx.mwh; redemptions = null });
+    let mappedTxs = Buffer.Buffer<{ tokenId: T.TokenId; statistics: { mwh: ?T.TokenAmount; redemptions: ?T.TokenAmount } }>(16);
+    let mappedAssets = Buffer.Buffer<T.AssetInfo>(16);
+
+    for({ mwh; assetInfo } in transactions.vals()) {
+      mappedAssets.add(assetInfo);
+
+      mappedTxs.add({
+        tokenId = assetInfo.tokenId;
+        statistics = { mwh = ?mwh; redemptions = null };
+      });
     };
+
+    // add user portfolio
+    await UserIndex.addTokensPortfolio(caller, Buffer.toArray(mappedAssets));
+
+    // register asset statistic
+    await Statistics.registerAssetStatistics(Buffer.toArray(mappedTxs));
 
     transactions
   };
@@ -186,7 +201,10 @@ actor class Agent() = this {
     if (not (await UserIndex.checkPrincipal(recipent))) throw Error.reject(notExists);
 
     // mint token to user token collection
-    let txIndex = await TokenIndex.mintTokenToUser(recipent, tokenId, tokenAmount);
+    let (txIndex, assetInfo) = await TokenIndex.mintTokenToUser(recipent, tokenId, tokenAmount);
+
+    // add user portfolio
+    await UserIndex.addTokensPortfolio(recipent, [assetInfo]);
 
     // register asset statistic
     await Statistics.registerAssetStatistic(tokenId, { mwh = ?tokenAmount; redemptions = null });
@@ -319,8 +337,19 @@ actor class Agent() = this {
       { item with tokenAmount = balance }
     });
 
+    // divide tokens without balance and tokens with balance
+    let (shouldKeep, shouldNotKeep): (List.List<T.Portfolio>, List.List<T.Portfolio>) = List.partition<T.Portfolio>(List.fromArray<T.Portfolio>(portfolio), func (item) {
+      item.tokenInfo.totalAmount > 0 or item.tokenInfo.inMarket > 0
+    });
+
+    // remove tokens without balance
+    if (List.size(shouldNotKeep) > 0) await UserIndex.removeTokensPortfolio(
+        caller,
+        Array.map<T.Portfolio, T.TokenId>(List.toArray<T.Portfolio>(shouldNotKeep), func x = x.tokenInfo.tokenId)
+      );
+
     {
-      data = portfolio;
+      data = List.toArray<T.Portfolio>(shouldKeep);
       totalPages = filteredPortfolio.totalPages;
     }
   };
@@ -536,7 +565,7 @@ actor class Agent() = this {
     };
 
     // performe ICP transfer and update token canister
-    let txIndex = await TokenIndex.purchaseToken(caller, recipent, tokenId, tokenAmount, totalPriceE8S);
+    let (txIndex, assetInfo) = await TokenIndex.purchaseToken(caller, recipent, tokenId, tokenAmount, totalPriceE8S);
 
     // build transaction
     let txInfo: T.TransactionInfo = {
@@ -560,7 +589,7 @@ actor class Agent() = this {
     let amountInMarket = await Marketplace.takeOffSale(tokenId, tokenAmount, recipent);
 
     // store to caller and recipent
-    await UserIndex.updateMarketplace(caller, { tokenId; amountInMarket; recipent = ?recipent; transactionId = txId });
+    await UserIndex.updateMarketplace(caller, { tokenId; amountInMarket; transactionId = txId }, ?{ recipent; assetInfo; });
 
     { txInfo with transactionId = txId }
   };
@@ -612,7 +641,7 @@ actor class Agent() = this {
     let amountInMarket = await Marketplace.putOnSale(tokenId, quantity, caller, priceE8S);
 
     // store to caller
-    await UserIndex.updateMarketplace(caller, { tokenId; amountInMarket; recipent = null; transactionId = txId });
+    await UserIndex.updateMarketplace(caller, { tokenId; amountInMarket; transactionId = txId }, null);
 
     { txInfo with transactionId = txId }
   };
@@ -662,7 +691,7 @@ actor class Agent() = this {
     let amountInMarket = await Marketplace.takeOffSale(tokenId, quantity, uid);
 
     // store to uid
-    await UserIndex.updateMarketplace(uid, { tokenId; amountInMarket; recipent = null; transactionId = txId });
+    await UserIndex.updateMarketplace(uid, { tokenId; amountInMarket; transactionId = txId }, null);
 
     { txInfo with transactionId = txId }
   };

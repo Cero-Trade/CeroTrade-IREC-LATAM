@@ -370,23 +370,20 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     // used hashmap to find faster elements using Hash
     // this Hash have limitation when data length is too large.
     // In this case, would consider changing to another more effective method.
-    let assetsMetadata = HM.HashMap<Nat, { mwh: T.TokenAmount; assetInfo: T.AssetInfo }>(16, Nat.equal, Hash.hash);
+    let assetsMetadata = HM.HashMap<T.TokenId, { mwh: T.TokenAmount; assetInfo: T.AssetInfo }>(16, Text.equal, Text.hash);
 
     switch(Serde.JSON.fromText(assetsJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize asset data");
       case(#ok(blob)) {
         let transactionResponse: ?[TransactionResponse] = from_candid(blob);
-        var index: Nat = 0;
 
         switch(transactionResponse) {
           case(null) throw Error.reject("cannot serialize asset data");
           case(?response) {
             for({ items } in response.vals()) {
               for(assetResponse in items.vals()) {
-                index := index + 1;
-
                 // TODO review mwh value assignment
-                assetsMetadata.put(index, {
+                assetsMetadata.put(assetResponse.asset_assetId, {
                   mwh = await T.textToToken(assetResponse.item_volume, null);
                   assetInfo = await buildAssetInfo(assetResponse);
                 });
@@ -434,21 +431,11 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       };
     };
 
-    let transactions = Iter.toArray(assetsMetadata.vals());
-
-    if (transactions.size() > 0) {
-      // update user portfolio
-      await updatePortfolio(uid, Array.map<{
-        mwh: T.TokenAmount;
-        assetInfo: T.AssetInfo
-      }, T.TokenId>(transactions, func x = x.assetInfo.tokenId)/* , { delete = false } */);
-    };
-
-    transactions
+    Iter.toArray(assetsMetadata.vals())
   };
 
 
-  public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, amount: T.TokenAmount): async T.TxIndex {
+  public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, amount: T.TokenAmount): async (T.TxIndex, T.AssetInfo) {
     _callValidation(caller);
 
     let assetsJson = await HTTP.canister.get({
@@ -498,10 +485,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       case(#Ok(value)) value;
     };
 
-    // update user portfolio
-    await updatePortfolio(recipent, [tokenId]/* , { delete = false } */);
-
-    txIndex
+    (txIndex, assetMetadata)
   };
 
   // helper function used to build [AssetInfo] from AssetResponse
@@ -673,22 +657,6 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   //   }
   // };
 
-  /// update user portfolio
-  private func updatePortfolio(uid: T.UID, tokenIds: [T.TokenId]/* , { delete: Bool } */) : async() {
-
-    let _ = await HTTP.canister.post({
-        url = HTTP.apiUrl # "users/portfolio";
-        port = null;
-        uid = ?uid;
-        headers = [];
-        bodyJson = switch(Serde.JSON.toText(to_candid({
-          tokenIds;
-        }), ["tokenIds"], null)) {
-          case(#err(error)) throw Error.reject("Cannot serialize data");
-          case(#ok(value)) value;
-        };
-      });
-  };
 
   public shared({ caller }) func getTokensInfo(tokenIds: [T.TokenId]): async [T.AssetInfo] {
     _callValidation(caller);
@@ -806,10 +774,10 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   };
 
 
-  public shared({ caller }) func purchaseToken(buyer: T.UID, seller: T.BID, tokenId: T.TokenId, amount: T.TokenAmount, priceE8S: T.Price): async T.TxIndex {
+  public shared({ caller }) func purchaseToken(buyer: T.UID, seller: T.BID, tokenId: T.TokenId, amount: T.TokenAmount, priceE8S: T.Price): async (T.TxIndex, T.AssetInfo) {
     _callValidation(caller);
 
-    let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
+    let (transferResult, assetInfo): (ICRC1.TransferResult, T.AssetInfo) = switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
       case (?cid) await Token.canister(cid).purchaseInMarketplace({
         marketplace = { owner = Principal.fromText(ENV.CANISTER_ID_MARKETPLACE); subaccount = null };
@@ -834,10 +802,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       case(#Ok(value)) value;
     };
 
-    // store token register on profile
-    await updatePortfolio(buyer, [tokenId]/* , { delete = false } */);
-
-    txIndex
+    (txIndex, assetInfo)
   };
 
   public shared ({ caller }) func requestRedeem(owner: T.UID, tokenId: T.TokenId, amount: T.TokenAmount, { returns: Bool }) : async T.TxIndex {

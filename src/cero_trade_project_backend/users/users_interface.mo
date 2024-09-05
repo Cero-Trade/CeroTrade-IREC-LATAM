@@ -17,8 +17,8 @@ module UsersInterface {
     // ======================================== Portfolio ===================================================== //
     getSinglePortfolio: (tokenId: T.TokenId) -> async T.SinglePortfolio;
     getPortfolio: (page: ?Nat, length: ?Nat, assetTypes: ?[T.AssetType], country: ?Text, mwhRange: ?[T.TokenAmount]) -> async { data: [T.Portfolio]; totalPages: Nat; };
-    addPortfolio: (assetInfo: T.AssetInfo) -> async();
-    removePortfolio: (tokenId: T.TokenId) -> async();
+    addTokensPortfolio: (assets: [T.AssetInfo]) -> async();
+    removeTokensPortfolio: (tokenIds: [T.TokenId]) -> async();
     updatePortfolio: ({ tokenId: T.TokenId; inMarket: ?T.TokenAmount; redemption: ?T.TransactionInfo }) -> async();
     // ======================================== Notifications ===================================================== //
     getNotification: (notificationId: T.NotificationId) -> async T.NotificationInfo;
@@ -35,6 +35,7 @@ module UsersInterface {
     // ======================================== Transactions ===================================================== //
     getTransactions: (page: ?Nat, length: ?Nat) -> async { data: [T.TransactionId]; totalPages: Nat; };
     addTransaction: (transactionId: T.TransactionId) -> async();
-    updateMarketplace: (tokenId: T.TokenId, inMarket: T.TokenAmount, transactionId: T.TransactionId) -> async();
+    updateMarketplaceWithTransaction: (tokenId: T.TokenId, inMarket: T.TokenAmount, transactionId: T.TransactionId) -> async();
+    addTokensWithTransaction: (assets: T.AssetInfo, transactionId: T.TransactionId) -> async();
   };
 }
