@@ -62,15 +62,15 @@ proc expectPassphrase {passphrase} {
 }
 
 set remnantsCanisters {statistics marketplace}
-foreach canister remnantsCanisters {
+foreach canister $remnantsCanisters {
   # Build canister
   puts "====-Build $canister canister-===="
-  spawn dfx canister build $canister --network $network
+  spawn dfx build $canister --network $network
   expectPassphrase $passphrase
 
   # Reinstall canister
   puts "====-Reinstall $canister canister-===="
-  spawn dfx canister install $canister --mode reinstall --network $network
+  spawn dfx canister install $canister --mode reinstall --network $network --yes
   expectPassphrase $passphrase
 }
 
