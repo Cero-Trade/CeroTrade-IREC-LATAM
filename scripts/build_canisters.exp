@@ -75,7 +75,7 @@ expect eof
 spawn dfx generate
 expect eof
 
-set canisterDeclarations {users user_index token token_index transactions transaction_index agent marketplace http_service statistics notifications notification_index bucket bucket_index}
+set canisterDeclarations {users user_index token token_index transactions transaction_index agent marketplace http_service statistics bucket bucket_index}
 
 foreach canister $canisterDeclarations {
   set command "cp src/declarations/$canister/* .dfx/local/canisters/$canister/"

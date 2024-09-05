@@ -7,25 +7,26 @@ module UsersInterface {
   public func canister(cid: Principal): Users { actor (Principal.toText(cid)) };
 
   public type Users = actor {
+    // ======================================== Profile ===================================================== //
     getUserToken: () -> async T.UserTokenAuth;
     updateUserToken: (token: Text) -> async();
+    createProfile: (userInfo: T.UserInfo) -> async();
     storeCompanyLogo: (avatar: T.ArrayFile) -> async();
     getProfile: () -> async T.UserProfile;
     updateProfile: (form: T.UpdateUserForm) -> async();
     // ======================================== Portfolio ===================================================== //
     getSinglePortfolio: (tokenId: T.TokenId) -> async T.SinglePortfolio;
-    getPortfolio: (page: ?Nat, length: ?Nat, assetTypes: ?[T.AssetType], country: ?Text, mwhRange: ?[T.TokenAmount]) -> async { data: [T.SinglePortfolio]; totalPages: Nat; };
+    getPortfolio: (page: ?Nat, length: ?Nat, assetTypes: ?[T.AssetType], country: ?Text, mwhRange: ?[T.TokenAmount]) -> async { data: [T.Portfolio]; totalPages: Nat; };
     addPortfolio: (assetInfo: T.AssetInfo) -> async();
     removePortfolio: (tokenId: T.TokenId) -> async();
     updatePortfolio: ({ tokenId: T.TokenId; inMarket: ?T.TokenAmount; redemption: ?T.TransactionInfo }) -> async();
     // ======================================== Notifications ===================================================== //
     getNotification: (notificationId: T.NotificationId) -> async T.NotificationInfo;
-    getNotifications: () -> async [T.NotificationInfo];
-    addNotification: (notification: T.NotificationInfo) -> async T.NotificationId;
-    updateGeneral: (notificationIds: [T.NotificationId]) -> async();
+    getNotifications: (page: ?Nat, length: ?Nat, notificationTypes: [T.NotificationType]) -> async [T.NotificationInfo];
+    addNotification: (notification: T.NotificationInfo) -> async();
+    updateGeneral: (notificationIds: ?[T.NotificationId]) -> async();
     updateEvent: (notificationId: T.NotificationId, eventStatus: T.NotificationEventStatus) -> async();
-    clearNotifications: (notificationIds: [T.NotificationId]) -> async();
-    clearNotification: (notificationId: T.NotificationId) -> async();
+    clearNotifications: (notificationIds: ?[T.NotificationId]) -> async();
     // ======================================== Beneficiaries ===================================================== //
     getBeneficiaries: () -> async [T.BID];
     checkBeneficiary: (beneficiaryId: T.BID) -> async Bool;
@@ -34,5 +35,6 @@ module UsersInterface {
     // ======================================== Transactions ===================================================== //
     getTransactions: (page: ?Nat, length: ?Nat) -> async { data: [T.TransactionId]; totalPages: Nat; };
     addTransaction: (transactionId: T.TransactionId) -> async();
+    updateMarketplace: (tokenId: T.TokenId, inMarket: T.TokenAmount, transactionId: T.TransactionId) -> async();
   };
 }

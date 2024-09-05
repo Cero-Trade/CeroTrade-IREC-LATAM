@@ -56,7 +56,7 @@ proc expectPassphrase {passphrase} {
   }
 }
 
-set dynamicCanisters {token users transactions notifications bucket}
+set dynamicCanisters {token users transactions bucket}
 
 # Build wasm modules
 puts "====-Register wasm modules-===="

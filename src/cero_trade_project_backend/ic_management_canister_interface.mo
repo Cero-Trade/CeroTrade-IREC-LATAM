@@ -38,7 +38,6 @@ module IC_MANAGEMENT_CANISTER_INTERFACE {
     #token: Text;
     #users: Text;
     #transactions: Text;
-    #notifications: Text;
     #bucket: Text;
   };
 
@@ -49,7 +48,6 @@ module IC_MANAGEMENT_CANISTER_INTERFACE {
       case(#token(value)) value;
       case(#users(value)) value;
       case(#transactions(value)) value;
-      case(#notifications(value)) value;
       case(#bucket(value)) value;
     };
 

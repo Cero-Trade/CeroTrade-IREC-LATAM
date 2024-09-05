@@ -241,7 +241,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
         Cycles.add<system>(T.cycles);
         await IC_MANAGEMENT.ic.stop_canister({ canister_id });
         await IC_MANAGEMENT.ic.delete_canister({ canister_id });
-        let _ = tokenDirectory.remove(tokenId)
+        tokenDirectory.delete(tokenId)
       };
     }
   };
@@ -319,7 +319,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
         await IC_MANAGEMENT.ic.delete_canister({ canister_id });
 
         for((tokenId, cid) in tokenDirectory.entries()) {
-          if (cid == canister_id) let _ = tokenDirectory.remove(tokenId);
+          if (cid == canister_id) return tokenDirectory.delete(tokenId);
         };
       };
       case(null) {
@@ -327,7 +327,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
           Cycles.add<system>(T.cycles);
           await IC_MANAGEMENT.ic.stop_canister({ canister_id });
           await IC_MANAGEMENT.ic.delete_canister({ canister_id });
-          let _ = tokenDirectory.remove(tokenId);
+          tokenDirectory.delete(tokenId);
         };
       };
     };
@@ -537,141 +537,141 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     };
   };
 
-  // get token portfolio for a specific user
-  public shared({ caller }) func getTokenPortfolio(uid: T.UID, tokenId: T.TokenId): async T.TokenInfo {
-    _callValidation(caller);
+  // // get token portfolio for a specific user
+  // public shared({ caller }) func getTokenPortfolio(uid: T.UID, tokenId: T.TokenId): async T.TokenInfo {
+  //   _callValidation(caller);
 
-    switch (tokenDirectory.get(tokenId)) {
-      case (null) throw Error.reject("Token not found on Portfolio");
-      case (?cid) {
-        let token_balance = await Token.canister(cid).token_balance({ owner = uid; subaccount = null });
+  //   switch (tokenDirectory.get(tokenId)) {
+  //     case (null) throw Error.reject("Token not found on Portfolio");
+  //     case (?cid) {
+  //       let token_balance = await Token.canister(cid).token_balance({ owner = uid; subaccount = null });
 
-        {
-          tokenId;
-          totalAmount = token_balance.balance;
-          assetInfo = token_balance.assetMetadata;
-          inMarket = 0;
-        }
-      };
-    };
-  };
+  //       {
+  //         tokenId;
+  //         totalAmount = token_balance.balance;
+  //         assetInfo = token_balance.assetMetadata;
+  //         inMarket = 0;
+  //       }
+  //     };
+  //   };
+  // };
 
-  /// get user portfolio
-  public shared({ caller }) func getPortfolio(uid: T.UID, page: ?Nat, length: ?Nat, assetTypes: ?[T.AssetType], country: ?Text, mwhRange: ?[T.TokenAmount]): async {
-    tokens: [T.TokenInfo];
-    txIds: [T.TransactionId];
-    totalPages: Nat;
-  } {
-    _callValidation(caller);
+  // /// get user portfolio
+  // public shared({ caller }) func getPortfolio(uid: T.UID, page: ?Nat, length: ?Nat, assetTypes: ?[T.AssetType], country: ?Text, mwhRange: ?[T.TokenAmount]): async {
+  //   tokens: [T.TokenInfo];
+  //   txIds: [T.TransactionId];
+  //   totalPages: Nat;
+  // } {
+  //   _callValidation(caller);
 
-    // fetch user to get token ids
-    let portfolioJson = await HTTP.canister.get({
-      url = HTTP.apiUrl # "users/portfolio";
-      port = null;
-      uid = ?uid;
-      headers = [];
-    });
+  //   // fetch user to get token ids
+  //   let portfolioJson = await HTTP.canister.get({
+  //     url = HTTP.apiUrl # "users/portfolio";
+  //     port = null;
+  //     uid = ?uid;
+  //     headers = [];
+  //   });
 
-    Debug.print("portfolioJson " # debug_show (portfolioJson));
-    let portfolioIds: { tokenIds: [T.TokenId]; txIds: [T.TransactionId] } = switch(Serde.JSON.fromText(portfolioJson, null)) {
-      case(#err(_)) throw Error.reject("cannot serialize asset data");
-      case(#ok(blob)) {
-        let portfolio: ?{ tokenIds: ?[T.TokenId]; txIds: ?[T.TransactionId]; } = from_candid(blob);
-        Debug.print("portfolio " # debug_show (portfolio));
+  //   Debug.print("portfolioJson " # debug_show (portfolioJson));
+  //   let portfolioIds: { tokenIds: [T.TokenId]; txIds: [T.TransactionId] } = switch(Serde.JSON.fromText(portfolioJson, null)) {
+  //     case(#err(_)) throw Error.reject("cannot serialize asset data");
+  //     case(#ok(blob)) {
+  //       let portfolio: ?{ tokenIds: ?[T.TokenId]; txIds: ?[T.TransactionId]; } = from_candid(blob);
+  //       Debug.print("portfolio " # debug_show (portfolio));
 
-        switch(portfolio) {
-          case(null) throw Error.reject("cannot serialize asset data");
-          case(?value) {
-            {
-              tokenIds = switch(value.tokenIds) {
-                case(null) [];
-                case(?value) value;
-              };
-              txIds = switch(value.txIds) {
-                case(null) [];
-                case(?value) value;
-              };
-            }
-          };
-        };
-      };
-    };
+  //       switch(portfolio) {
+  //         case(null) throw Error.reject("cannot serialize asset data");
+  //         case(?value) {
+  //           {
+  //             tokenIds = switch(value.tokenIds) {
+  //               case(null) [];
+  //               case(?value) value;
+  //             };
+  //             txIds = switch(value.txIds) {
+  //               case(null) [];
+  //               case(?value) value;
+  //             };
+  //           }
+  //         };
+  //       };
+  //     };
+  //   };
 
-    // define page based on statement
-    let startPage = switch(page) {
-      case(null) 1;
-      case(?value) value;
-    };
+  //   // define page based on statement
+  //   let startPage = switch(page) {
+  //     case(null) 1;
+  //     case(?value) value;
+  //   };
 
-    // define length based on statement
-    let maxLength = switch(length) {
-      case(null) 50;
-      case(?value) value;
-    };
+  //   // define length based on statement
+  //   let maxLength = switch(length) {
+  //     case(null) 50;
+  //     case(?value) value;
+  //   };
 
-    let tokens = Buffer.Buffer<T.TokenInfo>(50);
+  //   let tokens = Buffer.Buffer<T.TokenInfo>(50);
 
-    // calculate range of elements returned
-    let startIndex: Nat = (startPage - 1) * maxLength;
-    var i = 0;
+  //   // calculate range of elements returned
+  //   let startIndex: Nat = (startPage - 1) * maxLength;
+  //   var i = 0;
 
-    Debug.print(debug_show ("before getPortfolio: " # Nat.toText(Cycles.balance())));
-
-
-    for(tokenId in portfolioIds.tokenIds.vals()) {
-      if (i >= startIndex and i < startIndex + maxLength) {
-        switch(tokenDirectory.get(tokenId)) {
-          case(null) {};
-
-          case(?cid) {
-            let token_balance = await Token.canister(cid).token_balance({ owner = uid; subaccount = null });
-            let token = {
-              tokenId;
-              totalAmount = token_balance.balance;
-              assetInfo = token_balance.assetMetadata;
-              inMarket = 0;
-            };
-
-            // filter by tokenId
-            let filterRange: Bool = switch(mwhRange) {
-              case(null) true;
-              case(?range) token.totalAmount >= range[0] and token.totalAmount <= range[1];
-            };
-
-            // filter by assetTypes
-            let filterAssetType = switch (assetTypes) {
-              case(null) true;
-              case(?assets) {
-                let assetType = Array.find<T.AssetType>(assets, func (assetType) { assetType == token.assetInfo.deviceDetails.deviceType });
-                assetType != null
-              };
-            };
-
-            // filter by country
-            let filterCountry = switch (country) {
-              case(null) true;
-              case(?value) token.assetInfo.specifications.country == value;
-            };
-
-            if (token.totalAmount > 0 and filterRange and filterAssetType and filterCountry) tokens.add(token);
-          };
-        };
-      };
-      i += 1;
-    };
+  //   Debug.print(debug_show ("before getPortfolio: " # Nat.toText(Cycles.balance())));
 
 
-    Debug.print(debug_show ("later getPortfolio: " # Nat.toText(Cycles.balance())));
+  //   for(tokenId in portfolioIds.tokenIds.vals()) {
+  //     if (i >= startIndex and i < startIndex + maxLength) {
+  //       switch(tokenDirectory.get(tokenId)) {
+  //         case(null) {};
 
-    var totalPages: Nat = i / maxLength;
-    if (totalPages <= 0) totalPages := 1;
+  //         case(?cid) {
+  //           let token_balance = await Token.canister(cid).token_balance({ owner = uid; subaccount = null });
+  //           let token = {
+  //             tokenId;
+  //             totalAmount = token_balance.balance;
+  //             assetInfo = token_balance.assetMetadata;
+  //             inMarket = 0;
+  //           };
 
-    {
-      tokens = Buffer.toArray<T.TokenInfo>(tokens);
-      txIds = portfolioIds.txIds;
-      totalPages;
-    }
-  };
+  //           // filter by tokenId
+  //           let filterRange: Bool = switch(mwhRange) {
+  //             case(null) true;
+  //             case(?range) token.totalAmount >= range[0] and token.totalAmount <= range[1];
+  //           };
+
+  //           // filter by assetTypes
+  //           let filterAssetType = switch (assetTypes) {
+  //             case(null) true;
+  //             case(?assets) {
+  //               let assetType = Array.find<T.AssetType>(assets, func (assetType) { assetType == token.assetInfo.deviceDetails.deviceType });
+  //               assetType != null
+  //             };
+  //           };
+
+  //           // filter by country
+  //           let filterCountry = switch (country) {
+  //             case(null) true;
+  //             case(?value) token.assetInfo.specifications.country == value;
+  //           };
+
+  //           if (token.totalAmount > 0 and filterRange and filterAssetType and filterCountry) tokens.add(token);
+  //         };
+  //       };
+  //     };
+  //     i += 1;
+  //   };
+
+
+  //   Debug.print(debug_show ("later getPortfolio: " # Nat.toText(Cycles.balance())));
+
+  //   var totalPages: Nat = i / maxLength;
+  //   if (totalPages <= 0) totalPages := 1;
+
+  //   {
+  //     tokens = Buffer.toArray<T.TokenInfo>(tokens);
+  //     txIds = portfolioIds.txIds;
+  //     totalPages;
+  //   }
+  // };
 
   /// update user portfolio
   private func updatePortfolio(uid: T.UID, tokenIds: [T.TokenId]/* , { delete: Bool } */) : async() {
@@ -721,6 +721,22 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     };
   };
 
+  public shared({ caller }) func balanceOfBatch(uid: T.UID, tokenIds: [T.TokenId]): async [(T.TokenId, ICRC1.Balance)] {
+    _callValidation(caller);
+
+    let hashMap: HM.HashMap<T.TokenId, Nat> = HM.HashMap(16, Text.equal, Text.hash);
+
+    for(tokenId in tokenIds.vals()) {
+      let balance = switch (tokenDirectory.get(tokenId)) {
+        case (null) 0;
+        case (?cid) await Token.canister(cid).icrc1_balance_of({ owner = uid; subaccount = null });
+      };
+
+      hashMap.put(tokenId, balance);
+    };
+
+    Iter.toArray(hashMap.entries());
+  };
 
   public shared({ caller }) func sellInMarketplace(seller: T.UID, tokenId: T.TokenId, amount: T.TokenAmount): async T.TxIndex {
     _callValidation(caller);

@@ -15,8 +15,8 @@ import UUID "mo:uuid/UUID";
 // types
 import T "../types";
 
-shared({ caller = userIndexCaller }) actor class Users() {
-  private func _callValidation(caller: Principal) { assert userIndexCaller == caller };
+shared({ caller = userIndexCaller }) actor class Users() = this {
+  private func _callValidation(caller: Principal) { assert userIndexCaller == caller or Principal.fromActor(this) == caller };
 
   /// funcs to persistent collection state
   system func preupgrade() {
@@ -39,10 +39,6 @@ shared({ caller = userIndexCaller }) actor class Users() {
   // ======================================== Profile ===================================================== //
   // ======================================================================================================== //
   stable var userInfo: ?T.UserInfo = null;
-
-  var users: HM.HashMap<T.UID, T.UserInfo> = HM.HashMap(16, Principal.equal, Principal.hash);
-  stable var usersEntries : [(T.UID, T.UserInfo)] = [];
-
 
 
   /// get vaultToken
@@ -80,6 +76,13 @@ shared({ caller = userIndexCaller }) actor class Users() {
     userInfo := ?{ info with companyLogo = ?avatar };
   };
 
+  /// initialize user info data
+  public shared({ caller }) func createProfile(info: T.UserInfo): async() {
+    _callValidation(caller);
+    assert userInfo == null;
+
+    userInfo := ?info;
+  };
 
   /// get user profile
   public shared({ caller }) func getProfile() : async T.UserProfile {
@@ -94,7 +97,7 @@ shared({ caller = userIndexCaller }) actor class Users() {
       case(null) throw Error.reject("Logo not found");
       case(?companyLogo) return {
         companyLogo;
-        principalId = Principal.toText(info.principal);
+        principalId = info.principal;
         companyId = info.companyId;
         companyName = info.companyName;
         city = info.city;
@@ -145,7 +148,7 @@ shared({ caller = userIndexCaller }) actor class Users() {
 
   // get portfolio
   public shared({ caller }) func getPortfolio(page: ?Nat, length: ?Nat, assetTypes: ?[T.AssetType], country: ?Text, mwhRange: ?[T.TokenAmount]): async {
-    data: [T.SinglePortfolio];
+    data: [T.Portfolio];
     totalPages: Nat;
   } {
     _callValidation(caller);
@@ -162,7 +165,7 @@ shared({ caller = userIndexCaller }) actor class Users() {
       case(?value) value;
     };
 
-    let portfolioFiltered = Buffer.Buffer<T.SinglePortfolio>(50);
+    let portfolioFiltered = Buffer.Buffer<T.Portfolio>(50);
 
     // calculate range of elements returned
     let startIndex: Nat = (startPage - 1) * maxLength;
@@ -194,7 +197,10 @@ shared({ caller = userIndexCaller }) actor class Users() {
           case(?value) tokenInfo.assetInfo.specifications.country == value;
         };
 
-        if (filterRange and filterAssetType and filterCountry) portfolioFiltered.add({ tokenInfo; redemptions });
+        if (filterRange and filterAssetType and filterCountry) portfolioFiltered.add({
+          tokenInfo;
+          redemptions = Array.map<T.TransactionInfo, T.TokenAmount>(redemptions, func x = x.tokenAmount);
+        });
       };
       i += 1;
     };
@@ -206,7 +212,7 @@ shared({ caller = userIndexCaller }) actor class Users() {
     if (totalPages <= 0) totalPages := 1;
 
     {
-      data = Buffer.toArray<T.SinglePortfolio>(portfolioFiltered);
+      data = Buffer.toArray<T.Portfolio>(portfolioFiltered);
       totalPages;
     }
   };
@@ -290,9 +296,59 @@ shared({ caller = userIndexCaller }) actor class Users() {
   };
 
   // get notifications
-  public shared({ caller }) func getNotifications(): async [T.NotificationInfo] {
+  public shared({ caller }) func getNotifications(page: ?Nat, length: ?Nat, notificationTypes: [T.NotificationType]): async {
+    data: [T.NotificationInfo];
+    totalPages: Nat;
+  } {
     _callValidation(caller);
-    Iter.toArray(notifications.vals());
+
+    // define page based on statement
+    let startPage = switch(page) {
+      case(null) 1;
+      case(?value) value;
+    };
+
+    // define length based on statement
+    let maxLength = switch(length) {
+      case(null) 50;
+      case(?value) value;
+    };
+
+    let notificationsFiltered = Buffer.Buffer<T.NotificationInfo>(50);
+
+    // calculate range of elements returned
+    let startIndex: Nat = (startPage - 1) * maxLength;
+    var i = 0;
+
+    Debug.print(debug_show ("before getNotifications: " # Nat.toText(Cycles.balance())));
+
+
+    for(notification in notifications.vals()) {
+      if (i >= startIndex and i < startIndex + maxLength) {
+        // filter by notificationTypes
+        let filterNotificationType = switch (notificationTypes.size() < 1) {
+          case(true) true;
+          case(false) {
+            let notificationType = Array.find<T.NotificationType>(notificationTypes, func (notificationType) { notificationType == notification.notificationType });
+            notificationType != null
+          };
+        };
+
+        if (filterNotificationType) notificationsFiltered.add(notification);
+      };
+      i += 1;
+    };
+
+
+    Debug.print(debug_show ("later getNotifications: " # Nat.toText(Cycles.balance())));
+
+    var totalPages: Nat = i / maxLength;
+    if (totalPages <= 0) totalPages := 1;
+
+    {
+      data = Buffer.toArray<T.NotificationInfo>(notificationsFiltered);
+      totalPages;
+    }
   };
 
   /// add notification
@@ -306,21 +362,50 @@ shared({ caller = userIndexCaller }) actor class Users() {
     id
   };
 
-  /// update general notification statuses
-  public shared({ caller }) func updateGeneral(notificationIds: [T.NotificationId]): async() {
+  /// clear notifications
+  public shared({ caller }) func clearNotifications(notificationIds: ?[T.NotificationId]): async() {
     _callValidation(caller);
 
-    for(notificationId in notificationIds.vals()) {
-      var notification = switch(notifications.get(notificationId)) {
-        case(null) throw Error.reject("Notification not found");
-        case(?value) value;
+    switch(notificationIds) {
+      case(null) {
+        for(notification in notifications.keys()) {
+          notifications.delete(notification);
+        };
       };
 
-      if (notification.notificationType == #general("general")) {
-        notification := { notification with status = ?#seen("seen") };
+      case(?value) {
+        for(notification in value.vals()) {
+          notifications.delete(notification);
+        };
+      };
+    };
+  };
+
+  /// update general notification statuses
+  public shared({ caller }) func updateGeneral(notificationIds: ?[T.NotificationId]): async() {
+    _callValidation(caller);
+
+    switch(notificationIds) {
+      case(null) {
+        for((id, notification) in notifications.entries()) {
+          if (notification.notificationType == #general("general")) {
+            notifications.put(id, { notification with status = ?#seen("seen") });
+          };
+        };
       };
 
-      notifications.put(notificationId, notification);
+      case(?value) {
+        for(notificationId in value.vals()) {
+          let notification = switch(notifications.get(notificationId)) {
+            case(null) throw Error.reject("Notification not found");
+            case(?value) value;
+          };
+
+          if (notification.notificationType == #general("general")) {
+            notifications.put(notificationId, { notification with status = ?#seen("seen") });
+          };
+        };
+      };
     };
   };
 
@@ -338,22 +423,6 @@ shared({ caller = userIndexCaller }) actor class Users() {
     };
 
     notifications.put(notificationId, notification);
-  };
-
-  /// clear notifications
-  public shared({ caller }) func clearNotifications(notificationIds: [T.NotificationId]): async() {
-    _callValidation(caller);
-
-    for(notification in notificationIds.vals()) {
-      let _ = notifications.remove(notification);
-    };
-  };
-
-  /// clear notification
-  public shared({ caller }) func clearNotification(notificationId: T.NotificationId): async() {
-    _callValidation(caller);
-
-    let _ = notifications.remove(notificationId);
   };
 
 
@@ -440,5 +509,13 @@ shared({ caller = userIndexCaller }) actor class Users() {
     if (exists != null) throw Error.reject("Transaction already exists");
 
     transactions := Array.flatten<T.TransactionId>([transactions, [transactionId]]);
+  };
+
+  public shared({ caller }) func updateMarketplace(tokenId: T.TokenId, inMarket: T.TokenAmount, transactionId: T.TransactionId): async() {
+    _callValidation(caller);
+
+    await updatePortfolio({ tokenId; inMarket = ?inMarket; redemption = null });
+
+    await addTransaction(transactionId);
   };
 }

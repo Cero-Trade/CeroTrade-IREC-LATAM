@@ -113,7 +113,6 @@ export class AgentCanister {
   static async getProfile(uid?: Principal): Promise<UserProfileModel> {
     try {
       const userProfile = await agent().getProfile(uid ? [uid] : []) as UserProfileModel
-      userProfile.principalId = Principal.fromText(userProfile.principalId.toString())
       userProfile.companyLogo = getUrlFromArrayBuffer(userProfile.companyLogo) || avatar
       userProfile.createdAt = new Date(userProfile.createdAt)
       userProfile.updatedAt = new Date(userProfile.updatedAt)
@@ -285,26 +284,6 @@ export class AgentCanister {
       console.log(transactions);
 
       return transactions
-    } catch (error) {
-      console.error(error);
-      throw getErrorMessage(error)
-    }
-  }
-
-  static async getTokenDetails(tokenId: string): Promise<TokenModel> {
-    try {
-      const token = await agent().getTokenDetails(tokenId) as TokenModel
-
-      // format record value
-      token.assetInfo.volumeProduced = tokenToNumber(token.assetInfo.volumeProduced)
-      token.totalAmount = tokenToNumber(token.totalAmount)
-      token.inMarket = tokenToNumber(token.inMarket)
-      // format dates
-      token.assetInfo.deviceDetails.deviceType = Object.values(token.assetInfo.deviceDetails.deviceType)[0] as AssetType
-      token.assetInfo.startDate = new Date(token.assetInfo.startDate)
-      token.assetInfo.endDate = new Date(token.assetInfo.endDate)
-
-      return token
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)

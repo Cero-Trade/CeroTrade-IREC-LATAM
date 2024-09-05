@@ -142,7 +142,7 @@ module {
 
   public type UserProfile = {
     companyLogo: ArrayFile;
-    principalId: Text;
+    principalId: Principal;
     companyId: Text;
     companyName: Text;
     city: Text;
@@ -154,6 +154,11 @@ module {
   public type SinglePortfolio = {
     tokenInfo: TokenInfo;
     redemptions: [TransactionInfo];
+  };
+
+  public type Portfolio = {
+    tokenInfo: TokenInfo;
+    redemptions: [TokenAmount];
   };
 
   public type TokenInfo = {

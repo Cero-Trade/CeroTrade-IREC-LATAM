@@ -9,7 +9,6 @@ import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
 import Nat64 "mo:base/Nat64";
 import Nat8 "mo:base/Nat8";
-import Buffer "mo:base/Buffer";
 import DateTime "mo:datetime/DateTime";
 
 // canisters
@@ -18,8 +17,7 @@ import TokenIndex "canister:token_index";
 import TransactionIndex "canister:transaction_index";
 import Marketplace "canister:marketplace";
 import Statistics "canister:statistics";
-import NotificationIndex "canister:notification_index";
-import BucketIndex "canister:notification_index";
+import BucketIndex "canister:bucket_index";
 
 // interfaces
 import IC_MANAGEMENT "../ic_management_canister_interface";
@@ -59,21 +57,20 @@ actor class Agent() = this {
   /// delete user into Cero Trade
   public shared({ caller }) func deleteUser(): async() {
     let portfolio: {
-      tokens: [T.TokenInfo];
-      txIds: [T.TransactionId];
+      data: [T.Portfolio];
       totalPages: Nat;
-    } = await TokenIndex.getPortfolio(caller, null, null, null, null, null);
+    } = await _getPortfolio(caller, null, null, null, null, null);
 
-    for({ tokenId; totalAmount; assetInfo; } in portfolio.tokens.vals()) {
+    for({ tokenInfo; } in portfolio.data.vals()) {
       // check if user has enough tokens
-      let tokensInSale = await Marketplace.getUserTokensOnSale(caller, tokenId);
+      let tokensInSale = await Marketplace.getUserTokensOnSale(caller, tokenInfo.tokenId);
       if (tokensInSale > 0) {
         // take off tokens on marketplace reference
-        await Marketplace.takeOffSale(tokenId, tokensInSale, caller);
+        let _ = await Marketplace.takeOffSale(tokenInfo.tokenId, tokensInSale, caller);
       };
 
       // burn user tokens
-      let txs = await TokenIndex.burnUserTokens(caller, tokenId, totalAmount, tokensInSale);
+      let txs = await TokenIndex.burnUserTokens(caller, tokenInfo.tokenId, tokenInfo.totalAmount, tokensInSale);
 
       for({ tokenAmount; txIndex; } in txs.vals()) {
         // build transaction
@@ -82,7 +79,7 @@ actor class Agent() = this {
           txIndex;
           from = caller;
           to = null;
-          tokenId;
+          tokenId = tokenInfo.tokenId;
           txType = #burn("burn");
           tokenAmount;
           priceE8S = null;
@@ -92,11 +89,11 @@ actor class Agent() = this {
         };
 
         // register transaction
-        let txId = await TransactionIndex.registerTransaction(txInfo);
+        let _txId = await TransactionIndex.registerTransaction(txInfo);
       };
 
       // remove tokens from statistics
-      await Statistics.removeAssetStatistic(tokenId, totalAmount);
+      await Statistics.removeAssetStatistic(tokenInfo.tokenId, tokenInfo.totalAmount);
     };
 
     // delete user
@@ -118,7 +115,6 @@ actor class Agent() = this {
     await UserIndex.registerControllers();
     await TokenIndex.registerControllers();
     await TransactionIndex.registerControllers();
-    await NotificationIndex.registerControllers();
     await BucketIndex.registerControllers();
   };
 
@@ -130,7 +126,6 @@ actor class Agent() = this {
       case(#token("token")) await TokenIndex.registerWasmArray();
       case(#users("users")) await UserIndex.registerWasmArray();
       case(#transactions("transactions")) await TransactionIndex.registerWasmArray();
-      case(#notifications("notifications")) await NotificationIndex.registerWasmArray();
       case(#bucket("bucket")) await BucketIndex.registerWasmArray();
       case _ throw Error.reject("Module name doesn't exists");
     };
@@ -149,14 +144,12 @@ actor class Agent() = this {
         await TokenIndex.deleteDeployedCanister(null);
         await UserIndex.deleteDeployedCanister(null);
         await TransactionIndex.deleteDeployedCanister(null);
-        await NotificationIndex.deleteDeployedCanister(null);
         await BucketIndex.deleteDeployedCanister(null);
       };
       case(?value) switch(value) {
         case(#token("token")) await TokenIndex.deleteDeployedCanister(cid);
         case(#users("users")) await UserIndex.deleteDeployedCanister(cid);
         case(#transactions("transactions")) await TransactionIndex.deleteDeployedCanister(cid);
-        case(#notifications("notifications")) await NotificationIndex.deleteDeployedCanister(cid);
         case(#bucket("bucket")) await BucketIndex.deleteDeployedCanister(cid);
         case _ throw Error.reject("Module name doesn't exists");
       };
@@ -222,7 +215,7 @@ actor class Agent() = this {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
-    let (_, notification) = await NotificationIndex.getNotification(notificationId);
+    let notification = await UserIndex.getNotification(caller, notificationId);
 
     // validate notification provided
     switch(notification.eventStatus) {
@@ -254,7 +247,7 @@ actor class Agent() = this {
     if (await UserIndex.checkBeneficiary(caller, beneficiaryId)) throw Error.reject("Beneficiary has already been added");
 
     // send beneficiary notification
-    await _addNotification({
+    await UserIndex.addNotification({
       id = "0";
       title = "Beneficiary request";
       content = null;
@@ -280,59 +273,55 @@ actor class Agent() = this {
   /// function to know user token balance
   public shared({ caller }) func balanceOf(tokenId: T.TokenId): async T.TokenAmount { await TokenIndex.balanceOf(caller, tokenId) };
 
+  /// get user single portfolio information
+  public shared({ caller }) func getSinglePortfolio(tokenId: T.TokenId): async T.SinglePortfolio {
+    await _getSinglePortfolio(caller, tokenId);
+  };
+
+  // helper function to get single portfolio
+  private func _getSinglePortfolio(caller: T.UID, tokenId: T.TokenId): async T.SinglePortfolio {
+    let singlePortfolio = await UserIndex.getSinglePortfolio(caller, tokenId);
+    let balance = await TokenIndex.balanceOf(caller, singlePortfolio.tokenInfo.tokenId);
+
+    { singlePortfolio with tokenAmount = balance }
+  };
+
   /// get user portfolio information
   public shared({ caller }) func getPortfolio(page: ?Nat, length: ?Nat, assetTypes: ?[T.AssetType], country: ?Text, mwhRange: ?[T.TokenAmount]): async {
-    tokensInfo: { data: [T.TokenInfo]; totalPages: Nat; };
-    tokensRedemption: [T.TransactionInfo]
+    data: [T.Portfolio];
+    totalPages: Nat;
   } {
-    let tokensInfo: {
-      tokens: [T.TokenInfo];
-      txIds: [T.TransactionId];
-      totalPages: Nat;
-    } = await TokenIndex.getPortfolio(caller, page, length, assetTypes, country, mwhRange);
-
-    let tokensRedemption: [T.TransactionInfo] = await TransactionIndex.getTransactionsById(tokensInfo.txIds, ?#redemption("redemption"), null, null, null, null, null);
-
-    { 
-      tokensInfo = { data = tokensInfo.tokens; totalPages = tokensInfo.totalPages; };
-      tokensRedemption
-    };
+    await _getPortfolio(caller, page, length, assetTypes, country, mwhRange);
   };
 
+  // helper function to get portfolio
+  private func _getPortfolio(caller: T.UID, page: ?Nat, length: ?Nat, assetTypes: ?[T.AssetType], country: ?Text, mwhRange: ?[T.TokenAmount]): async {
+    data: [T.Portfolio];
+    totalPages: Nat;
+  } {
+    let filteredPortfolio = await UserIndex.getPortfolio(caller, page, length, assetTypes, country, mwhRange);
+    let balances: [(T.TokenId, Nat)] = await TokenIndex.balanceOfBatch(
+      caller,
+      Array.map<T.Portfolio, T.TokenId>(filteredPortfolio.data, func x = x.tokenInfo.tokenId)
+    );
 
-  /// get user single portfolio information
-  public shared({ caller }) func getSinglePortfolio(tokenId: T.TokenId): async T.TokenInfo {
-    // check if user exists
-    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
-
-    let tokenInfo: T.TokenInfo = await TokenIndex.getTokenPortfolio(caller, tokenId);
-    let inMarket = await Marketplace.getAvailableTokens(tokenId);
-
-    { tokenInfo with inMarket }
-  };
+    // Convert tokensInfo to a HashMap for faster lookup
+    let tokenBalances = HM.fromIter<T.TokenId, Nat>(Iter.fromArray(balances), 16, Text.equal, Text.hash);
 
 
+    // map filteredPortfolio and tokenBalances values to portfolio info
+    let portfolio: [T.Portfolio] = Array.map<T.Portfolio, T.Portfolio>(filteredPortfolio.data, func (item) {
+      let balance = switch(tokenBalances.get(item.tokenInfo.tokenId)) {
+        case(null) 0;
+        case(?value) value;
+      };
 
-  /// get token information
-  public shared({ caller }) func getTokenDetails(tokenId: T.TokenId): async T.TokenInfo {
-    // check if user exists
-    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
+      { item with tokenAmount = balance }
+    });
 
-    try {
-      let tokenInfo: T.TokenInfo = await TokenIndex.getTokenPortfolio(caller, tokenId);
-      let inMarket = await Marketplace.getAvailableTokens(tokenId);
-
-      { tokenInfo with inMarket }
-    } catch (error) {
-      let assetInfo: T.AssetInfo = await TokenIndex.getAssetInfo(tokenId);
-      let inMarket = await Marketplace.getAvailableTokens(tokenId);
-
-      {
-        tokenId;
-        totalAmount = 0;
-        inMarket;
-        assetInfo;
-      }
+    {
+      data = portfolio;
+      totalPages = filteredPortfolio.totalPages;
     }
   };
 
@@ -567,11 +556,11 @@ actor class Agent() = this {
     // register transaction
     let txId = await TransactionIndex.registerTransaction(txInfo);
 
-    // store to caller and recipent
-    await UserIndex.updateTransactions(caller, ?recipent, txId);
-
     // take token off marketplace reference
-    await Marketplace.takeOffSale(tokenId, tokenAmount, recipent);
+    let amountInMarket = await Marketplace.takeOffSale(tokenId, tokenAmount, recipent);
+
+    // store to caller and recipent
+    await UserIndex.updateMarketplace(caller, { tokenId; amountInMarket; recipent = ?recipent; transactionId = txId });
 
     { txInfo with transactionId = txId }
   };
@@ -620,10 +609,10 @@ actor class Agent() = this {
     let txId = await TransactionIndex.registerTransaction(txInfo);
 
     // put tokens on marketplace reference
-    await Marketplace.putOnSale(tokenId, quantity, caller, priceE8S);
+    let amountInMarket = await Marketplace.putOnSale(tokenId, quantity, caller, priceE8S);
 
     // store to caller
-    await UserIndex.updateTransactions(caller, null, txId);
+    await UserIndex.updateMarketplace(caller, { tokenId; amountInMarket; recipent = null; transactionId = txId });
 
     { txInfo with transactionId = txId }
   };
@@ -635,7 +624,7 @@ actor class Agent() = this {
   };
 
 
-  // herlper function to ask market to take off market
+  // helper function to ask market to take off market
   private func _takeTokenOffMarket(uid: T.UID, tokenId: T.TokenId, quantity: T.TokenAmount): async T.TransactionInfo {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(uid))) throw Error.reject(notExists);
@@ -669,11 +658,11 @@ actor class Agent() = this {
     // register transaction
     let txId = await TransactionIndex.registerTransaction(txInfo);
 
-    // store to uid
-    await UserIndex.updateTransactions(uid, null, txId);
-
     // take off tokens on marketplace reference
-    await Marketplace.takeOffSale(tokenId, quantity, uid);
+    let amountInMarket = await Marketplace.takeOffSale(tokenId, quantity, uid);
+
+    // store to uid
+    await UserIndex.updateMarketplace(uid, { tokenId; amountInMarket; recipent = null; transactionId = txId });
 
     { txInfo with transactionId = txId }
   };
@@ -698,7 +687,7 @@ actor class Agent() = this {
     let txIndex = await TokenIndex.requestRedeem(caller, tokenId, quantity, { returns = false });
 
     // send redemption notification to beneficiary
-    await _addNotification({
+    await UserIndex.addNotification({
       id = "0";
       title = "Redemption request";
       content = null;
@@ -724,7 +713,7 @@ actor class Agent() = this {
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
     // get redemption notification
-    let (_, notification) = await NotificationIndex.getNotification(notificationId);
+    let notification = await UserIndex.getNotification(caller, notificationId);
 
     // validate notification provided
     switch(notification.eventStatus) {
@@ -792,13 +781,13 @@ actor class Agent() = this {
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
     // check if token exists
-    let tokenPortofolio = await TokenIndex.getTokenPortfolio(caller, tokenId);
+    let tokenPortfolio = await _getSinglePortfolio(caller, tokenId);
 
     // check if user has enough tokens
     let tokensInSale = await Marketplace.getUserTokensOnSale(caller, tokenId);
 
-    if (tokenPortofolio.totalAmount < tokensInSale) throw Error.reject("Not enough tokens in portfolio");
-    let availableTokens: T.TokenAmount = tokenPortofolio.totalAmount - tokensInSale;
+    if (tokenPortfolio.tokenInfo.totalAmount < tokensInSale) throw Error.reject("Not enough tokens in portfolio");
+    let availableTokens: T.TokenAmount = tokenPortfolio.tokenInfo.totalAmount - tokensInSale;
     if (availableTokens < quantity) throw Error.reject("Not enough tokens in portfolio");
 
     // ask token to burn the tokens
@@ -838,38 +827,13 @@ actor class Agent() = this {
     data: [T.TransactionHistoryInfo];
     totalPages: Nat;
   } {
-    // check if user exists
-    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
-
-    // define page based on statement
-    let startPage = switch(page) {
-      case(null) 1;
-      case(?value) value;
-    };
-
-    // define length based on statement
-    let maxLength = switch(length) {
-      case(null) 50;
-      case(?value) value;
-    };
-
-    let txIds = await UserIndex.getTransactionIds(caller);
-    let txIdsFiltered = Buffer.Buffer<T.TransactionId>(50);
-
-    // calculate range of elements returned
-    let startIndex: Nat = (startPage - 1) * maxLength;
-    var i = 0;
-
-    for (txId in txIds.vals()) {
-      if (i >= startIndex and i < startIndex + maxLength) txIdsFiltered.add(txId);
-      i += 1;
-    };
-
-    var totalPages: Nat = i / maxLength;
-    if (totalPages <= 0) totalPages := 1;
+    let txIdsFiltered: {
+      data: [T.TransactionId];
+      totalPages: Nat;
+    } = await UserIndex.getTransactionIds(caller, page, length);
 
 
-    let transactionsInfo: [T.TransactionInfo] = await TransactionIndex.getTransactionsById(Buffer.toArray<T.TransactionId>(txIdsFiltered), txType, priceRange, mwhRange, method, rangeDates, tokenId);
+    let transactionsInfo: [T.TransactionInfo] = await TransactionIndex.getTransactionsById(txIdsFiltered.data, txType, priceRange, mwhRange, method, rangeDates, tokenId);
 
     // get tokens info
     let tokensInfo: [T.AssetInfo] = await TokenIndex.getTokensInfo(Array.map<T.TransactionInfo, Text>(transactionsInfo, func x = x.tokenId));
@@ -929,7 +893,7 @@ actor class Agent() = this {
 
     {
       data = filteredTransactions;
-      totalPages
+      totalPages = txIdsFiltered.totalPages;
     }
   };
 
@@ -943,39 +907,17 @@ actor class Agent() = this {
 
   // get notifications
   public shared({ caller }) func getNotifications(page: ?Nat, length: ?Nat, notificationTypes: [T.NotificationType]): async [T.NotificationInfo] {
-    let token = await UserIndex.getUserToken(caller);
-    await NotificationIndex.getNotifications(token, page, length, notificationTypes);
+    await UserIndex.getNotifications(caller, page, length, notificationTypes);
   };
-
-
-  // add notification
-  private func _addNotification(notification: T.NotificationInfo): async() {
-    let receiverToken = await UserIndex.getUserToken(notification.receivedBy);
-
-    let triggerToken: ?T.UserTokenAuth = switch(notification.triggeredBy) {
-      case(null) null;
-      case(?triggerUser) {
-        if (notification.notificationType == #general("general")) { null } else {
-          let token = await UserIndex.getUserToken(triggerUser);
-          ?token
-        }
-      };
-    };
-
-    await NotificationIndex.addNotification(receiverToken, triggerToken, notification);
-  };
-
 
   // update general notifications
-  public shared({ caller }) func updateGeneralNotifications(notificationIds: [T.NotificationId]) : async() {
-    let token = await UserIndex.getUserToken(caller);
-    await NotificationIndex.updateGeneralNotifications(token, notificationIds);
+  public shared({ caller }) func updateGeneralNotifications(notificationIds: ?[T.NotificationId]) : async() {
+    await UserIndex.updateGeneralNotifications(caller, notificationIds);
   };
 
-  // clear general notifications
-  public shared({ caller }) func clearGeneralNotifications(notificationIds: [T.NotificationId]): async() {
-    let token = await UserIndex.getUserToken(caller);
-    await NotificationIndex.clearGeneralNotifications(token, notificationIds);
+  // clear notifications
+  public shared({ caller }) func clearNotifications(notificationIds: ?[T.NotificationId]): async() {
+    await UserIndex.clearNotifications(caller, notificationIds);
   };
 
   // update event notification
@@ -985,39 +927,28 @@ actor class Agent() = this {
 
   // helper function to performe updateEventNotification
   private func _updateEventNotification(caller: T.UID, notificationId: T.NotificationId, eventStatus: ?T.NotificationEventStatus): async ?T.TxIndex {
-    let (cid, notification) = await NotificationIndex.getNotification(notificationId);
-
-    let receiver = await UserIndex.getUserToken(notification.receivedBy);
-
-    let trigger: ?T.UserTokenAuth = switch(notification.triggeredBy) {
+    switch(await UserIndex.updateEventNotification(caller, notificationId, eventStatus)) {
       case(null) null;
-      case(?triggerUser) {
-        if (notification.notificationType == #general("general")) { null } else {
-          let token = await UserIndex.getUserToken(triggerUser);
-          ?token
-        }
+
+      case(?notification) {
+        // flow to return holded tokens
+        let triggerUser = switch(notification.triggeredBy) {
+          case(null) throw Error.reject("triggeredBy not provided");
+          case(?value) value;
+        };
+        let tokenId = switch(notification.tokenId) {
+          case(null) throw Error.reject("tokenId not provided");
+          case(?value) value;
+        };
+        let quantity = switch(notification.quantity) {
+          case(null) throw Error.reject("quantity not provided");
+          case(?value) value;
+        };
+
+        // return tokens holded on token canister if trigger performe cancelation
+        let txIndex = await TokenIndex.requestRedeem(triggerUser, tokenId, quantity, { returns = true });
+        ?txIndex
       };
     };
-
-    let redemptionCancelled = await NotificationIndex.updateEventNotification(caller, { receiver; trigger }, (cid, notification), eventStatus);
-    if (not redemptionCancelled) return null;
-
-    // flow to return holded tokens
-    let triggerUser = switch(notification.triggeredBy) {
-      case(null) throw Error.reject("triggeredBy not provided");
-      case(?value) value;
-    };
-    let tokenId = switch(notification.tokenId) {
-      case(null) throw Error.reject("tokenId not provided");
-      case(?value) value;
-    };
-    let quantity = switch(notification.quantity) {
-      case(null) throw Error.reject("quantity not provided");
-      case(?value) value;
-    };
-
-    // return tokens holded on token canister if trigger performe cancelation
-    let txIndex = await TokenIndex.requestRedeem(triggerUser, tokenId, quantity, { returns = true });
-    ?txIndex
   };
 }

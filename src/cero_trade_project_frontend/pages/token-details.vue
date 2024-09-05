@@ -1454,10 +1454,10 @@ onBeforeMount(() => {
 async function getData() {
   try {
     const [checkToken, checkTokenInMarket, token, txRedemptions, statistics, _, __] = await Promise.allSettled([
-      AgentCanister.checkUserToken(tokenId.value),
-      AgentCanister.checkUserTokenInMarket(tokenId.value),
-      AgentCanister.getTokenDetails(tokenId.value),
-      AgentCanister.getTransactions({ txType: 'redemption', tokenId: tokenId.value }),
+      AgentCanister.checkUserToken(tokenId.value), // remove
+      AgentCanister.checkUserTokenInMarket(tokenId.value), // remove
+      AgentCanister.getSinglePortfolio(tokenId.value), // get other removed data from here
+      AgentCanister.getTransactions({ txType: 'redemption', tokenId: tokenId.value }), // remove
       AgentCanister.getAssetStatistics(tokenId.value),
       getMarketPlace(),
       getBeneficiaries()

@@ -1,6 +1,5 @@
 <!-- TODO subdomain integration with `cerotrade.cl/alfa` -->
 <!-- TODO make new arquitecture to backend -->
-<!-- TODO change delete canister function to inactivate canister and can be reused when create other user -->
 
 # Cero Trade
 

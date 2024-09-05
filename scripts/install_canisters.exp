@@ -73,7 +73,7 @@ proc expectPassphrase {passphrase} {
 
 # Install canisters code
 puts "====-Install canisters code-===="
-set canisters {http_service user_index token_index notification_index transaction_index bucket_index marketplace statistics agent}
+set canisters {http_service user_index token_index transaction_index bucket_index marketplace statistics agent}
 
 if {!$backend_found} {
   set canisters [linsert $canisters 0 "cero_trade_project_frontend"]
@@ -100,7 +100,7 @@ close $file_id
 # Delete file after read it
 file delete "principal.txt"
 
-set indexCanisters {agent token_index user_index transaction_index notification_index bucket_index}
+set indexCanisters {agent token_index user_index transaction_index bucket_index}
 
 foreach canister $indexCanisters {
   spawn dfx canister update-settings $canister --add-controller $controller --network $network

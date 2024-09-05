@@ -59,7 +59,7 @@ actor class Marketplace() = this {
 
   // TODO troubles here setting token on marketplace
   // handles new token information on market
-  public shared({ caller }) func putOnSale(tokenId : T.TokenId, quantity : T.TokenAmount, user : T.UID, priceE8S: T.Price) : async () {
+  public shared({ caller }) func putOnSale(tokenId : T.TokenId, quantity : T.TokenAmount, user : T.UID, priceE8S: T.Price) : async T.TokenAmount {
     _callValidation(caller);
 
     switch(tokensInMarket.get(tokenId)) {
@@ -68,17 +68,26 @@ actor class Marketplace() = this {
         let usersxToken = HM.HashMap<T.UID, T.UserTokenInfo>(100, Principal.equal, Principal.hash);
         usersxToken.put(user, { quantity; priceE8S });
         tokensInMarket.put(tokenId, { totalQuantity = quantity; usersxToken; });
+
+        return quantity
       };
 
       // token exists
       case(?tokenMarketInfo) {
         let usersxToken = tokenMarketInfo.usersxToken;
-        usersxToken.put(user, { quantity; priceE8S });
+
+        let userTokensOnSale = switch(usersxToken.get(user)) {
+          case(null) quantity;
+          case(?value) value.quantity + quantity;
+        };
+        usersxToken.put(user, { quantity = userTokensOnSale; priceE8S; });
 
         tokensInMarket.put(tokenId, {
           tokenMarketInfo with totalQuantity = tokenMarketInfo.totalQuantity + quantity;
           usersxToken
         });
+
+        return userTokensOnSale
       };
     };
   };
@@ -157,32 +166,36 @@ actor class Marketplace() = this {
   };
 
   // handles reducing token offer from the market
-  public shared({ caller }) func takeOffSale(tokenId: T.TokenId, quantity: T.TokenAmount, user: T.UID): async () {
+  public shared({ caller }) func takeOffSale(tokenId: T.TokenId, quantity: T.TokenAmount, user: T.UID): async T.TokenAmount {
     _callValidation(caller);
 
     switch (tokensInMarket.get(tokenId)) {
       case (null) {
         throw Error.reject("Token not found in the market");
       };
+
       case(?tokenMarket) {
         switch (tokenMarket.usersxToken.get(user)) {
           case (null){
             throw Error.reject("User's token not found in the market");
           };
+
           case (?userTokenInfo) {
             let newQuantity: T.TokenAmount = userTokenInfo.quantity - quantity;
+
             // if the new quantity is 0, remove the user from tokensxuser
             if (newQuantity == 0) {
               await _deleteUserTokenfromMarket(tokenId, user);
               let newTotalQuantity: T.TokenAmount = tokenMarket.totalQuantity - quantity;
+
               // if the new total quantity is 0, remove the token from the market
               if (newTotalQuantity == 0) {
-                  await _deleteTokensInMarket(tokenId);
+                await _deleteTokensInMarket(tokenId);
               } else if (newTotalQuantity > 0) {
-                  // Update the total quantity in the market info
-                  await _reduceTotalQuantity(tokenId, quantity);
+                // Update the total quantity in the market info
+                await _reduceTotalQuantity(tokenId, quantity);
               } else {
-                  throw Error.reject("Token quantity cannot be less than 0");
+                throw Error.reject("Token quantity cannot be less than 0");
               };
             } else if (newQuantity > 0) {
               // Update the user's token quantity and market info
@@ -191,6 +204,8 @@ actor class Marketplace() = this {
             } else {
               throw Error.reject("User's token quantity cannot be less than 0");
             };
+
+            return newQuantity
           };
         };
       };

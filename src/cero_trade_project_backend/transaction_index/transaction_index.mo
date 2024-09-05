@@ -151,7 +151,7 @@ actor class TransactionIndex() = this {
         await IC_MANAGEMENT.ic.delete_canister({ canister_id });
 
         for((txId, cid) in transactionsDirectory.entries()) {
-          if (cid == canister_id) let _ = transactionsDirectory.remove(txId);
+          if (cid == canister_id) return transactionsDirectory.delete(txId);
         };
       };
       case(null) {
