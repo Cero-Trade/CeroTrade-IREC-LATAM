@@ -399,12 +399,12 @@ async function getData() {
       }
       return acc;
     }, []),
-    groupedRedemptions = groupedTokens.map(e => e.redeemed ?? 0)
+    groupedRedemptions = groupedTokens.map(e => formatAmount(e.redeemed ?? 0, { compact: true }))
 
     series.value = [
       {
         name: 'MWh',
-        data: groupedTokens.map(e => e.mwh ?? 0)
+        data: groupedTokens.map(e => formatAmount(e.mwh ?? 0, { compact: true }))
       },
       {
         name: 'Redeemed',
