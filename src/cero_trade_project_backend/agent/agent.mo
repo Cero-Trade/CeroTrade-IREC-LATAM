@@ -301,7 +301,7 @@ actor class Agent() = this {
     let singlePortfolio = await UserIndex.getSinglePortfolio(caller, tokenId);
     let balance = await TokenIndex.balanceOf(caller, singlePortfolio.tokenInfo.tokenId);
 
-    { singlePortfolio with tokenAmount = balance }
+    { singlePortfolio with tokenInfo = { singlePortfolio.tokenInfo with totalAmount = balance } }
   };
 
   /// get user portfolio information
@@ -334,12 +334,12 @@ actor class Agent() = this {
         case(?value) value;
       };
 
-      { item with tokenAmount = balance }
+      { item with tokenInfo = { item.tokenInfo with totalAmount = balance }  }
     });
 
     // divide tokens without balance and tokens with balance
     let (shouldKeep, shouldNotKeep): (List.List<T.Portfolio>, List.List<T.Portfolio>) = List.partition<T.Portfolio>(List.fromArray<T.Portfolio>(portfolio), func (item) {
-      item.tokenInfo.totalAmount > 0 or item.tokenInfo.inMarket > 0
+      item.tokenInfo.totalAmount > 0 or item.tokenInfo.inMarket > 0 or item.redemptions.size() > 0
     });
 
     // remove tokens without balance
@@ -935,7 +935,10 @@ actor class Agent() = this {
 
 
   // get notifications
-  public shared({ caller }) func getNotifications(page: ?Nat, length: ?Nat, notificationTypes: [T.NotificationType]): async [T.NotificationInfo] {
+  public shared({ caller }) func getNotifications(page: ?Nat, length: ?Nat, notificationTypes: [T.NotificationType]): async {
+    data: [T.NotificationInfo];
+    totalPages: Nat;
+  } {
     await UserIndex.getNotifications(caller, page, length, notificationTypes);
   };
 

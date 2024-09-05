@@ -365,7 +365,7 @@ async function getData() {
 
   try {
     // get getPortfolio
-    const { tokensInfo, tokensRedemption } = await AgentCanister.getPortfolio({
+    const { data, totalPages: pages } = await AgentCanister.getPortfolio({
       length: itemsPerPage.value,
       country: filters.value.country?.toLowerCase(),
       mwhRange: filters.value.mwhRange,
@@ -374,54 +374,46 @@ async function getData() {
     }),
     list = []
 
-    for (const item of tokensInfo.data) {
+    for (const item of data) {
       list.push({
-        token_id: item.tokenId,
-        energy_source: item.assetInfo.deviceDetails.deviceType,
-        country: item.assetInfo.specifications.country,
-        mwh: item.totalAmount,
+        token_id: item.tokenInfo.tokenId,
+        energy_source: item.tokenInfo.assetInfo.deviceDetails.deviceType,
+        country: item.tokenInfo.assetInfo.specifications.country,
+        mwh: item.tokenInfo.totalAmount,
+        redemptions: item.redemptions,
       })
     }
 
     dataPortfolio.value = list.sort((a, b) => a.token_id - b.token_id)
-    totalPages.value = tokensInfo.totalPages
+    totalPages.value = pages
 
     const groupedTokens = list.reduce((acc, item) => {
       let existenceElement = acc.find(elem => elem.energy_source === item.energy_source);
 
       if (existenceElement) {
         existenceElement.mwh += item.mwh;
+        existenceElement.redemed ??= 0
+        existenceElement.redemed += item.redemptions.reduce((acc, value) => acc + value, 0)
       } else {
-        acc.push({ ...item });
+        acc.push({ ...item, redemed: item.redemptions.reduce((acc, value) => acc + value, 0) });
       }
       return acc;
-    }, []);
-
-    const groupedRedemptions = tokensRedemption.reduce((acc, item) => {
-      let existenceElement = acc.find(elem => elem.energy_source === item.energy_source);
-
-      if (existenceElement) {
-        existenceElement.tokenAmount += item.tokenAmount;
-      } else {
-        acc.push({ ...item });
-      }
-      return acc;
-    }, []);
-
+    }, []),
+    groupedRedemptions = groupedTokens.map(e => e.redemed ?? 0)
 
     series.value = [
       {
         name: 'MWh',
-        data: groupedTokens.map(e => e.mwh || 0)
+        data: groupedTokens.map(e => e.mwh ?? 0)
       },
       {
         name: 'Redeemed',
-        data: groupedRedemptions.map(e => e.tokenAmount || 0)
+        data: groupedRedemptions
       }
     ]
     if (groupedTokens.length) categories.value = groupedTokens.map(e => e.energy_source)
 
-    totalRedeemed.value = groupedRedemptions.reduce((acc, item) => acc + item.tokenAmount, 0) || 0
+    totalRedeemed.value = groupedRedemptions.reduce((acc, item) => acc + item, 0) ?? 0
   } catch (error) {
     console.error(error);
     toast.error(error)

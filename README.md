@@ -1,5 +1,9 @@
 <!-- TODO subdomain integration with `cerotrade.cl/alfa` -->
 <!-- TODO make new arquitecture to backend -->
+<!-- TODO make better look to marketplace data table users and beneficiaries users -->
+<!-- TODO checkout transactions flow -->
+<!-- TODO checkout marketplace flow -->
+<!-- TODO checkout notificaitons flow -->
 
 # Cero Trade
 

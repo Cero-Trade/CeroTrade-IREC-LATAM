@@ -22,7 +22,7 @@ module UsersInterface {
     updatePortfolio: ({ tokenId: T.TokenId; inMarket: ?T.TokenAmount; redemption: ?T.TransactionInfo }) -> async();
     // ======================================== Notifications ===================================================== //
     getNotification: (notificationId: T.NotificationId) -> async T.NotificationInfo;
-    getNotifications: (page: ?Nat, length: ?Nat, notificationTypes: [T.NotificationType]) -> async [T.NotificationInfo];
+    getNotifications: (page: ?Nat, length: ?Nat, notificationTypes: [T.NotificationType]) -> async { data: [T.NotificationInfo]; totalPages: Nat; };
     addNotification: (notification: T.NotificationInfo) -> async();
     updateGeneral: (notificationIds: ?[T.NotificationId]) -> async();
     updateEvent: (notificationId: T.NotificationId, eventStatus: T.NotificationEventStatus) -> async();

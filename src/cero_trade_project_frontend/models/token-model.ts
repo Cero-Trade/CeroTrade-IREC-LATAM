@@ -1,3 +1,5 @@
+import { TransactionInfo } from "./transaction-model";
+
 export type TokenStatus = "redeem"|"sold"|"forSale"|"notForSale";
 
 export interface TokenModel {
@@ -33,3 +35,13 @@ export interface SpecificationsModel {
   longitude: number;
   country: string;
 };
+
+export interface Portfolio {
+  tokenInfo: TokenModel;
+  redemptions: number[];
+}
+
+export interface SinglePortfolio {
+  tokenInfo: TokenModel;
+  redemptions: TransactionInfo[];
+}

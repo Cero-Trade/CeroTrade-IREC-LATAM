@@ -1453,35 +1453,18 @@ onBeforeMount(() => {
 
 async function getData() {
   try {
-    const [checkToken, checkTokenInMarket, token, txRedemptions, statistics, _, __] = await Promise.allSettled([
-      AgentCanister.checkUserToken(tokenId.value), // remove
-      AgentCanister.checkUserTokenInMarket(tokenId.value), // remove
-      AgentCanister.getSinglePortfolio(tokenId.value), // get other removed data from here
-      AgentCanister.getTransactions({ txType: 'redemption', tokenId: tokenId.value }), // remove
+    const [singlePortfolio, statistics, _, __] = await Promise.allSettled([
+      AgentCanister.getSinglePortfolio(tokenId.value),
       AgentCanister.getAssetStatistics(tokenId.value),
       getMarketPlace(),
       getBeneficiaries()
     ])
 
-    haveToken.value = checkToken.value
-    haveTokenInMarket.value = checkTokenInMarket.value
-    tokenDetail.value = token.value
-    redemptions.value = [
-      {
-        transactionId: "string",
-        blockHash: "number",
-        from: "string",
-        to: "string",
-        assetInfo: "AssetInfoModel",
-        txType: "TxTypeDef",
-        tokenAmount: "number",
-        priceE8S: "TokensICP",
-        date: "Date",
-        method: "TxMethodDef",
-        redemptionPdf: "File",
-      }
-    ]
-    seriesMintedVsProduced.value = [(statistics.value.mwh || 1) / (token.value.assetInfo.volumeProduced || 1) * 100]
+    haveToken.value = singlePortfolio.value.tokenInfo.totalAmount > 0
+    haveTokenInMarket.value = singlePortfolio.value.tokenInfo.inMarket > 0
+    tokenDetail.value = singlePortfolio.value.tokenInfo
+    redemptions.value = singlePortfolio.value.redemptions
+    seriesMintedVsProduced.value = [(statistics.value.mwh || 1) / (singlePortfolio.value.tokenInfo.assetInfo.volumeProduced || 1) * 100]
   } catch (error) {
     console.error(error);
     toast.error(error)
