@@ -270,7 +270,7 @@ import { AgentCanister } from '@/repository/agent-canister'
 import { ref, computed, watch, onBeforeMount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
-import { shortString } from '@/plugins/functions'
+import { formatAmount, shortString } from '@/plugins/functions'
 // import { closeLoader, showLoader } from '@/plugins/functions'
 
 const
@@ -343,7 +343,7 @@ windowStepComputed = computed(() => {
 totalMwh = computed(() => {
   if (!series.value) return 0
   const data = series.value[0].data
-  return data.reduce((acc, item) => acc + item, 0)
+  return formatAmount(data.reduce((acc, item) => acc + item, 0), { compact: true })
 })
 
 
@@ -392,14 +392,14 @@ async function getData() {
 
       if (existenceElement) {
         existenceElement.mwh += item.mwh;
-        existenceElement.redemed ??= 0
-        existenceElement.redemed += item.redemptions.reduce((acc, value) => acc + value, 0)
+        existenceElement.redeemed ??= 0
+        existenceElement.redeemed += item.redemptions.reduce((acc, value) => acc + value, 0)
       } else {
-        acc.push({ ...item, redemed: item.redemptions.reduce((acc, value) => acc + value, 0) });
+        acc.push({ ...item, redeemed: item.redemptions.reduce((acc, value) => acc + value, 0) });
       }
       return acc;
     }, []),
-    groupedRedemptions = groupedTokens.map(e => e.redemed ?? 0)
+    groupedRedemptions = groupedTokens.map(e => e.redeemed ?? 0)
 
     series.value = [
       {
@@ -413,7 +413,7 @@ async function getData() {
     ]
     if (groupedTokens.length) categories.value = groupedTokens.map(e => e.energy_source)
 
-    totalRedeemed.value = groupedRedemptions.reduce((acc, item) => acc + item, 0) ?? 0
+    totalRedeemed.value = formatAmount(groupedRedemptions.reduce((acc, item) => acc + item, 0) ?? 0, { compact: true })
   } catch (error) {
     console.error(error);
     toast.error(error)
