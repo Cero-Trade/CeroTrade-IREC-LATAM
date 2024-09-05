@@ -29,7 +29,7 @@
           :disabled="!tabs[0].data?.length"
           :loading="loadingClear"
           :class="{ hidden: currentTab !== 0 }"
-          @click="clearNotifications"
+          @click="clearGeneralNotifications"
         >Clear notifications</v-btn>
       </div>
 
@@ -263,7 +263,7 @@ async function markNotificationsAsSeen() {
   loadingSeen.value = false
 }
 
-async function clearNotifications() {
+async function clearGeneralNotifications() {
   if (loadingClear.value) return
   loadingClear.value = true
 
@@ -272,7 +272,7 @@ async function clearNotifications() {
     notificationIds = generalTab.data?.map(e => e.id)
     if (!notificationIds?.length) return
 
-    await AgentCanister.clearGeneralNotifications(notificationIds)
+    await AgentCanister.clearNotifications(notificationIds)
 
     tabs.value[0].data = []
   } catch (error) {
@@ -288,7 +288,7 @@ async function dismiss(item) {
 
   try {
     if (item.notificationType === NotificationType.general) {
-      await AgentCanister.clearGeneralNotifications([item.id])
+      await AgentCanister.clearNotifications([item.id])
     } else {
       await AgentCanister.updateEventNotification(item.id, NotificationEventStatus.declined)
     }

@@ -614,10 +614,10 @@ export class AgentCanister {
     }
   };
 
-  // clear general notifications
-  static async clearGeneralNotifications(notificationIds: [Text]): Promise<void> {
+  // clear notifications
+  static async clearNotifications(notificationIds?: [Text]): Promise<void> {
     try {
-      await agent().clearGeneralNotifications(notificationIds);
+      await agent().clearNotifications(notificationIds?.length ? [notificationIds] : []);
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)
