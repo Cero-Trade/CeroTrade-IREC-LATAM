@@ -215,9 +215,9 @@ export class AgentCanister {
     }
   }
 
-  static async filterUsers(user: string): Promise<UserProfileModel[]> {
+  static async filterUsers(user: string): Promise<{ principalId: Principal; companyName: string }[]> {
     try {
-      const users = await agent().filterUsers(user) as UserProfileModel[]
+      const users = await agent().filterUsers(user) as { principalId: Principal; companyName: string }[]
 
       const profile = UserProfileModel.get(),
       profileIndex = users.findIndex(e => e.principalId.toString() == profile.principalId.toString())
@@ -225,9 +225,6 @@ export class AgentCanister {
 
       for (const user of users) {
         user.principalId = Principal.fromText(user.principalId.toString())
-        user.companyLogo = getUrlFromArrayBuffer(user.companyLogo) || avatar
-        user.createdAt = new Date(user.createdAt)
-        user.updatedAt = new Date(user.updatedAt)
       }
 
       return users

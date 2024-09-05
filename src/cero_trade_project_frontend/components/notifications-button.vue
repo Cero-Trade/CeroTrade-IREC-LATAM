@@ -78,8 +78,8 @@
                 </v-badge>
               </div>
 
-              <p v-if="item.content">{{ item.content }}</p>
-              <p v-else>status: 
+              <p v-if="item.content" class="mb-2">{{ item.content }}</p>
+              <p v-if="item.eventStatus" class="mb-2">status: 
                 <v-chip
                   density="compact"
                   :style="`--color: rgb(var(--v-theme-${item.eventStatus === NotificationEventStatus.accepted
@@ -107,7 +107,7 @@
                 min-width="min-content"
                 variant="text"
                 color="#667085"
-                class="px-2"
+                class="px-2 mt-4"
                 style="translate: -8px 0;"
                 :loading="loadingDismiss === item.id"
                 @click="dismiss(item)"
@@ -221,7 +221,7 @@ async function getData(tab) {
   if (loadingData.value) return
   loadingData.value = true
 
-  const notificationTypes = tab != null ? tabs.value[tab].key : tabs.value.flatMap(e => e.key)
+  const notificationTypes = /* tab != null ? tabs.value[tab].key :  */tabs.value.flatMap(e => e.key)
 
   try {
     const response = await AgentCanister.getNotifications(null, null, notificationTypes)

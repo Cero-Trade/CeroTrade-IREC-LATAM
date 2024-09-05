@@ -43,8 +43,13 @@ actor class UserIndex() = this {
     updatedAt: Text;
   };
 
-  var usersDirectory: HM.HashMap<T.UID, T.CanisterId> = HM.HashMap(16, Principal.equal, Principal.hash);
-  stable var usersDirectoryEntries : [(T.UID, T.CanisterId)] = [];
+  type UserIndexInfo = {
+    companyName: Text;
+    canister_id: T.CanisterId;
+  };
+
+  var usersDirectory: HM.HashMap<T.UID, UserIndexInfo> = HM.HashMap(16, Principal.equal, Principal.hash);
+  stable var usersDirectoryEntries : [(T.UID, UserIndexInfo)] = [];
 
   let emptyUserCanisters = Deque.empty<T.CanisterId>();
 
@@ -54,7 +59,7 @@ actor class UserIndex() = this {
   /// funcs to persistent collection state
   system func preupgrade() { usersDirectoryEntries := Iter.toArray(usersDirectory.entries()) };
   system func postupgrade() {
-    usersDirectory := HM.fromIter<T.UID, T.CanisterId>(usersDirectoryEntries.vals(), 16, Principal.equal, Principal.hash);
+    usersDirectory := HM.fromIter<T.UID, UserIndexInfo>(usersDirectoryEntries.vals(), 16, Principal.equal, Principal.hash);
     usersDirectoryEntries := [];
   };
 
@@ -92,7 +97,7 @@ actor class UserIndex() = this {
     wasm_module := await IC_MANAGEMENT.getWasmModule(#users("users"));
 
     // update deployed canisters
-    for (canister_id in usersDirectory.vals()) {
+    for ({ canister_id } in usersDirectory.vals()) {
       await IC_MANAGEMENT.ic.install_code({
         arg = to_candid();
         wasm_module;
@@ -119,9 +124,9 @@ actor class UserIndex() = this {
       };
       case(null) {
         let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
-          for (cid in usersDirectory.vals()) {
-            if (not(Buffer.contains<T.CanisterId>(deployedCanisters, cid, Principal.equal))) {
-              deployedCanisters.append(Buffer.fromArray<T.CanisterId>([cid]));
+          for ({ canister_id; } in usersDirectory.vals()) {
+            if (not(Buffer.contains<T.CanisterId>(deployedCanisters, canister_id, Principal.equal))) {
+              deployedCanisters.append(Buffer.fromArray<T.CanisterId>([canister_id]));
             };
           };
 
@@ -146,7 +151,7 @@ actor class UserIndex() = this {
       };
       case(null) {
         let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
-        for (canister_id in usersDirectory.vals()) {
+        for ({ canister_id } in usersDirectory.vals()) {
           if (not(Buffer.contains<T.CanisterId>(deployedCanisters, canister_id, Principal.equal))) {
             Cycles.add<system>(T.cycles);
             await IC_MANAGEMENT.ic.stop_canister({ canister_id });
@@ -169,14 +174,14 @@ actor class UserIndex() = this {
         await IC_MANAGEMENT.ic.stop_canister({ canister_id });
         await IC_MANAGEMENT.ic.delete_canister({ canister_id });
 
-        for((uid, cid) in usersDirectory.entries()) {
+        for((uid, { canister_id = cid }) in usersDirectory.entries()) {
           if (cid == canister_id) return usersDirectory.delete(uid);
         };
       };
       case(null) {
         let deletedCanisters = Buffer.Buffer<T.CanisterId>(16);
 
-        for((uid, canister_id) in usersDirectory.entries()) {
+        for((uid, { canister_id }) in usersDirectory.entries()) {
           let canisterIsDeleted = Buffer.contains<T.CanisterId>(deletedCanisters, canister_id, Principal.equal);
           if (not canisterIsDeleted) {
             Cycles.add<system>(T.cycles);
@@ -245,26 +250,26 @@ actor class UserIndex() = this {
 
   public shared({ caller }) func getUsersInCeroTrade(): async [{
     principal: T.UID;
-    canister: T.CanisterId;
+    canister_id: T.CanisterId;
     token: T.UserTokenAuth;
   }] {
     IC_MANAGEMENT.adminValidation(caller, controllers);
 
-    let users = Buffer.Buffer<{ principal: T.UID; canister: T.CanisterId; token: T.UserTokenAuth; }>(16);
+    let users = Buffer.Buffer<{ principal: T.UID; canister_id: T.CanisterId; token: T.UserTokenAuth; }>(16);
 
-    for((principal, canister) in usersDirectory.entries()) {
-      let token = await Users.canister(canister).getUserToken();
-      users.add({ principal; canister; token })
+    for((principal, { canister_id }) in usersDirectory.entries()) {
+      let token = await Users.canister(canister_id).getUserToken();
+      users.add({ principal; canister_id; token })
     };
 
-    Buffer.toArray<{ principal: T.UID; canister: T.CanisterId; token: T.UserTokenAuth; }>(users);
+    Buffer.toArray<{ principal: T.UID; canister_id: T.CanisterId; token: T.UserTokenAuth; }>(users);
   };
 
   /// get canister id that allow current user
   private func getUserCanister(uid: T.UID): async Users.Users {
     switch (usersDirectory.get(uid)) {
       case (null) throw Error.reject(notExists);
-      case (?cid) Users.canister(cid);
+      case (?{ canister_id }) Users.canister(canister_id);
     };
   };
 
@@ -316,7 +321,6 @@ actor class UserIndex() = this {
     await (await getUserCanister(uid)).storeCompanyLogo(avatar);
   };
 
-  //! TODO here
   /// register [usersDirectory] collection
   public shared({ caller }) func registerUser(uid: T.UID, form: T.RegisterForm, beneficiary: ?T.BID) : async() {
     _callValidation(caller);
@@ -373,9 +377,9 @@ actor class UserIndex() = this {
     // WARN just for debug
     Debug.print("token generated by user " # Principal.toText(uid) #" --> " # trimmedToken);
 
-    let cid = await _createCanister();
+    let canister_id = await _createCanister();
 
-    await Users.canister(cid).createProfile({
+    await Users.canister(canister_id).createProfile({
       companyLogo = null;
       vaultToken = trimmedToken;
       principal = uid;
@@ -387,7 +391,7 @@ actor class UserIndex() = this {
       email = form.email;
     });
 
-    usersDirectory.put(uid, cid);
+    usersDirectory.put(uid, { canister_id; companyName = form.companyName });
 
     switch(checkedBeneficiary) {
       case(null) {};
@@ -408,7 +412,7 @@ actor class UserIndex() = this {
 
     let canister_id: T.CanisterId = switch(usersDirectory.get(uid)) {
       case(null) throw Error.reject(notExists);
-      case(?cid) cid;
+      case(?{ canister_id }) canister_id;
     };
 
     let token = await Users.canister(canister_id).getUserToken();
@@ -507,14 +511,67 @@ actor class UserIndex() = this {
   public shared({ caller }) func addNotification(notification: T.NotificationInfo): async() {
     _callValidation(caller);
 
+    let recieverCanister = await getUserCanister(notification.receivedBy);
+
+    var receiverNotification = notification;
+    var senderNotification = notification;
+
+    switch(notification.notificationType) {
+      case(#general(value)) {};
+
+      case(#redeem(value)) switch(notification.triggeredBy) {
+        case(null) {};
+
+        case(?triggerUser) {
+          let receiverCompanyName = switch(usersDirectory.get(notification.receivedBy)) {
+            case(null) throw Error.reject("Receiver user not found");
+            case(?{ companyName }) companyName;
+          };
+          let senderCompanyName = switch(usersDirectory.get(triggerUser)) {
+            case(null) throw Error.reject("Trigger user not found");
+            case(?{ companyName }) companyName;
+          };
+          let amount = switch(notification.quantity) {
+            case(null) "0";
+            case(?value) Nat.toText(value);
+          };
+
+          // notification to receiver
+          receiverNotification := { notification with content = ?("Request received from user " # senderCompanyName # " by amount " # amount) };
+          // notification to sender
+          senderNotification := { notification with content = ?("Request sended to user " # receiverCompanyName # " by amount " # amount) };
+        };
+      };
+
+      case(#beneficiary(value)) switch(notification.triggeredBy) {
+        case(null) {};
+
+        case(?triggerUser) {
+          let receiverCompanyName = switch(usersDirectory.get(notification.receivedBy)) {
+            case(null) throw Error.reject("Receiver user not found");
+            case(?{ companyName }) companyName;
+          };
+          let senderCompanyName = switch(usersDirectory.get(triggerUser)) {
+            case(null) throw Error.reject("Trigger user not found");
+            case(?{ companyName }) companyName;
+          };
+
+          // notification to receiver
+          receiverNotification := { notification with content = ?("Request received from user " # senderCompanyName) };
+          // notification to sender
+          senderNotification := { notification with content = ?("Request sended to user " # receiverCompanyName) };
+        };
+      };
+    };
+
     // add notification to receiver user
-    await (await getUserCanister(notification.receivedBy)).addNotification(notification);
+    let id = await recieverCanister.addNotification(receiverNotification);
 
     switch(notification.triggeredBy) {
       case(null) {};
       case(?uid) {
         // add notification to trigger user
-        await (await getUserCanister(uid)).addNotification(notification);
+        let _ = await (await getUserCanister(uid)).addNotification({ senderNotification with id});
       };
     };
   };
@@ -535,15 +592,11 @@ actor class UserIndex() = this {
   public shared({ caller }) func updateEventNotification(userCaller: T.UID, notificationId: T.NotificationId, eventStatus: ?T.NotificationEventStatus): async ?T.NotificationInfo {
     _callValidation(caller);
 
-    let userCanister = switch(usersDirectory.get(userCaller)) {
-      case(null) throw Error.reject(notExists);
-      case(?value) value;
-    };
-
-    let notification = await Users.canister(userCanister).getNotification(notificationId);
+    let userCanister = await getUserCanister(userCaller);
+    let notification = await userCanister.getNotification(notificationId);
 
     // get other user canister
-    let otherUserCanister = switch(usersDirectory.get(switch(userCaller == notification.receivedBy) {
+    let otherUserCanisterId = switch(usersDirectory.get(switch(userCaller == notification.receivedBy) {
       case(true) {
         switch(notification.triggeredBy) {
           case(null) throw Error.reject("triggeredBy not provided");
@@ -553,7 +606,7 @@ actor class UserIndex() = this {
       case(false) notification.receivedBy;
     })) {
       case(null) throw Error.reject("Beneficiary not exists on Cero Trade");
-      case(?value) value;
+      case(?{ canister_id }) canister_id;
     };
 
     // variable to know which user has cancel
@@ -568,8 +621,8 @@ actor class UserIndex() = this {
           cancelRedemptionNotification := ?notification;
         };
 
-        await Users.canister(userCanister).clearNotifications(?[notificationId]);
-        await Users.canister(otherUserCanister).updateEvent(notificationId, value);
+        await userCanister.clearNotifications(?[notificationId]);
+        await Users.canister(otherUserCanisterId).updateEvent(notificationId, value);
       };
     };
 
@@ -619,23 +672,21 @@ actor class UserIndex() = this {
 
 
   /// filter users on Cero Trade by name or principal id
-  public shared({ caller }) func filterUsers(uid: T.UID, user: Text): async [T.UserProfile] {
-    _callValidation(caller);
+  public query func filterUsers(uid: T.UID, input: Text): async [{ principalId: T.UID; companyName: Text }] {
+    // checkout caller exists on Cero Trade
+    if (usersDirectory.get(uid) == null) throw Error.reject(notExists);
 
-    let beneficiaryIds = await (await getUserCanister(uid)).getBeneficiaries();
-    let beneficiaries = Buffer.Buffer<T.UserProfile>(16);
+    let beneficiaries = Buffer.Buffer<{ principalId: T.UID; companyName: Text }>(16);
 
-    for(beneficiaryId in beneficiaryIds.vals()) {
-      let beneficiary: T.UserProfile = await (await getUserCanister(beneficiaryId)).getProfile();
+    for((principalId, { canister_id; companyName }) in usersDirectory.entries()) {
+      let userInput = Text.toLowercase(input);
+      let containsCompanyName = Text.contains(Text.toLowercase(companyName), #text userInput);
+      let containsPrincipal = Text.contains(Principal.toText(principalId), #text userInput);
 
-      let input = Text.toLowercase(user);
-      let containsCompanyName = Text.contains(Text.toLowercase(beneficiary.companyName), #text input);
-      let containsPrincipal = Text.contains(Principal.toText(beneficiary.principalId), #text input);
-
-      if (containsCompanyName or containsPrincipal) { beneficiaries.add(beneficiary); };
+      if (containsCompanyName or containsPrincipal) { beneficiaries.add({ principalId; companyName }); };
     };
 
-    Buffer.toArray<T.UserProfile>(beneficiaries);
+    Buffer.toArray<{ principalId: T.UID; companyName: Text }>(beneficiaries);
   };
 
 

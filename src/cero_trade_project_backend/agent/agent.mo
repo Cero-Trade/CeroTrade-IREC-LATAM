@@ -285,7 +285,9 @@ actor class Agent() = this {
 
 
   /// filter users on Cero Trade by name or principal id
-  public shared({ caller }) func filterUsers(user: Text): async [T.UserProfile] { await UserIndex.filterUsers(caller, user) };
+  public shared({ caller }) func filterUsers(input: Text): async [{ principalId: T.UID; companyName: Text }] {
+    await UserIndex.filterUsers(caller, input)
+  };
 
 
   /// function to know user token balance
@@ -963,6 +965,8 @@ actor class Agent() = this {
       case(null) null;
 
       case(?notification) {
+        Debug.print("⬛ this not should be showed " # notification.id);
+
         // flow to return holded tokens
         let triggerUser = switch(notification.triggeredBy) {
           case(null) throw Error.reject("triggeredBy not provided");

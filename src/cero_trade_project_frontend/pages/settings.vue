@@ -585,7 +585,9 @@
         </v-sheet>
         <h5>Delete account</h5>
 
-        <p>Are you sure that wanna delete your account</p>
+        <p>
+          Are you sure that wanna delete your account? this action will burn all tokens you owned in the platform
+        </p>
 
         <div class="divrow mt-6" style="gap: 10px;">
           <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogDeleteAccount = false">
@@ -991,7 +993,6 @@
               >
                 <template #append>
                   <v-btn
-                    variant="icon"
                     :loading="loadingSearchBeneficiary"
                     @click="searchBeneficiaries"
                   >
@@ -1011,13 +1012,25 @@
                 <div
                   v-for="(item, i) in formBeneficiary.beneficiaries" :key="i"
                   class="div-radio-sell mt-0 mb-4"
-                  :class="{ active: formBeneficiary.beneficiary?.principalId === item.principalId }"
+                  :class="{ active: formBeneficiary.beneficiary === item.principalId }"
                   style="width: 100% !important"
-                  @click="formBeneficiary.beneficiary = item"
+                  @click="getBeneficiaryProfile(item.principalId, i)"
                 >
                   <v-sheet class="double-sheet">
                     <v-sheet>
-                      <img :src="item.companyLogo" alt="avatar image" style="width: 20px">
+                      <v-progress-circular
+                        v-if="!item.companyLogo"
+                        :indeterminate="formBeneficiary.beneficiary === item.principalId"
+                      ></v-progress-circular>
+                      <v-img-load
+                        v-else
+                        :src="item.companyLogo"
+                        :alt="`${item.companyName} logo`"
+                        cover
+                        sizes="30px"
+                        rounded="50%"
+                        class="flex-grow-0"
+                      />
                     </v-sheet>
                   </v-sheet>
                   <div class="divcol ml-6">
@@ -1215,7 +1228,7 @@ export default{
       this.loadingAddBeneficiary = true
 
       try {
-        await AgentCanister.requestBeneficiary(this.formBeneficiary.beneficiary.principalId)
+        await AgentCanister.requestBeneficiary(this.formBeneficiary.beneficiary)
         this.dialogNewBeneficiary = false
         for (const key of Object.keys(this.formBeneficiary)) this.formBeneficiary[key] = null
         this.toast.success("Beneficiary request sended")
@@ -1250,6 +1263,16 @@ export default{
         principal.toString().copyToClipboard(`User ID ${principal.toString()} copied to clipboard`)
       } catch (error) {
         this.toast.error(error);
+      }
+    },
+    async getBeneficiaryProfile(uid, index) {
+      this.formBeneficiary.beneficiary = uid
+
+      try {
+        const profile = await AgentCanister.getProfile(uid)
+        this.formBeneficiary.beneficiaries[index].companyLogo = profile.companyLogo
+      } catch (error) {
+        this.toast.error(error)
       }
     },
     async saveProfileInfo() {

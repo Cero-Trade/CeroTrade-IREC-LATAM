@@ -23,7 +23,7 @@ module UsersInterface {
     // ======================================== Notifications ===================================================== //
     getNotification: (notificationId: T.NotificationId) -> async T.NotificationInfo;
     getNotifications: (page: ?Nat, length: ?Nat, notificationTypes: [T.NotificationType]) -> async { data: [T.NotificationInfo]; totalPages: Nat; };
-    addNotification: (notification: T.NotificationInfo) -> async();
+    addNotification: (notification: T.NotificationInfo) -> async T.NotificationId;
     updateGeneral: (notificationIds: ?[T.NotificationId]) -> async();
     updateEvent: (notificationId: T.NotificationId, eventStatus: T.NotificationEventStatus) -> async();
     clearNotifications: (notificationIds: ?[T.NotificationId]) -> async();

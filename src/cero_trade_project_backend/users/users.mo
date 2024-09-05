@@ -366,11 +366,15 @@ shared({ caller = userIndexCaller }) actor class Users() = this {
   public shared({ caller }) func addNotification(notification: T.NotificationInfo): async T.NotificationId {
     _callValidation(caller);
 
-    let id = await generateNotificationId();
-    let buildNotification = { notification with id };
+    var newNotification = notification;
 
-    notifications.put(buildNotification.id, buildNotification);
-    id
+    if (newNotification.id == "" or newNotification.id == "0") {
+      let id = await generateNotificationId();
+      newNotification := { newNotification with id };
+    };
+
+    notifications.put(newNotification.id, newNotification);
+    newNotification.id
   };
 
   /// clear notifications
@@ -407,13 +411,13 @@ shared({ caller = userIndexCaller }) actor class Users() = this {
 
       case(?value) {
         for(notificationId in value.vals()) {
-          let notification = switch(notifications.get(notificationId)) {
-            case(null) throw Error.reject("Notification not found");
-            case(?value) value;
-          };
-
-          if (notification.notificationType == #general("general")) {
-            notifications.put(notificationId, { notification with status = ?#seen("seen") });
+          switch(notifications.get(notificationId)) {
+            case(null) {};
+            case(?notification) {
+              if (notification.notificationType == #general("general")) {
+                notifications.put(notificationId, { notification with status = ?#seen("seen") });
+              };
+            };
           };
         };
       };
@@ -424,16 +428,18 @@ shared({ caller = userIndexCaller }) actor class Users() = this {
   public shared({ caller }) func updateEvent(notificationId: T.NotificationId, eventStatus: T.NotificationEventStatus): async() {
     _callValidation(caller);
 
-    var notification = switch(notifications.get(notificationId)) {
-      case(null) throw Error.reject("Notification not found");
-      case(?value) value;
-    };
+    switch(notifications.get(notificationId)) {
+      case(null) {};
+      case(?value) {
+        var notification = value;
 
-    if (notification.notificationType != #general("general")) {
-      notification := { notification with eventStatus = ?eventStatus };
-    };
+        if (notification.notificationType != #general("general")) {
+          notification := { notification with eventStatus = ?eventStatus };
+        };
 
-    notifications.put(notificationId, notification);
+        notifications.put(notificationId, notification);
+      };
+    };
   };
 
 
