@@ -891,39 +891,35 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     // - items: Un url identificador de los items. Esta información debe traerse al momento de hacer el importe de los IRECs.
     // - periodStart y periodEnd: Las fechas de inicio y fin del periodo de redención. Esto debe ser un input del usuario.
     // - locale: El idioma en que se quiere obtener el "redemption statement" (ej. "en", "es"). Este debe ser un input del usuario.
+    let pdfJson = await HTTP.canister.post({
+        url = HTTP.apiUrl # "redemptions";
+        port = null;
+        uid = ?notification.receivedBy;
+        headers = [];
+        bodyJson = switch(Serde.JSON.toText(to_candid({
+          volume = amount;
+          beneficiary = Principal.toText(notification.receivedBy);
+          items = tokenId;
+          periodStart;
+          periodEnd;
+          locale;
+        }), ["volume", "beneficiary", "items", "periodStart", "periodEnd", "locale"], null)) {
+          case(#err(error)) throw Error.reject("Cannot serialize data");
+          case(#ok(value)) value;
+        };
+      });
 
-    let redemptionPdf: T.ArrayFile = [1,2,3,4,5,6,7,8];
+    let redemptionPdf: T.ArrayFile = switch(Serde.JSON.fromText(pdfJson, null)) {
+      case(#err(_)) throw Error.reject("cannot serialize PDF file data");
+      case(#ok(blob)) {
+        let response: ?{ pdf: [Nat] } = from_candid(blob);
 
-    // TODO commented while resolve troubles with request 👇
-    // let pdfJson = await HTTP.canister.post({
-    //     url = HTTP.apiUrl # "redemption";
-    //     port = null;
-    //     uid = ?notification.receivedBy;
-    //     headers = [];
-    //     bodyJson = switch(Serde.JSON.toText(to_candid({
-    //       volume = amount;
-    //       beneficiary = Principal.toText(notification.receivedBy);
-    //       items = tokenId;
-    //       periodStart;
-    //       periodEnd;
-    //       locale;
-    //     }), ["volume", "beneficiary", "items", "periodStart", "periodEnd", "locale"], null)) {
-    //       case(#err(error)) throw Error.reject("Cannot serialize data");
-    //       case(#ok(value)) value;
-    //     };
-    //   });
-
-    // let redemptionPdf: T.ArrayFile = switch(Serde.JSON.fromText(pdfJson, null)) {
-    //   case(#err(_)) throw Error.reject("cannot serialize asset data");
-    //   case(#ok(blob)) {
-    //     let response: ?{ pdf: T.ArrayFile } = from_candid(blob);
-
-    //     switch(response) {
-    //       case(null) throw Error.reject("cannot serialize PDF file data");
-    //       case(?value) value.pdf;
-    //     };
-    //   };
-    // };
+        switch(response) {
+          case(null) throw Error.reject("cannot serialize PDF file data");
+          case(?{ pdf }) Array.map<Nat, Nat8>(pdf, func x = Nat8.fromNat(x));
+        };
+      };
+    };
 
     let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
@@ -964,39 +960,35 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     // - items: Un url identificador de los items. Esta información debe traerse al momento de hacer el importe de los IRECs.
     // - periodStart y periodEnd: Las fechas de inicio y fin del periodo de redención. Esto debe ser un input del usuario.
     // - locale: El idioma en que se quiere obtener el "redemption statement" (ej. "en", "es"). Este debe ser un input del usuario.
+    let pdfJson = await HTTP.canister.post({
+        url = HTTP.apiUrl # "redemptions";
+        port = null;
+        uid = ?owner;
+        headers = [];
+        bodyJson = switch(Serde.JSON.toText(to_candid({
+          volume = amount;
+          beneficiary = Principal.toText(owner);
+          items = tokenId;
+          periodStart;
+          periodEnd;
+          locale;
+        }), ["volume", "beneficiary", "items", "periodStart", "periodEnd", "locale"], null)) {
+          case(#err(error)) throw Error.reject("Cannot serialize data");
+          case(#ok(value)) value;
+        };
+      });
 
-    let redemptionPdf: T.ArrayFile = [1,2,3,4,5,6,7,8];
+    let redemptionPdf: T.ArrayFile = switch(Serde.JSON.fromText(pdfJson, null)) {
+      case(#err(_)) throw Error.reject("cannot serialize PDF file data");
+      case(#ok(blob)) {
+        let response: ?{ pdf: [Nat] } = from_candid(blob);
 
-    // TODO commented while resolve troubles with request 👇
-    // let pdfJson = await HTTP.canister.post({
-    //     url = HTTP.apiUrl # "transactions/redemption";
-    //     port = null;
-    //     uid = ?owner;
-    //     headers = [];
-    //     bodyJson = switch(Serde.JSON.toText(to_candid({
-    //       volume = amount;
-    //       beneficiary = Principal.toText(owner);
-    //       items = tokenId;
-    //       periodStart;
-    //       periodEnd;
-    //       locale;
-    //     }), ["volume", "beneficiary", "items", "periodStart", "periodEnd", "locale"], null)) {
-    //       case(#err(error)) throw Error.reject("Cannot serialize data");
-    //       case(#ok(value)) value;
-    //     };
-    //   });
-
-    // let redemptionPdf: T.ArrayFile = switch(Serde.JSON.fromText(pdfJson, null)) {
-    //   case(#err(_)) throw Error.reject("cannot serialize asset data");
-    //   case(#ok(blob)) {
-    //     let response: ?{ pdf: T.ArrayFile } = from_candid(blob);
-
-    //     switch(response) {
-    //       case(null) throw Error.reject("cannot serialize PDF file data");
-    //       case(?value) value.pdf;
-    //     };
-    //   };
-    // };
+        switch(response) {
+          case(null) throw Error.reject("cannot serialize PDF file data");
+          case(?{ pdf }) Array.map<Nat, Nat8>(pdf, func x = Nat8.fromNat(x));
+        };
+      };
+    };
 
     let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
