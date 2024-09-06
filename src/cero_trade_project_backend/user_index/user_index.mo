@@ -540,10 +540,9 @@ actor class UserIndex() = this {
             case(null) throw Error.reject("Trigger user not found");
             case(?{ companyName }) companyName;
           };
-          let amount = switch(notification.quantity) {
+          let amount: Text = switch(notification.quantity) {
             case(null) "0";
-            // TODO make function to convert value from token to decimal text
-            case(?value) Nat.toText(value);
+            case(?value) await T.tokenToText(value, null);
           };
 
           // notification to receiver

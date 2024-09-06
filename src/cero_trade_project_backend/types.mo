@@ -91,6 +91,19 @@ module {
     Int.abs(Float.toInt(float))
   };
 
+  /// helper function to convert Token Balance to Text
+  public func tokenToText(token: ICPTypes.Balance, decimals: ?Nat8): async Text {
+    let f = await textToFloat(Nat.toText(token));
+    
+    let decimalsValue : Float = Float.fromInt64(Int64.fromNat64(Nat64.fromNat(Nat8.toNat(switch(decimals) {
+      case(null) tokenDecimals;
+      case(?value) value;
+    }))));
+
+    let float = f / Float.pow(10.0, decimalsValue);
+    Float.toText(float)
+  };
+
   public type UID = Principal;
   public type EvidentID = Text;
   public type CanisterId = Principal;
