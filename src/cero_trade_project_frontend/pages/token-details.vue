@@ -209,33 +209,27 @@
             density="compact"
             @update:options="getMarketPlace()"
             >
-              <template #[`item.seller`]="{ item }">
-                <v-menu :close-on-content-click="false" @update:model-value="(value) => getSellerProfile(value, item.seller)">
-                  <template #activator="{ props }">
-                    <a v-bind="props" class="pointer flex-acenter" style="gap: 5px; max-width: 200px">{{ shortPrincipalId(item.seller?.toString()) }}</a>
-                  </template>
-
-                  <v-card class="px-4 py-2 bg-secondary d-flex flex-column">
-                    <v-progress-circular
-                      v-if="!previewSeller"
-                      indeterminate
-                      color="rgb(var(--v-theme-primary))"
-                      class="mx-auto"
-                    ></v-progress-circular>
-
-                    <span v-else class="flex-acenter" style="gap: 10px; text-wrap: nowrap">
+              <template #[`item.seller`]="{ item, index }">
+                <div class="pointer d-flex align-center" @click="getSellerProfile(item.seller, index)">
+                  <v-sheet class="double-sheet">
+                    <v-sheet>
+                      <v-progress-circular
+                        v-if="!item.sellerLogo"
+                        :indeterminate="item.loading"
+                      ></v-progress-circular>
                       <v-img-load
-                        :src="previewSeller.companyLogo"
-                        :alt="`${previewSeller.companyName} logo`"
+                        v-else
+                        :src="item.sellerLogo"
+                        :alt="`${item.sellerName} logo`"
                         cover
-                        sizes="30px"
+                        sizes="25px"
                         rounded="50%"
                         class="flex-grow-0"
                       />
-                      {{ previewSeller.companyName }}
-                    </span>
-                  </v-card>
-                </v-menu>
+                    </v-sheet>
+                  </v-sheet>
+                  <span class="bold">{{ item.sellerName }}</span>
+                </div>
               </template>
 
               <template #[`item.price`]="{ item }">
@@ -282,33 +276,7 @@
 
                 <div class="jspace divrow mb-1">
                   <span>Seller ID</span>
-
-                  <v-menu :close-on-content-click="false" @update:model-value="(value) => getSellerProfile(value, item.seller)">
-                    <template #activator="{ props }">
-                      <a v-bind="props" style="color: #475467;" class="acenter pointer text-capitalize">{{ shortPrincipalId(item.seller?.toString()) }}</a>
-                    </template>
-
-                    <v-card class="px-4 py-2 bg-secondary d-flex">
-                      <v-progress-circular
-                        v-if="!previewSeller"
-                        indeterminate
-                        color="rgb(var(--v-theme-primary))"
-                        class="mx-auto"
-                      ></v-progress-circular>
-
-                      <span v-else class="flex-acenter" style="gap: 10px; text-wrap: nowrap">
-                        <v-img-load
-                          :src="previewSeller.companyLogo"
-                          :alt="`${previewSeller.companyName} logo`"
-                          cover
-                          sizes="30px"
-                          rounded="50%"
-                          class="flex-grow-0"
-                        />
-                        {{ previewSeller.companyName }}
-                      </span>
-                    </v-card>
-                  </v-menu>
+                  <span class="text-capitalize" style="color: #475467;">{{ item.sellerName }}</span>
                 </div>
 
                 <div class="jspace divrow mb-1">
@@ -614,7 +582,35 @@
               bg-color="transparent"
               placeholder="beneficiary account (optional)"
               :rules="[true]"
-            ></v-select>
+            >
+              <template #selection="{ item }">
+                <v-img-load
+                  :src="item.raw.companyLogo"
+                  :alt="`${item.raw.companyName} logo`"
+                  cover
+                  sizes="25px"
+                  rounded="50%"
+                  class="flex-grow-0"
+                />
+                <span class="bold ml-2">{{ item.raw.companyName }}</span>
+              </template>
+
+              <template #item="{ item, props }">
+                <v-list-item v-bind="props" title=" ">
+                  <div class="d-flex align-center">
+                    <v-img-load
+                      :src="item.raw.companyLogo"
+                      :alt="`${item.raw.companyName} logo`"
+                      cover
+                      sizes="25px"
+                      rounded="50%"
+                      class="flex-grow-0"
+                    />
+                    <span class="bold ml-2" style="translate: 0 1px">{{ item.raw.companyName }}</span>
+                  </div>
+                </v-list-item>
+              </template>
+            </v-select>
           </div>
 
           <!-- <v-btn class="btn2" style="width: max-content !important">Add beneficiary</v-btn> -->
@@ -879,38 +875,32 @@
           density="compact"
           @update:options="getMarketPlace"
           >
-            <template #[`item.seller`]="{ item }">
-              <v-menu :close-on-content-click="false" @update:model-value="(value) => getSellerProfile(value, item.seller)">
-                <template #activator="{ props }">
-                  <a v-bind="props" class="pointer flex-acenter" style="gap: 5px; max-width: 200px">{{ shortPrincipalId(item.seller?.toString()) }}</a>
-                </template>
-
-                <v-card class="px-4 py-2 bg-secondary d-flex flex-column">
-                  <v-progress-circular
-                    v-if="!previewSeller"
-                    indeterminate
-                    color="rgb(var(--v-theme-primary))"
-                    class="mx-auto"
-                  ></v-progress-circular>
-
-                  <span v-else class="flex-acenter" style="gap: 10px; text-wrap: nowrap">
+            <template #[`item.seller`]="{ item, index }">
+              <div class="pointer d-flex align-center" @click="getSellerProfile(item.seller, index)">
+                <v-sheet class="double-sheet">
+                  <v-sheet>
+                    <v-progress-circular
+                      v-if="!item.sellerLogo"
+                      :indeterminate="item.loading"
+                    ></v-progress-circular>
                     <v-img-load
-                      :src="previewSeller.companyLogo"
-                      :alt="`${previewSeller.companyName} logo`"
+                      v-else
+                      :src="item.sellerLogo"
+                      :alt="`${item.sellerName} logo`"
                       cover
-                      sizes="30px"
+                      sizes="25px"
                       rounded="50%"
                       class="flex-grow-0"
                     />
-                    {{ previewSeller.companyName }}
-                  </span>
-                </v-card>
-              </v-menu>
+                  </v-sheet>
+                </v-sheet>
+                <span class="bold ml-6">{{ item.sellerName }}</span>
+              </div>
             </template>
 
             <template #[`item.price`]="{ item }">
               <span class="divrow jspace acenter">
-                {{ item.price }} <v-sheet class="chip-currency bold">{{ item.currency }}</v-sheet>
+                {{ item.price }} <v-sheet class="chip-currency bold">{{ item  .currency }}</v-sheet>
               </span>
             </template>
 
@@ -1113,7 +1103,7 @@
 
         <div class="divrow center mt-6" style="gap: 10px;">
           <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogRedeemCertificates = false">Not Now</v-btn>
-          <v-btn class="btn" @click="modalApprove.model = true" style="border: none!important;">Yes, redeem</v-btn>
+          <v-btn class="btn" @click="dialogRedeemCertificates = false;  dialogRedeem = true" style="border: none!important;">Yes, redeem</v-btn>
         </div>
       </v-card>
     </v-dialog>
@@ -1257,7 +1247,7 @@ tokenDetail = ref({
   }
 }),
 headers = [
-  { title: 'Seller ID', key: 'seller', sortable: false },
+  { title: 'Seller', key: 'seller', sortable: false },
   { title: 'Country', key: 'country', sortable: false },
   { title: 'Price', key: 'price', sortable: false },
   { title: 'MWh', key: 'mwh', sortable: false },
@@ -1368,8 +1358,6 @@ filters = ref({
   companyName: null,
   priceRange: null,
 }),
-
-previewSeller = ref(null),
 
 modalApprove = ref(),
 modalRequestRedeem = ref(),
@@ -1500,6 +1488,7 @@ async function getMarketPlace() {
     for (const item of marketplace.data) {
       list.push({
         seller: item.sellerId,
+        sellerName: item.sellerName,
         country: item.assetInfo.specifications.country,
         price: item.priceE8S,
         mwh: item.mwh,
@@ -1603,7 +1592,7 @@ async function requestRedeemToken() {
     await AgentCanister.requestRedeemToken({
       tokenId: tokenId.value,
       amount: Number(tokenAmount.value),
-      beneficiary: Principal.fromText(formRedeem.value.beneficiary),
+      beneficiary: formRedeem.value.beneficiary,
       periodStart: formRedeem.value.periodStart,
       periodEnd: formRedeem.value.periodEnd,
       locale: formRedeem.value.locale,
@@ -1647,14 +1636,18 @@ async function redeemToken() {
   }
 }
 
-async function getSellerProfile(value, uid) {
-  if (!value) previewSeller.value = null
+async function getSellerProfile(uid, index) {
+  if (dataMarketplace.value[index].loading || dataMarketplace.value[index].sellerLogo) return;
+  dataMarketplace.value[index].loading = true
 
   try {
-    previewSeller.value = await AgentCanister.getProfile(uid)
+    const profile = await AgentCanister.getProfile(uid)
+    dataMarketplace.value[index].sellerLogo = profile.companyLogo
   } catch (error) {
     toast.error(error)
   }
+
+  dataMarketplace.value[index].loading = false
 }
 
 function goDetails({ token_id: tokenId }, input) {

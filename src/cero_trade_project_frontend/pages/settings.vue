@@ -1020,7 +1020,7 @@
                     <v-sheet>
                       <v-progress-circular
                         v-if="!item.companyLogo"
-                        :indeterminate="formBeneficiary.beneficiary === item.principalId"
+                        :indeterminate="item.loading"
                       ></v-progress-circular>
                       <v-img-load
                         v-else
@@ -1268,12 +1268,17 @@ export default{
     async getBeneficiaryProfile(uid, index) {
       this.formBeneficiary.beneficiary = uid
 
+      if (this.formBeneficiary.beneficiaries[index].loading || this.formBeneficiary.beneficiaries[index].companyLogo) return;
+      this.formBeneficiary.beneficiaries[index].loading = true
+
       try {
         const profile = await AgentCanister.getProfile(uid)
         this.formBeneficiary.beneficiaries[index].companyLogo = profile.companyLogo
       } catch (error) {
         this.toast.error(error)
       }
+
+      this.formBeneficiary.beneficiaries[index].loading = false
     },
     async saveProfileInfo() {
       if (this.loadingFormProfile || !(await this.formProfileRef.validate()).valid) return

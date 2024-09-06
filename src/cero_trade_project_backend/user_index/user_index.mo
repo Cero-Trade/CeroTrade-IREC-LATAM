@@ -437,6 +437,15 @@ actor class UserIndex() = this {
     await (await getUserCanister(uid)).getUserToken();
   };
 
+  /// get profile information
+  public shared({ caller }) func getUserName(uid: T.UID): async Text {
+    _callValidation(caller);
+
+    switch(usersDirectory.get(uid)) {
+      case(null) throw Error.reject(notExists);
+      case(?{ companyName }) companyName;
+    };
+  };
 
   /// get profile information
   public shared({ caller }) func getProfile(uid: T.UID): async T.UserProfile {
@@ -533,6 +542,7 @@ actor class UserIndex() = this {
           };
           let amount = switch(notification.quantity) {
             case(null) "0";
+            // TODO make function to convert value from token to decimal text
             case(?value) Nat.toText(value);
           };
 

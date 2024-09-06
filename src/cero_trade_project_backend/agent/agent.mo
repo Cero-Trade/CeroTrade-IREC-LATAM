@@ -467,7 +467,7 @@ actor class Agent() = this {
 
   /// get marketplace sellers information
   public shared({ caller }) func getMarketplaceSellers(page: ?Nat, length: ?Nat, tokenId: ?T.TokenId, country: ?Text, priceRange: ?[T.Price], excludeCaller: Bool): async {
-    data: [T.MarketplaceSellersInfo];
+    data: [T.MarketplaceSellersResponse];
     totalPages: Nat;
   } {
     // check if user exists
@@ -482,39 +482,25 @@ actor class Agent() = this {
 
     // get market info
     let {
-      data: [{
-        tokenId: T.TokenId;
-        userId: T.UID;
-        mwh: T.TokenAmount;
-        priceE8S: T.Price;
-      }] = marketInfo;
+      data: [T.MarketplaceSellersInfo] = marketInfo;
       totalPages: Nat;
     } = await Marketplace.getMarketplaceSellers(page, length, tokenId, priceRange, excludedCaller);
 
     // get tokens info
-    let tokensInfo: [T.AssetInfo] = await TokenIndex.getTokensInfo(Array.map<{
-      tokenId: T.TokenId;
-      userId: T.UID;
-      mwh: T.TokenAmount;
-      priceE8S: T.Price;
-    }, Text>(marketInfo, func x = x.tokenId));
+    let tokensInfo: [T.AssetInfo] = await TokenIndex.getTokensInfo(Array.map<T.MarketplaceSellersInfo, Text>(marketInfo, func x = x.tokenId));
 
     // Convert tokensInfo to a HashMap for faster lookup
     let tokensInfoMap = HM.fromIter<T.TokenId, T.AssetInfo>(Iter.fromArray(Array.map<T.AssetInfo, (T.TokenId, T.AssetInfo)>(tokensInfo, func info = (info.tokenId, info))), 16, Text.equal, Text.hash);
 
 
     // map market and asset values to marketplace info
-    let marketplace: [T.MarketplaceSellersInfo] = Array.map<{
-      tokenId: T.TokenId;
-      userId: T.UID;
-      mwh: T.TokenAmount;
-      priceE8S: T.Price;
-    }, T.MarketplaceSellersInfo>(marketInfo, func (item) {
+    let marketplace: [T.MarketplaceSellersResponse] = Array.map<T.MarketplaceSellersInfo, T.MarketplaceSellersResponse>(marketInfo, func (item) {
       let assetInfo = tokensInfoMap.get(item.tokenId);
 
-      // build MarketplaceSellersInfo object
+      // build MarketplaceSellersResponse object
       {
-        sellerId = item.userId;
+        sellerId = item.sellerId;
+        sellerName = item.sellerName;
         tokenId = item.tokenId;
         mwh = item.mwh;
         priceE8S = item.priceE8S;
@@ -526,7 +512,7 @@ actor class Agent() = this {
 
 
     // Apply filters
-    let filteredMarketplace: [T.MarketplaceSellersInfo] = Array.filter<T.MarketplaceSellersInfo>(marketplace, func (item) {
+    let filteredMarketplace: [T.MarketplaceSellersResponse] = Array.filter<T.MarketplaceSellersResponse>(marketplace, func (item) {
       // by country
       let countryMatches = switch (country) {
         case(null) true;
@@ -599,8 +585,8 @@ actor class Agent() = this {
 
   /// ask market to put on sale token
   public shared({ caller }) func sellToken(tokenId: T.TokenId, quantity: T.TokenAmount, priceE8S: T.Price): async T.TransactionInfo {
-    // check if user exists
-    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
+    // check if user exists and return companyName
+    let sellerName = await UserIndex.getUserName(caller);
 
     // check price higher than 0
     if (priceE8S.e8s < 0) throw Error.reject("Price Must be higher than 0");
@@ -640,7 +626,7 @@ actor class Agent() = this {
     let txId = await TransactionIndex.registerTransaction(txInfo);
 
     // put tokens on marketplace reference
-    let amountInMarket = await Marketplace.putOnSale(tokenId, quantity, caller, priceE8S);
+    let amountInMarket = await Marketplace.putOnSale(tokenId, quantity, { sellerId = caller; sellerName }, priceE8S);
 
     // store to caller
     await UserIndex.updateMarketplace(caller, { tokenId; amountInMarket; transactionId = txId }, null);
@@ -878,7 +864,7 @@ actor class Agent() = this {
       let assetInfo = tokensInfoMap.get(item.tokenId);
 
 
-      // build MarketplaceSellersInfo object
+      // build TransactionHistoryInfo object
       {
         transactionId = item.transactionId;
         txIndex = item.txIndex;
@@ -965,8 +951,6 @@ actor class Agent() = this {
       case(null) null;
 
       case(?notification) {
-        Debug.print("⬛ this not should be showed " # notification.id);
-
         // flow to return holded tokens
         let triggerUser = switch(notification.triggeredBy) {
           case(null) throw Error.reject("triggeredBy not provided");

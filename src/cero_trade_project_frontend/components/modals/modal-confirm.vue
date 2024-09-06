@@ -27,7 +27,7 @@
         >{{ cancelButtonText }}</v-btn>
 
         <v-btn
-          class="bg-primary text-white flex-grow-1"
+          class="bg-primary text-black flex-grow-1"
           :disabled="disabled || loading"
           @click="emit('accept', modelParameter)"
         >{{ confirmButtonText }}</v-btn>

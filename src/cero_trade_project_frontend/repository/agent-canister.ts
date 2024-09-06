@@ -461,6 +461,8 @@ export class AgentCanister {
     periodEnd: Date,
     locale: string,
   }): Promise<TransactionInfo> {
+    console.log(tokenId, numberToToken(amount), moment(periodStart).format(variables.dateFormat), moment(periodEnd).format(variables.dateFormat), locale);
+    
     try {
       const tx = await agent().redeemToken(
         tokenId,

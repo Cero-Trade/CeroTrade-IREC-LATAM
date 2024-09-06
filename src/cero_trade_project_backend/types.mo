@@ -258,8 +258,17 @@ module {
   };
 
   public type MarketplaceSellersInfo = {
-    tokenId: Text;
+    tokenId: TokenId;
     sellerId: UID;
+    sellerName: Text;
+    priceE8S: Price;
+    mwh: TokenAmount;
+  };
+
+  public type MarketplaceSellersResponse = {
+    tokenId: TokenId;
+    sellerId: UID;
+    sellerName: Text;
     priceE8S: Price;
     assetInfo: ?AssetInfo;
     mwh: TokenAmount;
@@ -271,6 +280,7 @@ module {
   };
 
   public type UserTokenInfo = {
+    sellerName: Text;
     quantity: TokenAmount;
     priceE8S: Price;
   };

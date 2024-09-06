@@ -305,27 +305,30 @@ async function dismiss(item) {
 async function execute(item) {
   if (loadingExecute.value || loadingDismiss.value || !isReceiver(item)) return
   loadingExecute.value = item.id
+  
+  switch (item.notificationType) {
+    case NotificationType.beneficiary:
+        await addBeneficiaryRequested(item)
+      break;
 
-  try {
-    switch (item.notificationType) {
-
-      case NotificationType.beneficiary:
-          await AgentCanister.addBeneficiaryRequested(item.id)
-        break;
-
-      case NotificationType.redeem:
-          modalApprove.value.showModal(item)
-        return;
-    }
-
-    const index = tabs.value[currentTab.value].data.findIndex(e => e.id === item.id)
-    tabs.value[currentTab.value].data.splice(index, 1)
-
-  } catch (error) {
-    toast.error(error)
+    case NotificationType.redeem:
+        modalApprove.value.showModal(item)
+      return;
   }
 
   loadingExecute.value = null
+}
+
+async function addBeneficiaryRequested(item) {
+  try {
+    await AgentCanister.addBeneficiaryRequested(item.id)
+
+    const index = tabs.value[currentTab.value].data.findIndex(e => e.id === item.id)
+    tabs.value[currentTab.value].data.splice(index, 1)
+    toast.success("Your has been added beneficiary successful!")
+  } catch (error) {
+    toast.error(error)
+  }
 }
 
 async function redeemRequested(item) {
@@ -336,6 +339,7 @@ async function redeemRequested(item) {
 
     const index = tabs.value[currentTab.value].data.findIndex(e => e.id === item.id)
     tabs.value[currentTab.value].data.splice(index, 1)
+    toast.success("Your redemption has been successful!")
   } catch (error) {
     toast.error(error.toString())
   }

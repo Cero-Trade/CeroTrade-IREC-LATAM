@@ -372,6 +372,31 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     // In this case, would consider changing to another more effective method.
     let assetsMetadata = HM.HashMap<T.TokenId, { mwh: T.TokenAmount; assetInfo: T.AssetInfo }>(16, Text.equal, Text.hash);
 
+    // TODO this code below exists in case need test it
+    // assetsMetadata.put("2", {
+    //   mwh = 200_000_000;
+    //   assetInfo = {
+    //     tokenId = "2";
+    //     startDate = "2024-04-29T19:43:34.000Z";
+    //     endDate = "2024-05-29T19:48:31.000Z";
+    //     co2Emission = "11.22";
+    //     radioactivityEmission = "10.20";
+    //     volumeProduced: T.TokenAmount = 200_000_000_000;
+    //     deviceDetails = {
+    //       name = "machine";
+    //       deviceType = #HydroElectric("Hydro-Electric");
+    //       description = "description";
+    //     };
+    //     specifications = {
+    //       deviceCode = "200";
+    //       location = "location";
+    //       latitude = "0.1";
+    //       longitude = "1.0";
+    //       country = "CL";
+    //     };
+    //   };
+    // });
+
     switch(Serde.JSON.fromText(assetsJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize asset data");
       case(#ok(blob)) {

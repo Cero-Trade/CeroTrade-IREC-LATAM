@@ -21,8 +21,8 @@ actor class Marketplace() = this {
     for ((tokenId, tokenMarketInfo) in tokensInMarket.entries()) {
       let usersxToken = Buffer.Buffer<((T.UID, T.UserTokenInfo))>(50);
 
-      for ((userId, userTokenInfo) in tokenMarketInfo.usersxToken.entries()) {
-        usersxToken.add( (userId, userTokenInfo) )
+      for ((sellerId, userTokenInfo) in tokenMarketInfo.usersxToken.entries()) {
+        usersxToken.add( (sellerId, userTokenInfo) )
       };
 
       marketplace.add( (tokenId, tokenMarketInfo.totalQuantity, Buffer.toArray<(T.UID, T.UserTokenInfo)>(usersxToken)) );
@@ -35,8 +35,8 @@ actor class Marketplace() = this {
     for ((tokenId, totalQuantity, users) in tokensInMarketEntries.vals()) {
       var usersxToken = HM.HashMap<T.UID, T.UserTokenInfo>(100, Principal.equal, Principal.hash);
 
-      for ((userId, userTokenInfo) in users.vals()) {
-        usersxToken.put(userId, userTokenInfo);
+      for ((sellerId, userTokenInfo) in users.vals()) {
+        usersxToken.put(sellerId, userTokenInfo);
       };
 
       tokensInMarket.put(tokenId, { totalQuantity; usersxToken });
@@ -57,16 +57,15 @@ actor class Marketplace() = this {
     };
   };
 
-  // TODO troubles here setting token on marketplace
   // handles new token information on market
-  public shared({ caller }) func putOnSale(tokenId : T.TokenId, quantity : T.TokenAmount, user : T.UID, priceE8S: T.Price) : async T.TokenAmount {
+  public shared({ caller }) func putOnSale(tokenId : T.TokenId, quantity : T.TokenAmount, { sellerId: T.UID; sellerName: Text }, priceE8S: T.Price) : async T.TokenAmount {
     _callValidation(caller);
 
     switch(tokensInMarket.get(tokenId)) {
       // token doesnt exists
       case(null) {
         let usersxToken = HM.HashMap<T.UID, T.UserTokenInfo>(100, Principal.equal, Principal.hash);
-        usersxToken.put(user, { quantity; priceE8S });
+        usersxToken.put(sellerId, { quantity; priceE8S; sellerName });
         tokensInMarket.put(tokenId, { totalQuantity = quantity; usersxToken; });
 
         return quantity
@@ -76,11 +75,11 @@ actor class Marketplace() = this {
       case(?tokenMarketInfo) {
         let usersxToken = tokenMarketInfo.usersxToken;
 
-        let userTokensOnSale = switch(usersxToken.get(user)) {
+        let userTokensOnSale = switch(usersxToken.get(sellerId)) {
           case(null) quantity;
           case(?value) value.quantity + quantity;
         };
-        usersxToken.put(user, { quantity = userTokensOnSale; priceE8S; });
+        usersxToken.put(sellerId, { quantity = userTokensOnSale; priceE8S; sellerName; });
 
         tokensInMarket.put(tokenId, {
           tokenMarketInfo with totalQuantity = tokenMarketInfo.totalQuantity + quantity;
@@ -387,12 +386,7 @@ actor class Marketplace() = this {
 
   // function to get marketplace sellers
   public query func getMarketplaceSellers(page: ?Nat, length: ?Nat, tokenId: ?T.TokenId, priceRange: ?[T.Price], excludedCaller: ?T.UID): async {
-    data: [{
-      tokenId: T.TokenId;
-      userId: T.UID;
-      mwh: T.TokenAmount;
-      priceE8S: T.Price;
-    }];
+    data: [T.MarketplaceSellersInfo];
     totalPages: Nat;
   } {
     // define page based on statement
@@ -407,12 +401,7 @@ actor class Marketplace() = this {
       case(?value) value;
     };
 
-    let marketplace = Buffer.Buffer<{
-      tokenId: T.TokenId;
-      userId: T.UID;
-      mwh: T.TokenAmount;
-      priceE8S: T.Price;
-    }>(50);
+    let marketplace = Buffer.Buffer<T.MarketplaceSellersInfo>(50);
 
     // calculate range of elements returned
     let startIndex: Nat = (startPage - 1) * maxLength;
@@ -422,11 +411,11 @@ actor class Marketplace() = this {
 
       if (i >= startIndex and i < startIndex + maxLength) {
 
-        for((userId, userToken) in tokenMarketInfo.usersxToken.entries()) {
+        for((sellerId, userToken) in tokenMarketInfo.usersxToken.entries()) {
           // rule to exclude caller
           let excludeCallerRule: Bool = switch(excludedCaller) {
             case(null) true;
-            case(?caller) userId != caller;
+            case(?caller) sellerId != caller;
           };
 
           // filter by tokenId
@@ -443,7 +432,8 @@ actor class Marketplace() = this {
 
           if (filterTokenId and filterRange and excludeCallerRule) {
             marketplace.add({
-              userId;
+              sellerId;
+              sellerName = userToken.sellerName;
               tokenId = currentTokenId;
               mwh = userToken.quantity;
               priceE8S = userToken.priceE8S;
@@ -458,12 +448,7 @@ actor class Marketplace() = this {
     if (totalPages <= 0) totalPages := 1;
 
     {
-      data = Buffer.toArray<{
-        tokenId: T.TokenId;
-        userId: T.UID;
-        mwh: T.TokenAmount;
-        priceE8S: T.Price;
-      }>(marketplace);
+      data = Buffer.toArray<T.MarketplaceSellersInfo>(marketplace);
       totalPages;
     }
   };
