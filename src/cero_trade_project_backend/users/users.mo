@@ -529,19 +529,27 @@ shared({ caller = userIndexCaller }) actor class Users() = this {
   };
 
 
-  public shared({ caller }) func updateMarketplaceWithTransaction(tokenId: T.TokenId, inMarket: T.TokenAmount, transactionId: T.TransactionId): async() {
-    _callValidation(caller);
-
-    await updatePortfolio({ tokenId; inMarket = ?inMarket; redemption = null });
-
-    await addTransaction(transactionId);
-  };
-
   public shared({ caller }) func addTokensWithTransaction(assets: T.AssetInfo, transactionId: T.TransactionId): async() {
     _callValidation(caller);
 
     await addTokensPortfolio([assets]);
 
     await addTransaction(transactionId);
+  };
+
+  public shared({ caller }) func updateMarketplaceWithTransaction(inMarket: T.TokenAmount, transaction: T.TransactionInfo): async() {
+    _callValidation(caller);
+
+    await updatePortfolio({ tokenId = transaction.tokenId; inMarket = ?inMarket; redemption = null });
+
+    await addTransaction(transaction.transactionId);
+  };
+
+  public shared({ caller }) func updateRedemptions(transaction: T.TransactionInfo): async() {
+    _callValidation(caller);
+
+    await updatePortfolio({ tokenId = transaction.tokenId; inMarket = null; redemption = ?transaction });
+
+    await addTransaction(transaction.transactionId);
   };
 }

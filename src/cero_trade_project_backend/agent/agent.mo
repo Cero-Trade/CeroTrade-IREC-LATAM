@@ -571,15 +571,15 @@ actor class Agent() = this {
     };
 
     // register transaction
-    let txId = await TransactionIndex.registerTransaction(txInfo);
+    let transactionId = await TransactionIndex.registerTransaction(txInfo);
 
     // take token off marketplace reference
     let amountInMarket = await Marketplace.takeOffSale(tokenId, tokenAmount, recipent);
 
     // store to caller and recipent
-    await UserIndex.updateMarketplace(caller, { tokenId; amountInMarket; transactionId = txId }, ?{ recipent; assetInfo; });
+    await UserIndex.updateMarketplace(caller, { amountInMarket; transaction = { txInfo with transactionId } }, ?{ recipent; assetInfo; });
 
-    { txInfo with transactionId = txId }
+    { txInfo with transactionId }
   };
 
 
@@ -623,15 +623,15 @@ actor class Agent() = this {
     };
 
     // register transaction
-    let txId = await TransactionIndex.registerTransaction(txInfo);
+    let transactionId = await TransactionIndex.registerTransaction(txInfo);
 
     // put tokens on marketplace reference
     let amountInMarket = await Marketplace.putOnSale(tokenId, quantity, { sellerId = caller; sellerName }, priceE8S);
 
     // store to caller
-    await UserIndex.updateMarketplace(caller, { tokenId; amountInMarket; transactionId = txId }, null);
+    await UserIndex.updateMarketplace(caller, { amountInMarket; transaction = { txInfo with transactionId } }, null);
 
-    { txInfo with transactionId = txId }
+    { txInfo with transactionId }
   };
 
 
@@ -673,15 +673,15 @@ actor class Agent() = this {
     };
 
     // register transaction
-    let txId = await TransactionIndex.registerTransaction(txInfo);
+    let transactionId = await TransactionIndex.registerTransaction(txInfo);
 
     // take off tokens on marketplace reference
     let amountInMarket = await Marketplace.takeOffSale(tokenId, quantity, uid);
 
     // store to uid
-    await UserIndex.updateMarketplace(uid, { tokenId; amountInMarket; transactionId = txId }, null);
+    await UserIndex.updateMarketplace(uid, { amountInMarket; transaction = { txInfo with transactionId } }, null);
 
-    { txInfo with transactionId = txId }
+    { txInfo with transactionId }
   };
   
   // ask market to take off market
@@ -778,10 +778,10 @@ actor class Agent() = this {
     };
 
     // register transaction
-    let txId = await TransactionIndex.registerTransaction(txInfo);
+    let transactionId = await TransactionIndex.registerTransaction(txInfo);
 
     // update receiver and trigger user transactions
-    await UserIndex.updateTransactions(notification.receivedBy, ?triggeredBy, txId);
+    await UserIndex.updateRedemptions(notification.receivedBy, ?triggeredBy, { txInfo with transactionId });
 
     // change notification status
     let _ = await _updateEventNotification(caller, notificationId, ?#accepted("accepted"));
@@ -789,7 +789,7 @@ actor class Agent() = this {
     // register asset statistic
     await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = ?quantity });
 
-    { txInfo with transactionId = txId }
+    { txInfo with transactionId }
   };
 
   // redeem certificate by burning user tokens
@@ -827,15 +827,15 @@ actor class Agent() = this {
     };
 
     // register transaction
-    let txId = await TransactionIndex.registerTransaction(txInfo);
+    let transactionId = await TransactionIndex.registerTransaction(txInfo);
 
     // store to caller
-    await UserIndex.updateTransactions(caller, null, txId);
+    await UserIndex.updateRedemptions(caller, null, { txInfo with transactionId });
 
     // register asset statistic
     await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = ?quantity });
 
-    { txInfo with transactionId = txId }
+    { txInfo with transactionId }
   };
 
 

@@ -35,7 +35,8 @@ module UsersInterface {
     // ======================================== Transactions ===================================================== //
     getTransactions: (page: ?Nat, length: ?Nat) -> async { data: [T.TransactionId]; totalPages: Nat; };
     addTransaction: (transactionId: T.TransactionId) -> async();
-    updateMarketplaceWithTransaction: (tokenId: T.TokenId, inMarket: T.TokenAmount, transactionId: T.TransactionId) -> async();
     addTokensWithTransaction: (assets: T.AssetInfo, transactionId: T.TransactionId) -> async();
+    updateMarketplaceWithTransaction: (inMarket: T.TokenAmount, transaction: T.TransactionInfo) -> async();
+    updateRedemptions: (transaction: T.TransactionInfo) -> async();
   };
 }

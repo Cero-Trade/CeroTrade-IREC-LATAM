@@ -726,22 +726,34 @@ actor class UserIndex() = this {
   };
 
   /// add transactionId to user and update marketplace amount
-  public shared({ caller }) func updateMarketplace(uid: T.UID, { tokenId: T.TokenId; amountInMarket: T.TokenAmount; transactionId: T.TransactionId }, buyer: ?{ recipent: T.BID; assetInfo: T.AssetInfo }): async() {
+  public shared({ caller }) func updateMarketplace(uid: T.UID, { amountInMarket: T.TokenAmount; transaction: T.TransactionInfo }, buyer: ?{ recipent: T.BID; assetInfo: T.AssetInfo }): async() {
     _callValidation(caller);
 
     // if not provide buyer will be updated [marketplace + transactions] of user
     //
     // else will be updated recipent marketplace and user [portfolio + transactions]
     switch(buyer) {
-      case(null) await (await getUserCanister(uid)).updateMarketplaceWithTransaction(tokenId, amountInMarket, transactionId);
+      case(null) await (await getUserCanister(uid)).updateMarketplaceWithTransaction(amountInMarket, transaction);
 
       case(?{ recipent; assetInfo; }) {
         // update marketplace of recipent
-        await (await getUserCanister(recipent)).updatePortfolio({ tokenId; inMarket = ?amountInMarket; redemption = null });
+        await (await getUserCanister(recipent)).updatePortfolio({ tokenId = transaction.tokenId; inMarket = ?amountInMarket; redemption = null });
 
         // update portfolio + transactions of user
-        await (await getUserCanister(uid)).addTokensWithTransaction(assetInfo, transactionId);
+        await (await getUserCanister(uid)).addTokensWithTransaction(assetInfo, transaction.transactionId);
       }
+    };
+  };
+
+  /// add transactionId to user and update redemptions
+  public shared({ caller }) func updateRedemptions(uid: T.UID, recipent: ?T.BID, transaction: T.TransactionInfo): async() {
+    _callValidation(caller);
+
+    await (await getUserCanister(uid)).addTransaction(transaction.transactionId);
+
+    switch(recipent) {
+      case(null) {};
+      case(?value) await (await getUserCanister(value)).updateRedemptions(transaction);
     };
   };
 }
