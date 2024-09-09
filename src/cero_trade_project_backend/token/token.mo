@@ -489,6 +489,16 @@ shared ({ caller = _owner }) actor class Token(
     icrc1().balance_of(args);
   };
 
+  public shared func token_balance(args : ICRC1.Account) : async {
+    balance : ICRC1.Balance;
+    assetMetadata : T.AssetInfo;
+  } {
+    {
+      balance = icrc1().balance_of(args);
+      assetMetadata = await assetMetadata();
+    };
+  };
+
   public shared query func icrc1_supported_standards() : async [ICRC1.SupportedStandard] {
     icrc1().supported_standards();
   };

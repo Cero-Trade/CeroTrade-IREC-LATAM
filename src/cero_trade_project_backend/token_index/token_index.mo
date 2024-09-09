@@ -546,6 +546,25 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     };
   };
 
+  // get token portfolio for a specific user
+  public shared({ caller }) func getSingleTokenInfo(uid: T.UID, tokenId: T.TokenId): async T.TokenInfo {
+    _callValidation(caller);
+
+    switch (tokenDirectory.get(tokenId)) {
+      case (null) throw Error.reject("Token not found on Portfolio");
+      case (?cid) {
+        let token_balance = await Token.canister(cid).token_balance({ owner = uid; subaccount = null });
+
+        {
+          tokenId;
+          totalAmount = token_balance.balance;
+          assetInfo = token_balance.assetMetadata;
+          inMarket = 0;
+        }
+      };
+    };
+  };
+
   // // get token portfolio for a specific user
   // public shared({ caller }) func getTokenPortfolio(uid: T.UID, tokenId: T.TokenId): async T.TokenInfo {
   //   _callValidation(caller);

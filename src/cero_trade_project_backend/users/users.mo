@@ -8,6 +8,7 @@ import Cycles "mo:base/ExperimentalCycles";
 import Iter "mo:base/Iter";
 import Buffer "mo:base/Buffer";
 import Array "mo:base/Array";
+import Result "mo:base/Result";
 import Source "mo:uuid/async/SourceV4";
 import UUID "mo:uuid/UUID";
 
@@ -137,12 +138,12 @@ shared({ caller = userIndexCaller }) actor class Users() = this {
   stable var portfolioEntries : [(T.TokenId, T.SinglePortfolio)] = [];
 
   // get single portfolio
-  public shared({ caller }) func getSinglePortfolio(tokenId: T.TokenId): async T.SinglePortfolio {
+  public shared({ caller }) func getSinglePortfolio(tokenId: T.TokenId): async Result.Result<T.SinglePortfolio, Text> {
     _callValidation(caller);
 
     switch(portfolio.get(tokenId)) {
-      case(null) throw Error.reject("Token not found in user portfolio");
-      case(?value) value;
+      case(null) #err("Token not found in user portfolio");
+      case(?value) #ok(value);
     };
   };
 

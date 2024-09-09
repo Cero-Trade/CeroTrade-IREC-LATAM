@@ -1,4 +1,5 @@
 import Principal "mo:base/Principal";
+import Result "mo:base/Result";
 
 // types
 import T "../types"
@@ -15,7 +16,7 @@ module UsersInterface {
     getProfile: () -> async T.UserProfile;
     updateProfile: (form: T.UpdateUserForm) -> async();
     // ======================================== Portfolio ===================================================== //
-    getSinglePortfolio: (tokenId: T.TokenId) -> async T.SinglePortfolio;
+    getSinglePortfolio: (tokenId: T.TokenId) -> async Result.Result<T.SinglePortfolio, Text>;
     getPortfolio: (page: ?Nat, length: ?Nat, assetTypes: ?[T.AssetType], country: ?Text, mwhRange: ?[T.TokenAmount]) -> async { data: [T.Portfolio]; totalPages: Nat; };
     addTokensPortfolio: (assets: [T.AssetInfo]) -> async();
     removeTokensPortfolio: (tokenIds: [T.TokenId]) -> async();

@@ -11,6 +11,7 @@ import Error "mo:base/Error";
 import Serde "mo:serde";
 import Debug "mo:base/Debug";
 import Deque "mo:base/Deque";
+import Result "mo:base/Result";
 
 // interfaces
 import Users "../users/users_interface";
@@ -465,7 +466,7 @@ actor class UserIndex() = this {
   };
   
   /// get single portfolio
-  public shared({ caller }) func getSinglePortfolio(uid: T.UID, tokenId: T.TokenId): async T.SinglePortfolio {
+  public shared({ caller }) func getSinglePortfolio(uid: T.UID, tokenId: T.TokenId): async Result.Result<T.SinglePortfolio, Text> {
     _callValidation(caller);
 
     await (await getUserCanister(uid)).getSinglePortfolio(tokenId);
@@ -744,11 +745,16 @@ actor class UserIndex() = this {
   public shared({ caller }) func updateRedemptions(uid: T.UID, recipent: ?T.BID, transaction: T.TransactionInfo): async() {
     _callValidation(caller);
 
-    await (await getUserCanister(uid)).addTransaction(transaction.transactionId);
+    let userCanister = await getUserCanister(uid);
 
     switch(recipent) {
-      case(null) {};
-      case(?value) await (await getUserCanister(value)).updateRedemptions(transaction);
+      case(null) {
+        await userCanister.updateRedemptions(transaction);
+      };
+      case(?value) {
+        await userCanister.addTransaction(transaction.transactionId);
+        await (await getUserCanister(value)).updateRedemptions(transaction);
+      }
     };
   };
 }

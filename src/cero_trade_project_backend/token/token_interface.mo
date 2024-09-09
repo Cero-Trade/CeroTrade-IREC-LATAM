@@ -22,6 +22,7 @@ module TokenInterface {
     icrc1_total_supply: query () -> async ICRC1.Balance;
     icrc1_minting_account: query () -> async ?ICRC1.Account;
     icrc1_balance_of: query (args: ICRC1.Account) -> async ICRC1.Balance;
+    token_balance: (args: ICRC1.Account) -> async { balance: ICRC1.Balance; assetMetadata: T.AssetInfo; };
     icrc1_supported_standards: query () -> async [ICRC1.SupportedStandard];
     icrc10_supported_standards: query () -> async [ICRC1.SupportedStandard];
     icrc1_transfer: (args: ICRC1.TransferArgs) -> async ICRC1.TransferResult;
