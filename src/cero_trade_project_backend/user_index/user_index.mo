@@ -336,9 +336,23 @@ actor class UserIndex() = this {
       };
     };
 
-    let formData = { evidentId = form.evidentId; };
+    let formData = {
+      principalId = Principal.toText(uid);
+      companyId = form.companyId;
+      evidentId = form.evidentId;
+      companyName = form.companyName;
+      country = form.country;
+      city = form.city;
+      address = form.address;
+      email = form.email;
+    };
+
     let formBlob = to_candid(formData);
-    let formKeys = ["evidentId"];
+    let formKeys = ["principalId", "companyId", "evidentId", "companyName", "country", "city", "address", "email"];
+    // TODO waiting for changes
+    // let formData = { evidentId = form.evidentId; };
+    // let formBlob = to_candid(formData);
+    // let formKeys = ["evidentId"];
 
     // WARN just for debug
     Debug.print("registerUser with principal --> " # Principal.toText(uid));
