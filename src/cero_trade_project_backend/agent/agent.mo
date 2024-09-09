@@ -293,6 +293,8 @@ actor class Agent() = this {
   /// function to know user token balance
   public shared({ caller }) func balanceOf(tokenId: T.TokenId): async T.TokenAmount { await TokenIndex.balanceOf(caller, tokenId) };
 
+  // TODO change consult about portfolio to get info from marketplace and token_index in realtime
+
   /// get user single portfolio information
   public shared({ caller }) func getSinglePortfolio(tokenId: T.TokenId): async T.SinglePortfolio {
     await _getSinglePortfolio(caller, tokenId);

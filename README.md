@@ -1,6 +1,12 @@
 <!-- TODO subdomain integration with `cerotrade.cl/alfa` -->
+
 <!-- TODO checkout wich country put on sellers in marketplace -->
-<!-- TODO checkout wich from and to values assigned in redemptions -->
+<!-- TODO my-transactions: recipent ID user name -->
+<!-- TODO review token-details portfolio obtain -->
+<!-- TODO my-transactions price empty -> trouble -->
+<!-- TODO token-details pdf redemption missing -->
+<!-- TODO put Sender Id column in my transactions -->
+<!-- TODO put blockchain txIndex in my-transactions -->
 
 # Cero Trade
 

@@ -53,9 +53,9 @@
             <img src="@/assets/sources/icons/reload-icon.png" alt="reload icon" style="width: 22px; height: 22px">
           </v-btn>
 
-          <v-btn size="32" variant="text" color="#333">
+          <!-- <v-btn size="32" variant="text" color="#333">
             <img src="@/assets/sources/icons/config.svg" alt="config icon" style="filter: invert(70%);">
-          </v-btn>
+          </v-btn> -->
         </div>
       </v-tabs>
 
@@ -325,7 +325,7 @@ async function addBeneficiaryRequested(item) {
 
     const index = tabs.value[currentTab.value].data.findIndex(e => e.id === item.id)
     tabs.value[currentTab.value].data.splice(index, 1)
-    toast.success("Your has been added beneficiary successful!")
+    toast.success("Your beneficiary has been added successfully!")
   } catch (error) {
     toast.error(error)
   }

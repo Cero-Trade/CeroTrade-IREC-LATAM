@@ -544,7 +544,7 @@ actor class UserIndex() = this {
           // notification to receiver
           receiverNotification := { notification with content = ?("Request received from user " # senderCompanyName # " by amount " # amount) };
           // notification to sender
-          senderNotification := { notification with content = ?("Request sended to user " # receiverCompanyName # " by amount " # amount) };
+          senderNotification := { notification with content = ?("Request sent to user " # receiverCompanyName # " by amount " # amount) };
         };
       };
 
@@ -564,7 +564,7 @@ actor class UserIndex() = this {
           // notification to receiver
           receiverNotification := { notification with content = ?("Request received from user " # senderCompanyName) };
           // notification to sender
-          senderNotification := { notification with content = ?("Request sended to user " # receiverCompanyName) };
+          senderNotification := { notification with content = ?("Request sent to user " # receiverCompanyName) };
         };
       };
     };
