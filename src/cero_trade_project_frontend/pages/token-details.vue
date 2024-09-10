@@ -30,7 +30,7 @@
     <h3 class="acenter mb-4" :title="tokenId" style="width: max-content">
       <company-logo
         :energy-src="energies[tokenDetail.assetInfo.deviceDetails?.deviceType]"
-        :country-src="countriesImg[tokenDetail.assetInfo.specifications?.country]"
+        :country-src="countries[tokenDetail.assetInfo.specifications?.country]?.flag"
         class="mr-4"
       ></company-logo>
       Asset # {{ shortString(tokenId, {}) }}
@@ -173,7 +173,7 @@
                       <div class="jspace divrow mt-3 mb-1">
                         <span style="color: #475467;">Country</span>
                         <div>
-                          <img :src="countriesImg[tokenDetail.assetInfo.specifications?.country]" :alt="`${tokenDetail.assetInfo.specifications?.country} flag`">
+                          <img :src="countries[tokenDetail.assetInfo.specifications?.country].flag" :alt="`${tokenDetail.assetInfo.specifications?.country} flag`">
                           <span>{{ tokenDetail.assetInfo.specifications?.country }}</span>
                         </div>
                       </div>
@@ -240,7 +240,7 @@
 
               <template #[`item.country`]="{ item }">
                 <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-                  <img :src="countriesImg[item.country]" :alt="`${item.country} Icon`" style="width: 20px;">
+                  <img :src="countries[item.country].flag" :alt="`${item.country} Icon`" style="width: 20px;">
                   {{ item.country }}
                 </span>
               </template>
@@ -287,7 +287,7 @@
                 <div class="jspace divrow mb-1">
                   <span>Country</span>
                   <span style="color: #475467;" class="acenter text-capitalize">
-                    <img :src="countriesImg[item.country]" alt="icon" class="mr-1" style="width: 20px;"> {{ item.country }}
+                    <img :src="countries[item.country].flag" alt="icon" class="mr-1" style="width: 20px;"> {{ item.country }}
                   </span>
                 </div>
 
@@ -406,7 +406,7 @@
             <h5 class="acenter mb-0 bold h5-mobile" :title="tokenId">
               <company-logo
                 :energy-src="energies[tokenDetail.assetInfo.deviceDetails?.deviceType]"
-                :country-src="countriesImg[tokenDetail.assetInfo.specifications?.country]"
+                :country-src="countries[tokenDetail.assetInfo.specifications?.country].flag"
                 class="mr-4"
               ></company-logo>
               #{{ shortString(tokenId, {}) }}
@@ -424,7 +424,7 @@
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Country</span>
             <span class="flex-center" style="gap: 5px">
-              <img :src="countriesImg[tokenDetail.assetInfo.specifications?.country]" :alt="`${tokenDetail.assetInfo.specifications?.country} flag`">
+              <img :src="countries[tokenDetail.assetInfo.specifications?.country].flag" :alt="`${tokenDetail.assetInfo.specifications?.country} flag`">
               {{ tokenDetail.assetInfo.specifications?.country }}
             </span>
           </div>
@@ -624,7 +624,7 @@
               <h5 class="acenter h5-mobile" :title="tokenId">
                 <company-logo
                   :energy-src="energies[tokenDetail.assetInfo.deviceDetails?.deviceType]"
-                  :country-src="countriesImg[tokenDetail.assetInfo.specifications?.country]"
+                  :country-src="countries[tokenDetail.assetInfo.specifications?.country].flag"
                   class="mr-4"
                 ></company-logo>
                 #{{ shortString(tokenId, {}) }}
@@ -642,7 +642,7 @@
             <div class="jspace divrow mb-1">
               <span style="color: #475467;">Country</span>
               <span class="flex-center" style="gap: 5px">
-                <img :src="countriesImg[tokenDetail.assetInfo.specifications?.country]" :alt="`${tokenDetail.assetInfo.specifications?.country} flag`">
+                <img :src="countries[tokenDetail.assetInfo.specifications?.country].flag" :alt="`${tokenDetail.assetInfo.specifications?.country} flag`">
                 {{ tokenDetail.assetInfo.country }}
               </span>
             </div>
@@ -799,7 +799,7 @@
             <h5 class="acenter mb-0 bold h5-mobile" :title="tokenId">
               <company-logo
                 :energy-src="energies[tokenDetail.assetInfo.deviceDetails?.deviceType]"
-                :country-src="countriesImg[tokenDetail.assetInfo.specifications?.country]"
+                :country-src="countries[tokenDetail.assetInfo.specifications?.country].flag"
                 class="mr-4"
               ></company-logo>
               #{{ shortString(tokenId, {}) }}
@@ -824,7 +824,7 @@
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Country</span>
             <span class="flex-center" style="gap: 5px">
-              <img :src="countriesImg[tokenDetail.assetInfo.specifications?.country]" :alt="`${tokenDetail.assetInfo.country} flag`">
+              <img :src="countries[tokenDetail.assetInfo.specifications?.country].flag" :alt="`${tokenDetail.assetInfo.country} flag`">
               {{ tokenDetail.assetInfo.country }}
             </span>
           </div>
@@ -906,7 +906,7 @@
 
             <template #[`item.country`]="{ item }">
               <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-                <img :src="countriesImg[item.country]" :alt="`${item.country} Icon`" style="width: 20px;">
+                <img :src="countries[item.country].flag" :alt="`${item.country} Icon`" style="width: 20px;">
                 {{ item.country }}
               </span>
             </template>
@@ -957,7 +957,7 @@
             <h5 class="acenter h5-mobile" :title="tokenId">
               <company-logo
                 :energy-src="energies[tokenDetail.assetInfo.deviceDetails?.deviceType]"
-                :country-src="countriesImg[tokenDetail.assetInfo.specifications?.country]"
+                :country-src="countries[tokenDetail.assetInfo.specifications?.country].flag"
                 class="mr-4"
               ></company-logo>
               #{{ shortString(tokenId, {}) }}
@@ -1042,7 +1042,7 @@
             <h5 class="acenter h5-mobile" :title="tokenId">
               <company-logo
                 :energy-src="energies[tokenDetail.assetInfo.deviceDetails?.deviceType]"
-                :country-src="countriesImg[tokenDetail.assetInfo.specifications?.country]"
+                :country-src="countries[tokenDetail.assetInfo.specifications?.country].flag"
                 class="mr-4"
               ></company-logo>
               #{{ shortString(tokenId, {}) }}
@@ -1133,14 +1133,51 @@
 
         <v-autocomplete
           v-model="filters.country"
-          :items="countries"
+          :items="Object.values(countries)"
           variant="outlined"
           flat elevation="0"
+          menu-icon=""
           item-title="name"
           item-value="name"
           label="country"
           class="select mb-4"
-        ></v-autocomplete>
+        >
+          <template #append-inner="{ isFocused }">
+            <img
+              src="@/assets/sources/icons/chevron-down.svg"
+              alt="chevron-down icon"
+              :style="`transform: ${isFocused.value ? 'rotate(180deg)' : 'none'};`"
+            >
+          </template>
+
+          <template #selection="{ item }">
+            <v-img-load
+              :src="item.raw.flag.toString()"
+              :alt="`${item.raw.name} logo`"
+              cover
+              sizes="25px"
+              rounded="50%"
+              class="flex-grow-0"
+            />
+            <span class="bold ml-2">{{ item.raw.name }}</span>
+          </template>
+
+          <template #item="{ item, props }">
+            <v-list-item v-bind="props" title=" ">
+              <div class="d-flex align-center">
+                <v-img-load
+                  :src="item.raw.flag.toString()"
+                  :alt="`${item.raw.name} logo`"
+                  cover
+                  sizes="25px"
+                  rounded="50%"
+                  class="flex-grow-0"
+                />
+                <span class="bold ml-2" style="translate: 0 1px">{{ item.raw.name }}</span>
+              </div>
+            </v-list-item>
+          </template>
+        </v-autocomplete>
 
         <v-text-field
           v-model="filters.companyName"
@@ -1176,7 +1213,6 @@
 <script setup>
 import '@/assets/styles/pages/token-details.scss'
 import ModalApprove from '@/components/modals/modal-approve.vue'
-import countries from '@/assets/sources/json/countries-all.json'
 import Apexchart from "vue3-apexcharts"
 
 import HydroEnergyIcon from '@/assets/sources/energies/hydro.svg'
@@ -1204,7 +1240,7 @@ const
   route = useRoute(),
   router = useRouter(),
   toast = useToast(),
-  { globalRules, ceroComisison, dateFormat, defaultMaxDecimals } = variables,
+  { globalRules, ceroComisison, countries, dateFormat, defaultMaxDecimals } = variables,
 
 energiesColored = {
   "Solar": SolarEnergyColorIcon,
@@ -1217,9 +1253,6 @@ energies = {
   "Wind": WindEnergyIcon,
   "Hydro-Electric": HydroEnergyIcon,
   "Thermal": GeothermalEnergyIcon,
-},
-countriesImg = {
-  CL: ChileIcon
 },
 tokenDetail = ref({
   tokenId: null,

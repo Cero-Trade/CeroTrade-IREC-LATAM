@@ -317,3 +317,7 @@ export function numberToToken(number, decimals) {
 export function exponentToString(number, decimals) {
   return number.toFixed(decimals || number.toString().split("-")[1])
 }
+
+export function getAsset(path) {
+  return new URL("/src/cero_trade_project_frontend/assets/sources/" + path, import.meta.url)
+}

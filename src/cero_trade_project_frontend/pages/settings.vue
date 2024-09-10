@@ -174,7 +174,7 @@
                 class="input" variant="solo" flat elevation="0"
                 placeholder="USA"
                 menu-icon=""
-                :items="countries"
+                :items="Object.values(countries)"
                 item-title="name"
                 item-value="code"
                 :rules="[globalRules.required]"
@@ -185,6 +185,34 @@
                     alt="chevron-down icon"
                     :style="`transform: ${isFocused.value ? 'rotate(180deg)' : 'none'};`"
                   >
+                </template>
+
+                <template #selection="{ item }">
+                  <v-img-load
+                    :src="item.raw.flag.toString()"
+                    :alt="`${item.raw.name} logo`"
+                    cover
+                    sizes="25px"
+                    rounded="50%"
+                    class="flex-grow-0"
+                  />
+                  <span class="bold ml-2">{{ item.raw.name }}</span>
+                </template>
+
+                <template #item="{ item, props }">
+                  <v-list-item v-bind="props" title=" ">
+                    <div class="d-flex align-center">
+                      <v-img-load
+                        :src="item.raw.flag.toString()"
+                        :alt="`${item.raw.name} logo`"
+                        cover
+                        sizes="25px"
+                        rounded="50%"
+                        class="flex-grow-0"
+                      />
+                      <span class="bold ml-2" style="translate: 0 1px">{{ item.raw.name }}</span>
+                    </div>
+                  </v-list-item>
                 </template>
               </v-autocomplete>
             </v-col>
@@ -523,7 +551,6 @@
 import '@/assets/styles/pages/settings.scss'
 import icpIcon from '@/assets/sources/icons/internet-computer-icon.svg'
 import bankIcon from '@/assets/sources/icons/bank.svg'
-import countriesJson from '@/assets/sources/json/countries-all.json'
 import ChileIcon from '@/assets/sources/icons/CL.svg'
 import { ref } from 'vue'
 import { AgentCanister } from '@/repository/agent-canister'
@@ -536,7 +563,7 @@ import { UserProfileModel } from '@/models/user-profile-model'
 export default{
   setup(){
       const toast = useToast(),
-      { globalRules, beneficiaryUrl } = variables,
+      { globalRules, beneficiaryUrl, countries } = variables,
       getUrlFromFile = getUrlFromFileFunc,
       tabsWindow = ref(1),
       show_password= ref(false),
@@ -585,10 +612,6 @@ export default{
       beneficiaries = ref(null),
       loadingSearchBeneficiary = ref(false),
       loadingAddBeneficiary = ref(false),
-      countries = countriesJson,
-      countriesImg = {
-        CL: ChileIcon
-      },
       profileCompanyLogo = ref(null),
       formProfileRef = ref(),
       loadingFormProfile = ref(false),
@@ -637,7 +660,6 @@ export default{
       loadingSearchBeneficiary,
       loadingAddBeneficiary,
       countries,
-      countriesImg,
       profileCompanyLogo,
       formProfileRef,
       loadingFormProfile,

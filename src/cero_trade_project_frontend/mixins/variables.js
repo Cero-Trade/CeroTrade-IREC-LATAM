@@ -35,6 +35,7 @@ export default {
   defaultLocale: 'en-US',
 
   isSafari: /^((?!chrome|android).)*safari/i.test(navigator.userAgent),
+  countries: computed(() => store.state.countries),
   isLogged() {
     return !!useStorage().getStorageSync('tokenAuth')
   },

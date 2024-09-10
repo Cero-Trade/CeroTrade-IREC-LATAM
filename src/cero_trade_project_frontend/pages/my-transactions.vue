@@ -92,7 +92,7 @@
       <template #[`item.sender`]="{ item }">
         <v-menu :close-on-content-click="false" @update:model-value="(value) => getUserProfile(value, item.sender)">
           <template #activator="{ props }">
-            <a v-bind="props" class="flex-acenter pointer" style="gap: 5px; text-wrap: nowrap">{{ shortPrincipalId(item.sender?.toString()) }}</a>
+            <a v-bind="props" class="flex-acenter pointer" style="gap: 5px; text-wrap: nowrap; text-decoration: underline !important;">{{ shortPrincipalId(item.sender?.toString()) }}</a>
           </template>
 
           <v-card class="px-4 py-2 bg-secondary d-flex">
@@ -141,7 +141,7 @@
 
       <template #[`item.country`]="{ item }">
         <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-          <img :src="countriesImg[item.country]" :alt="`${item.country} Icon`" style="width: 20px;">
+          <img :src="countries[item.country].flag" :alt="`${item.country} Icon`" style="width: 20px;">
           {{ item.country }}
         </span>
       </template>
@@ -269,14 +269,51 @@
 
           <v-autocomplete
             v-model="filters.country"
-            :items="countries"
+            :items="Object.values(countries)"
             variant="outlined"
             flat elevation="0"
+            menu-icon=""
             item-title="name"
             item-value="name"
             label="country"
             class="select mb-4"
-          ></v-autocomplete>
+          >
+          <template #append-inner="{ isFocused }">
+            <img
+              src="@/assets/sources/icons/chevron-down.svg"
+              alt="chevron-down icon"
+              :style="`transform: ${isFocused.value ? 'rotate(180deg)' : 'none'};`"
+            >
+          </template>
+
+          <template #selection="{ item }">
+            <v-img-load
+              :src="item.raw.flag.toString()"
+              :alt="`${item.raw.name} logo`"
+              cover
+              sizes="25px"
+              rounded="50%"
+              class="flex-grow-0"
+            />
+            <span class="bold ml-2">{{ item.raw.name }}</span>
+          </template>
+
+          <template #item="{ item, props }">
+            <v-list-item v-bind="props" title=" ">
+              <div class="d-flex align-center">
+                <v-img-load
+                  :src="item.raw.flag.toString()"
+                  :alt="`${item.raw.name} logo`"
+                  cover
+                  sizes="25px"
+                  rounded="50%"
+                  class="flex-grow-0"
+                />
+                <span class="bold ml-2" style="translate: 0 1px">{{ item.raw.name }}</span>
+              </div>
+            </v-list-item>
+          </template>
+        </v-autocomplete>
 
           <v-range-slider
             v-model="filters.priceRange"
@@ -350,7 +387,6 @@
 
 <script setup>
 import '@/assets/styles/pages/my-transactions.scss'
-import countries from '@/assets/sources/json/countries-all.json'
 
 import HydroEnergyIcon from '@/assets/sources/energies/hydro.svg'
 import OceanEnergyIcon from '@/assets/sources/energies/ocean.svg'
@@ -366,10 +402,12 @@ import { useToast } from 'vue-toastification'
 import { useRouter } from 'vue-router'
 import moment from "moment";
 import { shortPrincipalId, shortString } from '@/plugins/functions'
+import variables from '@/mixins/variables'
 
 const
   router = useRouter(),
   toast = useToast(),
+  { countries } = variables,
 
 tabsMobile = ref(1),
 windowStep = ref(undefined),
@@ -392,9 +430,6 @@ energies = {
   "Wind": WindEnergyIcon,
   "Hydro-Electric": HydroEnergyIcon,
   "Thermal": GeothermalEnergyIcon,
-},
-countriesImg = {
-  CL: ChileIcon
 },
 
   headers = [
