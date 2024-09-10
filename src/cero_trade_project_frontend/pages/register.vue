@@ -31,7 +31,7 @@
                 ></v-img-input>
               </v-col>
               <v-col xl="6" lg="6" md="6" cols="12">
-                <label for="companey-name">Company name</label>
+                <label for="company-name">Company name</label>
                 <v-text-field 
                 v-model="companyForm.companyName"
                 id="company-name" class="input" variant="solo" flat elevation="0" 

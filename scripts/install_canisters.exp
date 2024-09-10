@@ -12,7 +12,7 @@ set modules_found 0
 
 foreach arg $args {
   if {[string match --help $arg]} {
-    puts "Welcome, these are the args available:\n1) backend -> used to build only backend canisters\n\nHere are the flags available:\n1) -- --network=ic -> used to install canisters on ic network\n2) -- --network=local -> used to install canisters on local replica\n3) -- --mode=upgrade -> used to install canister code without losing data\n4) -- --mode=reinstall -> used to install canister code cleaning data"
+    puts "Welcome, these are the args available:\n1) backend -> used to install only backend canisters\n\nHere are the flags available:\n1) -- --network=ic -> used to install canisters on ic network\n2) -- --network=local -> used to install canisters on local replica\n3) -- --mode=upgrade -> used to install canister code without losing data\n4) -- --mode=reinstall -> used to install canister code cleaning data"
     exit 0
   }
 
