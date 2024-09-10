@@ -523,6 +523,7 @@ export class AgentCanister {
         item.date = new Date(item.date)
         item.redemptionPdf = await getFileFromArrayBuffer(item.redemptionPdf, { fileName: 'certificate', fileType: 'application/pdf' })
         item['url'] = URL.createObjectURL(item.redemptionPdf)
+        item.txIndex = Number(item.txIndex)
 
         // get nullable object
         item.to = item.to[0]

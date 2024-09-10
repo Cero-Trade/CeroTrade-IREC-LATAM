@@ -287,7 +287,7 @@ export async function fileCompression(file, options) {
 
 export function shortPrincipalId(principalId) {
   const splitted = principalId?.split('-');
-  if (!splitted) return ''
+  if (!splitted || !splitted[0]) return principalId
 
   return `${splitted[0]}...${splitted[splitted.length - 1]}`
 }

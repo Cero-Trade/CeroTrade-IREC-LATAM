@@ -33,7 +33,7 @@ export interface TransactionInfo {
 
 export interface TransactionHistoryInfo {
   transactionId: string;
-  blockHash: number;
+  txIndex: number;
   from: string;
   to?: string;
   assetInfo?: AssetInfoModel;

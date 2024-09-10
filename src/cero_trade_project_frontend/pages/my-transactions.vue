@@ -48,8 +48,8 @@
       class="mt-6 my-data-table"
       @update:options="getData"
     >
-      <template #[`item.transaction_id`]="{ item }">
-        <span class="flex-center wbold" style="color: #475467;">{{ item.transaction_id }}</span>
+      <template #[`item.tx_id`]="{ item }">
+        <span class="flex-center wbold" style="color: #475467;">{{ item.tx_id }}</span>
       </template>
 
       <template #item.type="{ item }">
@@ -61,14 +61,14 @@
       </template>
 
       <template #[`item.recipent`]="{ item }">
-        <v-menu :close-on-content-click="false" @update:model-value="(value) => getRecipentProfile(value, item.recipent)">
+        <v-menu :close-on-content-click="false" @update:model-value="(value) => getUserProfile(value, item.recipent)">
           <template #activator="{ props }">
             <a v-bind="props" class="flex-acenter pointer" style="gap: 5px; text-wrap: nowrap">{{ shortPrincipalId(item.recipent?.toString()) }}</a>
           </template>
 
           <v-card class="px-4 py-2 bg-secondary d-flex">
             <v-progress-circular
-              v-if="!previewRecipent"
+              v-if="!previewUser"
               indeterminate
               color="rgb(var(--v-theme-primary))"
               class="mx-auto"
@@ -76,14 +76,43 @@
 
             <span v-else class="flex-acenter" style="gap: 10px; text-wrap: nowrap">
               <v-img-load
-                :src="previewRecipent.companyLogo"
-                :alt="`${previewRecipent.companyName} logo`"
+                :src="previewUser.companyLogo"
+                :alt="`${previewUser.companyName} logo`"
                 cover
                 sizes="30px"
                 rounded="50%"
                 class="flex-grow-0"
               />
-              {{ previewRecipent.companyName }}
+              {{ previewUser.companyName }}
+            </span>
+          </v-card>
+        </v-menu>
+      </template>
+
+      <template #[`item.sender`]="{ item }">
+        <v-menu :close-on-content-click="false" @update:model-value="(value) => getUserProfile(value, item.sender)">
+          <template #activator="{ props }">
+            <a v-bind="props" class="flex-acenter pointer" style="gap: 5px; text-wrap: nowrap">{{ shortPrincipalId(item.sender?.toString()) }}</a>
+          </template>
+
+          <v-card class="px-4 py-2 bg-secondary d-flex">
+            <v-progress-circular
+              v-if="!previewUser"
+              indeterminate
+              color="rgb(var(--v-theme-primary))"
+              class="mx-auto"
+            ></v-progress-circular>
+
+            <span v-else class="flex-acenter" style="gap: 10px; text-wrap: nowrap">
+              <v-img-load
+                :src="previewUser.companyLogo"
+                :alt="`${previewUser.companyName} logo`"
+                cover
+                sizes="30px"
+                rounded="50%"
+                class="flex-grow-0"
+              />
+              {{ previewUser.companyName }}
             </span>
           </v-card>
         </v-menu>
@@ -102,7 +131,7 @@
 
       <template #[`item.price`]="{ item }">
         <span class="divrow jspace acenter">
-          {{ item.price }} <v-sheet class="chip-currency bold">ICP</v-sheet>
+          {{ item.price }} <v-sheet v-if="item.price != '---'" class="chip-currency bold">ICP</v-sheet>
         </span>
       </template>
 
@@ -370,16 +399,18 @@ countriesImg = {
 
   headers = [
   // { title: '', key: 'checkbox', sortable: false, align: 'center'},
-  { title: 'Transaction ID', key: 'transaction_id', align: 'center', sortable: false },
+  { title: 'Tx ID', key: 'tx_id', align: 'center', sortable: false, width: "90px" },
   { title: 'Type', key: 'type', sortable: false },
   { title: 'Asset ID', key: 'asset_id', sortable: false },
   { title: 'Energy source', key: 'energy_source', sortable: false },
   { title: 'Price (ICP)', key: 'price', align: 'center', sortable: false },
   { title: 'Country', key: 'country', sortable: false },
-  { title: 'Recipent ID', key: 'recipent', sortable: false },
+  { title: 'Recipent ID', key: 'recipent', sortable: false, width: "110px" },
+  { title: 'Sender ID', key: 'sender', sortable: false, width: "100px" },
   { title: 'MWh', key: 'mwh', sortable: false },
   { title: 'Date', key: 'date', sortable: false },
   { title: 'Via', key: 'via', align: 'center', sortable: false },
+  { title: 'block index', key: 'tx_index', align: 'center', sortable: false },
 ],
 dataTransactions = ref([]),
 loading = ref(true),
@@ -392,7 +423,7 @@ txMethodValues = [
   TxMethod.blockchainTransfer
 ],
 
-previewRecipent = ref(null),
+previewUser = ref(null),
 
 dialogFilters = ref(),
 filtersFormRef = ref(),
@@ -468,20 +499,22 @@ async function getData() {
 
     for (const item of data) {
       list.push({
-        transaction_id: item.transactionId,
+        tx_id: item.transactionId,
         type: item.txType,
-        recipent: item.to,
+        recipent: item.to || "---",
+        sender: item.from || "---",
         energy_source: item.assetInfo.deviceDetails.deviceType,
         country: item.assetInfo.specifications.country,
         mwh: item.tokenAmount,
         asset_id: item.assetInfo.tokenId,
         date: item.date.toDateString(),
-        price: item.priceE8S,
+        price: item.priceE8S || "---",
         via: item.method,
+        tx_index: item.txIndex || "---",
       })
     }
 
-    dataTransactions.value = list.sort((a, b) => a.transaction_id - b.transaction_id)
+    dataTransactions.value = list.sort((a, b) => a.tx_id - b.tx_id)
     totalPages.value = total
   } catch (error) {
     console.error(error);
@@ -491,11 +524,11 @@ async function getData() {
   loading.value = false
 }
 
-async function getRecipentProfile(value, uid) {
-  if (!value) previewRecipent.value = null
+async function getUserProfile(value, uid) {
+  if (!value) previewUser.value = null
 
   try {
-    previewRecipent.value = await AgentCanister.getProfile(uid)
+    previewUser.value = await AgentCanister.getProfile(uid)
   } catch (error) {
     toast.error(error)
   }
