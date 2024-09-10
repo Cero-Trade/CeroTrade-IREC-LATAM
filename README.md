@@ -1,5 +1,4 @@
 <!-- TODO subdomain integration with `cerotrade.cl/alfa` -->
-<!-- TODO checkout wich country put on sellers in marketplace -->
 
 # Cero Trade
 
