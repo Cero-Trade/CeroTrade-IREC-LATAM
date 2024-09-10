@@ -30,7 +30,7 @@
     <h3 class="acenter mb-4" :title="tokenId" style="width: max-content">
       <company-logo
         :energy-src="energies[tokenDetail.assetInfo.deviceDetails?.deviceType]"
-        :country-src="countriesImg[tokenDetail.assetInfo.specifications?.country]"
+        :country-src="countries[tokenDetail.assetInfo.specifications?.country]?.flag"
         class="mr-4"
       ></company-logo>
       Asset # {{ shortString(tokenId, {}) }}
@@ -173,7 +173,7 @@
                       <div class="jspace divrow mt-3 mb-1">
                         <span style="color: #475467;">Country</span>
                         <div>
-                          <img :src="countriesImg[tokenDetail.assetInfo.specifications?.country]" :alt="`${tokenDetail.assetInfo.specifications?.country} flag`">
+                          <img :src="countries[tokenDetail.assetInfo.specifications?.country].flag" :alt="`${tokenDetail.assetInfo.specifications?.country} flag`">
                           <span>{{ tokenDetail.assetInfo.specifications?.country }}</span>
                         </div>
                       </div>
@@ -209,33 +209,27 @@
             density="compact"
             @update:options="getMarketPlace()"
             >
-              <template #[`item.seller`]="{ item }">
-                <v-menu :close-on-content-click="false" @update:model-value="(value) => getSellerProfile(value, item.seller)">
-                  <template #activator="{ props }">
-                    <a v-bind="props" class="pointer flex-acenter" style="gap: 5px; max-width: 200px">{{ shortPrincipalId(item.seller?.toString()) }}</a>
-                  </template>
-
-                  <v-card class="px-4 py-2 bg-secondary d-flex flex-column">
-                    <v-progress-circular
-                      v-if="!previewSeller"
-                      indeterminate
-                      color="rgb(var(--v-theme-primary))"
-                      class="mx-auto"
-                    ></v-progress-circular>
-
-                    <span v-else class="flex-acenter" style="gap: 10px; text-wrap: nowrap">
+              <template #[`item.seller`]="{ item, index }">
+                <div class="pointer d-flex align-center" @click="getSellerProfile(item.seller, index)">
+                  <v-sheet class="double-sheet">
+                    <v-sheet>
+                      <v-progress-circular
+                        v-if="!item.sellerLogo"
+                        :indeterminate="item.loading"
+                      ></v-progress-circular>
                       <v-img-load
-                        :src="previewSeller.companyLogo"
-                        :alt="`${previewSeller.companyName} logo`"
+                        v-else
+                        :src="item.sellerLogo"
+                        :alt="`${item.sellerName} logo`"
                         cover
-                        sizes="30px"
+                        sizes="25px"
                         rounded="50%"
                         class="flex-grow-0"
                       />
-                      {{ previewSeller.companyName }}
-                    </span>
-                  </v-card>
-                </v-menu>
+                    </v-sheet>
+                  </v-sheet>
+                  <span class="bold">{{ item.sellerName }}</span>
+                </div>
               </template>
 
               <template #[`item.price`]="{ item }">
@@ -246,7 +240,7 @@
 
               <template #[`item.country`]="{ item }">
                 <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-                  <img :src="countriesImg[item.country]" :alt="`${item.country} Icon`" style="width: 20px;">
+                  <img :src="countries[item.country].flag" :alt="`${item.country} Icon`" style="width: 20px;">
                   {{ item.country }}
                 </span>
               </template>
@@ -282,33 +276,7 @@
 
                 <div class="jspace divrow mb-1">
                   <span>Seller ID</span>
-
-                  <v-menu :close-on-content-click="false" @update:model-value="(value) => getSellerProfile(value, item.seller)">
-                    <template #activator="{ props }">
-                      <a v-bind="props" style="color: #475467;" class="acenter pointer text-capitalize">{{ shortPrincipalId(item.seller?.toString()) }}</a>
-                    </template>
-
-                    <v-card class="px-4 py-2 bg-secondary d-flex">
-                      <v-progress-circular
-                        v-if="!previewSeller"
-                        indeterminate
-                        color="rgb(var(--v-theme-primary))"
-                        class="mx-auto"
-                      ></v-progress-circular>
-
-                      <span v-else class="flex-acenter" style="gap: 10px; text-wrap: nowrap">
-                        <v-img-load
-                          :src="previewSeller.companyLogo"
-                          :alt="`${previewSeller.companyName} logo`"
-                          cover
-                          sizes="30px"
-                          rounded="50%"
-                          class="flex-grow-0"
-                        />
-                        {{ previewSeller.companyName }}
-                      </span>
-                    </v-card>
-                  </v-menu>
+                  <span class="text-capitalize" style="color: #475467;">{{ item.sellerName }}</span>
                 </div>
 
                 <div class="jspace divrow mb-1">
@@ -319,7 +287,7 @@
                 <div class="jspace divrow mb-1">
                   <span>Country</span>
                   <span style="color: #475467;" class="acenter text-capitalize">
-                    <img :src="countriesImg[item.country]" alt="icon" class="mr-1" style="width: 20px;"> {{ item.country }}
+                    <img :src="countries[item.country].flag" alt="icon" class="mr-1" style="width: 20px;"> {{ item.country }}
                   </span>
                 </div>
 
@@ -438,7 +406,7 @@
             <h5 class="acenter mb-0 bold h5-mobile" :title="tokenId">
               <company-logo
                 :energy-src="energies[tokenDetail.assetInfo.deviceDetails?.deviceType]"
-                :country-src="countriesImg[tokenDetail.assetInfo.specifications?.country]"
+                :country-src="countries[tokenDetail.assetInfo.specifications?.country].flag"
                 class="mr-4"
               ></company-logo>
               #{{ shortString(tokenId, {}) }}
@@ -456,7 +424,7 @@
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Country</span>
             <span class="flex-center" style="gap: 5px">
-              <img :src="countriesImg[tokenDetail.assetInfo.specifications?.country]" :alt="`${tokenDetail.assetInfo.specifications?.country} flag`">
+              <img :src="countries[tokenDetail.assetInfo.specifications?.country].flag" :alt="`${tokenDetail.assetInfo.specifications?.country} flag`">
               {{ tokenDetail.assetInfo.specifications?.country }}
             </span>
           </div>
@@ -614,7 +582,35 @@
               bg-color="transparent"
               placeholder="beneficiary account (optional)"
               :rules="[true]"
-            ></v-select>
+            >
+              <template #selection="{ item }">
+                <v-img-load
+                  :src="item.raw.companyLogo"
+                  :alt="`${item.raw.companyName} logo`"
+                  cover
+                  sizes="25px"
+                  rounded="50%"
+                  class="flex-grow-0"
+                />
+                <span class="bold ml-2 ellipsis-text">{{ item.raw.name }}</span>
+              </template>
+
+              <template #item="{ item, props }">
+                <v-list-item v-bind="props" title=" ">
+                  <div class="d-flex align-center">
+                    <v-img-load
+                      :src="item.raw.companyLogo"
+                      :alt="`${item.raw.companyName} logo`"
+                      cover
+                      sizes="25px"
+                      rounded="50%"
+                      class="flex-grow-0"
+                    />
+                    <span class="bold ml-2" style="translate: 0 1px">{{ item.raw.companyName }}</span>
+                  </div>
+                </v-list-item>
+              </template>
+            </v-select>
           </div>
 
           <!-- <v-btn class="btn2" style="width: max-content !important">Add beneficiary</v-btn> -->
@@ -628,7 +624,7 @@
               <h5 class="acenter h5-mobile" :title="tokenId">
                 <company-logo
                   :energy-src="energies[tokenDetail.assetInfo.deviceDetails?.deviceType]"
-                  :country-src="countriesImg[tokenDetail.assetInfo.specifications?.country]"
+                  :country-src="countries[tokenDetail.assetInfo.specifications?.country].flag"
                   class="mr-4"
                 ></company-logo>
                 #{{ shortString(tokenId, {}) }}
@@ -646,7 +642,7 @@
             <div class="jspace divrow mb-1">
               <span style="color: #475467;">Country</span>
               <span class="flex-center" style="gap: 5px">
-                <img :src="countriesImg[tokenDetail.assetInfo.specifications?.country]" :alt="`${tokenDetail.assetInfo.specifications?.country} flag`">
+                <img :src="countries[tokenDetail.assetInfo.specifications?.country].flag" :alt="`${tokenDetail.assetInfo.specifications?.country} flag`">
                 {{ tokenDetail.assetInfo.country }}
               </span>
             </div>
@@ -803,7 +799,7 @@
             <h5 class="acenter mb-0 bold h5-mobile" :title="tokenId">
               <company-logo
                 :energy-src="energies[tokenDetail.assetInfo.deviceDetails?.deviceType]"
-                :country-src="countriesImg[tokenDetail.assetInfo.specifications?.country]"
+                :country-src="countries[tokenDetail.assetInfo.specifications?.country].flag"
                 class="mr-4"
               ></company-logo>
               #{{ shortString(tokenId, {}) }}
@@ -828,7 +824,7 @@
           <div class="jspace divrow mb-1">
             <span style="color: #475467;">Country</span>
             <span class="flex-center" style="gap: 5px">
-              <img :src="countriesImg[tokenDetail.assetInfo.specifications?.country]" :alt="`${tokenDetail.assetInfo.country} flag`">
+              <img :src="countries[tokenDetail.assetInfo.specifications?.country].flag" :alt="`${tokenDetail.assetInfo.country} flag`">
               {{ tokenDetail.assetInfo.country }}
             </span>
           </div>
@@ -879,44 +875,38 @@
           density="compact"
           @update:options="getMarketPlace"
           >
-            <template #[`item.seller`]="{ item }">
-              <v-menu :close-on-content-click="false" @update:model-value="(value) => getSellerProfile(value, item.seller)">
-                <template #activator="{ props }">
-                  <a v-bind="props" class="pointer flex-acenter" style="gap: 5px; max-width: 200px">{{ shortPrincipalId(item.seller?.toString()) }}</a>
-                </template>
-
-                <v-card class="px-4 py-2 bg-secondary d-flex flex-column">
-                  <v-progress-circular
-                    v-if="!previewSeller"
-                    indeterminate
-                    color="rgb(var(--v-theme-primary))"
-                    class="mx-auto"
-                  ></v-progress-circular>
-
-                  <span v-else class="flex-acenter" style="gap: 10px; text-wrap: nowrap">
+            <template #[`item.seller`]="{ item, index }">
+              <div class="pointer d-flex align-center" @click="getSellerProfile(item.seller, index)">
+                <v-sheet class="double-sheet">
+                  <v-sheet>
+                    <v-progress-circular
+                      v-if="!item.sellerLogo"
+                      :indeterminate="item.loading"
+                    ></v-progress-circular>
                     <v-img-load
-                      :src="previewSeller.companyLogo"
-                      :alt="`${previewSeller.companyName} logo`"
+                      v-else
+                      :src="item.sellerLogo"
+                      :alt="`${item.sellerName} logo`"
                       cover
-                      sizes="30px"
+                      sizes="25px"
                       rounded="50%"
                       class="flex-grow-0"
                     />
-                    {{ previewSeller.companyName }}
-                  </span>
-                </v-card>
-              </v-menu>
+                  </v-sheet>
+                </v-sheet>
+                <span class="bold ml-6">{{ item.sellerName }}</span>
+              </div>
             </template>
 
             <template #[`item.price`]="{ item }">
               <span class="divrow jspace acenter">
-                {{ item.price }} <v-sheet class="chip-currency bold">{{ item.currency }}</v-sheet>
+                {{ item.price }} <v-sheet class="chip-currency bold">{{ item  .currency }}</v-sheet>
               </span>
             </template>
 
             <template #[`item.country`]="{ item }">
               <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-                <img :src="countriesImg[item.country]" :alt="`${item.country} Icon`" style="width: 20px;">
+                <img :src="countries[item.country].flag" :alt="`${item.country} Icon`" style="width: 20px;">
                 {{ item.country }}
               </span>
             </template>
@@ -967,7 +957,7 @@
             <h5 class="acenter h5-mobile" :title="tokenId">
               <company-logo
                 :energy-src="energies[tokenDetail.assetInfo.deviceDetails?.deviceType]"
-                :country-src="countriesImg[tokenDetail.assetInfo.specifications?.country]"
+                :country-src="countries[tokenDetail.assetInfo.specifications?.country].flag"
                 class="mr-4"
               ></company-logo>
               #{{ shortString(tokenId, {}) }}
@@ -1052,7 +1042,7 @@
             <h5 class="acenter h5-mobile" :title="tokenId">
               <company-logo
                 :energy-src="energies[tokenDetail.assetInfo.deviceDetails?.deviceType]"
-                :country-src="countriesImg[tokenDetail.assetInfo.specifications?.country]"
+                :country-src="countries[tokenDetail.assetInfo.specifications?.country].flag"
                 class="mr-4"
               ></company-logo>
               #{{ shortString(tokenId, {}) }}
@@ -1113,7 +1103,7 @@
 
         <div class="divrow center mt-6" style="gap: 10px;">
           <v-btn class="btn" style="background-color: #fff!important;"  @click="dialogRedeemCertificates = false">Not Now</v-btn>
-          <v-btn class="btn" @click="modalApprove.model = true" style="border: none!important;">Yes, redeem</v-btn>
+          <v-btn class="btn" @click="dialogRedeemCertificates = false;  dialogRedeem = true" style="border: none!important;">Yes, redeem</v-btn>
         </div>
       </v-card>
     </v-dialog>
@@ -1143,14 +1133,51 @@
 
         <v-autocomplete
           v-model="filters.country"
-          :items="countries"
+          :items="Object.values(countries)"
           variant="outlined"
           flat elevation="0"
+          menu-icon=""
           item-title="name"
           item-value="name"
           label="country"
           class="select mb-4"
-        ></v-autocomplete>
+        >
+          <template #append-inner="{ isFocused }">
+            <img
+              src="@/assets/sources/icons/chevron-down.svg"
+              alt="chevron-down icon"
+              :style="`transform: ${isFocused.value ? 'rotate(180deg)' : 'none'};`"
+            >
+          </template>
+
+          <template #selection="{ item }">
+            <v-img-load
+              :src="item.raw.flag.toString()"
+              :alt="`${item.raw.name} logo`"
+              cover
+              sizes="25px"
+              rounded="50%"
+              class="flex-grow-0"
+            />
+            <span class="bold ml-2 ellipsis-text">{{ item.raw.name }}</span>
+          </template>
+
+          <template #item="{ item, props }">
+            <v-list-item v-bind="props" title=" ">
+              <div class="d-flex align-center">
+                <v-img-load
+                  :src="item.raw.flag.toString()"
+                  :alt="`${item.raw.name} logo`"
+                  cover
+                  sizes="25px"
+                  rounded="50%"
+                  class="flex-grow-0"
+                />
+                <span class="bold ml-2" style="translate: 0 1px">{{ item.raw.name }}</span>
+              </div>
+            </v-list-item>
+          </template>
+        </v-autocomplete>
 
         <v-text-field
           v-model="filters.companyName"
@@ -1186,7 +1213,6 @@
 <script setup>
 import '@/assets/styles/pages/token-details.scss'
 import ModalApprove from '@/components/modals/modal-approve.vue'
-import countries from '@/assets/sources/json/countries-all.json'
 import Apexchart from "vue3-apexcharts"
 
 import HydroEnergyIcon from '@/assets/sources/energies/hydro.svg'
@@ -1214,7 +1240,7 @@ const
   route = useRoute(),
   router = useRouter(),
   toast = useToast(),
-  { globalRules, ceroComisison, dateFormat, defaultMaxDecimals } = variables,
+  { globalRules, ceroComisison, countries, dateFormat, defaultMaxDecimals } = variables,
 
 energiesColored = {
   "Solar": SolarEnergyColorIcon,
@@ -1227,9 +1253,6 @@ energies = {
   "Wind": WindEnergyIcon,
   "Hydro-Electric": HydroEnergyIcon,
   "Thermal": GeothermalEnergyIcon,
-},
-countriesImg = {
-  CL: ChileIcon
 },
 tokenDetail = ref({
   tokenId: null,
@@ -1257,7 +1280,7 @@ tokenDetail = ref({
   }
 }),
 headers = [
-  { title: 'Seller ID', key: 'seller', sortable: false },
+  { title: 'Seller', key: 'seller', sortable: false },
   { title: 'Country', key: 'country', sortable: false },
   { title: 'Price', key: 'price', sortable: false },
   { title: 'MWh', key: 'mwh', sortable: false },
@@ -1369,8 +1392,6 @@ filters = ref({
   priceRange: null,
 }),
 
-previewSeller = ref(null),
-
 modalApprove = ref(),
 modalRequestRedeem = ref(),
 
@@ -1453,35 +1474,18 @@ onBeforeMount(() => {
 
 async function getData() {
   try {
-    const [checkToken, checkTokenInMarket, token, txRedemptions, statistics, _, __] = await Promise.allSettled([
-      AgentCanister.checkUserToken(tokenId.value),
-      AgentCanister.checkUserTokenInMarket(tokenId.value),
-      AgentCanister.getTokenDetails(tokenId.value),
-      AgentCanister.getTransactions({ txType: 'redemption', tokenId: tokenId.value }),
+    const [singlePortfolio, statistics, _, __] = await Promise.allSettled([
+      AgentCanister.getSinglePortfolio(tokenId.value),
       AgentCanister.getAssetStatistics(tokenId.value),
       getMarketPlace(),
       getBeneficiaries()
     ])
 
-    haveToken.value = checkToken.value
-    haveTokenInMarket.value = checkTokenInMarket.value
-    tokenDetail.value = token.value
-    redemptions.value = [
-      {
-        transactionId: "string",
-        blockHash: "number",
-        from: "string",
-        to: "string",
-        assetInfo: "AssetInfoModel",
-        txType: "TxTypeDef",
-        tokenAmount: "number",
-        priceE8S: "TokensICP",
-        date: "Date",
-        method: "TxMethodDef",
-        redemptionPdf: "File",
-      }
-    ]
-    seriesMintedVsProduced.value = [(statistics.value.mwh || 1) / (token.value.assetInfo.volumeProduced || 1) * 100]
+    haveToken.value = singlePortfolio.value.tokenInfo.totalAmount > 0
+    haveTokenInMarket.value = singlePortfolio.value.tokenInfo.inMarket > 0
+    tokenDetail.value = singlePortfolio.value.tokenInfo
+    redemptions.value = singlePortfolio.value.redemptions
+    seriesMintedVsProduced.value = [(statistics.value.mwh || 1) / (singlePortfolio.value.tokenInfo.assetInfo.volumeProduced || 1) * 100]
   } catch (error) {
     console.error(error);
     toast.error(error)
@@ -1517,6 +1521,7 @@ async function getMarketPlace() {
     for (const item of marketplace.data) {
       list.push({
         seller: item.sellerId,
+        sellerName: item.sellerName,
         country: item.assetInfo.specifications.country,
         price: item.priceE8S,
         mwh: item.mwh,
@@ -1620,7 +1625,7 @@ async function requestRedeemToken() {
     await AgentCanister.requestRedeemToken({
       tokenId: tokenId.value,
       amount: Number(tokenAmount.value),
-      beneficiary: Principal.fromText(formRedeem.value.beneficiary),
+      beneficiary: formRedeem.value.beneficiary,
       periodStart: formRedeem.value.periodStart,
       periodEnd: formRedeem.value.periodEnd,
       locale: formRedeem.value.locale,
@@ -1664,14 +1669,18 @@ async function redeemToken() {
   }
 }
 
-async function getSellerProfile(value, uid) {
-  if (!value) previewSeller.value = null
+async function getSellerProfile(uid, index) {
+  if (dataMarketplace.value[index].loading || dataMarketplace.value[index].sellerLogo) return;
+  dataMarketplace.value[index].loading = true
 
   try {
-    previewSeller.value = await AgentCanister.getProfile(uid)
+    const profile = await AgentCanister.getProfile(uid)
+    dataMarketplace.value[index].sellerLogo = profile.companyLogo
   } catch (error) {
     toast.error(error)
   }
+
+  dataMarketplace.value[index].loading = false
 }
 
 function goDetails({ token_id: tokenId }, input) {

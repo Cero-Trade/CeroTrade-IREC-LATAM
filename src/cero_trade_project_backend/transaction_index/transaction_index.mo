@@ -100,15 +100,12 @@ actor class TransactionIndex() = this {
       };
       case(null) {
         let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
-        for (cid in transactionsDirectory.vals()) {
-          if (not(Buffer.contains<T.CanisterId>(deployedCanisters, cid, Principal.equal))) {
-            deployedCanisters.append(Buffer.fromArray<T.CanisterId>([cid]));
+        for (canister_id in transactionsDirectory.vals()) {
+          if (not(Buffer.contains<T.CanisterId>(deployedCanisters, canister_id, Principal.equal))) {
+            Cycles.add<system>(T.cycles);
+            await IC_MANAGEMENT.ic.start_canister({ canister_id });
+            deployedCanisters.add(canister_id);
           };
-        };
-
-        for(canister_id in deployedCanisters.vals()) {
-          Cycles.add<system>(T.cycles);
-          await IC_MANAGEMENT.ic.start_canister({ canister_id });
         };
       };
     };
@@ -154,7 +151,7 @@ actor class TransactionIndex() = this {
         await IC_MANAGEMENT.ic.delete_canister({ canister_id });
 
         for((txId, cid) in transactionsDirectory.entries()) {
-          if (cid == canister_id) let _ = transactionsDirectory.remove(txId);
+          if (cid == canister_id) return transactionsDirectory.delete(txId);
         };
       };
       case(null) {

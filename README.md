@@ -1,4 +1,5 @@
 <!-- TODO subdomain integration with `cerotrade.cl/alfa` -->
+<!-- TODO checkout wich country put on sellers in marketplace -->
 
 # Cero Trade
 
@@ -61,8 +62,6 @@ cp src/declarations/agent/* .dfx/local/canisters/agent/
 cp src/declarations/marketplace/* .dfx/local/canisters/marketplace/
 cp src/declarations/http_service/* .dfx/local/canisters/http_service/
 cp src/declarations/statistics/* .dfx/local/canisters/statistics/
-cp src/declarations/notifications/* .dfx/local/canisters/notifications/
-cp src/declarations/notification_index/* .dfx/local/canisters/notification_index/
 cp src/declarations/bucket/* .dfx/local/canisters/bucket/
 cp src/declarations/bucket_index/* .dfx/local/canisters/bucket_index/
 ```

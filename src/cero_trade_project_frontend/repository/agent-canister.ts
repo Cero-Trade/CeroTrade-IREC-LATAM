@@ -3,7 +3,7 @@ import { useAgentCanister as agent, getErrorMessage } from "@/services/icp-provi
 import avatar from '@/assets/sources/images/avatar-online.svg'
 import store from "@/store";
 import { UserProfileModel } from "@/models/user-profile-model";
-import { AssetInfoModel, AssetType, TokenModel } from "@/models/token-model";
+import { AssetInfoModel, AssetType, Portfolio, SinglePortfolio } from "@/models/token-model";
 import { Tokens, TokensICP, TransactionHistoryInfo, TransactionInfo, TxMethodDef, TxTypeDef } from "@/models/transaction-model";
 import { MarketplaceInfo, MarketplaceSellersInfo } from "@/models/marketplace-model";
 import { Principal } from "@dfinity/principal";
@@ -113,7 +113,6 @@ export class AgentCanister {
   static async getProfile(uid?: Principal): Promise<UserProfileModel> {
     try {
       const userProfile = await agent().getProfile(uid ? [uid] : []) as UserProfileModel
-      userProfile.principalId = Principal.fromText(userProfile.principalId.toString())
       userProfile.companyLogo = getUrlFromArrayBuffer(userProfile.companyLogo) || avatar
       userProfile.createdAt = new Date(userProfile.createdAt)
       userProfile.updatedAt = new Date(userProfile.updatedAt)
@@ -144,17 +143,13 @@ export class AgentCanister {
     }
   }
 
-  static async getPortfolio({ page, length, assetTypes, country, mwhRange }:
-    {
-      page?: number,
-      length?: number,
-      assetTypes?: string[],
-      country?: string,
-      mwhRange?: number[],
-    }): Promise<{
-    tokensInfo: { data: TokenModel[]; totalPages: number; },
-    tokensRedemption: TransactionInfo[]
-  }> {
+  static async getPortfolio({ page, length, assetTypes, country, mwhRange }: {
+    page?: number,
+    length?: number,
+    assetTypes?: string[],
+    country?: string,
+    mwhRange?: number[],
+  }): Promise<{ data: [Portfolio]; totalPages: number; }> {
     assetTypes ??= []
     mwhRange ??= []
 
@@ -165,28 +160,25 @@ export class AgentCanister {
         assetTypes.length ? [assetTypes.map(energy => ({ [energy]: energy }))] : [],
         country ? [country] : [],
         mwhRange.length ? [mwhRange] : [],
-      ) as {tokensInfo: { data: TokenModel[]; totalPages: number; }, tokensRedemption: TransactionInfo[]}
+      ) as {
+        data: [Portfolio];
+        totalPages: number;
+      }
 
-      for (const item of response.tokensInfo.data) {
+      for (const item of response.data) {
         // format record value
-        item.assetInfo.deviceDetails.deviceType = Object.values(item.assetInfo.deviceDetails.deviceType)[0] as AssetType
-        item.assetInfo.volumeProduced = tokenToNumber(item.assetInfo.volumeProduced)
-        item.totalAmount = tokenToNumber(item.totalAmount)
-        item.inMarket = tokenToNumber(item.inMarket)
+        item.tokenInfo.assetInfo.deviceDetails.deviceType = Object.values(item.tokenInfo.assetInfo.deviceDetails.deviceType)[0] as AssetType
+        item.tokenInfo.assetInfo.volumeProduced = tokenToNumber(item.tokenInfo.assetInfo.volumeProduced)
+        item.tokenInfo.totalAmount = tokenToNumber(item.tokenInfo.totalAmount)
+        item.tokenInfo.inMarket = tokenToNumber(item.tokenInfo.inMarket)
         // format dates
-        item.assetInfo.startDate = new Date(item.assetInfo.startDate)
-        item.assetInfo.endDate = new Date(item.assetInfo.endDate)
+        item.tokenInfo.assetInfo.startDate = new Date(item.tokenInfo.assetInfo.startDate)
+        item.tokenInfo.assetInfo.endDate = new Date(item.tokenInfo.assetInfo.endDate)
+
+        item.redemptions = item.redemptions.map(e => tokenToNumber(e)) as number[]
       }
 
-      response.tokensInfo.totalPages = Number(response.tokensInfo.totalPages)
-
-      for (const item of response.tokensRedemption) {
-        item.txType = Object.values(item.txType)[0] as TxTypeDef
-        item.to = Object.values(item.to)[0] as string
-        item.tokenAmount = tokenToNumber(item.tokenAmount)
-        item.redemptionPdf = await getFileFromArrayBuffer(item.redemptionPdf, { fileName: 'certificate', fileType: 'application/pdf' })
-        item['url'] = URL.createObjectURL(item.redemptionPdf)
-      }
+      response.totalPages = Number(response.totalPages)
 
       return response
     } catch (error) {
@@ -195,29 +187,37 @@ export class AgentCanister {
     }
   }
 
-  static async getSinglePortfolio(tokenId: string): Promise<TokenModel> {
+  static async getSinglePortfolio(tokenId: string): Promise<SinglePortfolio> {
     try {
-      const token = await agent().getSinglePortfolio(tokenId) as TokenModel
+      const portfolio = await agent().getSinglePortfolio(tokenId) as SinglePortfolio
 
       // format record value
-      token.assetInfo.volumeProduced = tokenToNumber(token.assetInfo.volumeProduced)
-      token.totalAmount = tokenToNumber(token.totalAmount)
-      token.inMarket = tokenToNumber(token.inMarket)
+      portfolio.tokenInfo.assetInfo.volumeProduced = tokenToNumber(portfolio.tokenInfo.assetInfo.volumeProduced)
+      portfolio.tokenInfo.totalAmount = tokenToNumber(portfolio.tokenInfo.totalAmount)
+      portfolio.tokenInfo.inMarket = tokenToNumber(portfolio.tokenInfo.inMarket)
       // format dates
-      token.assetInfo.deviceDetails.deviceType = Object.values(token.assetInfo.deviceDetails.deviceType)[0] as AssetType
-      token.assetInfo.startDate = new Date(token.assetInfo.startDate)
-      token.assetInfo.endDate = new Date(token.assetInfo.endDate)
+      portfolio.tokenInfo.assetInfo.deviceDetails.deviceType = Object.values(portfolio.tokenInfo.assetInfo.deviceDetails.deviceType)[0] as AssetType
+      portfolio.tokenInfo.assetInfo.startDate = new Date(portfolio.tokenInfo.assetInfo.startDate)
+      portfolio.tokenInfo.assetInfo.endDate = new Date(portfolio.tokenInfo.assetInfo.endDate)
 
-      return token
+      for (const redemption of portfolio.redemptions) {
+        redemption.txType = Object.values(redemption.txType)[0] as TxTypeDef
+        redemption.to = redemption.to[0]
+        redemption.tokenAmount = tokenToNumber(redemption.tokenAmount)
+        redemption.redemptionPdf = await getFileFromArrayBuffer(redemption.redemptionPdf, { fileName: 'certificate', fileType: 'application/pdf' })
+        redemption['url'] = URL.createObjectURL(redemption.redemptionPdf)
+      }
+
+      return portfolio
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)
     }
   }
 
-  static async filterUsers(user: string): Promise<UserProfileModel[]> {
+  static async filterUsers(user: string): Promise<{ principalId: Principal; companyName: string }[]> {
     try {
-      const users = await agent().filterUsers(user) as UserProfileModel[]
+      const users = await agent().filterUsers(user) as { principalId: Principal; companyName: string }[]
 
       const profile = UserProfileModel.get(),
       profileIndex = users.findIndex(e => e.principalId.toString() == profile.principalId.toString())
@@ -225,9 +225,6 @@ export class AgentCanister {
 
       for (const user of users) {
         user.principalId = Principal.fromText(user.principalId.toString())
-        user.companyLogo = getUrlFromArrayBuffer(user.companyLogo) || avatar
-        user.createdAt = new Date(user.createdAt)
-        user.updatedAt = new Date(user.updatedAt)
       }
 
       return users
@@ -285,26 +282,6 @@ export class AgentCanister {
       console.log(transactions);
 
       return transactions
-    } catch (error) {
-      console.error(error);
-      throw getErrorMessage(error)
-    }
-  }
-
-  static async getTokenDetails(tokenId: string): Promise<TokenModel> {
-    try {
-      const token = await agent().getTokenDetails(tokenId) as TokenModel
-
-      // format record value
-      token.assetInfo.volumeProduced = tokenToNumber(token.assetInfo.volumeProduced)
-      token.totalAmount = tokenToNumber(token.totalAmount)
-      token.inMarket = tokenToNumber(token.inMarket)
-      // format dates
-      token.assetInfo.deviceDetails.deviceType = Object.values(token.assetInfo.deviceDetails.deviceType)[0] as AssetType
-      token.assetInfo.startDate = new Date(token.assetInfo.startDate)
-      token.assetInfo.endDate = new Date(token.assetInfo.endDate)
-
-      return token
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)
@@ -410,7 +387,7 @@ export class AgentCanister {
     try {
       const tx = await agent().purchaseToken(tokenId, recipent, numberToToken(amount)) as TransactionInfo
       tx.txType = Object.values(tx.txType)[0] as TxTypeDef
-      tx.to = tx.to[0] as string
+      tx.to = tx.to[0]
       tx.method = Object.values(tx.method)[0] as TxMethodDef
       tx.priceE8S = tx.priceE8S[0] ? tokenToNumber(tx.priceE8S[0]['e8s']) : null
 
@@ -484,6 +461,8 @@ export class AgentCanister {
     periodEnd: Date,
     locale: string,
   }): Promise<TransactionInfo> {
+    console.log(tokenId, numberToToken(amount), moment(periodStart).format(variables.dateFormat), moment(periodEnd).format(variables.dateFormat), locale);
+    
     try {
       const tx = await agent().redeemToken(
         tokenId,
@@ -493,7 +472,7 @@ export class AgentCanister {
         locale
       ) as TransactionInfo
       tx.txType = Object.values(tx.txType)[0] as TxTypeDef
-      tx.to = tx.to[0] as string
+      tx.to = tx.to[0]
       tx.method = Object.values(tx.method)[0] as TxMethodDef
       tx.priceE8S = tx.priceE8S[0] ? tokenToNumber(tx.priceE8S[0]['e8s']) : null
 
@@ -544,6 +523,7 @@ export class AgentCanister {
         item.date = new Date(item.date)
         item.redemptionPdf = await getFileFromArrayBuffer(item.redemptionPdf, { fileName: 'certificate', fileType: 'application/pdf' })
         item['url'] = URL.createObjectURL(item.redemptionPdf)
+        item.txIndex = Number(item.txIndex)
 
         // get nullable object
         item.to = item.to[0]
@@ -605,9 +585,12 @@ export class AgentCanister {
         page ? [page] : [],
         length ? [length] : [],
         notificationTypes?.map(e => ({[e]: e})) ?? [],
-      ) as NotificationInfo[]
+      ) as {
+        data: NotificationInfo[],
+        totalPages: bigint;
+      }
 
-      for (const item of res) {
+      for (const item of res.data) {
         item.notificationType = Object.values(item.notificationType)[0] as NotificationTypeDef
         item.eventStatus = item.eventStatus[0] ? Object.values(item.eventStatus[0])[0] as NotificationEventStatusDef : null
         item.status = item.status[0] ? Object.values(item.status[0])[0] as NotificationStatusDef : null
@@ -618,7 +601,7 @@ export class AgentCanister {
         item.createdAt = new Date(item.createdAt)
       }
 
-      return res
+      return res.data
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)
@@ -635,10 +618,10 @@ export class AgentCanister {
     }
   };
 
-  // clear general notifications
-  static async clearGeneralNotifications(notificationIds: [Text]): Promise<void> {
+  // clear notifications
+  static async clearNotifications(notificationIds?: [Text]): Promise<void> {
     try {
-      await agent().clearGeneralNotifications(notificationIds);
+      await agent().clearNotifications(notificationIds?.length ? [notificationIds] : []);
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)

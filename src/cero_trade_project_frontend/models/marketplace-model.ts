@@ -11,6 +11,7 @@ export interface MarketplaceInfo {
 
 export interface MarketplaceSellersInfo {
   sellerId: string;
+  sellerName: string;
   tokenId: string;
   priceE8S: TokensICP;
   mwh: number;

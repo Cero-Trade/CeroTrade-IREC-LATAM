@@ -7,7 +7,7 @@
     </span>
     <div class="divrow acenter mb-4">
       <company-logo
-        :energy-src="countriesImg[profile?.country ?? 'chile']"
+        :energy-src="countries[profile?.country ?? 'CL'].flag"
         :country-src="profile?.companyLogo"
         badge-padding="2px"
         energy-sizes="25px"
@@ -167,7 +167,7 @@
 
           <template #[`item.country`]="{ item }">
             <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-              <img :src="countriesImg[item.country]" :alt="`${item.country} Icon`" style="width: 20px;">
+              <img :src="countries[item.country].flag" :alt="`${item.country} Icon`" style="width: 20px;">
               {{ item.country }}
             </span>
           </template>
@@ -295,14 +295,51 @@
 
         <v-autocomplete
           v-model="filters.country"
-          :items="countries"
+          :items="Object.values(countries)"
           variant="outlined"
           flat elevation="0"
+          menu-icon=""
           item-title="name"
           item-value="name"
           label="country"
           class="select mb-4"
-        ></v-autocomplete>
+        >
+          <template #append-inner="{ isFocused }">
+            <img
+              src="@/assets/sources/icons/chevron-down.svg"
+              alt="chevron-down icon"
+              :style="`transform: ${isFocused.value ? 'rotate(180deg)' : 'none'};`"
+            >
+          </template>
+
+          <template #selection="{ item }">
+            <v-img-load
+              :src="item.raw.flag.toString()"
+              :alt="`${item.raw.name} logo`"
+              cover
+              sizes="25px"
+              rounded="50%"
+              class="flex-grow-0"
+            />
+            <span class="bold ml-2 ellipsis-text">{{ item.raw.name }}</span>
+          </template>
+
+          <template #item="{ item, props }">
+            <v-list-item v-bind="props" title=" ">
+              <div class="d-flex align-center">
+                <v-img-load
+                  :src="item.raw.flag.toString()"
+                  :alt="`${item.raw.name} logo`"
+                  cover
+                  sizes="25px"
+                  rounded="50%"
+                  class="flex-grow-0"
+                />
+                <span class="bold ml-2" style="translate: 0 1px">{{ item.raw.name }}</span>
+              </div>
+            </v-list-item>
+          </template>
+        </v-autocomplete>
 
         <!-- <v-range-slider
           v-model="filters.priceRange"
@@ -363,7 +400,6 @@
 
 <script setup>
 import '@/assets/styles/pages/profile.scss'
-import countries from '@/assets/sources/json/countries-all.json'
 import RenewableChart from "@/components/renewable-chart.vue"
 import HydroEnergyIcon from '@/assets/sources/energies/hydro-color.svg'
 import OceanEnergyIcon from '@/assets/sources/energies/ocean.svg'
@@ -379,10 +415,12 @@ import { UserProfileModel } from '@/models/user-profile-model'
 import { TxType } from '@/models/transaction-model'
 import moment from 'moment'
 import { shortPrincipalId, shortString } from '@/plugins/functions'
+import variables from '@/mixins/variables'
 // import IrecChart from '@/components/irec-chart.vue'
 
 const
   toast = useToast(),
+  { countries } = variables,
 
 windowStep = ref(undefined),
 toggle = ref(0),
@@ -391,9 +429,6 @@ energies = {
   "Wind": WindEnergyIcon,
   "Hydro-Electric": HydroEnergyIcon,
   "Thermal": GeothermalEnergyIcon,
-},
-countriesImg = {
-  CL: ChileIcon
 },
 
 profile = ref(null),

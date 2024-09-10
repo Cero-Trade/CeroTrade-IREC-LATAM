@@ -70,7 +70,7 @@
                 <v-autocomplete
                 v-model="companyForm.country"
                 id="country" class="input" variant="solo" flat 
-                :items="countries"
+                :items="Object.values(countries)"
                 item-title="name"
                 item-value="code"
                 elevation="0" placeholder="USA"
@@ -83,6 +83,34 @@
                       alt="chevron-down icon"
                       :style="`transform: ${isFocused.value ? 'rotate(180deg)' : 'none'};`"
                     >
+                  </template>
+
+                  <template #selection="{ item }">
+                    <v-img-load
+                      :src="item.raw.flag.toString()"
+                      :alt="`${item.raw.name} logo`"
+                      cover
+                      sizes="25px"
+                      rounded="50%"
+                      class="flex-grow-0"
+                    />
+                    <span class="bold ml-2 ellipsis-text">{{ item.raw.name }}</span>
+                  </template>
+
+                  <template #item="{ item, props }">
+                    <v-list-item v-bind="props" title=" ">
+                      <div class="d-flex align-center">
+                        <v-img-load
+                          :src="item.raw.flag.toString()"
+                          :alt="`${item.raw.name} logo`"
+                          cover
+                          sizes="25px"
+                          rounded="50%"
+                          class="flex-grow-0"
+                        />
+                        <span class="bold ml-2" style="translate: 0 1px">{{ item.raw.name }}</span>
+                      </div>
+                    </v-list-item>
                   </template>
                 </v-autocomplete>
               </v-col>
@@ -199,7 +227,6 @@
 
 <script setup>
 import '@/assets/styles/pages/home.scss'
-import countries from '@/assets/sources/json/countries-all.json'
 import { ref, onBeforeMount } from 'vue'
 import { AgentCanister } from '@/repository/agent-canister';
 import { useRoute, useRouter } from 'vue-router';
@@ -212,7 +239,7 @@ const
   router = useRouter(),
   route = useRoute(),
   toast = useToast(),
-  { globalRules } = variables,
+  { globalRules, countries } = variables,
 
 windowStep = ref(1),
 companyFormRef = ref(),
