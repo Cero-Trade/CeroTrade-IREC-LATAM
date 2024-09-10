@@ -230,7 +230,7 @@
               rounded="50%"
               class="flex-grow-0"
             />
-            <span class="bold ml-2">{{ item.raw.name }}</span>
+            <span class="bold ml-2 ellipsis-text">{{ item.raw.name }}</span>
           </template>
 
           <template #item="{ item, props }">
@@ -378,7 +378,7 @@ windowStepComputed = computed(() => {
 totalMwh = computed(() => {
   if (!series.value) return 0
   const data = series.value[0].data
-  return formatAmount(data.reduce((acc, item) => acc + item, 0), { compact: true })
+  return formatAmount(data.reduce((acc, item) => acc + Number(item), 0), { compact: true })
 })
 
 
@@ -448,7 +448,7 @@ async function getData() {
     ]
     if (groupedTokens.length) categories.value = groupedTokens.map(e => e.energy_source)
 
-    totalRedeemed.value = formatAmount(groupedRedemptions.reduce((acc, item) => acc + item, 0) ?? 0, { compact: true })
+    totalRedeemed.value = formatAmount(groupedRedemptions.reduce((acc, item) => acc + Number(item), 0) ?? 0, { compact: true })
   } catch (error) {
     console.error(error);
     toast.error(error)

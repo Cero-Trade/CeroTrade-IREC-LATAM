@@ -202,7 +202,7 @@ export class AgentCanister {
 
       for (const redemption of portfolio.redemptions) {
         redemption.txType = Object.values(redemption.txType)[0] as TxTypeDef
-        redemption.to = Object.values(redemption.to)[0] as string
+        redemption.to = redemption.to[0]
         redemption.tokenAmount = tokenToNumber(redemption.tokenAmount)
         redemption.redemptionPdf = await getFileFromArrayBuffer(redemption.redemptionPdf, { fileName: 'certificate', fileType: 'application/pdf' })
         redemption['url'] = URL.createObjectURL(redemption.redemptionPdf)
@@ -387,7 +387,7 @@ export class AgentCanister {
     try {
       const tx = await agent().purchaseToken(tokenId, recipent, numberToToken(amount)) as TransactionInfo
       tx.txType = Object.values(tx.txType)[0] as TxTypeDef
-      tx.to = tx.to[0] as string
+      tx.to = tx.to[0]
       tx.method = Object.values(tx.method)[0] as TxMethodDef
       tx.priceE8S = tx.priceE8S[0] ? tokenToNumber(tx.priceE8S[0]['e8s']) : null
 
@@ -472,7 +472,7 @@ export class AgentCanister {
         locale
       ) as TransactionInfo
       tx.txType = Object.values(tx.txType)[0] as TxTypeDef
-      tx.to = tx.to[0] as string
+      tx.to = tx.to[0]
       tx.method = Object.values(tx.method)[0] as TxMethodDef
       tx.priceE8S = tx.priceE8S[0] ? tokenToNumber(tx.priceE8S[0]['e8s']) : null
 

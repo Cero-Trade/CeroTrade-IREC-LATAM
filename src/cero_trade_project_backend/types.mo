@@ -189,8 +189,8 @@ module {
   public type TransactionInfo = {
     transactionId: TransactionId;
     txIndex: TxIndex;
-    from: UID;
-    to: ?BID;
+    from: { principal: UID; name: Text };
+    to: ?{ principal: BID; name: Text };
     tokenId: TokenId;
     txType: TxType;
     tokenAmount: TokenAmount;
@@ -203,8 +203,8 @@ module {
   public type TransactionHistoryInfo = {
     transactionId: TransactionId;
     txIndex: TxIndex;
-    from: UID;
-    to: ?BID;
+    from: { principal: UID; name: Text };
+    to: ?{ principal: BID; name: Text };
     assetInfo: ?AssetInfo;
     txType: TxType;
     tokenAmount: TokenAmount;

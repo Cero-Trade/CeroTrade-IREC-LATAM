@@ -58,6 +58,9 @@ actor class Agent() = this {
 
   /// delete user into Cero Trade
   public shared({ caller }) func deleteUser(): async() {
+    // check if caller exists and return companyName
+    let callerName = await UserIndex.getUserName(caller);
+
     let portfolio: {
       data: [T.Portfolio];
       totalPages: Nat;
@@ -79,7 +82,7 @@ actor class Agent() = this {
         let txInfo: T.TransactionInfo = {
           transactionId = "0";
           txIndex;
-          from = caller;
+          from = { principal = caller; name = callerName };
           to = null;
           tokenId = tokenInfo.tokenId;
           txType = #burn("burn");
@@ -546,8 +549,11 @@ actor class Agent() = this {
 
   /// performe token purchase
   public shared({ caller }) func purchaseToken(tokenId: T.TokenId, recipent: T.BID, tokenAmount: T.TokenAmount): async T.TransactionInfo {
-    // check if user exists
-    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
+    // check if caller exists and return companyName
+    let callerName = await UserIndex.getUserName(caller);
+
+    // check if recipent exists and return companyName
+    let recipentName = await UserIndex.getUserName(recipent);
 
     // validate if recipent have enough tokens
     let tokensOnSale = await Marketplace.getUserTokensOnSale(recipent, tokenId);
@@ -568,8 +574,8 @@ actor class Agent() = this {
     let txInfo: T.TransactionInfo = {
       transactionId = "0";
       txIndex;
-      from = caller;
-      to = ?recipent;
+      from = { principal = caller; name = callerName; };
+      to = ?{ principal = recipent; name = recipentName; };
       tokenId;
       txType = #purchase("purchase");
       tokenAmount;
@@ -620,7 +626,7 @@ actor class Agent() = this {
     let txInfo: T.TransactionInfo = {
       transactionId = "0";
       txIndex;
-      from = caller;
+      from = { principal = caller; name = sellerName; };
       to = null;
       tokenId;
       txType = #putOnSale("putOnSale");
@@ -652,8 +658,8 @@ actor class Agent() = this {
 
   // helper function to ask market to take off market
   private func _takeTokenOffMarket(uid: T.UID, tokenId: T.TokenId, quantity: T.TokenAmount): async T.TransactionInfo {
-    // check if user exists
-    if (not (await UserIndex.checkPrincipal(uid))) throw Error.reject(notExists);
+    // check if user exists and return companyName
+    let callerName = await UserIndex.getUserName(uid);
 
     // check if user is already selling
     let isSelling = await Marketplace.isSellingToken(uid, tokenId);
@@ -670,7 +676,7 @@ actor class Agent() = this {
     let txInfo: T.TransactionInfo = {
       transactionId = "0";
       txIndex;
-      from = uid;
+      from = { principal = uid; name = callerName; };
       to = null;
       tokenId;
       txType = #takeOffMarketplace("takeOffMarketplace");
@@ -735,8 +741,8 @@ actor class Agent() = this {
 
   // redeem certificate by burning user tokens
   public shared({ caller }) func redeemTokenRequested(notificationId: T.NotificationId): async T.TransactionInfo {
-    // check if user exists
-    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
+    // check if caller exists and return companyName
+    let callerName = await UserIndex.getUserName(caller);
 
     // get redemption notification
     let notification = await UserIndex.getNotification(caller, notificationId);
@@ -774,8 +780,8 @@ actor class Agent() = this {
     let txInfo: T.TransactionInfo = {
       transactionId = "0";
       txIndex;
-      from = caller;
-      to = ?caller;
+      from = { principal = caller; name = callerName; };
+      to = ?{ principal = caller; name = callerName; };
       tokenId;
       txType = #redemption("redemption");
       tokenAmount = quantity;
@@ -803,8 +809,8 @@ actor class Agent() = this {
 
   // redeem certificate by burning user tokens
   public shared({ caller }) func redeemToken(tokenId: T.TokenId, quantity: T.TokenAmount, periodStart: Text, periodEnd: Text, locale: Text): async T.TransactionInfo {
-    // check if user exists
-    if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
+    // check if caller exists and return companyName
+    let callerName = await UserIndex.getUserName(caller);
 
     // check if token exists
     let tokenPortfolio = await _getSinglePortfolio(caller, tokenId);
@@ -823,8 +829,8 @@ actor class Agent() = this {
     let txInfo: T.TransactionInfo = {
       transactionId = "0";
       txIndex;
-      from = caller;
-      to = ?caller;
+      from = { principal = caller; name = callerName; };
+      to = ?{ principal = caller; name = callerName; };
       tokenId;
       txType = #redemption("redemption");
       tokenAmount = quantity;

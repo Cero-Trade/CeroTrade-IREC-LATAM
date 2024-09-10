@@ -61,59 +61,25 @@
       </template>
 
       <template #[`item.recipent`]="{ item }">
-        <v-menu :close-on-content-click="false" @update:model-value="(value) => getUserProfile(value, item.recipent)">
+        <v-menu :close-on-content-click="false" location="bottom center">
           <template #activator="{ props }">
-            <a v-bind="props" class="flex-acenter pointer" style="gap: 5px; text-wrap: nowrap">{{ shortPrincipalId(item.recipent?.toString()) }}</a>
+            <a v-bind="props" class="flex-acenter pointer" style="gap: 5px; text-wrap: nowrap; text-decoration: underline !important;">{{ item.recipent.name }}</a>
           </template>
 
-          <v-card class="px-4 py-2 bg-secondary d-flex">
-            <v-progress-circular
-              v-if="!previewUser"
-              indeterminate
-              color="rgb(var(--v-theme-primary))"
-              class="mx-auto"
-            ></v-progress-circular>
-
-            <span v-else class="flex-acenter" style="gap: 10px; text-wrap: nowrap">
-              <v-img-load
-                :src="previewUser.companyLogo"
-                :alt="`${previewUser.companyName} logo`"
-                cover
-                sizes="30px"
-                rounded="50%"
-                class="flex-grow-0"
-              />
-              {{ previewUser.companyName }}
-            </span>
+          <v-card class="px-4 py-2 bg-secondary">
+            <span>id: {{ item.recipent.principal.toString() }}</span>
           </v-card>
         </v-menu>
       </template>
 
       <template #[`item.sender`]="{ item }">
-        <v-menu :close-on-content-click="false" @update:model-value="(value) => getUserProfile(value, item.sender)">
+        <v-menu :close-on-content-click="false" location="bottom center">
           <template #activator="{ props }">
-            <a v-bind="props" class="flex-acenter pointer" style="gap: 5px; text-wrap: nowrap; text-decoration: underline !important;">{{ shortPrincipalId(item.sender?.toString()) }}</a>
+            <a v-bind="props" class="flex-acenter pointer" style="gap: 5px; text-wrap: nowrap; text-decoration: underline !important;">{{ item.sender.name }}</a>
           </template>
 
-          <v-card class="px-4 py-2 bg-secondary d-flex">
-            <v-progress-circular
-              v-if="!previewUser"
-              indeterminate
-              color="rgb(var(--v-theme-primary))"
-              class="mx-auto"
-            ></v-progress-circular>
-
-            <span v-else class="flex-acenter" style="gap: 10px; text-wrap: nowrap">
-              <v-img-load
-                :src="previewUser.companyLogo"
-                :alt="`${previewUser.companyName} logo`"
-                cover
-                sizes="30px"
-                rounded="50%"
-                class="flex-grow-0"
-              />
-              {{ previewUser.companyName }}
-            </span>
+          <v-card class="px-4 py-2 bg-secondary">
+            <span>id: {{ item.sender.principal.toString() }}</span>
           </v-card>
         </v-menu>
       </template>
@@ -295,7 +261,7 @@
               rounded="50%"
               class="flex-grow-0"
             />
-            <span class="bold ml-2">{{ item.raw.name }}</span>
+            <span class="bold ml-2 ellipsis-text">{{ item.raw.name }}</span>
           </template>
 
           <template #item="{ item, props }">
@@ -440,8 +406,8 @@ energies = {
   { title: 'Energy source', key: 'energy_source', sortable: false },
   { title: 'Price (ICP)', key: 'price', align: 'center', sortable: false },
   { title: 'Country', key: 'country', sortable: false },
-  { title: 'Recipent ID', key: 'recipent', sortable: false, width: "110px" },
-  { title: 'Sender ID', key: 'sender', sortable: false, width: "100px" },
+  { title: 'Recipent', key: 'recipent', sortable: false, width: "110px" },
+  { title: 'Sender', key: 'sender', sortable: false, width: "100px" },
   { title: 'MWh', key: 'mwh', sortable: false },
   { title: 'Date', key: 'date', sortable: false },
   { title: 'Via', key: 'via', align: 'center', sortable: false },
@@ -557,16 +523,6 @@ async function getData() {
   }
 
   loading.value = false
-}
-
-async function getUserProfile(value, uid) {
-  if (!value) previewUser.value = null
-
-  try {
-    previewUser.value = await AgentCanister.getProfile(uid)
-  } catch (error) {
-    toast.error(error)
-  }
 }
 
 function goDetails(){

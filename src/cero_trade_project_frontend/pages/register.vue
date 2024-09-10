@@ -94,7 +94,7 @@
                       rounded="50%"
                       class="flex-grow-0"
                     />
-                    <span class="bold ml-2">{{ item.raw.name }}</span>
+                    <span class="bold ml-2 ellipsis-text">{{ item.raw.name }}</span>
                   </template>
 
                   <template #item="{ item, props }">
