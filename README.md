@@ -30,7 +30,7 @@ Below is the system architecture used by Cero Trade, which includes ICP Canister
 
 ## 📸 **Screenshots / Demos**  
 
-![]([https://github.com/Cero-Trade/CeroTrade-IREC-LATAM/readme_assets/demo_gif.gif](https://github.com/Cero-Trade/CeroTrade-IREC-LATAM/blob/main/readme_assets/demo_gif.gif))
+![](https://github.com/Cero-Trade/CeroTrade-IREC-LATAM/blob/main/readme_assets/demo_gif.gif)
 
 ---
 
