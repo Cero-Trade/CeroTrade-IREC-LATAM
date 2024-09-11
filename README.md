@@ -24,7 +24,7 @@ Cero Trade enables users to:
 ## 🛠️ **Architecture Overview**  
 Below is the system architecture used by Cero Trade, which includes ICP Canisters, Docker API services, and Evident API for integrating IREC functionalities.
 
-![Architecture Diagram](https://github.com/Cero-Trade/CeroTrade-IREC-LATAM/blob/main/readme_assets/architecture.png)
+![Architecture Diagram](https://github.com/Cero-Trade/CeroTrade-IREC-LATAM/blob/main/readme_assets/nueva_arqui.png)
 
 ---
 
@@ -49,21 +49,24 @@ Before installing, ensure you have the following:
 ```
 dfx extension install nns
 ```
-
-🛤️ Roadmap
+## 🛤️ Roadmap
 The upcoming features and improvements include:
 
-🔜 Integration with the real Evident API (not sandbox).
-🔜 Bidding system for redemptions: users will be able to create redemption requests, and sellers can accept or negotiate the price.
-🔜 Koywe integration: On-ramp and off-ramp services.
-🔜 Optimization of HTTP call times and general code improvements for cycle costs and load time.
+- 🔜 Integration with the real Evident API (not sandbox).
+- 🔜 Bidding system for redemptions: users will be able to create redemption requests, and sellers can accept or negotiate the price.
+- 🔜 Koywe integration: On-ramp and off-ramp services.
+- 🔜 Optimization of HTTP call times and general code improvements for cycle costs and load time.
 
-📄 License
-This project is licensed under the MIT License. See the LICENSE.md file for details.
+---
 
-🙏 Acknowledgements
+## 📄 License
+This project is licensed under the MIT License. See the `LICENSE.md` file for details.
+
+---
+
+## 🙏 Acknowledgements
 We would like to thank:
 
-DFINITY Foundation for their support and granting us the Developer Grant.
-Startup Chile for accelerating our development.
-Startup Bootcamp in Amsterdam, for accepting us into their program and supporting our upcoming functional launch.
+- **DFINITY Foundation** for their support and granting us the Developer Grant.
+- **Startup Chile** for accelerating our development.
+- **Startup Bootcamp in Amsterdam**, for accepting us into their program and supporting our upcoming functional launch.
