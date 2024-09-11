@@ -343,7 +343,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   /// get canister id that allow current token
   public query func getTokenCanister(tokenId: T.TokenId): async T.CanisterId {
     switch (tokenDirectory.get(tokenId)) {
-      case (null) { throw Error.reject("Token not found"); };
+      case (null) { throw Error.reject("Token not found on Cero Trade"); };
       case (?cid) { return cid };
     };
   };
@@ -358,6 +358,9 @@ shared({ caller = owner }) actor class TokenIndex() = this {
 
   public shared({ caller }) func importUserTokens(uid: T.UID): async [{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }] {
     _callValidation(caller);
+
+    let canister_status = await IC_MANAGEMENT.ic.canister_status({ canister_id = cid });
+    if (canister_status.cycles <= 2_500_000_000_000) throw Error.reject("Token canister have not enough cycles to performe this operation");
 
     let assetsJson = await HTTP.canister.post({
       url = HTTP.apiUrl # "transactions/import";
