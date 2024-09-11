@@ -5,7 +5,6 @@ import Error "mo:base/Error";
 import Cycles "mo:base/ExperimentalCycles";
 import Blob "mo:base/Blob";
 import Array "mo:base/Array";
-import Hash "mo:base/Hash";
 import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
 import Nat64 "mo:base/Nat64";
@@ -359,7 +358,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   public shared({ caller }) func importUserTokens(uid: T.UID): async [{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }] {
     _callValidation(caller);
 
-    let canister_status = await IC_MANAGEMENT.ic.canister_status({ canister_id = cid });
+    let canister_status = await IC_MANAGEMENT.ic.canister_status({ canister_id = Principal.fromActor(this) });
     if (canister_status.cycles <= 2_500_000_000_000) throw Error.reject("Token canister have not enough cycles to performe this operation");
 
     let assetsJson = await HTTP.canister.post({
