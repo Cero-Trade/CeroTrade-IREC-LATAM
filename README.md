@@ -26,7 +26,8 @@ Below is the system architecture used by Cero Trade, which includes ICP Canister
 
 ![Architecture Diagram](https://github.com/Cero-Trade/CeroTrade-IREC-LATAM/blob/main/readme_assets/nueva_arqui.png)
 
-Regarding canisters, we created a complex system of directories that allow us to dynamically create and map our canisters. Transactions, notifications, users, tokens, and any other canister that will indefinetaly be growing in size has their index' counterpart. Tokens (IRECs) and users are stored in one canister each, for maximum scalability.
+Regarding canisters, we created a complex system of directories that allow us to dynamically create and map our canisters. Transactions, notifications, users, tokens, and any other canister that will indefinetaly be growing in size has their index' counterpart. Tokens (IRECs) and users are stored in one canister each, for maximum scalability. On the other hand, the agent canister handles all intercanister calls, and all http calls are handled by the HTTP Service canister.
+
 ![Canister Architecture](https://github.com/Cero-Trade/CeroTrade-IREC-LATAM/blob/main/readme_assets/canister_architecture.jpg)
 
 ---
