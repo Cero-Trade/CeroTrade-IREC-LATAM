@@ -6,7 +6,7 @@ Cero Trade is a decentralized platform for trading, buying, and redeeming tokeni
 ## 📋 **Introduction**  
 Cero Trade enables users to:
 - Create an account with Internet Identity.
-- Import IRECs from their Evident Participant account into our Platform Operator account.
+- Import IRECs that have been manually transfered from their Evident Participant account into our Platform Operator account.
 - Tokenize IRECs and list them for sale or purchase tokenized IRECs from others.
 - Track all transaction records and redeem IRECs on behalf of other users.
 
