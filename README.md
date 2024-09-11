@@ -1,192 +1,69 @@
-<!-- TODO subdomain integration with `cerotrade.cl/alfa` -->
+# 🚀 **Cero Trade**  
+Cero Trade is a decentralized platform for trading, buying, and redeeming tokenized IRECs (International Renewable Energy Certificates). It features a marketplace where users can manage their assets, redeem certificates, and list them for sale. With real-time data from the I-TRACK API, traders can make informed decisions.
 
-# Cero Trade
+---
 
-Public frontend url: https://z2mgf-dqaaa-aaaak-qihbq-cai.icp0.io?canisterId=z2mgf-dqaaa-aaaak-qihbq-cai
+## 📋 **Introduction**  
+Cero Trade enables users to:
+- Create an account with Internet Identity.
+- Import IRECs from their Evident Participant account into our Platform Operator account.
+- Tokenize IRECs and list them for sale or purchase tokenized IRECs from others.
+- Track all transaction records and redeem IRECs on behalf of other users.
 
-Public candid url: https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=<canister_id>
+---
 
-## Deployment Commands
+## 🌟 **Key Features**  
+- **🔄 IREC Tokenization and Trading**: Easily tokenize IRECs and list them in the marketplace.
+- **🔐 Internet Identity**: Secure user accounts with the ICP’s Internet Identity.
+- **🛒 Marketplace**: Buy and sell tokenized IRECs seamlessly.
+- **📊 Transaction Records**: View transaction history for all actions.
+- **🔖 IREC Redemption**: Redeem IRECs for other users' accounts.
 
-`npm run deploy`: used to upgrade all canisters excluding dynamic canisters.
+---
 
-`npm run deploy modules`: used to upgrade all canisters including dynamic canisters.
+## 🛠️ **Architecture Overview**  
+Below is the system architecture used by Cero Trade, which includes ICP Canisters, Docker API services, and Evident API for integrating IREC functionalities.
 
-`npm run deploy clean`: used to deploy canisters from zero, useful when run dfx start --clean.
+![Architecture Diagram](https://github.com/Cero-Trade/CeroTrade-IREC-LATAM/readme_assets/nueva_arqui.png)
 
-## Project setup
+---
 
-If you havent nns extension installed run:
-`dfx extension install nns`
+## 📸 **Screenshots / Demos**  
 
-* You can run this proyect locally by run below script:
+![](https://github.com/Cero-Trade/CeroTrade-IREC-LATAM/readme_assets/demo_gif.gif)
+
+---
+
+## 🌐 **Live Version**  
+You can access the live version of the Cero Trade platform here:  
+[Live Platform](https://z2mgf-dqaaa-aaaak-qihbq-cai.icp0.io/auth/login?canisterId=z2mgf-dqaaa-aaaak-qihbq-cai)
+
+---
+
+## ⚙️ **Installation Instructions**
+
+### 🔧 **Prerequisites**  
+Before installing, ensure you have the following:
+- **DFX SDK** installed
+- **NNS Extension**: If not installed, run:
 ```
-dfx start
-npm run deploy clean
-```
-
-
-* Also can try manually following these steps:
-
-Init ic background replica
-
-`dfx start`
-
-Install dependencies
-
-`npm install`
-
-Install mops dependencies globally if havent
-`npm i -g ic-mops`
-
-Otherwise install mops proyect dependencies
-`mops install`
-
-
-deploy internet identity canister
-
-`dfx deploy internet_identity`
-
-Generate declarations
-```
-mkdir -p .dfx/local/canisters/cero_trade_project_frontend && cp assetstorage.did .dfx/local/canisters/cero_trade_project_frontend/assetstorage.did
-dfx generate
-cp src/declarations/users/* .dfx/local/canisters/users/
-cp src/declarations/user_index/* .dfx/local/canisters/user_index/
-cp src/declarations/token/* .dfx/local/canisters/token/
-cp src/declarations/token_index/* .dfx/local/canisters/token_index/
-cp src/declarations/transactions/* .dfx/local/canisters/transactions/
-cp src/declarations/transaction_index/* .dfx/local/canisters/transaction_index/
-cp src/declarations/agent/* .dfx/local/canisters/agent/
-cp src/declarations/marketplace/* .dfx/local/canisters/marketplace/
-cp src/declarations/http_service/* .dfx/local/canisters/http_service/
-cp src/declarations/statistics/* .dfx/local/canisters/statistics/
-cp src/declarations/notifications/* .dfx/local/canisters/notifications/
-cp src/declarations/notification_index/* .dfx/local/canisters/notification_index/
-cp src/declarations/bucket/* .dfx/local/canisters/bucket/
-cp src/declarations/bucket_index/* .dfx/local/canisters/bucket_index/
+dfx extension install nns
 ```
 
-Generate env.mo and deploy canisters
+🛤️ Roadmap
+The upcoming features and improvements include:
 
-```
-dfx canister create --all
-dfx build cero_trade_project_frontend
-dfx canister install cero_trade_project_frontend
-dfx deploy http_service
-dfx deploy agent
-```
+🔜 Integration with the real Evident API (not sandbox).
+🔜 Bidding system for redemptions: users will be able to create redemption requests, and sellers can accept or negotiate the price.
+🔜 Koywe integration: On-ramp and off-ramp services.
+🔜 Optimization of HTTP call times and general code improvements for cycle costs and load time.
 
-Update canister controllers
+📄 License
+This project is licensed under the MIT License. See the LICENSE.md file for details.
 
-`
-npm run upgrade-controllers <[principal]>
-`
+🙏 Acknowledgements
+We would like to thank:
 
-### Register wasm modules
-
-Register wasm module into backend canisters by run:
-```
-dfx canister call agent registerWasmModule '(variant { "token" = "token" })'
-dfx canister call agent registerWasmModule '(variant { "users" = "users" })'
-dfx canister call agent registerWasmModule '(variant { "transactions" = "transactions" })'
-dfx canister call agent registerWasmModule '(variant { "notifications" = "notifications" })'
-```
-
-### Deploying token canisters
-`
-dfx canister call agent registerToken '("<token_id>" "<name>" "<symbol>" "<logo>")'
-`
-
-### Minting tokens to users
-`
-dfx canister call agent mintTokenToUser '("<recipent>", "<tokenId>", <tokenAmount>)'
-`
-
-### Generate wasm modules (Note: only cero-devs)
-```
-dfx canister create token
-dfx build token
-dfx canister create users
-dfx build users
-dfx canister create transactions
-dfx build transactions
-```
-
-Generate the wasm module like array run command below
-
-```
-npm run generate-wasm token
-npm run generate-wasm users
-npm run generate-wasm transactions
-npm run generate-wasm notifications
-```
-
-Push the current ./wasm_modules commit folder to github
-```
-git pull
-git add ./wasm_modules
-git commit -m "config/new-wasm-modules"
-git push
-```
-
-### Compiles and hot-reloads for development
-`npm run dev`
-
-### Customize configuration
-See [Configuration Reference](https://vitejs.dev/config/).
-
-
-### Guides
-
-#### Vue frontend
-https://internetcomputer.org/docs/current/developer-docs/frontend/vue-frontend
-
-#### Internet identity integration
-https://internetcomputer.org/docs/current/developer-docs/integrations/internet-identity/integrate-identity
-
-#### how to get Cycles
-
-Can supply a cycle faucet here:
-
-https://internetcomputer.org/docs/current/developer-docs/setup/cycles/cycles-faucet
-
-or convert ICP balance to Cycles (TC) by run:
-
-`dfx ledger top-up <wallet_id> --icp <icp_amount> --network ic`
-
-#### How to export and import identities between devices
-* export: `dfx identity export <identity_name> > exported_identity.pem`
-
-* import: `dfx identity import <new_identity_name> <exported_identity_root_file.pem>`
-
-### How to setup Internet Identity locally to development
-https://github.com/dfinity/internet-identity/blob/main/demos/using-dev-build/README.md
-
-#### How to add canister controllers
-https://internetcomputer.org/docs/current/developer-docs/smart-contracts/maintain/control#setting-the-controllers-of-a-canister
-
-#### Mainnet deploy
-https://internetcomputer.org/docs/current/developer-docs/setup/deploy-mainnet
-
-### IC Management Canister docs
-https://internetcomputer.org/docs/current/references/ic-interface-spec#ic-management-canister
-
-### Mops site url
-https://mops.one/
-
-### ICRC Standard Implementation
-* ICRC Fungible: https://github.com/PanIndustrial-Org/ICRC_fungible
-
-* ICRC Types: https://github.com/NatLabs/icrc1/blob/main/src/ICRC1/Types.mo
-
-### NNS local deployment
-* url: https://internetcomputer.org/docs/current/developer-docs/developer-tools/cli-tools/cli-reference/dfx-nns
-
-* convert principal to account-id: https://k7gat-daaaa-aaaae-qaahq-cai.raw.ic0.app/docs/
-
-### Custom domain configuration
-https://internetcomputer.org/docs/current/developer-docs/web-apps/custom-domains/using-custom-domains#custom-domains-on-the-boundary-nodes
-
-### found canister
-dfx canister deposit-cycles 20_860_000_000 --network ic http_service
+DFINITY Foundation for their support and granting us the Developer Grant.
+Startup Chile for accelerating our development.
+Startup Bootcamp in Amsterdam, for accepting us into their program and supporting our upcoming functional launch.
