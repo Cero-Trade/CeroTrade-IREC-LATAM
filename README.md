@@ -24,13 +24,13 @@ Cero Trade enables users to:
 ## 🛠️ **Architecture Overview**  
 Below is the system architecture used by Cero Trade, which includes ICP Canisters, Docker API services, and Evident API for integrating IREC functionalities.
 
-![Architecture Diagram](https://github.com/Cero-Trade/CeroTrade-IREC-LATAM/readme_assets/nueva_arqui.png)
+![Architecture Diagram](https://github.com/Cero-Trade/CeroTrade-IREC-LATAM/blob/main/readme_assets/architecture.png)
 
 ---
 
 ## 📸 **Screenshots / Demos**  
 
-![](https://github.com/Cero-Trade/CeroTrade-IREC-LATAM/readme_assets/demo_gif.gif)
+![]([https://github.com/Cero-Trade/CeroTrade-IREC-LATAM/readme_assets/demo_gif.gif](https://github.com/Cero-Trade/CeroTrade-IREC-LATAM/blob/main/readme_assets/demo_gif.gif))
 
 ---
 
