@@ -22,13 +22,27 @@ Cero Trade enables users to:
 ---
 
 ## 🛠️ **Architecture Overview**  
-Below is the system architecture used by Cero Trade, which includes ICP Canisters, Docker API services, and Evident API for integrating IREC functionalities.
+Below is the system architecture used by Cero Trade, which includes ICP Canisters, Docker API services, and Evident API for integrating IREC functionalities. Regarding canisters, we created a complex system of directories that allow us to dynamically create and map our canisters. Transactions, notifications, users, tokens, and any other canister that will indefinetaly be growing in size has their index' counterpart. Tokens (IRECs) and users are stored in one canister each, for maximum scalability. On the other hand, the agent canister handles all intercanister calls, and all http calls are handled by the HTTP Service canister.
 
+**Canister architecture**
+![Canister Architecture](https://github.com/Cero-Trade/CeroTrade-IREC-LATAM/blob/main/readme_assets/canister_architecture.jpg)
+
+- **Frontend canister:** This canister contains the webapp and allows interaction with our users.
+- **User Canisters:** These canisters manage user data, including identities, interactions, and other key information that traders need to access. Each user’s data is securely stored and can be retrieved when required.
+- **Token Canisters:** These canisters store and handle the management of tokenized climate assets like i-RECs. They are indexed via a Token Index, ensuring that each transaction involving tokens is accounted for and managed properly.
+- **Cero Trade Agent:** This is the core canister that handles the marketplace logic, including processing trades, managing notifications, and ensuring that transactions happen smoothly between users and the assets they trade.
+- **Marketplace Canister:** The marketplace interface interacts with the Cero Trade Agent, allowing users to easily access, trade, and redeem climate assets.
+- **Notifications & Transaction Index:** These canisters are responsible for managing the flow of notifications and the tracking of transactions, providing transparency and real-time updates to users.
+- **Statistics Canister:** This provides analytical insights and tracks overall usage, trends, and statistics within the platform.
+
+
+**UML diagram**
 ![Architecture Diagram](https://github.com/Cero-Trade/CeroTrade-IREC-LATAM/blob/main/readme_assets/nueva_arqui.png)
 
-Regarding canisters, we created a complex system of directories that allow us to dynamically create and map our canisters. Transactions, notifications, users, tokens, and any other canister that will indefinetaly be growing in size has their index' counterpart. Tokens (IRECs) and users are stored in one canister each, for maximum scalability. On the other hand, the agent canister handles all intercanister calls, and all http calls are handled by the HTTP Service canister.
-
-![Canister Architecture](https://github.com/Cero-Trade/CeroTrade-IREC-LATAM/blob/main/readme_assets/canister_architecture.jpg)
+- **User Interface & API Gateway:** Users interact with the system through our UI, which is connected to an API Gateway. This allows for secure communication between users and our internal components.
+- **Nginx Proxy & Load Balancer:** We use a reverse proxy (Nginx) and load balancer to ensure that the platform handles traffic smoothly, while the firewall (WAF) adds an extra layer of security to protect against external threats.
+- **EC2 Instances & Docker Containers:** Our core API services, hosted in Docker containers, manage user data and handle interactions with external APIs. This includes integrating with external systems like the Evident API, which verifies user identity and helps manage KYC processes.
+- **ICP Canisters:** The key logic of the platform, as we mentioned earlier, runs on Internet Computer Canisters. This ensures the security and decentralized nature of the platform while allowing for seamless interaction with the outside infrastructure.
 
 ---
 
