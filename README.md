@@ -1,5 +1,3 @@
-<!-- TODO subdomain integration with `cerotrade.cl/alfa` -->
-
 # 🚀 **Cero Trade**  
 Cero Trade is a decentralized platform for trading, buying, and redeeming tokenized IRECs (International Renewable Energy Certificates). It features a marketplace where users can manage their assets, redeem certificates, and list them for sale. With real-time data from the I-TRACK API, traders can make informed decisions.
 

@@ -1,3 +1,5 @@
+<!-- TODO subdomain integration with `cerotrade.cl/alfa` -->
+
 # Cero Trade
 
 Public frontend url: https://z2mgf-dqaaa-aaaak-qihbq-cai.icp0.io?canisterId=z2mgf-dqaaa-aaaak-qihbq-cai
