@@ -261,6 +261,23 @@ module {
     specifications: Specifications;
   };
 
+  public type RedemptionItem = {
+    id: TokenId;
+    volume: TokenAmount;
+  };
+
+  public type RedemptionRequest = {
+    id: TokenId;
+    txIndex: TxIndex;
+  };
+
+  public type RedemptionItemPdf = {
+    id: TokenId;
+    txIndex: TxIndex;
+    volume: TokenAmount;
+    pdf: ArrayFile;
+  };
+
   //
   // Market types
   //
@@ -315,11 +332,10 @@ module {
     status: ?NotificationStatus;
 
     eventStatus: ?NotificationEventStatus;
-    tokenId: ?TokenId;
     receivedBy: BID;
     triggeredBy: ?UID;
-    quantity: ?TokenAmount;
 
+    items: ?[RedemptionItem];
     redeemPeriodStart: ?Text;
     redeemPeriodEnd: ?Text;
     redeemLocale: ?Text;

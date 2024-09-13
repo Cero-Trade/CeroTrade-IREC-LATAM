@@ -273,13 +273,12 @@ actor class Agent() = this {
       title = "Beneficiary request";
       content = null;
       notificationType = #beneficiary("beneficiary");
-      tokenId = null;
       receivedBy = beneficiaryId;
       triggeredBy = ?caller;
-      quantity = null;
       createdAt = DateTime.now().toText();
       status = null;
       eventStatus = ?#pending("pending");
+      items = null;
       redeemPeriodStart = null;
       redeemPeriodEnd = null;
       redeemLocale = null;
@@ -711,12 +710,12 @@ actor class Agent() = this {
   };
 
 
-  public shared({ caller }) func requestRedeemToken(tokenId: T.TokenId, quantity: T.TokenAmount, beneficiary: T.BID, periodStart: Text, periodEnd: Text, locale: Text): async T.TxIndex {
+  public shared({ caller }) func requestRedeemToken(items: [T.RedemptionItem], beneficiary: T.BID, periodStart: Text, periodEnd: Text, locale: Text): async [T.RedemptionRequest] {
     // check if user exists
     if (not (await UserIndex.checkPrincipal(caller))) throw Error.reject(notExists);
 
     // hold tokens until beneficiary performe redemption
-    let txIndex = await TokenIndex.requestRedeem(caller, tokenId, quantity, { returns = false });
+    let transactions = await TokenIndex.requestRedeem(caller, items, { returns = false });
 
     // send redemption notification to beneficiary
     await UserIndex.addNotification({
@@ -724,23 +723,22 @@ actor class Agent() = this {
       title = "Redemption request";
       content = null;
       notificationType = #redeem("redeem");
-      tokenId = ?tokenId;
       receivedBy = beneficiary;
       triggeredBy = ?caller;
-      quantity = ?quantity;
       createdAt = DateTime.now().toText();
       status = null;
       eventStatus = ?#pending("pending");
+      items = ?items;
       redeemPeriodStart = ?periodStart;
       redeemPeriodEnd = ?periodEnd;
       redeemLocale = ?locale;
     });
 
-    txIndex
+    transactions
   };
 
   // redeem certificate by burning user tokens
-  public shared({ caller }) func redeemTokenRequested(notificationId: T.NotificationId): async T.TransactionInfo {
+  public shared({ caller }) func redeemTokenRequested(notificationId: T.NotificationId): async [T.TransactionInfo] {
     // get redemption notification
     let notification = await UserIndex.getNotification(caller, notificationId);
 
@@ -759,98 +757,103 @@ actor class Agent() = this {
       };
     };
 
-    let tokenId = switch(notification.tokenId) {
-      case(null) throw Error.reject("tokenId not provided");
-      case(?value) value;
-    };
-    let quantity = switch(notification.quantity) {
-      case(null) throw Error.reject("quantity id not provided");
-      case(?value) value;
-    };
-
     let triggeredBy = switch(notification.triggeredBy) {
       case(null) throw Error.reject("triggeredBy not provided");
       case(?value) value;
     };
 
     // redeem tokens
-    let { txIndex; redemptionPdf } = await TokenIndex.redeemRequested(profile, notification);
+    let redemptions = await TokenIndex.redeemRequested(profile, notification);
 
-    // build transaction
-    let txInfo: T.TransactionInfo = {
-      transactionId = "0";
-      txIndex;
-      from = { principal = caller; name = profile.companyName; };
-      to = ?{ principal = caller; name = profile.companyName; };
-      tokenId;
-      txType = #redemption("redemption");
-      tokenAmount = quantity;
-      /// cero trade comission + transaction fee estimated
-      priceE8S = ?{ e8s = T.getCeroComission() + 20_000 };
-      date = DateTime.now().toText();
-      method = #blockchainTransfer("blockchainTransfer");
-      redemptionPdf = ?redemptionPdf;
+    let transactions = Buffer.Buffer<T.TransactionInfo>(16);
+
+    for({ id = tokenId; txIndex; pdf; volume; } in redemptions.vals()) {
+      // build transaction
+      let txInfo: T.TransactionInfo = {
+        transactionId = "0";
+        txIndex;
+        from = { principal = caller; name = profile.companyName; };
+        to = ?{ principal = caller; name = profile.companyName; };
+        tokenId;
+        txType = #redemption("redemption");
+        tokenAmount = volume;
+        /// cero trade comission + transaction fee estimated
+        priceE8S = ?{ e8s = T.getCeroComission() + 20_000 };
+        date = DateTime.now().toText();
+        method = #blockchainTransfer("blockchainTransfer");
+        redemptionPdf = ?pdf;
+      };
+
+      // register transaction
+      let transactionId = await TransactionIndex.registerTransaction(txInfo);
+
+      // update receiver and trigger user transactions
+      await UserIndex.updateRedemptions(notification.receivedBy, ?triggeredBy, { txInfo with transactionId });
+
+      // change notification status
+      let _ = await _updateEventNotification(caller, notificationId, ?#accepted("accepted"));
+
+      // register asset statistic
+      await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = ?volume });
+
+      transactions.add({ txInfo with transactionId });
     };
 
-    // register transaction
-    let transactionId = await TransactionIndex.registerTransaction(txInfo);
-
-    // update receiver and trigger user transactions
-    await UserIndex.updateRedemptions(notification.receivedBy, ?triggeredBy, { txInfo with transactionId });
-
-    // change notification status
-    let _ = await _updateEventNotification(caller, notificationId, ?#accepted("accepted"));
-
-    // register asset statistic
-    await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = ?quantity });
-
-    { txInfo with transactionId }
+    Buffer.toArray<T.TransactionInfo>(transactions);
   };
 
   // redeem certificate by burning user tokens
-  public shared({ caller }) func redeemToken(tokenId: T.TokenId, quantity: T.TokenAmount, periodStart: Text, periodEnd: Text, locale: Text): async T.TransactionInfo {
+  public shared({ caller }) func redeemToken(items: [T.RedemptionItem], periodStart: Text, periodEnd: Text, locale: Text): async [T.TransactionInfo] {
     // check if caller exists and return companyName
     let profile = await UserIndex.getProfile(caller);
 
-    // check if token exists
-    let tokenPortfolio = await _getSinglePortfolio(caller, tokenId);
+    for({ id = tokenId; volume; } in items.vals()) {
+      // check if token exists
+      let tokenPortfolio = await _getSinglePortfolio(caller, tokenId);
 
-    // check if user has enough tokens
-    let tokensInSale = await Marketplace.getUserTokensOnSale(caller, tokenId);
+      // check if user has enough tokens
+      let tokensInSale = await Marketplace.getUserTokensOnSale(caller, tokenId);
 
-    if (tokenPortfolio.tokenInfo.totalAmount < tokensInSale) throw Error.reject("Not enough tokens in portfolio");
-    let availableTokens: T.TokenAmount = tokenPortfolio.tokenInfo.totalAmount - tokensInSale;
-    if (availableTokens < quantity) throw Error.reject("Not enough tokens in portfolio");
-
-    // ask token to burn the tokens
-    let { txIndex; redemptionPdf; } = await TokenIndex.redeem(caller, profile.evidentBID, tokenId, quantity, periodStart, periodEnd, locale);
-
-    // build transaction
-    let txInfo: T.TransactionInfo = {
-      transactionId = "0";
-      txIndex;
-      from = { principal = caller; name = profile.companyName; };
-      to = ?{ principal = caller; name = profile.companyName; };
-      tokenId;
-      txType = #redemption("redemption");
-      tokenAmount = quantity;
-      /// cero trade comission + transaction fee estimated
-      priceE8S = ?{ e8s = T.getCeroComission() + 20_000 };
-      date = DateTime.now().toText();
-      method = #blockchainTransfer("blockchainTransfer");
-      redemptionPdf = ?redemptionPdf;
+      if (tokenPortfolio.tokenInfo.totalAmount < tokensInSale) throw Error.reject("Not enough tokens in portfolio with id " # tokenId);
+      let availableTokens: T.TokenAmount = tokenPortfolio.tokenInfo.totalAmount - tokensInSale;
+      if (availableTokens < volume) throw Error.reject("Not enough tokens in portfolio with id " # tokenId);
     };
 
-    // register transaction
-    let transactionId = await TransactionIndex.registerTransaction(txInfo);
+    // ask token to burn the tokens
+    let redemptions = await TokenIndex.redeem(caller, profile.evidentBID, items, periodStart, periodEnd, locale);
 
-    // store to caller
-    await UserIndex.updateRedemptions(caller, null, { txInfo with transactionId });
+    let transactions = Buffer.Buffer<T.TransactionInfo>(16);
 
-    // register asset statistic
-    await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = ?quantity });
+    for({ id = tokenId; txIndex; pdf; volume; } in redemptions.vals()) {
+      // build transaction
+      let txInfo: T.TransactionInfo = {
+        transactionId = "0";
+        txIndex;
+        from = { principal = caller; name = profile.companyName; };
+        to = ?{ principal = caller; name = profile.companyName; };
+        tokenId;
+        txType = #redemption("redemption");
+        tokenAmount = volume;
+        /// cero trade comission + transaction fee estimated
+        priceE8S = ?{ e8s = T.getCeroComission() + 20_000 };
+        date = DateTime.now().toText();
+        method = #blockchainTransfer("blockchainTransfer");
+        redemptionPdf = ?pdf;
+      };
 
-    { txInfo with transactionId }
+      // register transaction
+      let transactionId = await TransactionIndex.registerTransaction(txInfo);
+
+      // store to caller
+      await UserIndex.updateRedemptions(caller, null, { txInfo with transactionId });
+
+      // register asset statistic
+      await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = ?volume });
+
+      transactions.add({ txInfo with transactionId });
+    };
+
+    Buffer.toArray<T.TransactionInfo>(transactions);
   };
 
 
@@ -956,12 +959,12 @@ actor class Agent() = this {
   };
 
   // update event notification
-  public shared({ caller }) func updateEventNotification(notificationId: T.NotificationId, eventStatus: ?T.NotificationEventStatus): async ?T.TxIndex {
+  public shared({ caller }) func updateEventNotification(notificationId: T.NotificationId, eventStatus: ?T.NotificationEventStatus): async ?[T.RedemptionRequest] {
     await _updateEventNotification(caller, notificationId, eventStatus);
   };
 
   // helper function to performe updateEventNotification
-  private func _updateEventNotification(caller: T.UID, notificationId: T.NotificationId, eventStatus: ?T.NotificationEventStatus): async ?T.TxIndex {
+  private func _updateEventNotification(caller: T.UID, notificationId: T.NotificationId, eventStatus: ?T.NotificationEventStatus): async ?[T.RedemptionRequest] {
     switch(await UserIndex.updateEventNotification(caller, notificationId, eventStatus)) {
       case(null) null;
 
@@ -971,18 +974,14 @@ actor class Agent() = this {
           case(null) throw Error.reject("triggeredBy not provided");
           case(?value) value;
         };
-        let tokenId = switch(notification.tokenId) {
-          case(null) throw Error.reject("tokenId not provided");
-          case(?value) value;
-        };
-        let quantity = switch(notification.quantity) {
-          case(null) throw Error.reject("quantity not provided");
+        let items = switch(notification.items) {
+          case(null) throw Error.reject("items not provided");
           case(?value) value;
         };
 
         // return tokens holded on token canister if trigger performe cancelation
-        let txIndex = await TokenIndex.requestRedeem(triggerUser, tokenId, quantity, { returns = true });
-        ?txIndex
+        let transactions = await TokenIndex.requestRedeem(triggerUser, items, { returns = true });
+        ?transactions
       };
     };
   };

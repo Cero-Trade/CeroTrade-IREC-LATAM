@@ -851,49 +851,55 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     (txIndex, assetInfo)
   };
 
-  public shared ({ caller }) func requestRedeem(owner: T.UID, tokenId: T.TokenId, amount: T.TokenAmount, { returns: Bool }) : async T.TxIndex {
+  public shared ({ caller }) func requestRedeem(owner: T.UID, items: [T.RedemptionItem], { returns: Bool }) : async [T.RedemptionRequest] {
     _callValidation(caller);
 
-    let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
-      case (null) throw Error.reject("Token not found");
-      case (?cid) await Token.canister(cid).requestRedeem({
-        owner = {
-          owner = owner;
-          subaccount = null;
-        };
-        amount;
-      }, { returns });
+    let redemptionRequest = Buffer.Buffer<T.RedemptionRequest>(16);
+
+    for({ id; volume; } in items.vals()) {
+      let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(id)) {
+        case (null) throw Error.reject("Token not found");
+        case (?cid) await Token.canister(cid).requestRedeem({
+          owner = {
+            owner = owner;
+            subaccount = null;
+          };
+          amount = volume;
+        }, { returns });
+      };
+
+      let txIndex = switch(transferResult) {
+        case(#Err(error)) throw Error.reject(switch(error) {
+          case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
+          case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
+          case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
+          case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
+          case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
+          case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
+          case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
+          case (#TooOld) "#TooOld";
+        });
+        case(#Ok(value)) value;
+      };
+
+      redemptionRequest.add({ id; txIndex; });
     };
 
-    switch(transferResult) {
-      case(#Err(error)) throw Error.reject(switch(error) {
-        case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
-        case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
-        case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
-        case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
-        case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
-        case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
-        case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
-        case (#TooOld) "#TooOld";
-      });
-      case(#Ok(value)) value;
-    };
+    Buffer.toArray<T.RedemptionRequest>(redemptionRequest);
   };
 
-  public shared({ caller }) func redeemRequested(profile: T.UserProfile, notification: T.NotificationInfo): async {
-    txIndex: T.TxIndex;
-    redemptionPdf: T.ArrayFile;
-  } {
+  public shared({ caller }) func redeemRequested(profile: T.UserProfile, notification: T.NotificationInfo): async [T.RedemptionItemPdf] {
     _callValidation(caller);
 
-    let tokenId = switch(notification.tokenId) {
-      case(null) throw Error.reject("tokenId not provided");
+    let items = switch(notification.items) {
+      case(null) throw Error.reject("items not provided");
       case(?value) value;
     };
-    let amount = switch(notification.quantity) {
-      case(null) throw Error.reject("quantity not provided");
-      case(?value) value;
-    };
+
+    var volume: Nat = 0;
+    // summatory of volumes
+    for ({ volume = vol } in items.vals()) { volume += vol };
+
     let periodStart = switch(notification.redeemPeriodStart) {
       case(null) throw Error.reject("redeemPeriodStart not provided");
       case(?value) value;
@@ -921,9 +927,9 @@ shared({ caller = owner }) actor class TokenIndex() = this {
         uid = ?profile.principalId;
         headers = [];
         bodyJson = switch(Serde.JSON.toText(to_candid({
-          volume = amount;
+          volume;
           beneficiary = profile.evidentBID;
-          items = tokenId;
+          items;
           periodStart;
           periodEnd;
           locale;
@@ -934,51 +940,63 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       });
       Debug.print("⭐ here --> " # debug_show (pdfJson));
 
-    let redemptionPdf: T.ArrayFile = switch(Serde.JSON.fromText(pdfJson, null)) {
+    switch(Serde.JSON.fromText(pdfJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize PDF file data");
       case(#ok(blob)) {
-        let response: ?{ pdf: [Nat] } = from_candid(blob);
+        let response: ?[{ id: T.TokenId; pdf: [Nat] }] = from_candid(blob);
 
         switch(response) {
           case(null) throw Error.reject("cannot serialize PDF file data");
-          case(?{ pdf }) Array.map<Nat, Nat8>(pdf, func x = Nat8.fromNat(x));
+          case(?pdfItems) {
+            let redemptionItems = Buffer.Buffer<T.RedemptionItemPdf>(16);
+
+            for({ id; volume } in items.vals()) {
+              let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(id)) {
+                case (null) throw Error.reject("Token not found");
+                case (?cid) await Token.canister(cid).redeemRequested({
+                  owner = {
+                    owner = notification.receivedBy;
+                    subaccount = null;
+                  };
+                  amount = volume;
+                });
+              };
+
+              let txIndex = switch(transferResult) {
+                case(#Err(error)) throw Error.reject(switch(error) {
+                  case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
+                  case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
+                  case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
+                  case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
+                  case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
+                  case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
+                  case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
+                  case (#TooOld) "#TooOld";
+                });
+                case(#Ok(value)) value;
+              };
+
+              let { pdf } = switch(Array.find<{ id: T.TokenId; pdf: [Nat] }>(pdfItems, func x = x.id == id)) {
+                case(null) throw Error.reject("TokenId not found in redmeption");
+                case(?value) value;
+              };
+
+              redemptionItems.add({ id; txIndex; volume; pdf = Array.map<Nat, Nat8>(pdf, func x = Nat8.fromNat(x)); });
+            };
+
+            Buffer.toArray<T.RedemptionItemPdf>(redemptionItems);
+          }
         };
       };
     };
-
-    let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
-      case (null) throw Error.reject("Token not found");
-      case (?cid) await Token.canister(cid).redeemRequested({
-        owner = {
-          owner = notification.receivedBy;
-          subaccount = null;
-        };
-        amount;
-      });
-    };
-
-    let txIndex = switch(transferResult) {
-      case(#Err(error)) throw Error.reject(switch(error) {
-        case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
-        case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
-        case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
-        case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
-        case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
-        case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
-        case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
-        case (#TooOld) "#TooOld";
-      });
-      case(#Ok(value)) value;
-    };
-
-    { txIndex; redemptionPdf; }
   };
 
-  public shared({ caller }) func redeem(owner: T.UID, evidentBID: T.EvidentBID, tokenId: T.TokenId, amount: T.TokenAmount, periodStart: Text, periodEnd: Text, locale: Text): async {
-    txIndex: T.TxIndex;
-    redemptionPdf: T.ArrayFile;
-  } {
+  public shared({ caller }) func redeem(owner: T.UID, evidentBID: T.EvidentBID, items: [T.RedemptionItem], periodStart: Text, periodEnd: Text, locale: Text): async [T.RedemptionItemPdf] {
     _callValidation(caller);
+
+    var volume: Nat = 0;
+    // summatory of volumes
+    for ({ volume = vol } in items.vals()) { volume += vol };
 
     // TODO ---> just for testing here
     // let redemptionPdf = [1,2,3,4,5,6,7,9];
@@ -994,9 +1012,9 @@ shared({ caller = owner }) actor class TokenIndex() = this {
         uid = ?owner;
         headers = [];
         bodyJson = switch(Serde.JSON.toText(to_candid({
-          volume = amount;
+          volume;
           beneficiary = evidentBID;
-          items = [tokenId];
+          items;
           periodStart;
           periodEnd;
           locale;
@@ -1007,44 +1025,55 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       });
       Debug.print("⭐ here --> " # debug_show (pdfJson));
 
-    let redemptionPdf: T.ArrayFile = switch(Serde.JSON.fromText(pdfJson, null)) {
+    switch(Serde.JSON.fromText(pdfJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize PDF file data");
       case(#ok(blob)) {
-        let response: ?{ pdf: [Nat] } = from_candid(blob);
+        let response: ?[{ id: T.TokenId; pdf: [Nat] }] = from_candid(blob);
 
         switch(response) {
           case(null) throw Error.reject("cannot serialize PDF file data");
-          case(?{ pdf }) Array.map<Nat, Nat8>(pdf, func x = Nat8.fromNat(x));
+          case(?pdfItems) {
+            let redemptionItems = Buffer.Buffer<T.RedemptionItemPdf>(16);
+
+            for({ id; volume; } in items.vals()) {
+              let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(id)) {
+                case (null) throw Error.reject("Token not found");
+                case (?cid) await Token.canister(cid).redeem({
+                  owner = {
+                    owner = owner;
+                    subaccount = null;
+                  };
+                  amount = volume;
+                });
+              };
+
+              let txIndex = switch(transferResult) {
+                case(#Err(error)) throw Error.reject(switch(error) {
+                  case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
+                  case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
+                  case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
+                  case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
+                  case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
+                  case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
+                  case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
+                  case (#TooOld) "#TooOld";
+                });
+                case(#Ok(value)) value;
+              };
+
+              let { pdf } = switch(Array.find<{ id: T.TokenId; pdf: [Nat] }>(pdfItems, func x = x.id == id)) {
+                case(null) throw Error.reject("TokenId not found in redmeption");
+                case(?value) value;
+              };
+
+              redemptionItems.add({ id; txIndex; volume; pdf = Array.map<Nat, Nat8>(pdf, func x = Nat8.fromNat(x)); });
+            };
+
+            Buffer.toArray<T.RedemptionItemPdf>(redemptionItems);
+          }
         };
       };
     };
-
-    let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
-      case (null) throw Error.reject("Token not found");
-      case (?cid) await Token.canister(cid).redeem({
-        owner = {
-          owner = owner;
-          subaccount = null;
-        };
-        amount;
-      });
-    };
-
-    let txIndex = switch(transferResult) {
-      case(#Err(error)) throw Error.reject(switch(error) {
-        case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
-        case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
-        case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
-        case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
-        case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
-        case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
-        case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
-        case (#TooOld) "#TooOld";
-      });
-      case(#Ok(value)) value;
-    };
-
-    { txIndex; redemptionPdf }
   };
 
   type BurnedTokenIndex = {

@@ -420,9 +420,8 @@ export class AgentCanister {
   }
 
 
-  static async requestRedeemToken({ tokenId, amount, beneficiary, periodStart, periodEnd, locale }: {
-    tokenId: string,
-    amount: number,
+  static async requestRedeemToken({ items, beneficiary, periodStart, periodEnd, locale }: {
+    items: { id: string, volume: number }[],
     beneficiary: Principal,
     periodStart: Date,
     periodEnd: Date,
@@ -430,8 +429,7 @@ export class AgentCanister {
   }): Promise<void> {
     try {
       await agent().requestRedeemToken(
-        tokenId,
-        numberToToken(amount),
+        items.map(({ volume, id }) => ({ id, volume: numberToToken(volume) })),
         beneficiary,
         moment(periodStart).format(variables.dateFormat),
         moment(periodEnd).format(variables.dateFormat),
@@ -454,19 +452,15 @@ export class AgentCanister {
   }
 
 
-  static async redeemToken({ tokenId, amount, periodStart, periodEnd, locale }: {
-    tokenId: string,
-    amount: number,
+  static async redeemToken({ items, periodStart, periodEnd, locale }: {
+    items: { id: string, volume: number }[],
     periodStart: Date,
     periodEnd: Date,
     locale: string,
   }): Promise<TransactionInfo> {
-    console.log(tokenId, numberToToken(amount), moment(periodStart).format(variables.dateFormat), moment(periodEnd).format(variables.dateFormat), locale);
-    
     try {
       const tx = await agent().redeemToken(
-        tokenId,
-        numberToToken(amount),
+        items.map(({ volume, id }) => ({ id, volume: numberToToken(volume) })),
         moment(periodStart).format(variables.dateFormat),
         moment(periodEnd).format(variables.dateFormat),
         locale

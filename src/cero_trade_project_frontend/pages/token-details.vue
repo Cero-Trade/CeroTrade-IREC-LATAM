@@ -1623,8 +1623,10 @@ async function requestRedeemToken() {
 
   try {
     await AgentCanister.requestRedeemToken({
-      tokenId: tokenId.value,
-      amount: Number(tokenAmount.value),
+      items: [{
+        id: tokenId.value,
+        volume: Number(tokenAmount.value),
+      }],
       beneficiary: formRedeem.value.beneficiary,
       periodStart: formRedeem.value.periodStart,
       periodEnd: formRedeem.value.periodEnd,
@@ -1647,8 +1649,10 @@ async function redeemToken() {
 
   try {
     const tx = await AgentCanister.redeemToken({
-      tokenId: tokenId.value,
-      amount: Number(tokenAmount.value),
+      items: [{
+        id: tokenId.value,
+        volume: Number(tokenAmount.value),
+      }],
       periodStart: formRedeem.value.periodStart,
       periodEnd: formRedeem.value.periodEnd,
       locale: formRedeem.value.locale,

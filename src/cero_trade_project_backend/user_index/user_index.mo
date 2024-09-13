@@ -554,15 +554,21 @@ actor class UserIndex() = this {
             case(null) throw Error.reject("Trigger user not found");
             case(?{ companyName }) companyName;
           };
-          let amount: Text = switch(notification.quantity) {
-            case(null) "0";
-            case(?value) await T.tokenToText(value, null);
+          var amountMessage = "";
+          switch(notification.items) {
+            case(null) {};
+            case(?items) {
+              for({ id; volume; } in items.vals()) {
+                let amount = await T.tokenToText(volume, null);
+                amountMessage := amountMessage # "\ntoken: " # id # " with amount: " # amount;
+              };
+            };
           };
 
           // notification to receiver
-          receiverNotification := { notification with content = ?("Request received from user " # senderCompanyName # " by amount " # amount) };
+          receiverNotification := { notification with content = ?("Request received from user " # senderCompanyName # " " # amountMessage) };
           // notification to sender
-          senderNotification := { notification with content = ?("Request sent to user " # receiverCompanyName # " by amount " # amount) };
+          senderNotification := { notification with content = ?("Request sent to user " # receiverCompanyName # " " # amountMessage) };
         };
       };
 
