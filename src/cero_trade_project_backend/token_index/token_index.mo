@@ -880,7 +880,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     };
   };
 
-  public shared({ caller }) func redeemRequested(notification: T.NotificationInfo): async {
+  public shared({ caller }) func redeemRequested(profile: T.UserProfile, notification: T.NotificationInfo): async {
     txIndex: T.TxIndex;
     redemptionPdf: T.ArrayFile;
   } {
@@ -907,6 +907,9 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       case(?value) value;
     };
 
+    // TODO ---> just for testing here
+    // let redemptionPdf = [1,2,3,4,5,6,7,9];
+
     // - volume: El volumen de I-RECs que se quiere redimir.
     // - beneficiary: El identificador del beneficiario de la redención.
     // - items: Un url identificador de los items. Esta información debe traerse al momento de hacer el importe de los IRECs.
@@ -915,11 +918,11 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     let pdfJson = await HTTP.canister.post({
         url = HTTP.apiUrl # "redemptions";
         port = null;
-        uid = ?notification.receivedBy;
+        uid = ?profile.principalId;
         headers = [];
         bodyJson = switch(Serde.JSON.toText(to_candid({
           volume = amount;
-          beneficiary = Principal.toText(notification.receivedBy);
+          beneficiary = profile.evidentBID;
           items = tokenId;
           periodStart;
           periodEnd;
@@ -929,6 +932,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
           case(#ok(value)) value;
         };
       });
+      Debug.print("⭐ here --> " # debug_show (pdfJson));
 
     let redemptionPdf: T.ArrayFile = switch(Serde.JSON.fromText(pdfJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize PDF file data");
@@ -970,11 +974,14 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     { txIndex; redemptionPdf; }
   };
 
-  public shared({ caller }) func redeem(owner: T.UID, tokenId: T.TokenId, amount: T.TokenAmount, periodStart: Text, periodEnd: Text, locale: Text): async {
+  public shared({ caller }) func redeem(owner: T.UID, evidentBID: T.EvidentBID, tokenId: T.TokenId, amount: T.TokenAmount, periodStart: Text, periodEnd: Text, locale: Text): async {
     txIndex: T.TxIndex;
     redemptionPdf: T.ArrayFile;
   } {
     _callValidation(caller);
+
+    // TODO ---> just for testing here
+    // let redemptionPdf = [1,2,3,4,5,6,7,9];
 
     // - volume: El volumen de I-RECs que se quiere redimir.
     // - beneficiary: El identificador del beneficiario de la redención.
@@ -988,8 +995,8 @@ shared({ caller = owner }) actor class TokenIndex() = this {
         headers = [];
         bodyJson = switch(Serde.JSON.toText(to_candid({
           volume = amount;
-          beneficiary = Principal.toText(owner);
-          items = tokenId;
+          beneficiary = evidentBID;
+          items = [tokenId];
           periodStart;
           periodEnd;
           locale;
@@ -998,6 +1005,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
           case(#ok(value)) value;
         };
       });
+      Debug.print("⭐ here --> " # debug_show (pdfJson));
 
     let redemptionPdf: T.ArrayFile = switch(Serde.JSON.fromText(pdfJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize PDF file data");

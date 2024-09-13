@@ -1,4 +1,5 @@
 <!-- TODO subdomain integration with `cerotrade.cl/alfa` -->
+<!-- TODO performe logic to check how many allowance have and determinate how many to spend in allowance or not -->
 
 # Cero Trade
 

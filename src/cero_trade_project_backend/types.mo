@@ -106,6 +106,7 @@ module {
 
   public type UID = Principal;
   public type EvidentID = Text;
+  public type EvidentBID = Text;
   public type CanisterId = Principal;
   public type TokenId = Text;
   public type TransactionId = Text;
@@ -150,12 +151,14 @@ module {
     address: Text;
     email: Text;
     vaultToken: UserTokenAuth;
+    evidentBID: EvidentBID;
     principal: Principal;
   };
 
   public type UserProfile = {
     companyLogo: ArrayFile;
     principalId: Principal;
+    evidentBID: EvidentBID;
     companyId: Text;
     companyName: Text;
     city: Text;

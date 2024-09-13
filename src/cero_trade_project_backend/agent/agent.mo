@@ -741,11 +741,11 @@ actor class Agent() = this {
 
   // redeem certificate by burning user tokens
   public shared({ caller }) func redeemTokenRequested(notificationId: T.NotificationId): async T.TransactionInfo {
-    // check if caller exists and return companyName
-    let callerName = await UserIndex.getUserName(caller);
-
     // get redemption notification
     let notification = await UserIndex.getNotification(caller, notificationId);
+
+    // check if caller exists and return companyName
+    let profile = await UserIndex.getProfile(notification.receivedBy);
 
     // validate notification provided
     switch(notification.eventStatus) {
@@ -774,14 +774,14 @@ actor class Agent() = this {
     };
 
     // redeem tokens
-    let { txIndex; redemptionPdf } = await TokenIndex.redeemRequested(notification);
+    let { txIndex; redemptionPdf } = await TokenIndex.redeemRequested(profile, notification);
 
     // build transaction
     let txInfo: T.TransactionInfo = {
       transactionId = "0";
       txIndex;
-      from = { principal = caller; name = callerName; };
-      to = ?{ principal = caller; name = callerName; };
+      from = { principal = caller; name = profile.companyName; };
+      to = ?{ principal = caller; name = profile.companyName; };
       tokenId;
       txType = #redemption("redemption");
       tokenAmount = quantity;
@@ -810,7 +810,7 @@ actor class Agent() = this {
   // redeem certificate by burning user tokens
   public shared({ caller }) func redeemToken(tokenId: T.TokenId, quantity: T.TokenAmount, periodStart: Text, periodEnd: Text, locale: Text): async T.TransactionInfo {
     // check if caller exists and return companyName
-    let callerName = await UserIndex.getUserName(caller);
+    let profile = await UserIndex.getProfile(caller);
 
     // check if token exists
     let tokenPortfolio = await _getSinglePortfolio(caller, tokenId);
@@ -823,14 +823,14 @@ actor class Agent() = this {
     if (availableTokens < quantity) throw Error.reject("Not enough tokens in portfolio");
 
     // ask token to burn the tokens
-    let { txIndex; redemptionPdf; } = await TokenIndex.redeem(caller, tokenId, quantity, periodStart, periodEnd, locale);
+    let { txIndex; redemptionPdf; } = await TokenIndex.redeem(caller, profile.evidentBID, tokenId, quantity, periodStart, periodEnd, locale);
 
     // build transaction
     let txInfo: T.TransactionInfo = {
       transactionId = "0";
       txIndex;
-      from = { principal = caller; name = callerName; };
-      to = ?{ principal = caller; name = callerName; };
+      from = { principal = caller; name = profile.companyName; };
+      to = ?{ principal = caller; name = profile.companyName; };
       tokenId;
       txType = #redemption("redemption");
       tokenAmount = quantity;
