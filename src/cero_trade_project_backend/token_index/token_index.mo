@@ -907,7 +907,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       case(?value) value;
     };
 
-    let redemptionPdf = [1,2,3,4,5,6,7,9];
+    let redemptionPdf: [Nat8] = [1,2,3,4,5,6,7,9];
 
     let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
@@ -943,7 +943,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   } {
     _callValidation(caller);
 
-    let redemptionPdf = [1,2,3,4,5,6,7,9];
+    let redemptionPdf: [Nat8] = [1,2,3,4,5,6,7,9];
 
     let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
