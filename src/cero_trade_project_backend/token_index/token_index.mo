@@ -943,7 +943,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     switch(Serde.JSON.fromText(pdfJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize PDF file data");
       case(#ok(blob)) {
-        let response: ?[{ id: T.TokenId; pdf: [Nat] }] = from_candid(blob);
+        let response: ?{ pdf: [Nat] } = from_candid(blob);
 
         switch(response) {
           case(null) throw Error.reject("cannot serialize PDF file data");
@@ -976,10 +976,11 @@ shared({ caller = owner }) actor class TokenIndex() = this {
                 case(#Ok(value)) value;
               };
 
-              let { pdf } = switch(Array.find<{ id: T.TokenId; pdf: [Nat] }>(pdfItems, func x = x.id == id)) {
-                case(null) throw Error.reject("TokenId not found in redmeption");
-                case(?value) value;
-              };
+              let { pdf } = pdfItems;
+              // let { pdf } = switch(Array.find<{ id: T.TokenId; pdf: [Nat] }>(pdfItems, func x = x.id == id)) {
+              //   case(null) throw Error.reject("TokenId not found in redmeption");
+              //   case(?value) value;
+              // };
 
               redemptionItems.add({ id; txIndex; volume; pdf = Array.map<Nat, Nat8>(pdf, func x = Nat8.fromNat(x)); });
             };
@@ -1028,7 +1029,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     switch(Serde.JSON.fromText(pdfJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize PDF file data");
       case(#ok(blob)) {
-        let response: ?[{ id: T.TokenId; pdf: [Nat] }] = from_candid(blob);
+        let response: ?{ pdf: [Nat] } = from_candid(blob);
 
         switch(response) {
           case(null) throw Error.reject("cannot serialize PDF file data");
@@ -1061,10 +1062,11 @@ shared({ caller = owner }) actor class TokenIndex() = this {
                 case(#Ok(value)) value;
               };
 
-              let { pdf } = switch(Array.find<{ id: T.TokenId; pdf: [Nat] }>(pdfItems, func x = x.id == id)) {
-                case(null) throw Error.reject("TokenId not found in redmeption");
-                case(?value) value;
-              };
+              let { pdf } = pdfItems;
+              // let { pdf } = switch(Array.find<{ id: T.TokenId; pdf: [Nat] }>(pdfItems, func x = x.id == id)) {
+              //   case(null) throw Error.reject("TokenId not found in redmeption");
+              //   case(?value) value;
+              // };
 
               redemptionItems.add({ id; txIndex; volume; pdf = Array.map<Nat, Nat8>(pdf, func x = Nat8.fromNat(x)); });
             };
