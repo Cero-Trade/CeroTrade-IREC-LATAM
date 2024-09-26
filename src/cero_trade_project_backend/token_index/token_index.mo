@@ -924,7 +924,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     let pdfJson = await HTTP.canister.post({
         url = HTTP.apiUrl # "redemptions";
         port = null;
-        uid = ?profile.principalId;
+        uid = null;
         headers = [];
         bodyJson = switch(Serde.JSON.toText(to_candid({
           volume;
@@ -938,7 +938,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
           case(#ok(value)) value;
         };
       });
-      Debug.print("⭐ here --> " # debug_show (pdfJson));
+      Debug.print("✅ response --> " # debug_show (pdfJson));
 
     switch(Serde.JSON.fromText(pdfJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize PDF file data");
@@ -1010,12 +1010,15 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     let pdfJson = await HTTP.canister.post({
         url = HTTP.apiUrl # "redemptions";
         port = null;
-        uid = ?owner;
+        uid = null;
         headers = [];
         bodyJson = switch(Serde.JSON.toText(to_candid({
-          volume;
-          beneficiary = evidentBID;
-          items;
+          volume = 1000000/*  = Nat.toText(volume) */;
+          beneficiary = "01J1QST7FGRGACW0DN4583NZ7X";
+          items = [{
+            id = "01J5QX61TEQASM6XE429SPEP0J";
+            volume = 1000000;
+          }]/*  = Array.map<T.RedemptionItem, { id: Text; volume: Text }>(items, func x = { id = x.id; volume = Nat.toText(x.volume) }) */;
           periodStart;
           periodEnd;
           locale;
@@ -1024,7 +1027,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
           case(#ok(value)) value;
         };
       });
-      Debug.print("⭐ here --> " # debug_show (pdfJson));
+      Debug.print("✅ response --> " # debug_show (pdfJson));
 
     switch(Serde.JSON.fromText(pdfJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize PDF file data");

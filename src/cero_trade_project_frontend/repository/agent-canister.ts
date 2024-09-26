@@ -431,8 +431,8 @@ export class AgentCanister {
       await agent().requestRedeemToken(
         items.map(({ volume, id }) => ({ id, volume: numberToToken(volume) })),
         beneficiary,
-        moment(periodStart).format(variables.dateFormat),
-        moment(periodEnd).format(variables.dateFormat),
+        moment(periodStart).format(variables.evidentDateFormat),
+        moment(periodEnd).format(variables.evidentDateFormat),
         locale
       )
     } catch (error) {
@@ -461,8 +461,8 @@ export class AgentCanister {
     try {
       const tx = await agent().redeemToken(
         items.map(({ volume, id }) => ({ id, volume: numberToToken(volume) })),
-        moment(periodStart).format(variables.dateFormat),
-        moment(periodEnd).format(variables.dateFormat),
+        moment(periodStart).format(variables.evidentDateFormat),
+        moment(periodEnd).format(variables.evidentDateFormat),
         locale
       ) as TransactionInfo
       tx.txType = Object.values(tx.txType)[0] as TxTypeDef
