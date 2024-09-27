@@ -99,6 +99,7 @@ shared({ caller = userIndexCaller }) actor class Users() = this {
       case(?companyLogo) return {
         companyLogo;
         principalId = info.principal;
+        evidentBID = info.evidentBID;
         companyId = info.companyId;
         companyName = info.companyName;
         city = info.city;

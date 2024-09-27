@@ -420,9 +420,8 @@ export class AgentCanister {
   }
 
 
-  static async requestRedeemToken({ tokenId, amount, beneficiary, periodStart, periodEnd, locale }: {
-    tokenId: string,
-    amount: number,
+  static async requestRedeemToken({ items, beneficiary, periodStart, periodEnd, locale }: {
+    items: { id: string, volume: number }[],
     beneficiary: Principal,
     periodStart: Date,
     periodEnd: Date,
@@ -430,11 +429,10 @@ export class AgentCanister {
   }): Promise<void> {
     try {
       await agent().requestRedeemToken(
-        tokenId,
-        numberToToken(amount),
+        items.map(({ volume, id }) => ({ id, volume: numberToToken(volume) })),
         beneficiary,
-        moment(periodStart).format(variables.dateFormat),
-        moment(periodEnd).format(variables.dateFormat),
+        moment(periodStart).format(variables.evidentDateFormat),
+        moment(periodEnd).format(variables.evidentDateFormat),
         locale
       )
     } catch (error) {
@@ -454,29 +452,28 @@ export class AgentCanister {
   }
 
 
-  static async redeemToken({ tokenId, amount, periodStart, periodEnd, locale }: {
-    tokenId: string,
-    amount: number,
+  static async redeemToken({ items, periodStart, periodEnd, locale }: {
+    items: { id: string, volume: number }[],
     periodStart: Date,
     periodEnd: Date,
     locale: string,
   }): Promise<TransactionInfo> {
-    console.log(tokenId, numberToToken(amount), moment(periodStart).format(variables.dateFormat), moment(periodEnd).format(variables.dateFormat), locale);
-    
     try {
-      const tx = await agent().redeemToken(
-        tokenId,
-        numberToToken(amount),
-        moment(periodStart).format(variables.dateFormat),
-        moment(periodEnd).format(variables.dateFormat),
+      const txs = await agent().redeemToken(
+        items.map(({ volume, id }) => ({ id, volume: numberToToken(volume) })),
+        moment(periodStart).format(variables.evidentDateFormat),
+        moment(periodEnd).format(variables.evidentDateFormat),
         locale
-      ) as TransactionInfo
-      tx.txType = Object.values(tx.txType)[0] as TxTypeDef
-      tx.to = tx.to[0]
-      tx.method = Object.values(tx.method)[0] as TxMethodDef
-      tx.priceE8S = tx.priceE8S[0] ? tokenToNumber(tx.priceE8S[0]['e8s']) : null
+      ) as TransactionInfo[]
 
-      return tx
+      for (const tx of txs) {
+        tx.txType = Object.values(tx.txType)[0] as TxTypeDef
+        tx.to = tx.to[0]
+        tx.method = Object.values(tx.method)[0] as TxMethodDef
+        tx.priceE8S = tx.priceE8S[0] ? tokenToNumber(tx.priceE8S[0]['e8s']) : null
+      }
+
+      return txs[0]
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)

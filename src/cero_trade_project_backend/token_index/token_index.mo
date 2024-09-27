@@ -13,6 +13,8 @@ import Iter "mo:base/Iter";
 import Time "mo:base/Time";
 import Buffer "mo:base/Buffer";
 import Serde "mo:serde";
+import Source "mo:uuid/async/SourceV4";
+import UUID "mo:uuid/UUID";
 import Debug "mo:base/Debug";
 
 import ICRC1 "mo:icrc1-mo/ICRC1";
@@ -851,49 +853,55 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     (txIndex, assetInfo)
   };
 
-  public shared ({ caller }) func requestRedeem(owner: T.UID, tokenId: T.TokenId, amount: T.TokenAmount, { returns: Bool }) : async T.TxIndex {
+  public shared ({ caller }) func requestRedeem(owner: T.UID, items: [T.RedemptionItem], { returns: Bool }) : async [T.RedemptionRequest] {
     _callValidation(caller);
 
-    let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
-      case (null) throw Error.reject("Token not found");
-      case (?cid) await Token.canister(cid).requestRedeem({
-        owner = {
-          owner = owner;
-          subaccount = null;
-        };
-        amount;
-      }, { returns });
+    let redemptionRequest = Buffer.Buffer<T.RedemptionRequest>(16);
+
+    for({ id; volume; } in items.vals()) {
+      let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(id)) {
+        case (null) throw Error.reject("Token not found");
+        case (?cid) await Token.canister(cid).requestRedeem({
+          owner = {
+            owner = owner;
+            subaccount = null;
+          };
+          amount = volume;
+        }, { returns });
+      };
+
+      let txIndex = switch(transferResult) {
+        case(#Err(error)) throw Error.reject(switch(error) {
+          case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
+          case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
+          case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
+          case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
+          case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
+          case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
+          case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
+          case (#TooOld) "#TooOld";
+        });
+        case(#Ok(value)) value;
+      };
+
+      redemptionRequest.add({ id; txIndex; });
     };
 
-    switch(transferResult) {
-      case(#Err(error)) throw Error.reject(switch(error) {
-        case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
-        case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
-        case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
-        case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
-        case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
-        case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
-        case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
-        case (#TooOld) "#TooOld";
-      });
-      case(#Ok(value)) value;
-    };
+    Buffer.toArray<T.RedemptionRequest>(redemptionRequest);
   };
 
-  public shared({ caller }) func redeemRequested(notification: T.NotificationInfo): async {
-    txIndex: T.TxIndex;
-    redemptionPdf: T.ArrayFile;
-  } {
+  public shared({ caller }) func redeemRequested(profile: T.UserProfile, notification: T.NotificationInfo): async [T.RedemptionItemPdf] {
     _callValidation(caller);
 
-    let tokenId = switch(notification.tokenId) {
-      case(null) throw Error.reject("tokenId not provided");
+    let items = switch(notification.items) {
+      case(null) throw Error.reject("items not provided");
       case(?value) value;
     };
-    let amount = switch(notification.quantity) {
-      case(null) throw Error.reject("quantity not provided");
-      case(?value) value;
-    };
+
+    var volume: Nat = 0;
+    // summatory of volumes
+    for ({ volume = vol } in items.vals()) { volume += vol };
+
     let periodStart = switch(notification.redeemPeriodStart) {
       case(null) throw Error.reject("redeemPeriodStart not provided");
       case(?value) value;
@@ -907,70 +915,216 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       case(?value) value;
     };
 
-    let redemptionPdf: [Nat8] = [1,2,3,4,5,6,7,9];
+    // TODO ---> just for testing here
+    // let pdf = [1,2,3,4,5,6,7,9];
 
-    let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
-      case (null) throw Error.reject("Token not found");
-      case (?cid) await Token.canister(cid).redeemRequested({
-        owner = {
-          owner = notification.receivedBy;
-          subaccount = null;
+    // - volume: El volumen de I-RECs que se quiere redimir.
+    // - beneficiary: El identificador del beneficiario de la redención.
+    // - items: Un url identificador de los items. Esta información debe traerse al momento de hacer el importe de los IRECs.
+    // - periodStart y periodEnd: Las fechas de inicio y fin del periodo de redención. Esto debe ser un input del usuario.
+    // - locale: El idioma en que se quiere obtener el "redemption statement" (ej. "en", "es"). Este debe ser un input del usuario.
+    var parts = 3;
+
+    let headers = [
+      {
+        name = "Response-Part-Key";
+        value = UUID.toText(await Source.Source().new());
+      },
+      {
+        name = "Response-Part-Number";
+        value = Nat.toText(parts);
+      }
+    ];
+    
+    let bodyJson = switch(Serde.JSON.toText(to_candid({
+      volume;
+      beneficiary = profile.evidentBID;
+      items;
+      periodStart;
+      periodEnd;
+      locale;
+    }), ["volume", "beneficiary", "items", "periodStart", "periodEnd", "locale"], null)) {
+      case(#err(error)) throw Error.reject("Cannot serialize data");
+      case(#ok(value)) value;
+    };
+
+    var pdf: [Nat] = [];
+
+    // recover all pdf parts
+    while (parts > 0) {
+      let pdfJson = await HTTP.canister.post({
+          url = HTTP.apiUrl # "redemptions";
+          port = null;
+          uid = null;
+          headers;
+          bodyJson;
+        });
+        Debug.print("✅ response --> " # debug_show (pdfJson));
+
+      switch(Serde.JSON.fromText(pdfJson, null)) {
+        case(#err(_)) throw Error.reject("cannot serialize PDF file data");
+        case(#ok(blob)) {
+          let response: ?{ data: [Nat]; parts: Nat } = from_candid(blob);
+
+          switch(response) {
+            case(null) throw Error.reject("cannot serialize PDF file data");
+            case(?pdfResponse) {
+              parts := pdfResponse.parts;
+              pdf := Array.flatten<Nat>([pdf, pdfResponse.data]);
+            }
+          };
         };
-        amount;
-      });
+      };
     };
 
-    let txIndex = switch(transferResult) {
-      case(#Err(error)) throw Error.reject(switch(error) {
-        case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
-        case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
-        case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
-        case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
-        case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
-        case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
-        case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
-        case (#TooOld) "#TooOld";
-      });
-      case(#Ok(value)) value;
+    let redemptionItems = Buffer.Buffer<T.RedemptionItemPdf>(16);
+
+    for({ id; volume } in items.vals()) {
+      let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(id)) {
+        case (null) throw Error.reject("Token not found");
+        case (?cid) await Token.canister(cid).redeemRequested({
+          owner = {
+            owner = notification.receivedBy;
+            subaccount = null;
+          };
+          amount = volume;
+        });
+      };
+
+      let txIndex = switch(transferResult) {
+        case(#Err(error)) throw Error.reject(switch(error) {
+          case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
+          case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
+          case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
+          case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
+          case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
+          case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
+          case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
+          case (#TooOld) "#TooOld";
+        });
+        case(#Ok(value)) value;
+      };
+
+      // let { pdf } = switch(Array.find<{ id: T.TokenId; pdf: [Nat] }>(pdfItems, func x = x.id == id)) {
+      //   case(null) throw Error.reject("TokenId not found in redmeption");
+      //   case(?value) value;
+      // };
+
+      redemptionItems.add({ id; txIndex; volume; pdf = Array.map<Nat, Nat8>(pdf, func x = Nat8.fromNat(x)); });
     };
 
-    { txIndex; redemptionPdf; }
+    Buffer.toArray<T.RedemptionItemPdf>(redemptionItems);
   };
 
-  public shared({ caller }) func redeem(owner: T.UID, tokenId: T.TokenId, amount: T.TokenAmount, periodStart: Text, periodEnd: Text, locale: Text): async {
-    txIndex: T.TxIndex;
-    redemptionPdf: T.ArrayFile;
-  } {
+  public shared({ caller }) func redeem(owner: T.UID, evidentBID: T.EvidentBID, items: [T.RedemptionItem], periodStart: Text, periodEnd: Text, locale: Text): async [T.RedemptionItemPdf] {
     _callValidation(caller);
 
-    let redemptionPdf: [Nat8] = [1,2,3,4,5,6,7,9];
+    var volume: Nat = 0;
+    // summatory of volumes
+    for ({ volume = vol } in items.vals()) { volume += vol };
 
-    let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
-      case (null) throw Error.reject("Token not found");
-      case (?cid) await Token.canister(cid).redeem({
-        owner = {
-          owner = owner;
-          subaccount = null;
+    // TODO ---> just for testing here
+    // let pdf = [1,2,3,4,5,6,7,9];
+
+    // - volume: El volumen de I-RECs que se quiere redimir.
+    // - beneficiary: El identificador del beneficiario de la redención.
+    // - items: Un url identificador de los items. Esta información debe traerse al momento de hacer el importe de los IRECs.
+    // - periodStart y periodEnd: Las fechas de inicio y fin del periodo de redención. Esto debe ser un input del usuario.
+    // - locale: El idioma en que se quiere obtener el "redemption statement" (ej. "en", "es"). Este debe ser un input del usuario.
+    var parts = 3;
+
+    let headers = [
+      {
+        name = "Response-Part-Key";
+        value = UUID.toText(await Source.Source().new());
+      },
+      {
+        name = "Response-Part-Number";
+        value = Nat.toText(parts);
+      }
+    ];
+
+    let bodyJson = switch(Serde.JSON.toText(to_candid({
+      volume = 1000000/*  = Nat.toText(volume) */;
+      beneficiary = "01J1QST7FGRGACW0DN4583NZ7X"/* evidentBID */;
+      items = [{
+        id = "01J5QX61TEQASM6XE429SPEP0J";
+        volume = 1000000;
+      }]/*  = Array.map<T.RedemptionItem, { id: Text; volume: Text }>(items, func x = { id = x.id; volume = Nat.toText(x.volume) }) */;
+      periodStart;
+      periodEnd;
+      locale;
+    }), ["volume", "beneficiary", "items", "periodStart", "periodEnd", "locale"], null)) {
+      case(#err(error)) throw Error.reject("Cannot serialize data");
+      case(#ok(value)) value;
+    };
+
+    var pdf: [Nat] = [];
+
+    // recover all pdf parts
+    while (parts > 0) {
+      let pdfJson = await HTTP.canister.post({
+          url = HTTP.apiUrl # "redemptions";
+          port = null;
+          uid = null;
+          headers;
+          bodyJson;
+        });
+        Debug.print("✅ response --> " # debug_show (pdfJson));
+
+      switch(Serde.JSON.fromText(pdfJson, null)) {
+        case(#err(_)) throw Error.reject("cannot serialize PDF file data");
+        case(#ok(blob)) {
+          let response: ?{ data: [Nat]; parts: Nat } = from_candid(blob);
+
+          switch(response) {
+            case(null) throw Error.reject("cannot serialize PDF file data");
+            case(?pdfResponse) {
+              parts := pdfResponse.parts;
+              pdf := Array.flatten<Nat>([pdf, pdfResponse.data]);
+            }
+          };
         };
-        amount;
-      });
+      };
     };
 
-    let txIndex = switch(transferResult) {
-      case(#Err(error)) throw Error.reject(switch(error) {
-        case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
-        case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
-        case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
-        case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
-        case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
-        case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
-        case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
-        case (#TooOld) "#TooOld";
-      });
-      case(#Ok(value)) value;
+    let redemptionItems = Buffer.Buffer<T.RedemptionItemPdf>(16);
+
+    for({ id; volume; } in items.vals()) {
+      let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(id)) {
+        case (null) throw Error.reject("Token not found");
+        case (?cid) await Token.canister(cid).redeem({
+          owner = {
+            owner = owner;
+            subaccount = null;
+          };
+          amount = volume;
+        });
+      };
+
+      let txIndex = switch(transferResult) {
+        case(#Err(error)) throw Error.reject(switch(error) {
+          case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
+          case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
+          case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
+          case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
+          case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
+          case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
+          case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
+          case (#TooOld) "#TooOld";
+        });
+        case(#Ok(value)) value;
+      };
+
+      // let { pdf } = switch(Array.find<{ id: T.TokenId; pdf: [Nat] }>(pdfItems, func x = x.id == id)) {
+      //   case(null) throw Error.reject("TokenId not found in redmeption");
+      //   case(?value) value;
+      // };
+
+      redemptionItems.add({ id; txIndex; volume; pdf = Array.map<Nat, Nat8>(pdf, func x = Nat8.fromNat(x)); });
     };
 
-    { txIndex; redemptionPdf }
+    Buffer.toArray<T.RedemptionItemPdf>(redemptionItems);
   };
 
   type BurnedTokenIndex = {

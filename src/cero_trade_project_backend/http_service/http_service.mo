@@ -209,7 +209,7 @@ actor HttpService {
     let http_request : HTTP.HttpRequestArgs = {
       url;
       // TODO under testing, this could be null or Nat64.fromNat(1024 * 1024)
-      max_response_bytes = ?Nat64.fromNat(1024 * 1024); //optional for request
+      max_response_bytes = null; //optional for request
       headers = await _generateHeaders({ url; port; uid; headers });
       body = ?request_body_as_nat8; //provide body for POST request
       method = #post;

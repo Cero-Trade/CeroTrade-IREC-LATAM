@@ -27,6 +27,7 @@ export default {
     principalId: (v) => /^[a-zA-Z0-9]{3,5}(-[a-zA-Z0-9]{3,5}){10}$/.test(v) || 'Invalid principal id'
   },
   dateFormat: 'YYYY-MM-DDTHH:mm:ss.sssssssssZ',
+  evidentDateFormat: 'YYYY-MM-DDTHH:mm:ssZ',
   // amount in e8s equal to 1 ICP
   ceroComisison: BigInt(process.env.CERO_COMISSION),
   isProduction: process.env.NODE_ENV === 'production',

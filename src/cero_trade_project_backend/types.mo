@@ -106,6 +106,7 @@ module {
 
   public type UID = Principal;
   public type EvidentID = Text;
+  public type EvidentBID = Text;
   public type CanisterId = Principal;
   public type TokenId = Text;
   public type TransactionId = Text;
@@ -150,12 +151,14 @@ module {
     address: Text;
     email: Text;
     vaultToken: UserTokenAuth;
+    evidentBID: EvidentBID;
     principal: Principal;
   };
 
   public type UserProfile = {
     companyLogo: ArrayFile;
     principalId: Principal;
+    evidentBID: EvidentBID;
     companyId: Text;
     companyName: Text;
     city: Text;
@@ -258,6 +261,23 @@ module {
     specifications: Specifications;
   };
 
+  public type RedemptionItem = {
+    id: TokenId;
+    volume: TokenAmount;
+  };
+
+  public type RedemptionRequest = {
+    id: TokenId;
+    txIndex: TxIndex;
+  };
+
+  public type RedemptionItemPdf = {
+    id: TokenId;
+    txIndex: TxIndex;
+    volume: TokenAmount;
+    pdf: ArrayFile;
+  };
+
   //
   // Market types
   //
@@ -312,11 +332,10 @@ module {
     status: ?NotificationStatus;
 
     eventStatus: ?NotificationEventStatus;
-    tokenId: ?TokenId;
     receivedBy: BID;
     triggeredBy: ?UID;
-    quantity: ?TokenAmount;
 
+    items: ?[RedemptionItem];
     redeemPeriodStart: ?Text;
     redeemPeriodEnd: ?Text;
     redeemLocale: ?Text;
