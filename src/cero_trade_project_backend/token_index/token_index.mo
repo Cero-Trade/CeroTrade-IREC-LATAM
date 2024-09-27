@@ -28,6 +28,7 @@ import HTTP "../http_service/http_service_interface";
 // types
 import T "../types";
 import ENV "../env";
+import PDF "./pdf_test";
 
 shared({ caller = owner }) actor class TokenIndex() = this {
   stable var wasm_module: Blob = "";
@@ -915,9 +916,6 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       case(?value) value;
     };
 
-    // TODO ---> just for testing here
-    // let pdf = [1,2,3,4,5,6,7,9];
-
     // - volume: El volumen de I-RECs que se quiere redimir.
     // - beneficiary: El identificador del beneficiario de la redención.
     // - items: Un url identificador de los items. Esta información debe traerse al momento de hacer el importe de los IRECs.
@@ -1022,9 +1020,6 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     var volume: Nat = 0;
     // summatory of volumes
     for ({ volume = vol } in items.vals()) { volume += vol };
-
-    // TODO ---> just for testing here
-    // let pdf = [1,2,3,4,5,6,7,9];
 
     // - volume: El volumen de I-RECs que se quiere redimir.
     // - beneficiary: El identificador del beneficiario de la redención.
