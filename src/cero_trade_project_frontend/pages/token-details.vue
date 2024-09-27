@@ -365,7 +365,7 @@
             </span>
 
             <span style="color: #475467;">Redemption Date</span>
-            <span class="mt-2 mb-4">{{ item.date }}</span>
+            <span class="mt-2 mb-4">{{ moment(item.date).format('YYYY/MM/DD') }}</span>
 
             <div class="border mb-2 jspace">
               <div class="divrow acenter">

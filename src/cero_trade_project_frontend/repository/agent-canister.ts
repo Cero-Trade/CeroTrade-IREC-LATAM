@@ -459,18 +459,21 @@ export class AgentCanister {
     locale: string,
   }): Promise<TransactionInfo> {
     try {
-      const tx = await agent().redeemToken(
+      const txs = await agent().redeemToken(
         items.map(({ volume, id }) => ({ id, volume: numberToToken(volume) })),
         moment(periodStart).format(variables.evidentDateFormat),
         moment(periodEnd).format(variables.evidentDateFormat),
         locale
-      ) as TransactionInfo
-      tx.txType = Object.values(tx.txType)[0] as TxTypeDef
-      tx.to = tx.to[0]
-      tx.method = Object.values(tx.method)[0] as TxMethodDef
-      tx.priceE8S = tx.priceE8S[0] ? tokenToNumber(tx.priceE8S[0]['e8s']) : null
+      ) as TransactionInfo[]
 
-      return tx
+      for (const tx of txs) {
+        tx.txType = Object.values(tx.txType)[0] as TxTypeDef
+        tx.to = tx.to[0]
+        tx.method = Object.values(tx.method)[0] as TxMethodDef
+        tx.priceE8S = tx.priceE8S[0] ? tokenToNumber(tx.priceE8S[0]['e8s']) : null
+      }
+
+      return txs[0]
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)
