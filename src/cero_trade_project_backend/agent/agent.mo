@@ -762,6 +762,9 @@ actor class Agent() = this {
       case(?value) value;
     };
 
+    // check if triggeredBy exists and return companyName
+    let triggeredByProfile = await UserIndex.getProfile(triggeredBy);
+
     // redeem tokens
     let redemptions = await TokenIndex.redeemRequested(profile, notification);
 
@@ -773,7 +776,7 @@ actor class Agent() = this {
         transactionId = "0";
         txIndex;
         from = { principal = caller; name = profile.companyName; };
-        to = ?{ principal = caller; name = profile.companyName; };
+        to = ?{ principal = triggeredBy; name = triggeredByProfile.companyName; };
         tokenId;
         txType = #redemption("redemption");
         tokenAmount = volume;
