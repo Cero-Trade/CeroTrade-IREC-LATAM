@@ -933,11 +933,12 @@ shared({ caller = owner }) actor class TokenIndex() = this {
         value = Nat.toText(parts);
       }
     ];
-    
+
     let bodyJson = switch(Serde.JSON.toText(to_candid({
-      volume;
+      volume = Nat.toText(volume);
       beneficiary = profile.evidentBID;
-      items;
+      // TODO undo this value, replace `id = ...` to `id = x.id`
+      items = Array.map<T.RedemptionItem, { id: Text; volume: Text }>(items, func x = { id = "01J5QX61TEQASM6XE429SPEP0J"; volume = Nat.toText(x.volume) });
       periodStart;
       periodEnd;
       locale;
@@ -1042,14 +1043,11 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       }
     ];
 
-    // TODO body here
     let bodyJson = switch(Serde.JSON.toText(to_candid({
-      volume = 1000000/*  = Nat.toText(volume) */;
-      beneficiary = "01J1QST7FGRGACW0DN4583NZ7X"/* evidentBID */;
-      items = [{
-        id = "01J5QX61TEQASM6XE429SPEP0J";
-        volume = 1000000;
-      }]/*  = Array.map<T.RedemptionItem, { id: Text; volume: Text }>(items, func x = { id = x.id; volume = Nat.toText(x.volume) }) */;
+      volume = Nat.toText(volume);
+      beneficiary = evidentBID;
+      // TODO undo this value, replace `id = ...` to `x.id`
+      items = Array.map<T.RedemptionItem, { id: Text; volume: Text }>(items, func x = { id = "01J5QX61TEQASM6XE429SPEP0J"; volume = Nat.toText(x.volume) });
       periodStart;
       periodEnd;
       locale;
