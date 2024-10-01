@@ -1021,6 +1021,9 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     // summatory of volumes
     for ({ volume = vol } in items.vals()) { volume += vol };
 
+    // // TODO commented because is just for test
+    // let pdf = PDF.pdf;
+
     // - volume: El volumen de I-RECs que se quiere redimir.
     // - beneficiary: El identificador del beneficiario de la redención.
     // - items: Un url identificador de los items. Esta información debe traerse al momento de hacer el importe de los IRECs.
@@ -1039,6 +1042,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       }
     ];
 
+    // TODO body here
     let bodyJson = switch(Serde.JSON.toText(to_candid({
       volume = 1000000/*  = Nat.toText(volume) */;
       beneficiary = "01J1QST7FGRGACW0DN4583NZ7X"/* evidentBID */;
