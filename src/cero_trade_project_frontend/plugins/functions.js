@@ -264,7 +264,7 @@ export async function getImageArrayBuffer(file) {
 export function getFileFromArrayBuffer(array, { fileName, fileType }) {
   const blob = new Blob([array], { type: fileType || 'application/octet-stream' });
   const file = new File([blob], fileName || 'file', { type: fileType ||'application/octet-stream' });
-  return file;
+  return { blob, file };
 }
 
 export function getUrlFromArrayBuffer(array, type) {

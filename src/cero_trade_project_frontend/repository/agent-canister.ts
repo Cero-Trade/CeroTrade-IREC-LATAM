@@ -204,8 +204,10 @@ export class AgentCanister {
         redemption.txType = Object.values(redemption.txType)[0] as TxTypeDef
         redemption.to = redemption.to[0]
         redemption.tokenAmount = tokenToNumber(redemption.tokenAmount)
-        redemption.redemptionPdf = await getFileFromArrayBuffer(redemption.redemptionPdf, { fileName: 'certificate', fileType: 'application/pdf' })
-        redemption['url'] = URL.createObjectURL(redemption.redemptionPdf)
+
+        const conversion = getFileFromArrayBuffer(redemption.redemptionPdf, { fileName: 'certificate', fileType: 'application/pdf' })
+        redemption.redemptionPdf = conversion.file
+        redemption['url'] = URL.createObjectURL(conversion.blob)
       }
 
       return portfolio
@@ -518,8 +520,10 @@ export class AgentCanister {
         item.txType = Object.values(item.txType)[0] as TxTypeDef
         item.method = Object.values(item.method)[0] as TxMethodDef
         item.date = new Date(item.date)
-        item.redemptionPdf = await getFileFromArrayBuffer(item.redemptionPdf, { fileName: 'certificate', fileType: 'application/pdf' })
-        item['url'] = URL.createObjectURL(item.redemptionPdf)
+
+        const conversion = getFileFromArrayBuffer(item.redemptionPdf, { fileName: 'certificate', fileType: 'application/pdf' })
+        item.redemptionPdf = conversion.file
+        item['url'] = URL.createObjectURL(conversion.blob)
         item.txIndex = Number(item.txIndex)
 
         // get nullable object
