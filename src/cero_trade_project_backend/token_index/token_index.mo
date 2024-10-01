@@ -1030,7 +1030,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     // - items: Un url identificador de los items. Esta información debe traerse al momento de hacer el importe de los IRECs.
     // - periodStart y periodEnd: Las fechas de inicio y fin del periodo de redención. Esto debe ser un input del usuario.
     // - locale: El idioma en que se quiere obtener el "redemption statement" (ej. "en", "es"). Este debe ser un input del usuario.
-    var parts = 2;
+    var parts = 3;
 
     let headers = [
       {
