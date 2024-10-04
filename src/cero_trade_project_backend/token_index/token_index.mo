@@ -371,6 +371,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       headers = [];
       bodyJson = "{}";
     });
+    Debug.print("⭐ imported irecs: " # assetsJson);
 
     // used hashmap to find faster elements using Hash
     // this Hash have limitation when data length is too large.
