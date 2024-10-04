@@ -53,7 +53,7 @@ module IC_MANAGEMENT_CANISTER_INTERFACE {
 
     let branch = switch(ENV.DFX_NETWORK) {
       case("ic") "main";
-      case _ "main-migration";
+      case _ "develop";
     };
     let wasmModule = await HTTP.canister.get({
       url = "https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # branch # "/wasm_modules/" # wasmModuleName # ".json";
