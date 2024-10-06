@@ -56,7 +56,7 @@ module IC_MANAGEMENT_CANISTER_INTERFACE {
       case _ "develop";
     };
     let wasmModule = await HTTP.canister.get({
-      url = "https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # branch # "/wasm_modules/" # wasmModuleName # ".json";
+      url = "https://raw.githubusercontent.com/Cero-Trade/CeroTrade-IREC-LATAM/" # branch # "/wasm_modules/" # wasmModuleName # ".json";
       port = null;
       uid = null;
       headers = []
