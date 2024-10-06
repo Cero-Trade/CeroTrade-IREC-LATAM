@@ -28,7 +28,7 @@ import HTTP "../http_service/http_service_interface";
 // types
 import T "../types";
 import ENV "../env";
-import PDF "./pdf_test";
+// import PDF "./pdf_test";
 
 shared({ caller = owner }) actor class TokenIndex() = this {
   stable var wasm_module: Blob = "";
