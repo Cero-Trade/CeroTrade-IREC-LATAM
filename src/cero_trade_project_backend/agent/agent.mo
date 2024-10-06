@@ -117,10 +117,29 @@ actor class Agent() = this {
 
     controllers := await IC_MANAGEMENT.getControllers(Principal.fromActor(this));
 
-    await UserIndex.registerControllers();
-    await TokenIndex.registerControllers();
-    await TransactionIndex.registerControllers();
-    await BucketIndex.registerControllers();
+    try {
+      await UserIndex.registerControllers();
+    } catch (error) {
+      Debug.print(debug_show (Error.message(error)));
+    };
+
+    try {
+      await TokenIndex.registerControllers();
+    } catch (error) {
+      Debug.print(debug_show (Error.message(error)));
+    };
+
+    try {
+      await TransactionIndex.registerControllers();
+    } catch (error) {
+      Debug.print(debug_show (Error.message(error)));
+    };
+
+    try {
+      await BucketIndex.registerControllers();
+    } catch (error) {
+      Debug.print(debug_show (Error.message(error)));
+    };
   };
 
   /// register a canister wasm module
