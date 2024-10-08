@@ -14,6 +14,7 @@ import Settings from '@/pages/settings.vue'
 import Support from '@/pages/support.vue'
 import MyPortfolio from '@/pages/my-portfolio.vue'
 import MyTransactions from '@/pages/my-transactions.vue'
+import TransactionsAudit from '@/pages/transactions-audit.vue'
 import Profile from '@/pages/profile.vue'
 import Auth from '@/layouts/auth-layout.vue'
 import Register from '@/pages/register.vue'
@@ -71,6 +72,12 @@ const routes = [
         name: 'MyTransactions',
         component: MyTransactions,
         meta: { head: `My transactions - ${DEFAULT_TITLE}` }
+      },
+      {
+        path: 'transactions-audit',
+        name: 'TransactionsAudit',
+        component: TransactionsAudit,
+        meta: { head: `Transactions audit - ${DEFAULT_TITLE}` }
       },
       {
         path: 'profile',

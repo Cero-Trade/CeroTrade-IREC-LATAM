@@ -9,6 +9,9 @@ import Text "mo:base/Text";
 import Error "mo:base/Error";
 import Array "mo:base/Array";
 import Iter "mo:base/Iter";
+import Debug "mo:base/Debug";
+import Hash "mo:base/Hash";
+import Time "mo:base/Time";
 
 // interfaces
 import HTTP "./http_service/http_service_interface";
@@ -33,6 +36,42 @@ module IC_MANAGEMENT_CANISTER_INTERFACE {
       case(?value) Array.find<Principal>(value, func x = x == caller) != null;
     };
   };
+
+  // public type AccountIdentifier = Principal;
+  // public type Tokens = Nat;
+  // public type Memo = Text;
+
+  // public type Operation = {
+  //   #Burn: { from: AccountIdentifier; amount: Tokens; };
+  //   #Mint: { to: AccountIdentifier; amount: Tokens; };
+  //   #Transfer: { from: AccountIdentifier; to: AccountIdentifier; amount: Tokens; fee: Tokens; };
+  // };
+
+  // public type Transaction = {
+  //   operation: Operation;
+  //   memo: Memo;
+  //   createdAtTime: ?Time.Time;
+  // };
+
+  // public func serializeTransaction(tx: Transaction): Blob {
+  //   let operationBlob = switch (tx.operation) {
+  //     case (#Burn({ from; amount })) { Blob.concat([Blob.fromBytes(#text "Burn"), from.toBlob(), Blob.fromNat(amount)]) };
+  //     case (#Mint({ to; amount })) { Blob.concat([Blob.fromBytes(#text "Mint"), to.toBlob(), Blob.fromNat(amount)]) };
+  //     case (#Transfer({ from; to; amount; fee })) { Blob.concat([Blob.fromBytes(#text "Transfer"), from.toBlob(), to.toBlob(), Blob.fromNat(amount), Blob.fromNat(fee)]) };
+  //   };
+
+  //   let memoBlob = Blob.fromBytes(tx.memo);
+  //   let timeBlob = tx.createdAtTime.map((t) = Blob.fromNat(t)).getOrElse(Blob.fromBytes(#text ""));
+  //   return Blob.concat([operationBlob, memoBlob, timeBlob]);
+  // }
+
+  // // TODO idk what is happend here
+  // public func getTransactionHash(tx: Transaction): Blob {
+  //   let serializedTx = serializeTransaction(tx);
+
+  //   Debug.print(Hash.sha256(serializedTx));
+  //   return Hash.sha256(serializedTx);
+  // }
 
   public type WasmModuleName = {
     #token: Text;

@@ -774,7 +774,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       });
     };
 
-    switch(transferResult) {
+    let txIndex = switch(transferResult) {
       case(#Err(error)) throw Error.reject(switch(error) {
         case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
         case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
@@ -787,6 +787,19 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       });
       case(#Ok(value)) value;
     };
+
+    // IC_MANAGEMENT.getTransactionHash({
+    //   operation = #Transfer({
+    //     from = seller;
+    //     to = Principal.fromText(ENV.CANISTER_ID_MARKETPLACE);
+    //     amount;
+    //     fee = 0;
+    //   });
+    //   memo = "";
+    //   createdAtTime = ?Time.now();
+    // });
+
+    txIndex
   };
 
 
