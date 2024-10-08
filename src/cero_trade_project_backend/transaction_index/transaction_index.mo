@@ -4,6 +4,7 @@ import Text "mo:base/Text";
 import Cycles "mo:base/ExperimentalCycles";
 import Blob "mo:base/Blob";
 import Nat "mo:base/Nat";
+import Nat8 "mo:base/Nat8";
 import Iter "mo:base/Iter";
 import Error "mo:base/Error";
 import Debug "mo:base/Debug";
@@ -59,8 +60,24 @@ actor class TransactionIndex() = this {
   public shared({ caller }) func registerWasmArray(): async() {
     _callValidation(caller);
 
+    let wasmModule = await HTTP.canister.get({
+      url = "https://raw.githubusercontent.com/Cero-Trade/CeroTrade-IREC-LATAM/" # T.githubBranch() # "/wasm_modules/transactions.json";
+      port = null;
+      uid = null;
+      headers = []
+    });
+
+    let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
+    let wasm_array = Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
+      switch (Nat.fromText(part)) {
+        case null 0;
+        case (?n) n;
+      }
+    });
+    let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
+
     // register wasm
-    wasm_module := await IC_MANAGEMENT.getWasmModule(#transactions("transactions"));
+    wasm_module := Blob.fromArray(nums8);
 
     // update deployed canisters
     let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);

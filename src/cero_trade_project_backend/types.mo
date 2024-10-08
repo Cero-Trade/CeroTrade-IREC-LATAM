@@ -28,6 +28,13 @@ module {
 
   public let tokenDecimals: Nat8 = 8;
 
+  public func githubBranch(): Text {
+    switch(ENV.DFX_NETWORK) {
+      case("ic") "main";
+      case _ "develop";
+    };
+  };
+
   // TODO try to change to simplest format to better filtering
   // global date format variable
   public let dateFormat: Text = "YYYY-MM-DDTHH:mm:ss.sssssssssZ";
@@ -118,7 +125,6 @@ module {
   public type TokenAmount = Nat;
   public type Price = { e8s: Nat64 };
   public type UserTokenAuth = Text;
-  
 
   //
   // Users
