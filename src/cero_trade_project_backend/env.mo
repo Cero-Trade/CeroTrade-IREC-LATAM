@@ -22,6 +22,8 @@ module ENV {
   public let CANISTER_ID_CERO_TRADE_PROJECT_FRONTEND: Text = "z2mgf-dqaaa-aaaak-qihbq-cai";
   public let CANISTER_ID_AGENT: Text = "z5nar-oiaaa-aaaak-qihba-cai";
   public let CANISTER_ID_NNS_LEDGER: Text = "ryjl3-tyaaa-aaaaa-aaaba-cai";
+  public let CANISTER_ID_TOKEN: Text = "a3shf-5eaaa-aaaaa-qaafa-cai";
+  public let CANISTER_ID_BUCKET_INDEX: Text = "bw4dl-smaaa-aaaaa-qaacq-cai";
   public let CANISTER_ID_NNS_ROOT: Text = "r7inp-6aaaa-aaaaa-aaabq-cai";
   public let CANISTER_ID_TRANSACTION_INDEX: Text = "ylgy2-3yaaa-aaaak-qihea-cai";
   public let CANISTER_ID_NNS_GOVERNANCE: Text = "rrkah-fqaaa-aaaaa-aaaaq-cai";
