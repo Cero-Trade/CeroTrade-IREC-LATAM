@@ -14,6 +14,7 @@ import Debug "mo:base/Debug";
 // interfaces
 import IC_MANAGEMENT "../ic_management_canister_interface";
 import Bucket "../bucket/bucket_interface";
+import HTTP "../http_service/http_service_interface";
 
 // types
 import T "../types";
