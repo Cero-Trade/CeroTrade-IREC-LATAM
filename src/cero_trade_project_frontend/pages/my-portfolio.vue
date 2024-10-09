@@ -107,7 +107,7 @@
 
           <template #[`item.country`]="{ item }">
             <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-              <img :src="countriesImg[item.country]" :alt="`${item.country} Icon`" style="width: 20px;">
+              <img :src="countries[item.country].flag" :alt="`${item.country} Icon`" style="width: 20px;">
               {{ item.country }}
             </span>
           </template>
@@ -149,7 +149,7 @@
               <div class="jspace divrow mb-1">
                 <span>Country</span>
                 <span style="color: #475467;" class="acenter text-capitalize">
-                  <img :src="countriesImg[item.country]" alt="icon" class="mr-1" style="width: 20px;"> {{ item.country }}
+                  <img :src="countries[item.country].flag" alt="icon" class="mr-1" style="width: 20px;"> {{ item.country }}
                 </span>
               </div>
 
@@ -204,14 +204,51 @@
 
         <v-autocomplete
           v-model="filters.country"
-          :items="countries"
+          :items="Object.values(countries)"
           variant="outlined"
           flat elevation="0"
+          menu-icon=""
           item-title="name"
           item-value="name"
           label="country"
           class="select mb-4"
-        ></v-autocomplete>
+        >
+          <template #append-inner="{ isFocused }">
+            <img
+              src="@/assets/sources/icons/chevron-down.svg"
+              alt="chevron-down icon"
+              :style="`transform: ${isFocused.value ? 'rotate(180deg)' : 'none'};`"
+            >
+          </template>
+
+          <template #selection="{ item }">
+            <v-img-load
+              :src="item.raw.flag.toString()"
+              :alt="`${item.raw.name} logo`"
+              cover
+              sizes="25px"
+              rounded="50%"
+              class="flex-grow-0"
+            />
+            <span class="bold ml-2 ellipsis-text">{{ item.raw.name }}</span>
+          </template>
+
+          <template #item="{ item, props }">
+            <v-list-item v-bind="props" title=" ">
+              <div class="d-flex align-center">
+                <v-img-load
+                  :src="item.raw.flag.toString()"
+                  :alt="`${item.raw.name} logo`"
+                  cover
+                  sizes="25px"
+                  rounded="50%"
+                  class="flex-grow-0"
+                />
+                <span class="bold ml-2" style="translate: 0 1px">{{ item.raw.name }}</span>
+              </div>
+            </v-list-item>
+          </template>
+        </v-autocomplete>
 
         <v-range-slider
           v-model="filters.mwhRange"
@@ -254,7 +291,6 @@
 
 <script setup>
 import '@/assets/styles/pages/my-portfolio.scss'
-import countries from '@/assets/sources/json/countries-all.json'
 import RenewableChart from "@/components/renewable-chart.vue"
 import HydroEnergyIcon from '@/assets/sources/energies/hydro-color.svg'
 import OceanEnergyIcon from '@/assets/sources/energies/ocean.svg'
@@ -270,12 +306,14 @@ import { AgentCanister } from '@/repository/agent-canister'
 import { ref, computed, watch, onBeforeMount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
-import { shortString } from '@/plugins/functions'
+import { formatAmount, shortString } from '@/plugins/functions'
+import variables from '@/mixins/variables'
 // import { closeLoader, showLoader } from '@/plugins/functions'
 
 const
   router = useRouter(),
   toast = useToast(),
+  { countries } = variables,
 
 windowStep = ref(undefined),
 tabsWindow = ref(0),
@@ -292,9 +330,6 @@ energies = {
   "Wind": WindEnergyIcon,
   "Hydro-Electric": HydroEnergyIcon,
   "Thermal": GeothermalEnergyIcon,
-},
-countriesImg = {
-  CL: ChileIcon
 },
 
 headers = [
@@ -343,7 +378,7 @@ windowStepComputed = computed(() => {
 totalMwh = computed(() => {
   if (!series.value) return 0
   const data = series.value[0].data
-  return data.reduce((acc, item) => acc + item, 0)
+  return formatAmount(data.reduce((acc, item) => acc + Number(item), 0), { compact: true })
 })
 
 
@@ -365,7 +400,7 @@ async function getData() {
 
   try {
     // get getPortfolio
-    const { tokensInfo, tokensRedemption } = await AgentCanister.getPortfolio({
+    const { data, totalPages: pages } = await AgentCanister.getPortfolio({
       length: itemsPerPage.value,
       country: filters.value.country?.toLowerCase(),
       mwhRange: filters.value.mwhRange,
@@ -374,54 +409,46 @@ async function getData() {
     }),
     list = []
 
-    for (const item of tokensInfo.data) {
+    for (const item of data) {
       list.push({
-        token_id: item.tokenId,
-        energy_source: item.assetInfo.deviceDetails.deviceType,
-        country: item.assetInfo.specifications.country,
-        mwh: item.totalAmount,
+        token_id: item.tokenInfo.tokenId,
+        energy_source: item.tokenInfo.assetInfo.deviceDetails.deviceType,
+        country: item.tokenInfo.assetInfo.specifications.country,
+        mwh: item.tokenInfo.totalAmount,
+        redemptions: item.redemptions,
       })
     }
 
     dataPortfolio.value = list.sort((a, b) => a.token_id - b.token_id)
-    totalPages.value = tokensInfo.totalPages
+    totalPages.value = pages
 
     const groupedTokens = list.reduce((acc, item) => {
       let existenceElement = acc.find(elem => elem.energy_source === item.energy_source);
 
       if (existenceElement) {
         existenceElement.mwh += item.mwh;
+        existenceElement.redeemed ??= 0
+        existenceElement.redeemed += item.redemptions.reduce((acc, value) => acc + value, 0)
       } else {
-        acc.push({ ...item });
+        acc.push({ ...item, redeemed: item.redemptions.reduce((acc, value) => acc + value, 0) });
       }
       return acc;
-    }, []);
-
-    const groupedRedemptions = tokensRedemption.reduce((acc, item) => {
-      let existenceElement = acc.find(elem => elem.energy_source === item.energy_source);
-
-      if (existenceElement) {
-        existenceElement.tokenAmount += item.tokenAmount;
-      } else {
-        acc.push({ ...item });
-      }
-      return acc;
-    }, []);
-
+    }, []),
+    groupedRedemptions = groupedTokens.map(e => formatAmount(e.redeemed ?? 0, { compact: true }))
 
     series.value = [
       {
         name: 'MWh',
-        data: groupedTokens.map(e => e.mwh || 0)
+        data: groupedTokens.map(e => formatAmount(e.mwh ?? 0, { compact: true }))
       },
       {
         name: 'Redeemed',
-        data: groupedRedemptions.map(e => e.tokenAmount || 0)
+        data: groupedRedemptions
       }
     ]
     if (groupedTokens.length) categories.value = groupedTokens.map(e => e.energy_source)
 
-    totalRedeemed.value = groupedRedemptions.reduce((acc, item) => acc + item.tokenAmount, 0) || 0
+    totalRedeemed.value = formatAmount(groupedRedemptions.reduce((acc, item) => acc + Number(item), 0) ?? 0, { compact: true })
   } catch (error) {
     console.error(error);
     toast.error(error)

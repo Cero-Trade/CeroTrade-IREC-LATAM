@@ -5,7 +5,6 @@ import Error "mo:base/Error";
 import Cycles "mo:base/ExperimentalCycles";
 import Blob "mo:base/Blob";
 import Array "mo:base/Array";
-import Hash "mo:base/Hash";
 import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
 import Nat64 "mo:base/Nat64";
@@ -14,6 +13,8 @@ import Iter "mo:base/Iter";
 import Time "mo:base/Time";
 import Buffer "mo:base/Buffer";
 import Serde "mo:serde";
+import Source "mo:uuid/async/SourceV4";
+import UUID "mo:uuid/UUID";
 import Debug "mo:base/Debug";
 
 import ICRC1 "mo:icrc1-mo/ICRC1";
@@ -27,6 +28,7 @@ import HTTP "../http_service/http_service_interface";
 // types
 import T "../types";
 import ENV "../env";
+// import PDF "./pdf_test";
 
 shared({ caller = owner }) actor class TokenIndex() = this {
   stable var wasm_module: Blob = "";
@@ -112,8 +114,24 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   public shared({ caller }) func registerWasmArray(): async() {
     _callValidation(caller);
 
+    let wasmModule = await HTTP.canister.get({
+      url = "https://raw.githubusercontent.com/Cero-Trade/CeroTrade-IREC-LATAM/" # T.githubBranch() # "/wasm_modules/token.json";
+      port = null;
+      uid = null;
+      headers = []
+    });
+
+    let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
+    let wasm_array = Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
+      switch (Nat.fromText(part)) {
+        case null 0;
+        case (?n) n;
+      }
+    });
+    let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
+
     // register wasm
-    wasm_module := await IC_MANAGEMENT.getWasmModule(#token("token"));
+    wasm_module := Blob.fromArray(nums8);
 
     // update deployed canisters
     for((tokenId, canister_id) in tokenDirectory.entries()) {
@@ -241,7 +259,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
         Cycles.add<system>(T.cycles);
         await IC_MANAGEMENT.ic.stop_canister({ canister_id });
         await IC_MANAGEMENT.ic.delete_canister({ canister_id });
-        let _ = tokenDirectory.remove(tokenId)
+        tokenDirectory.delete(tokenId)
       };
     }
   };
@@ -319,7 +337,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
         await IC_MANAGEMENT.ic.delete_canister({ canister_id });
 
         for((tokenId, cid) in tokenDirectory.entries()) {
-          if (cid == canister_id) let _ = tokenDirectory.remove(tokenId);
+          if (cid == canister_id) return tokenDirectory.delete(tokenId);
         };
       };
       case(null) {
@@ -327,7 +345,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
           Cycles.add<system>(T.cycles);
           await IC_MANAGEMENT.ic.stop_canister({ canister_id });
           await IC_MANAGEMENT.ic.delete_canister({ canister_id });
-          let _ = tokenDirectory.remove(tokenId);
+          tokenDirectory.delete(tokenId);
         };
       };
     };
@@ -343,7 +361,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   /// get canister id that allow current token
   public query func getTokenCanister(tokenId: T.TokenId): async T.CanisterId {
     switch (tokenDirectory.get(tokenId)) {
-      case (null) { throw Error.reject("Token not found"); };
+      case (null) { throw Error.reject("Token not found on Cero Trade"); };
       case (?cid) { return cid };
     };
   };
@@ -359,6 +377,9 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   public shared({ caller }) func importUserTokens(uid: T.UID): async [{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }] {
     _callValidation(caller);
 
+    let canister_status = await IC_MANAGEMENT.ic.canister_status({ canister_id = Principal.fromActor(this) });
+    if (canister_status.cycles <= 2_500_000_000_000) throw Error.reject("Token canister have not enough cycles to performe this operation");
+
     let assetsJson = await HTTP.canister.post({
       url = HTTP.apiUrl # "transactions/import";
       port = null;
@@ -366,27 +387,50 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       headers = [];
       bodyJson = "{}";
     });
+    Debug.print("⭐ imported irecs: " # assetsJson);
 
     // used hashmap to find faster elements using Hash
     // this Hash have limitation when data length is too large.
     // In this case, would consider changing to another more effective method.
-    let assetsMetadata = HM.HashMap<Nat, { mwh: T.TokenAmount; assetInfo: T.AssetInfo }>(16, Nat.equal, Hash.hash);
+    let assetsMetadata = HM.HashMap<T.TokenId, { mwh: T.TokenAmount; assetInfo: T.AssetInfo }>(16, Text.equal, Text.hash);
+
+    // TODO this code below exists in case need test it
+    // assetsMetadata.put("2", {
+    //   mwh = 200_000_000;
+    //   assetInfo = {
+    //     tokenId = "2";
+    //     startDate = "2024-04-29T19:43:34.000Z";
+    //     endDate = "2024-05-29T19:48:31.000Z";
+    //     co2Emission = "11.22";
+    //     radioactivityEmission = "10.20";
+    //     volumeProduced: T.TokenAmount = 200_000_000_000;
+    //     deviceDetails = {
+    //       name = "machine";
+    //       deviceType = #HydroElectric("Hydro-Electric");
+    //       description = "description";
+    //     };
+    //     specifications = {
+    //       deviceCode = "200";
+    //       location = "location";
+    //       latitude = "0.1";
+    //       longitude = "1.0";
+    //       country = "CL";
+    //     };
+    //   };
+    // });
 
     switch(Serde.JSON.fromText(assetsJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize asset data");
       case(#ok(blob)) {
         let transactionResponse: ?[TransactionResponse] = from_candid(blob);
-        var index: Nat = 0;
 
         switch(transactionResponse) {
           case(null) throw Error.reject("cannot serialize asset data");
           case(?response) {
             for({ items } in response.vals()) {
               for(assetResponse in items.vals()) {
-                index := index + 1;
-
                 // TODO review mwh value assignment
-                assetsMetadata.put(index, {
+                assetsMetadata.put(assetResponse.asset_assetId, {
                   mwh = await T.textToToken(assetResponse.item_volume, null);
                   assetInfo = await buildAssetInfo(assetResponse);
                 });
@@ -434,21 +478,11 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       };
     };
 
-    let transactions = Iter.toArray(assetsMetadata.vals());
-
-    if (transactions.size() > 0) {
-      // update user portfolio
-      await updatePortfolio(uid, Array.map<{
-        mwh: T.TokenAmount;
-        assetInfo: T.AssetInfo
-      }, T.TokenId>(transactions, func x = x.assetInfo.tokenId)/* , { delete = false } */);
-    };
-
-    transactions
+    Iter.toArray(assetsMetadata.vals())
   };
 
 
-  public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, amount: T.TokenAmount): async T.TxIndex {
+  public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, amount: T.TokenAmount): async (T.TxIndex, T.AssetInfo) {
     _callValidation(caller);
 
     let assetsJson = await HTTP.canister.get({
@@ -498,10 +532,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       case(#Ok(value)) value;
     };
 
-    // update user portfolio
-    await updatePortfolio(recipent, [tokenId]/* , { delete = false } */);
-
-    txIndex
+    (txIndex, assetMetadata)
   };
 
   // helper function used to build [AssetInfo] from AssetResponse
@@ -538,7 +569,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   };
 
   // get token portfolio for a specific user
-  public shared({ caller }) func getTokenPortfolio(uid: T.UID, tokenId: T.TokenId): async T.TokenInfo {
+  public shared({ caller }) func getSingleTokenInfo(uid: T.UID, tokenId: T.TokenId): async T.TokenInfo {
     _callValidation(caller);
 
     switch (tokenDirectory.get(tokenId)) {
@@ -556,139 +587,142 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     };
   };
 
-  /// get user portfolio
-  public shared({ caller }) func getPortfolio(uid: T.UID, page: ?Nat, length: ?Nat, assetTypes: ?[T.AssetType], country: ?Text, mwhRange: ?[T.TokenAmount]): async {
-    tokens: [T.TokenInfo];
-    txIds: [T.TransactionId];
-    totalPages: Nat;
-  } {
-    _callValidation(caller);
+  // // get token portfolio for a specific user
+  // public shared({ caller }) func getTokenPortfolio(uid: T.UID, tokenId: T.TokenId): async T.TokenInfo {
+  //   _callValidation(caller);
 
-    // fetch user to get token ids
-    let portfolioJson = await HTTP.canister.get({
-      url = HTTP.apiUrl # "users/portfolio";
-      port = null;
-      uid = ?uid;
-      headers = [];
-    });
+  //   switch (tokenDirectory.get(tokenId)) {
+  //     case (null) throw Error.reject("Token not found on Portfolio");
+  //     case (?cid) {
+  //       let token_balance = await Token.canister(cid).token_balance({ owner = uid; subaccount = null });
 
-    Debug.print("portfolioJson " # debug_show (portfolioJson));
-    let portfolioIds: { tokenIds: [T.TokenId]; txIds: [T.TransactionId] } = switch(Serde.JSON.fromText(portfolioJson, null)) {
-      case(#err(_)) throw Error.reject("cannot serialize asset data");
-      case(#ok(blob)) {
-        let portfolio: ?{ tokenIds: ?[T.TokenId]; txIds: ?[T.TransactionId]; } = from_candid(blob);
-        Debug.print("portfolio " # debug_show (portfolio));
+  //       {
+  //         tokenId;
+  //         totalAmount = token_balance.balance;
+  //         assetInfo = token_balance.assetMetadata;
+  //         inMarket = 0;
+  //       }
+  //     };
+  //   };
+  // };
 
-        switch(portfolio) {
-          case(null) throw Error.reject("cannot serialize asset data");
-          case(?value) {
-            {
-              tokenIds = switch(value.tokenIds) {
-                case(null) [];
-                case(?value) value;
-              };
-              txIds = switch(value.txIds) {
-                case(null) [];
-                case(?value) value;
-              };
-            }
-          };
-        };
-      };
-    };
+  // /// get user portfolio
+  // public shared({ caller }) func getPortfolio(uid: T.UID, page: ?Nat, length: ?Nat, assetTypes: ?[T.AssetType], country: ?Text, mwhRange: ?[T.TokenAmount]): async {
+  //   tokens: [T.TokenInfo];
+  //   txIds: [T.TransactionId];
+  //   totalPages: Nat;
+  // } {
+  //   _callValidation(caller);
 
-    // define page based on statement
-    let startPage = switch(page) {
-      case(null) 1;
-      case(?value) value;
-    };
+  //   // fetch user to get token ids
+  //   let portfolioJson = await HTTP.canister.get({
+  //     url = HTTP.apiUrl # "users/portfolio";
+  //     port = null;
+  //     uid = ?uid;
+  //     headers = [];
+  //   });
 
-    // define length based on statement
-    let maxLength = switch(length) {
-      case(null) 50;
-      case(?value) value;
-    };
+  //   Debug.print("portfolioJson " # debug_show (portfolioJson));
+  //   let portfolioIds: { tokenIds: [T.TokenId]; txIds: [T.TransactionId] } = switch(Serde.JSON.fromText(portfolioJson, null)) {
+  //     case(#err(_)) throw Error.reject("cannot serialize asset data");
+  //     case(#ok(blob)) {
+  //       let portfolio: ?{ tokenIds: ?[T.TokenId]; txIds: ?[T.TransactionId]; } = from_candid(blob);
+  //       Debug.print("portfolio " # debug_show (portfolio));
 
-    let tokens = Buffer.Buffer<T.TokenInfo>(50);
+  //       switch(portfolio) {
+  //         case(null) throw Error.reject("cannot serialize asset data");
+  //         case(?value) {
+  //           {
+  //             tokenIds = switch(value.tokenIds) {
+  //               case(null) [];
+  //               case(?value) value;
+  //             };
+  //             txIds = switch(value.txIds) {
+  //               case(null) [];
+  //               case(?value) value;
+  //             };
+  //           }
+  //         };
+  //       };
+  //     };
+  //   };
 
-    // calculate range of elements returned
-    let startIndex: Nat = (startPage - 1) * maxLength;
-    var i = 0;
+  //   // define page based on statement
+  //   let startPage = switch(page) {
+  //     case(null) 1;
+  //     case(?value) value;
+  //   };
 
-    Debug.print(debug_show ("before getPortfolio: " # Nat.toText(Cycles.balance())));
+  //   // define length based on statement
+  //   let maxLength = switch(length) {
+  //     case(null) 50;
+  //     case(?value) value;
+  //   };
 
+  //   let tokens = Buffer.Buffer<T.TokenInfo>(50);
 
-    for(tokenId in portfolioIds.tokenIds.vals()) {
-      if (i >= startIndex and i < startIndex + maxLength) {
-        switch(tokenDirectory.get(tokenId)) {
-          case(null) {};
+  //   // calculate range of elements returned
+  //   let startIndex: Nat = (startPage - 1) * maxLength;
+  //   var i = 0;
 
-          case(?cid) {
-            let token_balance = await Token.canister(cid).token_balance({ owner = uid; subaccount = null });
-            let token = {
-              tokenId;
-              totalAmount = token_balance.balance;
-              assetInfo = token_balance.assetMetadata;
-              inMarket = 0;
-            };
-
-            // filter by tokenId
-            let filterRange: Bool = switch(mwhRange) {
-              case(null) true;
-              case(?range) token.totalAmount >= range[0] and token.totalAmount <= range[1];
-            };
-
-            // filter by assetTypes
-            let filterAssetType = switch (assetTypes) {
-              case(null) true;
-              case(?assets) {
-                let assetType = Array.find<T.AssetType>(assets, func (assetType) { assetType == token.assetInfo.deviceDetails.deviceType });
-                assetType != null
-              };
-            };
-
-            // filter by country
-            let filterCountry = switch (country) {
-              case(null) true;
-              case(?value) token.assetInfo.specifications.country == value;
-            };
-
-            if (token.totalAmount > 0 and filterRange and filterAssetType and filterCountry) tokens.add(token);
-          };
-        };
-      };
-      i += 1;
-    };
+  //   Debug.print(debug_show ("before getPortfolio: " # Nat.toText(Cycles.balance())));
 
 
-    Debug.print(debug_show ("later getPortfolio: " # Nat.toText(Cycles.balance())));
+  //   for(tokenId in portfolioIds.tokenIds.vals()) {
+  //     if (i >= startIndex and i < startIndex + maxLength) {
+  //       switch(tokenDirectory.get(tokenId)) {
+  //         case(null) {};
 
-    var totalPages: Nat = i / maxLength;
-    if (totalPages <= 0) totalPages := 1;
+  //         case(?cid) {
+  //           let token_balance = await Token.canister(cid).token_balance({ owner = uid; subaccount = null });
+  //           let token = {
+  //             tokenId;
+  //             totalAmount = token_balance.balance;
+  //             assetInfo = token_balance.assetMetadata;
+  //             inMarket = 0;
+  //           };
 
-    {
-      tokens = Buffer.toArray<T.TokenInfo>(tokens);
-      txIds = portfolioIds.txIds;
-      totalPages;
-    }
-  };
+  //           // filter by tokenId
+  //           let filterRange: Bool = switch(mwhRange) {
+  //             case(null) true;
+  //             case(?range) token.totalAmount >= range[0] and token.totalAmount <= range[1];
+  //           };
 
-  /// update user portfolio
-  private func updatePortfolio(uid: T.UID, tokenIds: [T.TokenId]/* , { delete: Bool } */) : async() {
+  //           // filter by assetTypes
+  //           let filterAssetType = switch (assetTypes) {
+  //             case(null) true;
+  //             case(?assets) {
+  //               let assetType = Array.find<T.AssetType>(assets, func (assetType) { assetType == token.assetInfo.deviceDetails.deviceType });
+  //               assetType != null
+  //             };
+  //           };
 
-    let _ = await HTTP.canister.post({
-        url = HTTP.apiUrl # "users/portfolio";
-        port = null;
-        uid = ?uid;
-        headers = [];
-        bodyJson = switch(Serde.JSON.toText(to_candid({
-          tokenIds;
-        }), ["tokenIds"], null)) {
-          case(#err(error)) throw Error.reject("Cannot serialize data");
-          case(#ok(value)) value;
-        };
-      });
-  };
+  //           // filter by country
+  //           let filterCountry = switch (country) {
+  //             case(null) true;
+  //             case(?value) token.assetInfo.specifications.country == value;
+  //           };
+
+  //           if (token.totalAmount > 0 and filterRange and filterAssetType and filterCountry) tokens.add(token);
+  //         };
+  //       };
+  //     };
+  //     i += 1;
+  //   };
+
+
+  //   Debug.print(debug_show ("later getPortfolio: " # Nat.toText(Cycles.balance())));
+
+  //   var totalPages: Nat = i / maxLength;
+  //   if (totalPages <= 0) totalPages := 1;
+
+  //   {
+  //     tokens = Buffer.toArray<T.TokenInfo>(tokens);
+  //     txIds = portfolioIds.txIds;
+  //     totalPages;
+  //   }
+  // };
+
 
   public shared({ caller }) func getTokensInfo(tokenIds: [T.TokenId]): async [T.AssetInfo] {
     _callValidation(caller);
@@ -721,6 +755,22 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     };
   };
 
+  public shared({ caller }) func balanceOfBatch(uid: T.UID, tokenIds: [T.TokenId]): async [(T.TokenId, ICRC1.Balance)] {
+    _callValidation(caller);
+
+    let hashMap: HM.HashMap<T.TokenId, Nat> = HM.HashMap(16, Text.equal, Text.hash);
+
+    for(tokenId in tokenIds.vals()) {
+      let balance = switch (tokenDirectory.get(tokenId)) {
+        case (null) 0;
+        case (?cid) await Token.canister(cid).icrc1_balance_of({ owner = uid; subaccount = null });
+      };
+
+      hashMap.put(tokenId, balance);
+    };
+
+    Iter.toArray(hashMap.entries());
+  };
 
   public shared({ caller }) func sellInMarketplace(seller: T.UID, tokenId: T.TokenId, amount: T.TokenAmount): async T.TxIndex {
     _callValidation(caller);
@@ -740,7 +790,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       });
     };
 
-    switch(transferResult) {
+    let txIndex = switch(transferResult) {
       case(#Err(error)) throw Error.reject(switch(error) {
         case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
         case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
@@ -753,6 +803,19 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       });
       case(#Ok(value)) value;
     };
+
+    // IC_MANAGEMENT.getTransactionHash({
+    //   operation = #Transfer({
+    //     from = seller;
+    //     to = Principal.fromText(ENV.CANISTER_ID_MARKETPLACE);
+    //     amount;
+    //     fee = 0;
+    //   });
+    //   memo = "";
+    //   createdAtTime = ?Time.now();
+    // });
+
+    txIndex
   };
 
 
@@ -790,10 +853,10 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   };
 
 
-  public shared({ caller }) func purchaseToken(buyer: T.UID, seller: T.BID, tokenId: T.TokenId, amount: T.TokenAmount, priceE8S: T.Price): async T.TxIndex {
+  public shared({ caller }) func purchaseToken(buyer: T.UID, seller: T.BID, tokenId: T.TokenId, amount: T.TokenAmount, priceE8S: T.Price): async (T.TxIndex, T.AssetInfo) {
     _callValidation(caller);
 
-    let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
+    let (transferResult, assetInfo): (ICRC1.TransferResult, T.AssetInfo) = switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
       case (?cid) await Token.canister(cid).purchaseInMarketplace({
         marketplace = { owner = Principal.fromText(ENV.CANISTER_ID_MARKETPLACE); subaccount = null };
@@ -818,55 +881,58 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       case(#Ok(value)) value;
     };
 
-    // store token register on profile
-    await updatePortfolio(buyer, [tokenId]/* , { delete = false } */);
-
-    txIndex
+    (txIndex, assetInfo)
   };
 
-  public shared ({ caller }) func requestRedeem(owner: T.UID, tokenId: T.TokenId, amount: T.TokenAmount, { returns: Bool }) : async T.TxIndex {
+  public shared ({ caller }) func requestRedeem(owner: T.UID, items: [T.RedemptionItem], { returns: Bool }) : async [T.RedemptionRequest] {
     _callValidation(caller);
 
-    let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
-      case (null) throw Error.reject("Token not found");
-      case (?cid) await Token.canister(cid).requestRedeem({
-        owner = {
-          owner = owner;
-          subaccount = null;
-        };
-        amount;
-      }, { returns });
+    let redemptionRequest = Buffer.Buffer<T.RedemptionRequest>(16);
+
+    for({ id; volume; } in items.vals()) {
+      let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(id)) {
+        case (null) throw Error.reject("Token not found");
+        case (?cid) await Token.canister(cid).requestRedeem({
+          owner = {
+            owner = owner;
+            subaccount = null;
+          };
+          amount = volume;
+        }, { returns });
+      };
+
+      let txIndex = switch(transferResult) {
+        case(#Err(error)) throw Error.reject(switch(error) {
+          case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
+          case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
+          case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
+          case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
+          case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
+          case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
+          case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
+          case (#TooOld) "#TooOld";
+        });
+        case(#Ok(value)) value;
+      };
+
+      redemptionRequest.add({ id; txIndex; });
     };
 
-    switch(transferResult) {
-      case(#Err(error)) throw Error.reject(switch(error) {
-        case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
-        case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
-        case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
-        case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
-        case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
-        case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
-        case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
-        case (#TooOld) "#TooOld";
-      });
-      case(#Ok(value)) value;
-    };
+    Buffer.toArray<T.RedemptionRequest>(redemptionRequest);
   };
 
-  public shared({ caller }) func redeemRequested(notification: T.NotificationInfo): async {
-    txIndex: T.TxIndex;
-    redemptionPdf: T.ArrayFile;
-  } {
+  public shared({ caller }) func redeemRequested(profile: T.UserProfile, notification: T.NotificationInfo): async [T.RedemptionItemPdf] {
     _callValidation(caller);
 
-    let tokenId = switch(notification.tokenId) {
-      case(null) throw Error.reject("tokenId not provided");
+    let items = switch(notification.items) {
+      case(null) throw Error.reject("items not provided");
       case(?value) value;
     };
-    let amount = switch(notification.quantity) {
-      case(null) throw Error.reject("quantity not provided");
-      case(?value) value;
-    };
+
+    var volume: Nat = 0;
+    // summatory of volumes
+    for ({ volume = vol } in items.vals()) { volume += vol };
+
     let periodStart = switch(notification.redeemPeriodStart) {
       case(null) throw Error.reject("redeemPeriodStart not provided");
       case(?value) value;
@@ -885,139 +951,207 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     // - items: Un url identificador de los items. Esta información debe traerse al momento de hacer el importe de los IRECs.
     // - periodStart y periodEnd: Las fechas de inicio y fin del periodo de redención. Esto debe ser un input del usuario.
     // - locale: El idioma en que se quiere obtener el "redemption statement" (ej. "en", "es"). Este debe ser un input del usuario.
+    var parts = 3;
 
-    let redemptionPdf: T.ArrayFile = [1,2,3,4,5,6,7,8];
+    let headers = [
+      {
+        name = "Response-Part-Key";
+        value = UUID.toText(await Source.Source().new());
+      },
+      {
+        name = "Response-Part-Number";
+        value = Nat.toText(parts);
+      }
+    ];
 
-    // TODO commented while resolve troubles with request 👇
-    // let pdfJson = await HTTP.canister.post({
-    //     url = HTTP.apiUrl # "redemption";
-    //     port = null;
-    //     uid = ?notification.receivedBy;
-    //     headers = [];
-    //     bodyJson = switch(Serde.JSON.toText(to_candid({
-    //       volume = amount;
-    //       beneficiary = Principal.toText(notification.receivedBy);
-    //       items = tokenId;
-    //       periodStart;
-    //       periodEnd;
-    //       locale;
-    //     }), ["volume", "beneficiary", "items", "periodStart", "periodEnd", "locale"], null)) {
-    //       case(#err(error)) throw Error.reject("Cannot serialize data");
-    //       case(#ok(value)) value;
-    //     };
-    //   });
+    let bodyJson = switch(Serde.JSON.toText(to_candid({
+      volume = Nat.toText(volume);
+      beneficiary = profile.evidentBID;
+      // TODO undo this value, replace `id = ...` to `id = x.id`
+      items = Array.map<T.RedemptionItem, { id: Text; volume: Text }>(items, func x = { id = "01J5QX61TEQASM6XE429SPEP0J"; volume = Nat.toText(x.volume) });
+      periodStart;
+      periodEnd;
+      locale;
+    }), ["volume", "beneficiary", "items", "periodStart", "periodEnd", "locale"], null)) {
+      case(#err(error)) throw Error.reject("Cannot serialize data");
+      case(#ok(value)) value;
+    };
 
-    // let redemptionPdf: T.ArrayFile = switch(Serde.JSON.fromText(pdfJson, null)) {
-    //   case(#err(_)) throw Error.reject("cannot serialize asset data");
-    //   case(#ok(blob)) {
-    //     let response: ?{ pdf: T.ArrayFile } = from_candid(blob);
+    var pdf: [Nat] = [];
 
-    //     switch(response) {
-    //       case(null) throw Error.reject("cannot serialize PDF file data");
-    //       case(?value) value.pdf;
-    //     };
-    //   };
-    // };
+    // recover all pdf parts
+    while (parts > 0) {
+      let pdfJson = await HTTP.canister.post({
+          url = HTTP.apiUrl # "redemptions";
+          port = null;
+          uid = null;
+          headers;
+          bodyJson;
+        });
+        Debug.print("✅ response --> " # debug_show (pdfJson));
 
-    let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
-      case (null) throw Error.reject("Token not found");
-      case (?cid) await Token.canister(cid).redeemRequested({
-        owner = {
-          owner = notification.receivedBy;
-          subaccount = null;
+      switch(Serde.JSON.fromText(pdfJson, null)) {
+        case(#err(_)) throw Error.reject("cannot serialize PDF file data");
+        case(#ok(blob)) {
+          let response: ?{ data: [Nat]; parts: Nat } = from_candid(blob);
+
+          switch(response) {
+            case(null) throw Error.reject("cannot serialize PDF file data");
+            case(?pdfResponse) {
+              parts := pdfResponse.parts;
+              pdf := Array.flatten<Nat>([pdf, pdfResponse.data]);
+            }
+          };
         };
-        amount;
-      });
+      };
     };
 
-    let txIndex = switch(transferResult) {
-      case(#Err(error)) throw Error.reject(switch(error) {
-        case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
-        case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
-        case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
-        case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
-        case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
-        case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
-        case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
-        case (#TooOld) "#TooOld";
-      });
-      case(#Ok(value)) value;
+    let redemptionItems = Buffer.Buffer<T.RedemptionItemPdf>(16);
+
+    for({ id; volume } in items.vals()) {
+      let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(id)) {
+        case (null) throw Error.reject("Token not found");
+        case (?cid) await Token.canister(cid).redeemRequested({
+          owner = {
+            owner = notification.receivedBy;
+            subaccount = null;
+          };
+          amount = volume;
+        });
+      };
+
+      let txIndex = switch(transferResult) {
+        case(#Err(error)) throw Error.reject(switch(error) {
+          case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
+          case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
+          case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
+          case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
+          case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
+          case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
+          case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
+          case (#TooOld) "#TooOld";
+        });
+        case(#Ok(value)) value;
+      };
+
+      // let { pdf } = switch(Array.find<{ id: T.TokenId; pdf: [Nat] }>(pdfItems, func x = x.id == id)) {
+      //   case(null) throw Error.reject("TokenId not found in redmeption");
+      //   case(?value) value;
+      // };
+
+      redemptionItems.add({ id; txIndex; volume; pdf = Array.map<Nat, Nat8>(pdf, func x = Nat8.fromNat(x)); });
     };
 
-    { txIndex; redemptionPdf; }
+    Buffer.toArray<T.RedemptionItemPdf>(redemptionItems);
   };
 
-  public shared({ caller }) func redeem(owner: T.UID, tokenId: T.TokenId, amount: T.TokenAmount, periodStart: Text, periodEnd: Text, locale: Text): async {
-    txIndex: T.TxIndex;
-    redemptionPdf: T.ArrayFile;
-  } {
+  public shared({ caller }) func redeem(owner: T.UID, evidentBID: T.EvidentBID, items: [T.RedemptionItem], periodStart: Text, periodEnd: Text, locale: Text): async [T.RedemptionItemPdf] {
     _callValidation(caller);
+
+    var volume: Nat = 0;
+    // summatory of volumes
+    for ({ volume = vol } in items.vals()) { volume += vol };
+
+    // // TODO commented because is just for test
+    // let pdf = PDF.pdf;
 
     // - volume: El volumen de I-RECs que se quiere redimir.
     // - beneficiary: El identificador del beneficiario de la redención.
     // - items: Un url identificador de los items. Esta información debe traerse al momento de hacer el importe de los IRECs.
     // - periodStart y periodEnd: Las fechas de inicio y fin del periodo de redención. Esto debe ser un input del usuario.
     // - locale: El idioma en que se quiere obtener el "redemption statement" (ej. "en", "es"). Este debe ser un input del usuario.
+    var parts = 3;
 
-    let redemptionPdf: T.ArrayFile = [1,2,3,4,5,6,7,8];
+    let headers = [
+      {
+        name = "Response-Part-Key";
+        value = UUID.toText(await Source.Source().new());
+      },
+      {
+        name = "Response-Part-Number";
+        value = Nat.toText(parts);
+      }
+    ];
 
-    // TODO commented while resolve troubles with request 👇
-    // let pdfJson = await HTTP.canister.post({
-    //     url = HTTP.apiUrl # "transactions/redemption";
-    //     port = null;
-    //     uid = ?owner;
-    //     headers = [];
-    //     bodyJson = switch(Serde.JSON.toText(to_candid({
-    //       volume = amount;
-    //       beneficiary = Principal.toText(owner);
-    //       items = tokenId;
-    //       periodStart;
-    //       periodEnd;
-    //       locale;
-    //     }), ["volume", "beneficiary", "items", "periodStart", "periodEnd", "locale"], null)) {
-    //       case(#err(error)) throw Error.reject("Cannot serialize data");
-    //       case(#ok(value)) value;
-    //     };
-    //   });
+    let bodyJson = switch(Serde.JSON.toText(to_candid({
+      volume = Nat.toText(volume);
+      beneficiary = evidentBID;
+      // TODO undo this value, replace `id = ...` to `x.id`
+      items = Array.map<T.RedemptionItem, { id: Text; volume: Text }>(items, func x = { id = "01J5QX61TEQASM6XE429SPEP0J"; volume = Nat.toText(x.volume) });
+      periodStart;
+      periodEnd;
+      locale;
+    }), ["volume", "beneficiary", "items", "periodStart", "periodEnd", "locale"], null)) {
+      case(#err(error)) throw Error.reject("Cannot serialize data");
+      case(#ok(value)) value;
+    };
 
-    // let redemptionPdf: T.ArrayFile = switch(Serde.JSON.fromText(pdfJson, null)) {
-    //   case(#err(_)) throw Error.reject("cannot serialize asset data");
-    //   case(#ok(blob)) {
-    //     let response: ?{ pdf: T.ArrayFile } = from_candid(blob);
+    var pdf: [Nat] = [];
 
-    //     switch(response) {
-    //       case(null) throw Error.reject("cannot serialize PDF file data");
-    //       case(?value) value.pdf;
-    //     };
-    //   };
-    // };
+    // recover all pdf parts
+    while (parts > 0) {
+      let pdfJson = await HTTP.canister.post({
+          url = HTTP.apiUrl # "redemptions";
+          port = null;
+          uid = null;
+          headers;
+          bodyJson;
+        });
+        Debug.print("✅ response --> " # debug_show (pdfJson));
 
-    let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(tokenId)) {
-      case (null) throw Error.reject("Token not found");
-      case (?cid) await Token.canister(cid).redeem({
-        owner = {
-          owner = owner;
-          subaccount = null;
+      switch(Serde.JSON.fromText(pdfJson, null)) {
+        case(#err(_)) throw Error.reject("cannot serialize PDF file data");
+        case(#ok(blob)) {
+          let response: ?{ data: [Nat]; parts: Nat } = from_candid(blob);
+
+          switch(response) {
+            case(null) throw Error.reject("cannot serialize PDF file data");
+            case(?pdfResponse) {
+              parts := pdfResponse.parts;
+              pdf := Array.flatten<Nat>([pdf, pdfResponse.data]);
+            }
+          };
         };
-        amount;
-      });
+      };
     };
 
-    let txIndex = switch(transferResult) {
-      case(#Err(error)) throw Error.reject(switch(error) {
-        case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
-        case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
-        case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
-        case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
-        case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
-        case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
-        case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
-        case (#TooOld) "#TooOld";
-      });
-      case(#Ok(value)) value;
+    let redemptionItems = Buffer.Buffer<T.RedemptionItemPdf>(16);
+
+    for({ id; volume; } in items.vals()) {
+      let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(id)) {
+        case (null) throw Error.reject("Token not found");
+        case (?cid) await Token.canister(cid).redeem({
+          owner = {
+            owner = owner;
+            subaccount = null;
+          };
+          amount = volume;
+        });
+      };
+
+      let txIndex = switch(transferResult) {
+        case(#Err(error)) throw Error.reject(switch(error) {
+          case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
+          case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
+          case (#CreatedInFuture {ledger_time}) "#CreatedInFuture: " # Nat64.toText(ledger_time);
+          case (#Duplicate {duplicate_of}) "#Duplicate: " # Nat.toText(duplicate_of);
+          case (#GenericError {error_code; message}) "#GenericError: " # Nat.toText(error_code) # " " # message;
+          case (#InsufficientFunds {balance}) "#InsufficientFunds: " # Nat.toText(balance);
+          case (#TemporarilyUnavailable) "#TemporarilyUnavailable";
+          case (#TooOld) "#TooOld";
+        });
+        case(#Ok(value)) value;
+      };
+
+      // let { pdf } = switch(Array.find<{ id: T.TokenId; pdf: [Nat] }>(pdfItems, func x = x.id == id)) {
+      //   case(null) throw Error.reject("TokenId not found in redmeption");
+      //   case(?value) value;
+      // };
+
+      redemptionItems.add({ id; txIndex; volume; pdf = Array.map<Nat, Nat8>(pdf, func x = Nat8.fromNat(x)); });
     };
 
-    { txIndex; redemptionPdf }
+    Buffer.toArray<T.RedemptionItemPdf>(redemptionItems);
   };
 
   type BurnedTokenIndex = {

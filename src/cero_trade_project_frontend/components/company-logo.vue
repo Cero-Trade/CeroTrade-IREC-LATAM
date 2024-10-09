@@ -9,7 +9,7 @@
     :offset-y="badgeOffset"
   >
     <v-img-load
-      :src="countrySrc"
+      :src="countrySrc?.toString()"
       :sizes="countrySizes"
       rounded="50%"
       cover
@@ -18,7 +18,7 @@
 
     <template #badge>
       <v-img-load
-        :src="energySrc"
+        :src="energySrc?.toString()"
         :sizes="energySizes"
         bg-color="#fff"
         border="2px solid #dedede"
@@ -32,12 +32,12 @@
 
 <script setup>
 defineProps({
-  energySrc: String,
+  energySrc: [String, URL],
   energySizes: {
     type: String,
     default: "20px"
   },
-  countrySrc: String,
+  countrySrc: [String, URL],
   countrySizes: {
     type: String,
     default: "40px"

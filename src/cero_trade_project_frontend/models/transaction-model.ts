@@ -1,3 +1,4 @@
+import { Principal } from "@dfinity/principal";
 import { AssetInfoModel } from "./token-model";
 
 export type TokensICP = number;
@@ -20,8 +21,8 @@ export type TxTypeDef = keyof typeof TxType
 export interface TransactionInfo {
   transactionId: string;
   blockHash: number;
-  from: string;
-  to?: string;
+  from: { principal: Principal; name: string };
+  to?: { principal: Principal; name: string };
   tokenId: string;
   txType: TxTypeDef;
   tokenAmount: number;
@@ -33,9 +34,9 @@ export interface TransactionInfo {
 
 export interface TransactionHistoryInfo {
   transactionId: string;
-  blockHash: number;
-  from: string;
-  to?: string;
+  txIndex: number;
+  from: { principal: Principal; name: string };
+  to?: { principal: Principal; name: string };
   assetInfo?: AssetInfoModel;
   txType: TxTypeDef;
   tokenAmount: number;

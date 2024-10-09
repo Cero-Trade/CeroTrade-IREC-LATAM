@@ -28,6 +28,13 @@ module {
 
   public let tokenDecimals: Nat8 = 8;
 
+  public func githubBranch(): Text {
+    switch(ENV.DFX_NETWORK) {
+      case("ic") "main";
+      case _ "develop";
+    };
+  };
+
   // TODO try to change to simplest format to better filtering
   // global date format variable
   public let dateFormat: Text = "YYYY-MM-DDTHH:mm:ss.sssssssssZ";
@@ -91,8 +98,22 @@ module {
     Int.abs(Float.toInt(float))
   };
 
+  /// helper function to convert Token Balance to Text
+  public func tokenToText(token: ICPTypes.Balance, decimals: ?Nat8): async Text {
+    let f = await textToFloat(Nat.toText(token));
+    
+    let decimalsValue : Float = Float.fromInt64(Int64.fromNat64(Nat64.fromNat(Nat8.toNat(switch(decimals) {
+      case(null) tokenDecimals;
+      case(?value) value;
+    }))));
+
+    let float = f / Float.pow(10.0, decimalsValue);
+    Float.toText(float)
+  };
+
   public type UID = Principal;
   public type EvidentID = Text;
+  public type EvidentBID = Text;
   public type CanisterId = Principal;
   public type TokenId = Text;
   public type TransactionId = Text;
@@ -103,8 +124,7 @@ module {
   public type TxIndex = Nat;
   public type TokenAmount = Nat;
   public type Price = { e8s: Nat64 };
-  public type UserToken = Text;
-  
+  public type UserTokenAuth = Text;
 
   //
   // Users
@@ -130,21 +150,37 @@ module {
 
   public type UserInfo = {
     companyLogo: ?ArrayFile;
-    vaultToken: Text;
+    companyId: Text;
+    companyName: Text;
+    country: Text;
+    city: Text;
+    address: Text;
+    email: Text;
+    vaultToken: UserTokenAuth;
+    evidentBID: EvidentBID;
     principal: Principal;
   };
 
   public type UserProfile = {
     companyLogo: ArrayFile;
-    principalId: Text;
+    principalId: Principal;
+    evidentBID: EvidentBID;
     companyId: Text;
     companyName: Text;
     city: Text;
     country: Text;
     address: Text;
     email: Text;
-    createdAt: Text;
-    updatedAt: Text;
+  };
+
+  public type SinglePortfolio = {
+    tokenInfo: TokenInfo;
+    redemptions: [TransactionInfo];
+  };
+
+  public type Portfolio = {
+    tokenInfo: TokenInfo;
+    redemptions: [TokenAmount];
   };
 
   public type TokenInfo = {
@@ -162,8 +198,8 @@ module {
   public type TransactionInfo = {
     transactionId: TransactionId;
     txIndex: TxIndex;
-    from: UID;
-    to: ?BID;
+    from: { principal: UID; name: Text };
+    to: ?{ principal: BID; name: Text };
     tokenId: TokenId;
     txType: TxType;
     tokenAmount: TokenAmount;
@@ -176,8 +212,8 @@ module {
   public type TransactionHistoryInfo = {
     transactionId: TransactionId;
     txIndex: TxIndex;
-    from: UID;
-    to: ?BID;
+    from: { principal: UID; name: Text };
+    to: ?{ principal: BID; name: Text };
     assetInfo: ?AssetInfo;
     txType: TxType;
     tokenAmount: TokenAmount;
@@ -231,6 +267,23 @@ module {
     specifications: Specifications;
   };
 
+  public type RedemptionItem = {
+    id: TokenId;
+    volume: TokenAmount;
+  };
+
+  public type RedemptionRequest = {
+    id: TokenId;
+    txIndex: TxIndex;
+  };
+
+  public type RedemptionItemPdf = {
+    id: TokenId;
+    txIndex: TxIndex;
+    volume: TokenAmount;
+    pdf: ArrayFile;
+  };
+
   //
   // Market types
   //
@@ -244,8 +297,17 @@ module {
   };
 
   public type MarketplaceSellersInfo = {
-    tokenId: Text;
+    tokenId: TokenId;
     sellerId: UID;
+    sellerName: Text;
+    priceE8S: Price;
+    mwh: TokenAmount;
+  };
+
+  public type MarketplaceSellersResponse = {
+    tokenId: TokenId;
+    sellerId: UID;
+    sellerName: Text;
     priceE8S: Price;
     assetInfo: ?AssetInfo;
     mwh: TokenAmount;
@@ -257,6 +319,7 @@ module {
   };
 
   public type UserTokenInfo = {
+    sellerName: Text;
     quantity: TokenAmount;
     priceE8S: Price;
   };
@@ -275,11 +338,10 @@ module {
     status: ?NotificationStatus;
 
     eventStatus: ?NotificationEventStatus;
-    tokenId: ?TokenId;
     receivedBy: BID;
     triggeredBy: ?UID;
-    quantity: ?TokenAmount;
 
+    items: ?[RedemptionItem];
     redeemPeriodStart: ?Text;
     redeemPeriodEnd: ?Text;
     redeemLocale: ?Text;

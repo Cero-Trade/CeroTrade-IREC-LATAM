@@ -18,7 +18,7 @@ if {[info exists env(INTERNET_IDENTITY_PASSPHRASE)]} {
 }
 
 # Get all canisters status
-set canisters {cero_trade_project_frontend agent http_service user_index token_index notification_index transaction_index bucket_index marketplace statistics}
+set canisters {cero_trade_project_frontend agent http_service user_index token_index transaction_index bucket_index marketplace statistics}
 
 foreach canister $canisters {
 	puts "⬇️====-$canister-====⬇️"

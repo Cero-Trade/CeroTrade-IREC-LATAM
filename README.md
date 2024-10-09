@@ -41,7 +41,7 @@ Below is the system architecture used by Cero Trade, which includes ICP Canister
 
 - **User Interface & API Gateway:** Users interact with the system through our UI, which is connected to an API Gateway. This allows for secure communication between users and our internal components.
 - **Nginx Proxy & Load Balancer:** We use a reverse proxy (Nginx) and load balancer to ensure that the platform handles traffic smoothly, while the firewall (WAF) adds an extra layer of security to protect against external threats.
-- **EC2 Instances & Docker Containers:** Our core API services, hosted in Docker containers, manage user data and handle interactions with external APIs (Evident API, and Cero Trade API).
+- **EC2 Instances & Docker Containers:** Our core API services, hosted in Docker containers, manage user data and handle interactions with external APIs. This includes integrating with external systems like the Evident API, which verifies user identity and helps manage KYC processes.
 - **ICP Canisters:** The key logic of the platform, as we mentioned earlier, runs on Internet Computer Canisters. This ensures the security and decentralized nature of the platform while allowing for seamless interaction with the outside infrastructure.
 
 ---

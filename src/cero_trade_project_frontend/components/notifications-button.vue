@@ -29,7 +29,7 @@
           :disabled="!tabs[0].data?.length"
           :loading="loadingClear"
           :class="{ hidden: currentTab !== 0 }"
-          @click="clearNotifications"
+          @click="clearGeneralNotifications"
         >Clear notifications</v-btn>
       </div>
 
@@ -53,9 +53,9 @@
             <img src="@/assets/sources/icons/reload-icon.png" alt="reload icon" style="width: 22px; height: 22px">
           </v-btn>
 
-          <v-btn size="32" variant="text" color="#333">
+          <!-- <v-btn size="32" variant="text" color="#333">
             <img src="@/assets/sources/icons/config.svg" alt="config icon" style="filter: invert(70%);">
-          </v-btn>
+          </v-btn> -->
         </div>
       </v-tabs>
 
@@ -78,8 +78,8 @@
                 </v-badge>
               </div>
 
-              <p v-if="item.content">{{ item.content }}</p>
-              <p v-else>status: 
+              <p v-if="item.content" class="mb-2">{{ item.content }}</p>
+              <p v-if="item.eventStatus" class="mb-2">status: 
                 <v-chip
                   density="compact"
                   :style="`--color: rgb(var(--v-theme-${item.eventStatus === NotificationEventStatus.accepted
@@ -107,7 +107,7 @@
                 min-width="min-content"
                 variant="text"
                 color="#667085"
-                class="px-2"
+                class="px-2 mt-4"
                 style="translate: -8px 0;"
                 :loading="loadingDismiss === item.id"
                 @click="dismiss(item)"
@@ -221,7 +221,7 @@ async function getData(tab) {
   if (loadingData.value) return
   loadingData.value = true
 
-  const notificationTypes = tab != null ? tabs.value[tab].key : tabs.value.flatMap(e => e.key)
+  const notificationTypes = /* tab != null ? tabs.value[tab].key :  */tabs.value.flatMap(e => e.key)
 
   try {
     const response = await AgentCanister.getNotifications(null, null, notificationTypes)
@@ -263,7 +263,7 @@ async function markNotificationsAsSeen() {
   loadingSeen.value = false
 }
 
-async function clearNotifications() {
+async function clearGeneralNotifications() {
   if (loadingClear.value) return
   loadingClear.value = true
 
@@ -272,7 +272,7 @@ async function clearNotifications() {
     notificationIds = generalTab.data?.map(e => e.id)
     if (!notificationIds?.length) return
 
-    await AgentCanister.clearGeneralNotifications(notificationIds)
+    await AgentCanister.clearNotifications(notificationIds)
 
     tabs.value[0].data = []
   } catch (error) {
@@ -288,7 +288,7 @@ async function dismiss(item) {
 
   try {
     if (item.notificationType === NotificationType.general) {
-      await AgentCanister.clearGeneralNotifications([item.id])
+      await AgentCanister.clearNotifications([item.id])
     } else {
       await AgentCanister.updateEventNotification(item.id, NotificationEventStatus.declined)
     }
@@ -305,27 +305,30 @@ async function dismiss(item) {
 async function execute(item) {
   if (loadingExecute.value || loadingDismiss.value || !isReceiver(item)) return
   loadingExecute.value = item.id
+  
+  switch (item.notificationType) {
+    case NotificationType.beneficiary:
+        await addBeneficiaryRequested(item)
+      break;
 
-  try {
-    switch (item.notificationType) {
-
-      case NotificationType.beneficiary:
-          await AgentCanister.addBeneficiaryRequested(item.id)
-        break;
-
-      case NotificationType.redeem:
-          modalApprove.value.showModal(item)
-        return;
-    }
-
-    const index = tabs.value[currentTab.value].data.findIndex(e => e.id === item.id)
-    tabs.value[currentTab.value].data.splice(index, 1)
-
-  } catch (error) {
-    toast.error(error)
+    case NotificationType.redeem:
+        modalApprove.value.showModal(item)
+      return;
   }
 
   loadingExecute.value = null
+}
+
+async function addBeneficiaryRequested(item) {
+  try {
+    await AgentCanister.addBeneficiaryRequested(item.id)
+
+    const index = tabs.value[currentTab.value].data.findIndex(e => e.id === item.id)
+    tabs.value[currentTab.value].data.splice(index, 1)
+    toast.success("Your beneficiary has been added successfully!")
+  } catch (error) {
+    toast.error(error)
+  }
 }
 
 async function redeemRequested(item) {
@@ -336,6 +339,7 @@ async function redeemRequested(item) {
 
     const index = tabs.value[currentTab.value].data.findIndex(e => e.id === item.id)
     tabs.value[currentTab.value].data.splice(index, 1)
+    toast.success("Your redemption has been successful!")
   } catch (error) {
     toast.error(error.toString())
   }

@@ -9,6 +9,9 @@ import Text "mo:base/Text";
 import Error "mo:base/Error";
 import Array "mo:base/Array";
 import Iter "mo:base/Iter";
+import Debug "mo:base/Debug";
+import Hash "mo:base/Hash";
+import Time "mo:base/Time";
 
 // interfaces
 import HTTP "./http_service/http_service_interface";
@@ -34,48 +37,50 @@ module IC_MANAGEMENT_CANISTER_INTERFACE {
     };
   };
 
+  // public type AccountIdentifier = Principal;
+  // public type Tokens = Nat;
+  // public type Memo = Text;
+
+  // public type Operation = {
+  //   #Burn: { from: AccountIdentifier; amount: Tokens; };
+  //   #Mint: { to: AccountIdentifier; amount: Tokens; };
+  //   #Transfer: { from: AccountIdentifier; to: AccountIdentifier; amount: Tokens; fee: Tokens; };
+  // };
+
+  // public type Transaction = {
+  //   operation: Operation;
+  //   memo: Memo;
+  //   createdAtTime: ?Time.Time;
+  // };
+
+  // public func serializeTransaction(tx: Transaction): Blob {
+  //   let operationBlob = switch (tx.operation) {
+  //     case (#Burn({ from; amount })) { Blob.concat([Blob.fromBytes(#text "Burn"), from.toBlob(), Blob.fromNat(amount)]) };
+  //     case (#Mint({ to; amount })) { Blob.concat([Blob.fromBytes(#text "Mint"), to.toBlob(), Blob.fromNat(amount)]) };
+  //     case (#Transfer({ from; to; amount; fee })) { Blob.concat([Blob.fromBytes(#text "Transfer"), from.toBlob(), to.toBlob(), Blob.fromNat(amount), Blob.fromNat(fee)]) };
+  //   };
+
+  //   let memoBlob = Blob.fromBytes(tx.memo);
+  //   let timeBlob = tx.createdAtTime.map((t) = Blob.fromNat(t)).getOrElse(Blob.fromBytes(#text ""));
+  //   return Blob.concat([operationBlob, memoBlob, timeBlob]);
+  // }
+
+  // // TODO idk what is happend here
+  // public func getTransactionHash(tx: Transaction): Blob {
+  //   let serializedTx = serializeTransaction(tx);
+
+  //   Debug.print(Hash.sha256(serializedTx));
+  //   return Hash.sha256(serializedTx);
+  // }
+
   public type WasmModuleName = {
     #token: Text;
     #users: Text;
     #transactions: Text;
-    #notifications: Text;
     #bucket: Text;
   };
 
   public let LOW_MEMORY_LIMIT: Nat = 50000;
-
-  public func getWasmModule(moduleName: WasmModuleName): async Blob {
-    let wasmModuleName = switch(moduleName) {
-      case(#token(value)) value;
-      case(#users(value)) value;
-      case(#transactions(value)) value;
-      case(#notifications(value)) value;
-      case(#bucket(value)) value;
-    };
-
-    let branch = switch(ENV.DFX_NETWORK) {
-      case("ic") "main";
-      case _ "develop";
-    };
-    let wasmModule = await HTTP.canister.get({
-      url = "https://raw.githubusercontent.com/Cero-Trade/mvp1.0/" # branch # "/wasm_modules/" # wasmModuleName # ".json";
-      port = null;
-      uid = null;
-      headers = []
-    });
-
-    let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
-    let wasm_array = Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
-      switch (Nat.fromText(part)) {
-        case null 0;
-        case (?n) n;
-      }
-    });
-    let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
-
-    // return wasm
-    Blob.fromArray(nums8);
-  };
 
   public type CanisterSettings = {
     controllers: ?[Principal];
