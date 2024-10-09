@@ -14,6 +14,7 @@ import Array "mo:base/Array";
 // interfaces
 import IC_MANAGEMENT "../ic_management_canister_interface";
 import Transactions "../transactions/transactions_interface";
+import HTTP "../http_service/http_service_interface";
 
 // types
 import T "../types";
