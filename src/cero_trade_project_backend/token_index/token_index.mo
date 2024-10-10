@@ -115,7 +115,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     _callValidation(caller);
 
     let wasmModule = await HTTP.canister.get({
-      url = "https://raw.githubusercontent.com/Cero-Trade/CeroTrade-IREC-LATAM/" # T.githubBranch() # "/wasm_modules/token.json";
+      url = HTTP.apiUrl # "wasm-modules/token";
       port = null;
       uid = null;
       headers = []
