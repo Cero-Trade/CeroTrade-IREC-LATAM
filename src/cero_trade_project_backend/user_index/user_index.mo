@@ -108,25 +108,12 @@ actor class UserIndex() = this {
         headers = []
       });
 
-    let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
-    let wasm_array = Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
-      switch (Nat.fromText(part)) {
-        case null 0;
-        case (?n) n;
-      }
-    });
-    let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
-
-    // register wasm
-    wasm_module := Blob.fromArray(nums8);
-
-    // update deployed canisters
-    for ({ canister_id } in usersDirectory.vals()) {
-      await IC_MANAGEMENT.ic.install_code({
-        arg = to_candid();
-        wasm_module;
-        mode = #upgrade;
-        canister_id;
+      let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
+      let wasm_array = Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
+        switch (Nat.fromText(part)) {
+          case null 0;
+          case (?n) n;
+        }
       });
       let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
 
