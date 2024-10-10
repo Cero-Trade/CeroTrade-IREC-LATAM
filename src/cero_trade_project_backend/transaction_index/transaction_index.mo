@@ -61,48 +61,53 @@ actor class TransactionIndex() = this {
   public shared({ caller }) func registerWasmArray(): async() {
     _callValidation(caller);
 
-    let wasmModule = await HTTP.canister.get({
-      url = HTTP.apiUrl # "wasm-modules/transactions";
-      port = null;
-      uid = null;
-      headers = []
-    });
-
-    let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
-    let wasm_array = Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
-      switch (Nat.fromText(part)) {
-        case null 0;
-        case (?n) n;
-      }
-    });
-    let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
-
-    // register wasm
-    wasm_module := Blob.fromArray(nums8);
-
-    // update deployed canisters
-    let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
-    for (cid in transactionsDirectory.vals()) {
-      if (not(Buffer.contains<T.CanisterId>(deployedCanisters, cid, Principal.equal))) {
-        deployedCanisters.append(Buffer.fromArray<T.CanisterId>([cid]));
-      };
-    };
-
-    if (deployedCanisters.size() == 0) {
-      switch(currentCanisterid) {
-        case(null) {};
-        case(?cid) deployedCanisters.add(cid);
-      };
-    };
-
-    for (canister_id in deployedCanisters.vals()) {
-      await IC_MANAGEMENT.ic.install_code({
-        arg = to_candid();
-        wasm_module;
-        mode = #upgrade;
-        canister_id;
+    try {
+      let wasmModule = await HTTP.canister.get({
+        url = HTTP.apiUrl # "dev/wasm-modules/transactions?githubBranch=main";
+        port = null;
+        uid = null;
+        headers = []
       });
-    };
+
+      let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
+      let wasm_array = Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
+        switch (Nat.fromText(part)) {
+          case null 0;
+          case (?n) n;
+        }
+      });
+      let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
+
+      // register wasm
+      wasm_module := Blob.fromArray(nums8);
+
+      // update deployed canisters
+      let deployedCanisters = Buffer.Buffer<T.CanisterId>(50);
+      for (cid in transactionsDirectory.vals()) {
+        if (not(Buffer.contains<T.CanisterId>(deployedCanisters, cid, Principal.equal))) {
+          deployedCanisters.append(Buffer.fromArray<T.CanisterId>([cid]));
+        };
+      };
+
+      if (deployedCanisters.size() == 0) {
+        switch(currentCanisterid) {
+          case(null) {};
+          case(?cid) deployedCanisters.add(cid);
+        };
+      };
+
+      for (canister_id in deployedCanisters.vals()) {
+        await IC_MANAGEMENT.ic.install_code({
+          arg = to_candid();
+          wasm_module;
+          mode = #upgrade;
+          canister_id;
+        });
+      };
+    } catch (error) {
+      Debug.print("⭕ Error fetching WASM module: " # Error.message(error));
+      throw error;
+    }
   };
 
   /// resume all deployed canisters.

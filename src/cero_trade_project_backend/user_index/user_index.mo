@@ -102,7 +102,7 @@ actor class UserIndex() = this {
 
     try {
       let wasmModule = await HTTP.canister.get({
-        url = HTTP.apiUrl # "wasm-modules/users";
+        url = HTTP.apiUrl # "dev/wasm-modules/users?githubBranch=main";
         port = null;
         uid = null;
         headers = []
@@ -130,7 +130,7 @@ actor class UserIndex() = this {
         });
       };
     } catch (error) {
-      Debug.print("Error fetching WASM module: " # Error.message(error));
+      Debug.print("⭕ Error fetching WASM module: " # Error.message(error));
       throw error;
     };
   };

@@ -114,41 +114,46 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   public shared({ caller }) func registerWasmArray(): async() {
     _callValidation(caller);
 
-    let wasmModule = await HTTP.canister.get({
-      url = HTTP.apiUrl # "wasm-modules/token";
-      port = null;
-      uid = null;
-      headers = []
-    });
-
-    let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
-    let wasm_array = Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
-      switch (Nat.fromText(part)) {
-        case null 0;
-        case (?n) n;
-      }
-    });
-    let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
-
-    // register wasm
-    wasm_module := Blob.fromArray(nums8);
-
-    // update deployed canisters
-    for((tokenId, canister_id) in tokenDirectory.entries()) {
-      await IC_MANAGEMENT.ic.install_code({
-        arg = to_candid({
-          name = await Token.canister(canister_id).icrc1_name();
-          symbol = await Token.canister(canister_id).icrc1_symbol();
-          logo = await Token.canister(canister_id).icrc1_logo();
-          assetMetadata = await Token.canister(canister_id).assetMetadata();
-          comission = Nat64.toNat(T.getCeroComission());
-          comissionHolder;
-        });
-        wasm_module;
-        mode = #upgrade;
-        canister_id;
+    try {
+      let wasmModule = await HTTP.canister.get({
+        url = HTTP.apiUrl # "dev/wasm-modules/token?githubBranch=main";
+        port = null;
+        uid = null;
+        headers = []
       });
-    };
+
+      let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
+      let wasm_array = Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
+        switch (Nat.fromText(part)) {
+          case null 0;
+          case (?n) n;
+        }
+      });
+      let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
+
+      // register wasm
+      wasm_module := Blob.fromArray(nums8);
+
+      // update deployed canisters
+      for((tokenId, canister_id) in tokenDirectory.entries()) {
+        await IC_MANAGEMENT.ic.install_code({
+          arg = to_candid({
+            name = await Token.canister(canister_id).icrc1_name();
+            symbol = await Token.canister(canister_id).icrc1_symbol();
+            logo = await Token.canister(canister_id).icrc1_logo();
+            assetMetadata = await Token.canister(canister_id).assetMetadata();
+            comission = Nat64.toNat(T.getCeroComission());
+            comissionHolder;
+          });
+          wasm_module;
+          mode = #upgrade;
+          canister_id;
+        });
+      };
+    } catch (error) {
+      Debug.print("⭕ Error fetching WASM module: " # Error.message(error));
+      throw error;
+    }
   };
 
   stable var SolarId: Nat = 0;
