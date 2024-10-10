@@ -22,10 +22,11 @@ import ENV "./env";
 module IC_MANAGEMENT_CANISTER_INTERFACE {
   public let ic : IC = actor ("aaaaa-aa");
 
-  public func getControllers(canister_id: Principal): async ?[Principal] {
-    let status = await ic.canister_status({ canister_id });
-    status.settings.controllers
-  };
+  /// this method is getting time out troubles
+  // public func getControllers(canister_id: Principal): async ?[Principal] {
+  //   let status = await ic.canister_status({ canister_id });
+  //   status.settings.controllers
+  // };
 
   // global admin assert validation
   public func adminValidation(caller: Principal, controllers: ?[Principal]) {
