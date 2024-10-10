@@ -45,14 +45,14 @@ actor class BucketIndex() = this {
   /// get canister controllers
   public shared({ caller }) func getControllers(): async ?[Principal] {
     IC_MANAGEMENT.adminValidation(caller, controllers);
-    (await IC_MANAGEMENT.ic.canister_status({ canister_id = Principal.fromActor(this) })).settings.controllers;
+    await IC_MANAGEMENT.getControllers(Principal.fromActor(this));
   };
 
   /// register canister controllers
   public shared({ caller }) func registerControllers(): async () {
     _callValidation(caller);
 
-    controllers := (await IC_MANAGEMENT.ic.canister_status({ canister_id = Principal.fromActor(this) })).settings.controllers
+    controllers := await IC_MANAGEMENT.getControllers(Principal.fromActor(this));
   };
 
   /// register wasm module to dynamic users canister, only admin can run it

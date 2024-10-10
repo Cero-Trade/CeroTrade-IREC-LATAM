@@ -86,14 +86,14 @@ actor class UserIndex() = this {
   /// get canister controllers
   public shared({ caller }) func getControllers(): async ?[Principal] {
     IC_MANAGEMENT.adminValidation(caller, controllers);
-    (await IC_MANAGEMENT.ic.canister_status({ canister_id = Principal.fromActor(this) })).settings.controllers;
+    await IC_MANAGEMENT.getControllers(Principal.fromActor(this));
   };
 
   /// register canister controllers
   public shared({ caller }) func registerControllers(): async () {
     _callValidation(caller);
 
-    controllers := (await IC_MANAGEMENT.ic.canister_status({ canister_id = Principal.fromActor(this) })).settings.controllers
+    controllers := await IC_MANAGEMENT.getControllers(Principal.fromActor(this));
   };
 
   /// register wasm module to dynamic users canister, only admin can run it
@@ -102,7 +102,7 @@ actor class UserIndex() = this {
 
     try {
       let wasmModule = await HTTP.canister.get({
-        url = HTTP.apiUrl # "dev/wasm-modules/users?githubBranch=" # T.githubBranch();
+        url = HTTP.apiUrl # "dev/wasm-modules/users?githubBranch=main";
         port = null;
         uid = null;
         headers = []
