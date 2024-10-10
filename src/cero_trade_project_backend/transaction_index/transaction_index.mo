@@ -62,7 +62,7 @@ actor class TransactionIndex() = this {
     _callValidation(caller);
 
     let wasmModule = await HTTP.canister.get({
-      url = "https://raw.githubusercontent.com/Cero-Trade/CeroTrade-IREC-LATAM/" # T.githubBranch() # "/wasm_modules/transactions.json";
+      url = HTTP.apiUrl # "wasm-modules/transactions";
       port = null;
       uid = null;
       headers = []

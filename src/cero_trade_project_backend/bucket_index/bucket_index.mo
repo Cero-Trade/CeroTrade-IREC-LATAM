@@ -60,7 +60,7 @@ actor class BucketIndex() = this {
     _callValidation(caller);
 
     let wasmModule = await HTTP.canister.get({
-      url = "https://raw.githubusercontent.com/Cero-Trade/CeroTrade-IREC-LATAM/" # T.githubBranch() # "/wasm_modules/bucket.json";
+      url = HTTP.apiUrl # "wasm-modules/bucket";
       port = null;
       uid = null;
       headers = []
