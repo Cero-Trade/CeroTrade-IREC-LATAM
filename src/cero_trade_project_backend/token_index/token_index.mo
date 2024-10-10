@@ -116,7 +116,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
 
     try {
       let wasmModule = await HTTP.canister.get({
-        url = HTTP.apiUrl # "dev/wasm-modules/token?githubBranch=main";
+        url = HTTP.apiUrl # "dev/wasm-modules/token?githubBranch=" # T.githubBranch();
         port = null;
         uid = null;
         headers = []

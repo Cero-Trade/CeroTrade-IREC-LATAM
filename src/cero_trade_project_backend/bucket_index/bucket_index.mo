@@ -61,7 +61,7 @@ actor class BucketIndex() = this {
 
     try {
       let wasmModule = await HTTP.canister.get({
-        url = HTTP.apiUrl # "dev/wasm-modules/bucket?githubBranch=main";
+        url = HTTP.apiUrl # "dev/wasm-modules/bucket?githubBranch=" # T.githubBranch();
         port = null;
         uid = null;
         headers = []

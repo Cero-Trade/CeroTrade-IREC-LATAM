@@ -63,7 +63,7 @@ actor class TransactionIndex() = this {
 
     try {
       let wasmModule = await HTTP.canister.get({
-        url = HTTP.apiUrl # "dev/wasm-modules/transactions?githubBranch=main";
+        url = HTTP.apiUrl # "dev/wasm-modules/transactions?githubBranch=" # T.githubBranch();
         port = null;
         uid = null;
         headers = []
