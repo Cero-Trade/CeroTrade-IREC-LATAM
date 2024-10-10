@@ -108,14 +108,14 @@ actor class Agent() = this {
   /// get canister controllers
   public shared({ caller }) func getControllers(): async ?[Principal] {
     IC_MANAGEMENT.adminValidation(caller, controllers);
-    await IC_MANAGEMENT.getControllers(Principal.fromActor(this));
+    (await IC_MANAGEMENT.ic.canister_status({ canister_id = Principal.fromActor(this) })).settings.controllers;
   };
 
   /// register canister controllers
   public shared({ caller }) func registerControllers(): async () {
     IC_MANAGEMENT.adminValidation(caller, controllers);
 
-    controllers := await IC_MANAGEMENT.getControllers(Principal.fromActor(this));
+    controllers := (await IC_MANAGEMENT.ic.canister_status({ canister_id = Principal.fromActor(this) })).settings.controllers;
 
     try {
       await UserIndex.registerControllers();

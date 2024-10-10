@@ -88,7 +88,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   /// get canister controllers
   public shared({ caller }) func getControllers(): async ?[Principal] {
     IC_MANAGEMENT.adminValidation(caller, controllers);
-    await IC_MANAGEMENT.getControllers(Principal.fromActor(this));
+    (await IC_MANAGEMENT.ic.canister_status({ canister_id = Principal.fromActor(this) })).settings.controllers;
   };
 
   /// get comisison holder
@@ -107,7 +107,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   public shared({ caller }) func registerControllers(): async () {
     _callValidation(caller);
 
-    controllers := await IC_MANAGEMENT.getControllers(Principal.fromActor(this));
+    controllers := (await IC_MANAGEMENT.ic.canister_status({ canister_id = Principal.fromActor(this) })).settings.controllers
   };
 
   /// register wasm module to dynamic token canister, only admin can run it
