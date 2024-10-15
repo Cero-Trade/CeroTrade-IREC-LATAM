@@ -94,19 +94,21 @@ shared({ caller = userIndexCaller }) actor class Users() = this {
       case(?value) value;
     };
 
-    switch(info.companyLogo) {
-      case(null) throw Error.reject("Logo not found");
-      case(?companyLogo) return {
-        companyLogo;
-        principalId = info.principal;
-        evidentBID = info.evidentBID;
-        companyId = info.companyId;
-        companyName = info.companyName;
-        city = info.city;
-        country = info.country;
-        address = info.address;
-        email = info.email;
-      };
+    let companyLogo = switch(info.companyLogo) {
+      case(null) [];
+      case(?value) value;
+    };
+
+    {
+      companyLogo;
+      principalId = info.principal;
+      evidentBID = info.evidentBID;
+      companyId = info.companyId;
+      companyName = info.companyName;
+      city = info.city;
+      country = info.country;
+      address = info.address;
+      email = info.email;
     }
   };
 
