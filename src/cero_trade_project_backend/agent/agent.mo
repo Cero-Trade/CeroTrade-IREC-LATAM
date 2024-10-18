@@ -861,6 +861,51 @@ actor class Agent() = this {
   };
 
 
+  // get platform transactions
+  public func getPlatformTransactions(page: ?Nat, length: ?Nat, mwhRange: ?[T.TokenAmount], rangeDates: ?[Text], tokenId: ?T.TokenId): async {
+    data: [T.TransactionHistoryInfo];
+    totalPages: Nat;
+  } {
+    let transactionsInfo: {
+      data: [T.TransactionInfo];
+      totalPages: Nat;
+    } = await TransactionIndex.getPlatformTransactions(page, length, mwhRange, rangeDates, tokenId);
+
+    // get tokens info
+    let tokensInfo: [T.AssetInfo] = await TokenIndex.getTokensInfo(Array.map<T.TransactionInfo, Text>(transactionsInfo.data, func x = x.tokenId));
+
+    // Convert tokensInfo to a HashMap for faster lookup
+    let tokensInfoMap = HM.fromIter<T.TokenId, T.AssetInfo>(Iter.fromArray(Array.map<T.AssetInfo, (T.TokenId, T.AssetInfo)>(tokensInfo, func info = (info.tokenId, info))), 16, Text.equal, Text.hash);
+
+
+    // map market and asset values to marketplace info
+    let transactions: [T.TransactionHistoryInfo] = Array.map<T.TransactionInfo, T.TransactionHistoryInfo>(transactionsInfo.data, func (item) {
+      let assetInfo = tokensInfoMap.get(item.tokenId);
+
+
+      // build TransactionHistoryInfo object
+      {
+        transactionId = item.transactionId;
+        txIndex = item.txIndex;
+        txType = item.txType;
+        tokenAmount = item.tokenAmount;
+        priceE8S = item.priceE8S;
+        date = item.date;
+        method = item.method;
+        from = item.from;
+        to = item.to;
+        redemptionPdf = item.redemptionPdf;
+        assetInfo;
+      }
+    });
+
+    {
+      data = transactions;
+      totalPages = transactionsInfo.totalPages;
+    }
+  };
+
+
   // get user transactions
   public shared({ caller }) func getTransactionsByUser(page: ?Nat, length: ?Nat, txType: ?T.TxType, country: ?Text, priceRange: ?[T.Price], mwhRange: ?[T.TokenAmount], assetTypes: ?[T.AssetType], method: ?T.TxMethod, rangeDates: ?[Text], tokenId: ?T.TokenId): async {
     data: [T.TransactionHistoryInfo];

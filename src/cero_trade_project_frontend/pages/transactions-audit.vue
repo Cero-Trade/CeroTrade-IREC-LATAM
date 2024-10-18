@@ -7,20 +7,26 @@
       <img src="@/assets/sources/icons/chevron-right-light.svg" alt="arrow right icon" class="mx-1">
       <span style="color: #00555B;">Transactions</span>
     </span>
-    <h3>Transactions audit</h3>
-    <span class="mbb16 mb-6" style="color:#475467;">Here are all the transactions in the system. You can check that all IRECs that have been deposited in our platform have been registered, minted, transfered and burnt.</span>
+    <h3>IREC token flow</h3>
+    <span class="mbb16 mb-6" style="color:#475467;">Here are all the transactions in the system. You can check how all IRECs that have been deposited in our platform have been minted, transfered and burnt.</span>
 
-    <!-- TODO search here -->
     <v-text-field
       v-model="search"
       placeholder="Search transactions by token ID"
-      variant="solo"
+      variant="outlined"
       density="compact"
-      flat
+      class="search select mb-6"
       hide-details
     >
-      <template #prepend>
-        <img src="@/assets/sources/icons/search.png" alt="search icon">
+      <template #append-inner>
+        <v-btn
+          elevation="0"
+          class="btn ma-1"
+          style="background-color: rgb(var(--v-theme-primary)) !important; min-height: 35px !important; height: 35px !important"
+          @click="getData"
+        >
+          <img src="@/assets/sources/icons/search.png" alt="search icon" style="width: 16px;">
+        </v-btn>
       </template>
     </v-text-field>
 
@@ -119,7 +125,7 @@
 
     <!-- Dialog Filters -->
     <v-dialog v-model="dialogFilters" persistent width="100%" min-width="290" max-width="500">
-      <v-form ref="filtersFormRef" @submit.prevent>
+      <v-form ref="filtersFormRef" @submit.prevent style="min-width: 100% !important">
         <v-card class="card dialog-card-detokenize d-flex flex-column" style="min-width: 100% !important">
           <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="dialogFilters = false">
 
@@ -248,7 +254,7 @@
 <script setup>
 import '@/assets/styles/pages/transactions-audit.scss'
 
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { AgentCanister } from '@/repository/agent-canister'
 import { TxType } from '@/models/transaction-model'
 import plusCircle from '@/assets/sources/icons/plus-circle.svg'
@@ -287,7 +293,7 @@ headers = [
   { title: 'Token ID', key: 'asset_id', sortable: false },
   { title: 'From / To', key: 'addresses', sortable: false, width: "110px" },
   { title: 'MWh', key: 'mwh', sortable: false },
-  { title: 'Transaction hash', key: 'tx_index', align: 'center', sortable: false },
+  { title: 'Block Index'/* 'Transaction hash' */, key: 'tx_index', align: 'center', sortable: false },
   { title: 'Timestamp', key: 'date', sortable: false },
 ],
 dataTransactions = ref([]),
@@ -334,12 +340,11 @@ async function getData() {
     rangeDates = [new Date(filters.value.fromDate), new Date(filters.value.toDate)]
 
   try {
-    // get getPortfolio
-    const { data, total } = await AgentCanister.getTransactions({
+    // get platform transactions
+    const { data, total } = await AgentCanister.getPlatformTransactions({
       length: itemsPerPage.value,
       page: currentPage.value,
       mwhRange: filters.value.mwhRange,
-      method: filters.value.method,
       rangeDates,
     }),
     list = []
