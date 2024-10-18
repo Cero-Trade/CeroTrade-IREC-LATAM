@@ -175,7 +175,7 @@ actor class Agent() = this {
     // performe import of tokens
     let transactions = await TokenIndex.importUserTokens(caller);
 
-    let mappedTxs = Buffer.Buffer<{ tokenId: T.TokenId; statistics: { mwh: ?T.TokenAmount; redemptions: ?T.TokenAmount } }>(16);
+    let mappedTxs = Buffer.Buffer<{ tokenId: T.TokenId; statistics: { mwh: ?T.TokenAmount; redemptions: ?T.TokenAmount; sells: ?T.TokenAmount; } }>(16);
     let mappedAssets = Buffer.Buffer<T.AssetInfo>(16);
 
     for({ mwh; assetInfo } in transactions.vals()) {
@@ -183,7 +183,7 @@ actor class Agent() = this {
 
       mappedTxs.add({
         tokenId = assetInfo.tokenId;
-        statistics = { mwh = ?mwh; redemptions = null };
+        statistics = { mwh = ?mwh; redemptions = null; sells = null; };
       });
     };
 
@@ -211,7 +211,7 @@ actor class Agent() = this {
     await UserIndex.addTokensPortfolio(recipent, [assetInfo]);
 
     // register asset statistic
-    await Statistics.registerAssetStatistic(tokenId, { mwh = ?tokenAmount; redemptions = null });
+    await Statistics.registerAssetStatistic(tokenId, { mwh = ?tokenAmount; redemptions = null; sells = null; });
 
     txIndex
   };
@@ -591,6 +591,9 @@ actor class Agent() = this {
     // take token off marketplace reference
     let amountInMarket = await Marketplace.takeOffSale(tokenId, tokenAmount, recipent);
 
+    // register asset statistic sell
+    await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = null; sells = ?tokenAmount; });
+
     // store to caller and recipent
     await UserIndex.updateMarketplace(caller, { amountInMarket; transaction = { txInfo with transactionId } }, ?{ recipent; assetInfo; });
 
@@ -798,7 +801,7 @@ actor class Agent() = this {
       let _ = await _updateEventNotification(caller, notificationId, ?#accepted("accepted"));
 
       // register asset statistic
-      await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = ?volume });
+      await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = ?volume; sells = null; });
 
       transactions.add({ txInfo with transactionId });
     };
@@ -852,7 +855,7 @@ actor class Agent() = this {
       await UserIndex.updateRedemptions(caller, null, { txInfo with transactionId });
 
       // register asset statistic
-      await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = ?volume });
+      await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = ?volume; sells = null; });
 
       transactions.add({ txInfo with transactionId });
     };

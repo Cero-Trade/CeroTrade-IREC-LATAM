@@ -371,6 +371,7 @@ module {
     mwh: TokenAmount;
     assetType: AssetType;
     redemptions: TokenAmount;
+    sells: TokenAmount;
   };
   
   //
