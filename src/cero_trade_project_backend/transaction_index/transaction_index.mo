@@ -299,16 +299,10 @@ actor class TransactionIndex() = this {
     Debug.print(debug_show ("before getPlatformTransactions: " # Nat.toText(Cycles.balance())));
 
     // define page based on statement
-    let startPageVal: Nat = switch(page) {
+    let startPage: Nat = switch(page) {
       case(null) 1;
       case(?value) value;
     };
-    let transactionsSize = transactionsDirectory.size();
-    let currentTransactionsSize = switch(transactionsSize == 0) {
-      case(true) 1;
-      case(false) transactionsSize;
-    };
-    let startPage: Nat = startPageVal / currentTransactionsSize;
 
     // define length based on statement
     let maxLength: Nat = switch(length) {
@@ -324,7 +318,7 @@ actor class TransactionIndex() = this {
     let directory: HM.HashMap<T.CanisterId, [T.TransactionId]> = HM.HashMap(50, Principal.equal, Principal.hash);
 
     // TODO evaluate if can implements filter by rangeDate in transactionDirectory instead of into Transactions.canister()
-    while (i <= startIndex and i > startIndex - maxLength) {
+    while (i >= startIndex and i < startIndex + maxLength) {
       Debug.print("⭐ debug how many times is executed this method ⭐ --> index: " # Nat.toText(i));
 
       switch(transactionsDirectory.get(Nat.toText(i))) {
@@ -340,7 +334,7 @@ actor class TransactionIndex() = this {
         };
       };
 
-      i -= 1;
+      i += 1;
     };
 
 
