@@ -1586,7 +1586,7 @@ async function getData() {
     redemptions.value = singlePortfolio.value.redemptions
     seriesMintedVsProduced.value = [(statistics.value.mwh || 1) / (singlePortfolio.value.tokenInfo.assetInfo.volumeProduced || 1) * 100]
 
-    const totalInMarketplace = dataMarketplace.value.reduce((a, b) => a.mwh + b.mwh, 0) + tokenDetail.value.inMarket
+    const totalInMarketplace = dataMarketplace.value.reduce((a, b) => a + b.mwh, 0) + tokenDetail.value.inMarket
 
     stats.value = [
       {
