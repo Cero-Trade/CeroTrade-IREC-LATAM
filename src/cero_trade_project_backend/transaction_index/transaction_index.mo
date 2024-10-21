@@ -351,7 +351,7 @@ actor class TransactionIndex() = this {
 
     Debug.print(debug_show ("later getPlatformTransactions: " # Nat.toText(Cycles.balance())));
 
-    { data = txFiltered; totalPages };
+    { data = Array.reverse(txFiltered); totalPages };
   };
 
   /// get transactions by tx id
