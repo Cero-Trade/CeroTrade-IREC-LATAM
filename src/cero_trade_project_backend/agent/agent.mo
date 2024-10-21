@@ -97,8 +97,8 @@ actor class Agent() = this {
         let _txId = await TransactionIndex.registerTransaction(txInfo);
       };
 
-      // remove tokens from statistics
-      await Statistics.removeAssetStatistic(tokenInfo.tokenId, tokenInfo.totalAmount);
+      // reduce mwh on platform statistic
+      await Statistics.reducePlatformMwh(tokenInfo.tokenId, tokenInfo.totalAmount);
     };
 
     // delete user
@@ -175,7 +175,7 @@ actor class Agent() = this {
     // performe import of tokens
     let transactions = await TokenIndex.importUserTokens(caller);
 
-    let mappedTxs = Buffer.Buffer<{ tokenId: T.TokenId; statistics: { mwh: ?T.TokenAmount; redemptions: ?T.TokenAmount; sells: ?T.TokenAmount; } }>(16);
+    let mappedTxs = Buffer.Buffer<{ tokenId: T.TokenId; statistics: { mwh: ?T.TokenAmount; redemptions: ?T.TokenAmount; sells: ?T.TokenAmount; priceTrend: ?T.AssetStatisticPriceTrend; } }>(16);
     let mappedAssets = Buffer.Buffer<T.AssetInfo>(16);
 
     for({ mwh; assetInfo } in transactions.vals()) {
@@ -183,7 +183,7 @@ actor class Agent() = this {
 
       mappedTxs.add({
         tokenId = assetInfo.tokenId;
-        statistics = { mwh = ?mwh; redemptions = null; sells = null; };
+        statistics = { mwh = ?mwh; redemptions = null; sells = null; priceTrend = null; };
       });
     };
 
@@ -211,7 +211,7 @@ actor class Agent() = this {
     await UserIndex.addTokensPortfolio(recipent, [assetInfo]);
 
     // register asset statistic
-    await Statistics.registerAssetStatistic(tokenId, { mwh = ?tokenAmount; redemptions = null; sells = null; });
+    await Statistics.registerAssetStatistic(tokenId, { mwh = ?tokenAmount; redemptions = null; sells = null; priceTrend = null; });
 
     txIndex
   };
@@ -592,7 +592,7 @@ actor class Agent() = this {
     let amountInMarket = await Marketplace.takeOffSale(tokenId, tokenAmount, recipent);
 
     // register asset statistic sell
-    await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = null; sells = ?tokenAmount; });
+    await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = null; sells = ?tokenAmount; priceTrend = null; });
 
     // store to caller and recipent
     await UserIndex.updateMarketplace(caller, { amountInMarket; transaction = { txInfo with transactionId } }, ?{ recipent; assetInfo; });
@@ -648,6 +648,12 @@ actor class Agent() = this {
 
     // store to caller
     await UserIndex.updateMarketplace(caller, { amountInMarket; transaction = { txInfo with transactionId } }, null);
+
+    // register asset statistic priceTrend
+    await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = null; sells = null; priceTrend = ?{
+      seller = caller;
+      priceE8S;
+    }; });
 
     { txInfo with transactionId }
   };
@@ -801,7 +807,7 @@ actor class Agent() = this {
       let _ = await _updateEventNotification(caller, notificationId, ?#accepted("accepted"));
 
       // register asset statistic
-      await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = ?volume; sells = null; });
+      await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = ?volume; sells = null; priceTrend = null; });
 
       transactions.add({ txInfo with transactionId });
     };
@@ -855,7 +861,7 @@ actor class Agent() = this {
       await UserIndex.updateRedemptions(caller, null, { txInfo with transactionId });
 
       // register asset statistic
-      await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = ?volume; sells = null; });
+      await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = ?volume; sells = null; priceTrend = null; });
 
       transactions.add({ txInfo with transactionId });
     };
@@ -986,10 +992,10 @@ actor class Agent() = this {
 
 
   // get all asset statistics
-  public func getAllAssetStatistics(): async [(T.TokenId, T.AssetStatistic)] { await Statistics.getAllAssetStatistics() };
+  public func getAllAssetStatistics(): async [(T.TokenId, T.AssetStatisticResponse)] { await Statistics.getAllAssetStatistics() };
 
   // get asset statistics
-  public func getAssetStatistics(tokenId: T.TokenId): async T.AssetStatistic { await Statistics.getAssetStatistics(tokenId) };
+  public func getAssetStatistics(tokenId: T.TokenId): async T.AssetStatisticResponse { await Statistics.getAssetStatistics(tokenId) };
 
 
   // get notifications
