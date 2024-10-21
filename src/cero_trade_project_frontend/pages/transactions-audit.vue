@@ -58,13 +58,15 @@
         <span class="flex-center wbold" style="color: #475467;">{{ item.tx_id }}</span>
       </template>
 
-      <template #item.type="{ item }">
-        <img :src="txTypes[item.type].img" alt="tx type icon">
-        <span class="w700">{{ txTypes[item.type].img }}</span>
+      <template #[`item.type`]="{ item }">
+        <div class="d-flex acenter" style="gap: 3px;">
+          <img :src="txTypes[item.type].img" alt="tx type icon">
+          <span class="w700" style="translate: 0 2px">{{ txTypes[item.type].value }}</span>
+        </div>
       </template>
 
       <template #[`item.addresses`]="{ item }">
-        <span>
+        <span class="d-flex acenter" style="gap: 3px">
           <v-menu :close-on-content-click="false" location="bottom center">
             <template #activator="{ props }">
               <a v-bind="props" class="flex-acenter pointer" style="gap: 5px; text-wrap: nowrap; text-decoration: underline !important;">{{ item.recipent.name }}</a>
@@ -75,7 +77,7 @@
             </v-card>
           </v-menu>
 
-          {{ "-->" }}
+          <img src="@/assets/sources/icons/arrow-right.svg" alt="arrow-right icon">
 
           <v-menu :close-on-content-click="false" location="bottom center">
             <template #activator="{ props }">
@@ -94,10 +96,9 @@
       </template>
 
       <template #[`item.tx_index`]="{ item }">
-        <!-- TODO here -->
-        <a :href="item.tx_index" target="_blank" class="flex-acenter" style="">
-          {{ item.tx_index }}
-          <img src="@/assets/sources/icons/share.svg" alt="explorer icon">
+        <a :title="item.tx_index" :href="`https://www.icpexplorer.org/#/tx/${item.tx_index}`" target="_blank" class="text-label flex-acenter" style="gap: 5px">
+          {{ shortString(item.tx_index, {}) }}
+          <img src="@/assets/sources/icons/share.svg" alt="explorer icon" style="width: 16px">
         </a>
       </template>
 
@@ -290,10 +291,10 @@ txTypes = {
 search = ref(null),
 headers = [
   { title: 'Type', key: 'type', sortable: false },
-  { title: 'Token ID', key: 'asset_id', sortable: false },
+  { title: 'Token ID', key: 'asset_id', sortable: false, width: "100px" },
   { title: 'From / To', key: 'addresses', sortable: false, width: "110px" },
   { title: 'MWh', key: 'mwh', sortable: false },
-  { title: 'Block Index'/* 'Transaction hash' */, key: 'tx_index', align: 'center', sortable: false },
+  { title: 'Block Index'/* 'Transaction hash' */, key: 'tx_index', align: 'center', sortable: false, width: "110px" },
   { title: 'Timestamp', key: 'date', sortable: false },
 ],
 dataTransactions = ref([]),
@@ -352,12 +353,12 @@ async function getData() {
     for (const item of data) {
       list.push({
         type: item.txType,
-        recipent: item.to || "---",
-        sender: item.from || "---",
+        recipent: item.to || item.from,
+        sender: item.from,
         mwh: item.tokenAmount,
         asset_id: item.assetInfo.tokenId,
         date: item.date.toDateString(),
-        tx_index: item.txIndex || "---",
+        tx_index: item.txIndex.toString() || "---",
       })
     }
 
