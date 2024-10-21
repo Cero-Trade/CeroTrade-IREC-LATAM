@@ -4,6 +4,7 @@ import Text "mo:base/Text";
 import Iter "mo:base/Iter";
 import Error "mo:base/Error";
 import Array "mo:base/Array";
+import Debug "mo:base/Debug";
 
 
 // canisters
@@ -69,14 +70,15 @@ shared({ caller = owner }) actor class Statistics() {
           case(?valueProvided) {
 
             switch(currentPriceTrend) {
-              case(null) currentPriceTrend;
+              case(null) statistics.priceTrend;
+
               case(?value) {
                 try {
                   let currentPrice: T.Price = await Marketplace.getTokenPrice(tokenId, value.seller);
 
-                  if (currentPrice.e8s < valueProvided.priceE8S.e8s) { currentPriceTrend } else { ?valueProvided }
+                  if (currentPrice.e8s < valueProvided.priceE8S.e8s) { currentPriceTrend } else { statistics.priceTrend }
                 } catch (error) {
-                  ?valueProvided
+                  statistics.priceTrend
                 }
               };
             };
