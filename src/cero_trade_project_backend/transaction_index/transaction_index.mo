@@ -292,6 +292,8 @@ actor class TransactionIndex() = this {
     data: [T.TransactionInfo];
     totalPages: Nat;
   } {
+    // TODO trouble in any part with rest operation 👇
+
     _callValidation(caller);
 
     Debug.print(debug_show ("before getPlatformTransactions: " # Nat.toText(Cycles.balance())));
@@ -323,6 +325,8 @@ actor class TransactionIndex() = this {
 
     // TODO evaluate if can implements filter by rangeDate in transactionDirectory instead of into Transactions.canister()
     while (i <= startIndex and i > startIndex - maxLength) {
+      Debug.print("⭐ debug how many times is executed this method ⭐ --> index: " # Nat.toText(i));
+
       switch(transactionsDirectory.get(Nat.toText(i))) {
         case (null) {};
         case(?cid) {

@@ -4,4 +4,5 @@ export interface AssetStatistic {
   mwh: number;
   assetType: AssetType;
   redemptions: number;
+  sells: number;
 }
