@@ -924,7 +924,7 @@
             </h5>
             <div class="divrow astart acenter">
               <h5 class="mr-2 h5-mobile">
-                {{ formBuy.price ?? 0 }} ICP
+                {{ previousBuyAmount ?? 0 }} ICP
               </h5>
               <span style="color:#475467">per MWh</span>
             </div>
