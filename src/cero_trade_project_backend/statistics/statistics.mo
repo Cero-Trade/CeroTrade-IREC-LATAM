@@ -28,7 +28,7 @@ shared({ caller = owner }) actor class Statistics() {
 
 
   // helper function to register asset statistics
-  private func _registerAssetStatistic(tokenId: T.TokenId, statistics: { mwh: ?T.TokenAmount; redemptions: ?T.TokenAmount }): async() {
+  private func _registerAssetStatistic(tokenId: T.TokenId, statistics: { mwh: ?T.TokenAmount; redemptions: ?T.TokenAmount; sells: ?T.TokenAmount }): async() {
     switch(assetStatistics.get(tokenId)) {
       case(null) {
         let assetInfo = await TokenIndex.getAssetInfo(tokenId);
@@ -41,10 +41,11 @@ shared({ caller = owner }) actor class Statistics() {
           assetType = assetInfo.deviceDetails.deviceType;
           mwh;
           redemptions = 0;
+          sells = 0;
         });
       };
 
-      case(?{ assetType; mwh = currentMwh; redemptions = currentRedemptions; }) {
+      case(?{ assetType; mwh = currentMwh; redemptions = currentRedemptions; sells = currentSells; }) {
         let mwh = switch(statistics.mwh) {
           case(null) 0;
           case(?value) value;
@@ -53,28 +54,33 @@ shared({ caller = owner }) actor class Statistics() {
           case(null) 0;
           case(?value) value;
         };
+        let sells = switch(statistics.sells) {
+          case(null) 0;
+          case(?value) value;
+        };
 
         assetStatistics.put(tokenId, {
           mwh = currentMwh + mwh;
           assetType;
           redemptions = currentRedemptions + redemptions;
+          sells = currentSells + sells;
         });
       };
     };
   };
   
   /// register statistic
-  public shared({ caller }) func registerAssetStatistic(tokenId: T.TokenId, { mwh: ?T.TokenAmount; redemptions: ?T.TokenAmount }): async () {
+  public shared({ caller }) func registerAssetStatistic(tokenId: T.TokenId, { mwh: ?T.TokenAmount; redemptions: ?T.TokenAmount; sells: ?T.TokenAmount; }): async () {
     _callValidation(caller);
-    await _registerAssetStatistic(tokenId, { mwh; redemptions });
+    await _registerAssetStatistic(tokenId, { mwh; redemptions; sells; });
   };
 
   /// register statistics
-  public shared({ caller }) func registerAssetStatistics(assets: [{ tokenId: T.TokenId; statistics: { mwh: ?T.TokenAmount; redemptions: ?T.TokenAmount } }]): async () {
+  public shared({ caller }) func registerAssetStatistics(assets: [{ tokenId: T.TokenId; statistics: { mwh: ?T.TokenAmount; redemptions: ?T.TokenAmount; sells: ?T.TokenAmount; } }]): async () {
     _callValidation(caller);
 
     for({ tokenId; statistics; } in assets.vals()) {
-      await _registerAssetStatistic(tokenId, { mwh = statistics.mwh; redemptions = statistics.redemptions });
+      await _registerAssetStatistic(tokenId, { mwh = statistics.mwh; redemptions = statistics.redemptions; sells = statistics.sells; });
     };
   };
 
@@ -85,11 +91,12 @@ shared({ caller = owner }) actor class Statistics() {
     switch(assetStatistics.get(tokenId)) {
       case(null) {};
 
-      case(?{ assetType; mwh = currentMwh; redemptions; }) {
+      case(?{ assetType; mwh = currentMwh; redemptions; sells; }) {
         assetStatistics.put(tokenId, {
           mwh = currentMwh - mwh;
           assetType;
           redemptions;
+          sells;
         });
       };
     };

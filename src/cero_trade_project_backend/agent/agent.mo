@@ -175,7 +175,7 @@ actor class Agent() = this {
     // performe import of tokens
     let transactions = await TokenIndex.importUserTokens(caller);
 
-    let mappedTxs = Buffer.Buffer<{ tokenId: T.TokenId; statistics: { mwh: ?T.TokenAmount; redemptions: ?T.TokenAmount } }>(16);
+    let mappedTxs = Buffer.Buffer<{ tokenId: T.TokenId; statistics: { mwh: ?T.TokenAmount; redemptions: ?T.TokenAmount; sells: ?T.TokenAmount; } }>(16);
     let mappedAssets = Buffer.Buffer<T.AssetInfo>(16);
 
     for({ mwh; assetInfo } in transactions.vals()) {
@@ -183,7 +183,7 @@ actor class Agent() = this {
 
       mappedTxs.add({
         tokenId = assetInfo.tokenId;
-        statistics = { mwh = ?mwh; redemptions = null };
+        statistics = { mwh = ?mwh; redemptions = null; sells = null; };
       });
     };
 
@@ -211,7 +211,7 @@ actor class Agent() = this {
     await UserIndex.addTokensPortfolio(recipent, [assetInfo]);
 
     // register asset statistic
-    await Statistics.registerAssetStatistic(tokenId, { mwh = ?tokenAmount; redemptions = null });
+    await Statistics.registerAssetStatistic(tokenId, { mwh = ?tokenAmount; redemptions = null; sells = null; });
 
     txIndex
   };
@@ -591,6 +591,9 @@ actor class Agent() = this {
     // take token off marketplace reference
     let amountInMarket = await Marketplace.takeOffSale(tokenId, tokenAmount, recipent);
 
+    // register asset statistic sell
+    await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = null; sells = ?tokenAmount; });
+
     // store to caller and recipent
     await UserIndex.updateMarketplace(caller, { amountInMarket; transaction = { txInfo with transactionId } }, ?{ recipent; assetInfo; });
 
@@ -798,7 +801,7 @@ actor class Agent() = this {
       let _ = await _updateEventNotification(caller, notificationId, ?#accepted("accepted"));
 
       // register asset statistic
-      await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = ?volume });
+      await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = ?volume; sells = null; });
 
       transactions.add({ txInfo with transactionId });
     };
@@ -852,12 +855,57 @@ actor class Agent() = this {
       await UserIndex.updateRedemptions(caller, null, { txInfo with transactionId });
 
       // register asset statistic
-      await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = ?volume });
+      await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = ?volume; sells = null; });
 
       transactions.add({ txInfo with transactionId });
     };
 
     Buffer.toArray<T.TransactionInfo>(transactions);
+  };
+
+
+  // get platform transactions
+  public func getPlatformTransactions(page: ?Nat, length: ?Nat, mwhRange: ?[T.TokenAmount], rangeDates: ?[Text], tokenId: ?T.TokenId): async {
+    data: [T.TransactionHistoryInfo];
+    totalPages: Nat;
+  } {
+    let transactionsInfo: {
+      data: [T.TransactionInfo];
+      totalPages: Nat;
+    } = await TransactionIndex.getPlatformTransactions(page, length, mwhRange, rangeDates, tokenId);
+
+    // get tokens info
+    let tokensInfo: [T.AssetInfo] = await TokenIndex.getTokensInfo(Array.map<T.TransactionInfo, Text>(transactionsInfo.data, func x = x.tokenId));
+
+    // Convert tokensInfo to a HashMap for faster lookup
+    let tokensInfoMap = HM.fromIter<T.TokenId, T.AssetInfo>(Iter.fromArray(Array.map<T.AssetInfo, (T.TokenId, T.AssetInfo)>(tokensInfo, func info = (info.tokenId, info))), 16, Text.equal, Text.hash);
+
+
+    // map market and asset values to marketplace info
+    let transactions: [T.TransactionHistoryInfo] = Array.map<T.TransactionInfo, T.TransactionHistoryInfo>(transactionsInfo.data, func (item) {
+      let assetInfo = tokensInfoMap.get(item.tokenId);
+
+
+      // build TransactionHistoryInfo object
+      {
+        transactionId = item.transactionId;
+        txIndex = item.txIndex;
+        txType = item.txType;
+        tokenAmount = item.tokenAmount;
+        priceE8S = item.priceE8S;
+        date = item.date;
+        method = item.method;
+        from = item.from;
+        to = item.to;
+        redemptionPdf = item.redemptionPdf;
+        assetInfo;
+      }
+    });
+
+    {
+      data = transactions;
+      totalPages = transactionsInfo.totalPages;
+    }
   };
 
 

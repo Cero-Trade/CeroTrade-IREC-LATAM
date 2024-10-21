@@ -7,20 +7,26 @@
       <img src="@/assets/sources/icons/chevron-right-light.svg" alt="arrow right icon" class="mx-1">
       <span style="color: #00555B;">Transactions</span>
     </span>
-    <h3>Transactions audit</h3>
-    <span class="mbb16 mb-6" style="color:#475467;">Here are all the transactions in the system. You can check that all IRECs that have been deposited in our platform have been registered, minted, transfered and burnt.</span>
+    <h3>IREC token flow</h3>
+    <span class="mbb16 mb-6" style="color:#475467;">Here are all the transactions in the system. You can check how all IRECs that have been deposited in our platform have been minted, transfered and burnt.</span>
 
-    <!-- TODO search here -->
     <v-text-field
       v-model="search"
       placeholder="Search transactions by token ID"
-      variant="solo"
+      variant="outlined"
       density="compact"
-      flat
+      class="search select mb-6"
       hide-details
     >
-      <template #prepend>
-        <img src="@/assets/sources/icons/search.png" alt="search icon">
+      <template #append-inner>
+        <v-btn
+          elevation="0"
+          class="btn ma-1"
+          style="background-color: rgb(var(--v-theme-primary)) !important; min-height: 35px !important; height: 35px !important"
+          @click="getData"
+        >
+          <img src="@/assets/sources/icons/search.png" alt="search icon" style="width: 16px;">
+        </v-btn>
       </template>
     </v-text-field>
 
@@ -52,13 +58,15 @@
         <span class="flex-center wbold" style="color: #475467;">{{ item.tx_id }}</span>
       </template>
 
-      <template #item.type="{ item }">
-        <img :src="txTypes[item.type].img" alt="tx type icon">
-        <span class="w700">{{ txTypes[item.type].img }}</span>
+      <template #[`item.type`]="{ item }">
+        <div class="d-flex acenter" style="gap: 3px;">
+          <img :src="txTypes[item.type].img" alt="tx type icon">
+          <span class="w700" style="translate: 0 2px">{{ txTypes[item.type].value }}</span>
+        </div>
       </template>
 
       <template #[`item.addresses`]="{ item }">
-        <span>
+        <span class="d-flex acenter" style="gap: 3px">
           <v-menu :close-on-content-click="false" location="bottom center">
             <template #activator="{ props }">
               <a v-bind="props" class="flex-acenter pointer" style="gap: 5px; text-wrap: nowrap; text-decoration: underline !important;">{{ item.recipent.name }}</a>
@@ -69,7 +77,7 @@
             </v-card>
           </v-menu>
 
-          {{ "-->" }}
+          <img src="@/assets/sources/icons/arrow-right.svg" alt="arrow-right icon">
 
           <v-menu :close-on-content-click="false" location="bottom center">
             <template #activator="{ props }">
@@ -88,10 +96,9 @@
       </template>
 
       <template #[`item.tx_index`]="{ item }">
-        <!-- TODO here -->
-        <a :href="item.tx_index" target="_blank" class="flex-acenter" style="">
-          {{ item.tx_index }}
-          <img src="@/assets/sources/icons/share.svg" alt="explorer icon">
+        <a :title="item.tx_index" :href="`https://www.icpexplorer.org/#/tx/${item.tx_index}`" target="_blank" class="text-label flex-acenter" style="gap: 5px">
+          {{ shortString(item.tx_index, {}) }}
+          <img src="@/assets/sources/icons/share.svg" alt="explorer icon" style="width: 16px">
         </a>
       </template>
 
@@ -119,7 +126,7 @@
 
     <!-- Dialog Filters -->
     <v-dialog v-model="dialogFilters" persistent width="100%" min-width="290" max-width="500">
-      <v-form ref="filtersFormRef" @submit.prevent>
+      <v-form ref="filtersFormRef" @submit.prevent style="min-width: 100% !important">
         <v-card class="card dialog-card-detokenize d-flex flex-column" style="min-width: 100% !important">
           <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="dialogFilters = false">
 
@@ -248,7 +255,7 @@
 <script setup>
 import '@/assets/styles/pages/transactions-audit.scss'
 
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { AgentCanister } from '@/repository/agent-canister'
 import { TxType } from '@/models/transaction-model'
 import plusCircle from '@/assets/sources/icons/plus-circle.svg'
@@ -284,10 +291,10 @@ txTypes = {
 search = ref(null),
 headers = [
   { title: 'Type', key: 'type', sortable: false },
-  { title: 'Token ID', key: 'asset_id', sortable: false },
+  { title: 'Token ID', key: 'asset_id', sortable: false, width: "100px" },
   { title: 'From / To', key: 'addresses', sortable: false, width: "110px" },
   { title: 'MWh', key: 'mwh', sortable: false },
-  { title: 'Transaction hash', key: 'tx_index', align: 'center', sortable: false },
+  { title: 'Block Index'/* 'Transaction hash' */, key: 'tx_index', align: 'center', sortable: false, width: "110px" },
   { title: 'Timestamp', key: 'date', sortable: false },
 ],
 dataTransactions = ref([]),
@@ -334,12 +341,11 @@ async function getData() {
     rangeDates = [new Date(filters.value.fromDate), new Date(filters.value.toDate)]
 
   try {
-    // get getPortfolio
-    const { data, total } = await AgentCanister.getTransactions({
+    // get platform transactions
+    const { data, total } = await AgentCanister.getPlatformTransactions({
       length: itemsPerPage.value,
       page: currentPage.value,
       mwhRange: filters.value.mwhRange,
-      method: filters.value.method,
       rangeDates,
     }),
     list = []
@@ -347,12 +353,12 @@ async function getData() {
     for (const item of data) {
       list.push({
         type: item.txType,
-        recipent: item.to || "---",
-        sender: item.from || "---",
+        recipent: item.to || item.from,
+        sender: item.from,
         mwh: item.tokenAmount,
         asset_id: item.assetInfo.tokenId,
         date: item.date.toDateString(),
-        tx_index: item.txIndex || "---",
+        tx_index: item.txIndex.toString() || "---",
       })
     }
 

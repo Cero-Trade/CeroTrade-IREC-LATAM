@@ -40,3 +40,74 @@ display: none !important;
     ~ span { font-weight: 400 !important }
   }
 }
+
+.great-text {
+  font-size: 1.875em !important;
+  font-weight: 700 !important;
+}
+
+.h3 {
+  font-size: 22px !important;
+  font-weight: 600 !important;
+}
+
+.h5 {
+  font-size: 18px !important;
+  font-weight: 400 !important;
+}
+
+.h6 {
+  font-size: 16px !important;
+  font-weight: 400 !important;
+  color: #475467 !important;
+}
+
+.label {
+  font-size: 16px !important;
+  font-weight: 400 !important;
+  color: #0C111D !important;
+}
+
+.card-styled {
+  background: #F9FAFB;
+  border: 1px solid #EAECF0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  padding: 30px 24px;
+  padding-bottom: 21px;
+}
+
+.card-styled-2 {
+  border: 1px solid #EAECF0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 24px;
+}
+
+.custom-tabs {
+  height: 40px;
+  background-color: #F3F4F6;
+  border-radius: 12px;
+  padding: 3px 7.5px;
+
+  .v-btn {
+    flex-grow: 1;
+    flex-shrink: 1;
+    height: 100% !important;
+    border: none !important;
+    border-radius: 6px;
+
+    span {
+      font-size: 17px !important;
+      color: #000000;
+    }
+  }
+
+  .v-slide-group-item--active {
+    background-color: #fff;
+    border: 1px solid #EAECF0 !important;
+    span { color: #00393D !important }
+  }
+}

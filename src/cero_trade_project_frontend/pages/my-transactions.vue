@@ -31,6 +31,10 @@
           <img src="@/assets/sources/icons/filter-lines.svg" alt="filter-lines icon">
           Add filter
         </v-btn>
+
+        <v-btn class="btn ml-auto" to="/transactions-audit">
+          Transactions audit
+        </v-btn>
       </div>
     </div>
 

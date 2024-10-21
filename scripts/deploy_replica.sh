@@ -41,7 +41,8 @@ echo "====-Generate env.mo and deploy canisters-===="
 if [ "$flag" = "clean" ]; then
   npm install
 fi
-dfx canister create --all
+dfx canister create --all --with-cycles 5000000000000
+dfx canister deposit-cycles 9_000_000_000_000 token_index
 dfx build cero_trade_project_frontend
 if [ "$flag" = "clean" ]; then
   dfx canister install cero_trade_project_frontend

@@ -11,6 +11,18 @@
   justify-content: flex-start;
   margin-block: 30px;
 
+  .search {
+    max-width: 400px;
+
+    .v-field {
+      padding-right: 0;
+    }
+
+    input {
+      font-weight: 400 !important;
+    }
+  }
+
   h3{
     font-weight: 700;
   }
