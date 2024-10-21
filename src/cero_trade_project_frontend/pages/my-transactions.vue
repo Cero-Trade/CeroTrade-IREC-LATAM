@@ -31,6 +31,10 @@
           <img src="@/assets/sources/icons/filter-lines.svg" alt="filter-lines icon">
           Add filter
         </v-btn>
+
+        <v-btn class="btn ml-auto" to="/transactions-audit">
+          Transactions audit
+        </v-btn>
       </div>
     </div>
 
@@ -48,8 +52,8 @@
       class="mt-6 my-data-table"
       @update:options="getData"
     >
-      <template #[`item.transaction_id`]="{ item }">
-        <span class="flex-center wbold" style="color: #475467;">{{ item.transaction_id }}</span>
+      <template #[`item.tx_id`]="{ item }">
+        <span class="flex-center wbold" style="color: #475467;">{{ item.tx_id }}</span>
       </template>
 
       <template #item.type="{ item }">
@@ -61,30 +65,25 @@
       </template>
 
       <template #[`item.recipent`]="{ item }">
-        <v-menu :close-on-content-click="false" @update:model-value="(value) => getRecipentProfile(value, item.recipent)">
+        <v-menu :close-on-content-click="false" location="bottom center">
           <template #activator="{ props }">
-            <a v-bind="props" class="flex-acenter pointer" style="gap: 5px; text-wrap: nowrap">{{ shortPrincipalId(item.recipent?.toString()) }}</a>
+            <a v-bind="props" class="flex-acenter pointer" style="gap: 5px; text-wrap: nowrap; text-decoration: underline !important;">{{ item.recipent.name }}</a>
           </template>
 
-          <v-card class="px-4 py-2 bg-secondary d-flex">
-            <v-progress-circular
-              v-if="!previewRecipent"
-              indeterminate
-              color="rgb(var(--v-theme-primary))"
-              class="mx-auto"
-            ></v-progress-circular>
+          <v-card class="px-4 py-2 bg-secondary">
+            <span>id: {{ item.recipent.principal.toString() }}</span>
+          </v-card>
+        </v-menu>
+      </template>
 
-            <span v-else class="flex-acenter" style="gap: 10px; text-wrap: nowrap">
-              <v-img-load
-                :src="previewRecipent.companyLogo"
-                :alt="`${previewRecipent.companyName} logo`"
-                cover
-                sizes="30px"
-                rounded="50%"
-                class="flex-grow-0"
-              />
-              {{ previewRecipent.companyName }}
-            </span>
+      <template #[`item.sender`]="{ item }">
+        <v-menu :close-on-content-click="false" location="bottom center">
+          <template #activator="{ props }">
+            <a v-bind="props" class="flex-acenter pointer" style="gap: 5px; text-wrap: nowrap; text-decoration: underline !important;">{{ item.sender.name }}</a>
+          </template>
+
+          <v-card class="px-4 py-2 bg-secondary">
+            <span>id: {{ item.sender.principal.toString() }}</span>
           </v-card>
         </v-menu>
       </template>
@@ -102,7 +101,7 @@
 
       <template #[`item.price`]="{ item }">
         <span class="divrow jspace acenter">
-          {{ item.price }} <v-sheet class="chip-currency bold">ICP</v-sheet>
+          {{ item.price }} <v-sheet v-if="item.price != '---'" class="chip-currency bold">ICP</v-sheet>
         </span>
       </template>
 
@@ -112,7 +111,7 @@
 
       <template #[`item.country`]="{ item }">
         <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-          <img :src="countriesImg[item.country]" :alt="`${item.country} Icon`" style="width: 20px;">
+          <img :src="countries[item.country].flag" :alt="`${item.country} Icon`" style="width: 20px;">
           {{ item.country }}
         </span>
       </template>
@@ -240,14 +239,51 @@
 
           <v-autocomplete
             v-model="filters.country"
-            :items="countries"
+            :items="Object.values(countries)"
             variant="outlined"
             flat elevation="0"
+            menu-icon=""
             item-title="name"
             item-value="name"
             label="country"
             class="select mb-4"
-          ></v-autocomplete>
+          >
+          <template #append-inner="{ isFocused }">
+            <img
+              src="@/assets/sources/icons/chevron-down.svg"
+              alt="chevron-down icon"
+              :style="`transform: ${isFocused.value ? 'rotate(180deg)' : 'none'};`"
+            >
+          </template>
+
+          <template #selection="{ item }">
+            <v-img-load
+              :src="item.raw.flag.toString()"
+              :alt="`${item.raw.name} logo`"
+              cover
+              sizes="25px"
+              rounded="50%"
+              class="flex-grow-0"
+            />
+            <span class="bold ml-2 ellipsis-text">{{ item.raw.name }}</span>
+          </template>
+
+          <template #item="{ item, props }">
+            <v-list-item v-bind="props" title=" ">
+              <div class="d-flex align-center">
+                <v-img-load
+                  :src="item.raw.flag.toString()"
+                  :alt="`${item.raw.name} logo`"
+                  cover
+                  sizes="25px"
+                  rounded="50%"
+                  class="flex-grow-0"
+                />
+                <span class="bold ml-2" style="translate: 0 1px">{{ item.raw.name }}</span>
+              </div>
+            </v-list-item>
+          </template>
+        </v-autocomplete>
 
           <v-range-slider
             v-model="filters.priceRange"
@@ -321,7 +357,6 @@
 
 <script setup>
 import '@/assets/styles/pages/my-transactions.scss'
-import countries from '@/assets/sources/json/countries-all.json'
 
 import HydroEnergyIcon from '@/assets/sources/energies/hydro.svg'
 import OceanEnergyIcon from '@/assets/sources/energies/ocean.svg'
@@ -337,10 +372,12 @@ import { useToast } from 'vue-toastification'
 import { useRouter } from 'vue-router'
 import moment from "moment";
 import { shortPrincipalId, shortString } from '@/plugins/functions'
+import variables from '@/mixins/variables'
 
 const
   router = useRouter(),
   toast = useToast(),
+  { countries } = variables,
 
 tabsMobile = ref(1),
 windowStep = ref(undefined),
@@ -364,22 +401,21 @@ energies = {
   "Hydro-Electric": HydroEnergyIcon,
   "Thermal": GeothermalEnergyIcon,
 },
-countriesImg = {
-  CL: ChileIcon
-},
 
   headers = [
   // { title: '', key: 'checkbox', sortable: false, align: 'center'},
-  { title: 'Transaction ID', key: 'transaction_id', align: 'center', sortable: false },
+  { title: 'Tx ID', key: 'tx_id', align: 'center', sortable: false, width: "90px" },
   { title: 'Type', key: 'type', sortable: false },
   { title: 'Asset ID', key: 'asset_id', sortable: false },
   { title: 'Energy source', key: 'energy_source', sortable: false },
   { title: 'Price (ICP)', key: 'price', align: 'center', sortable: false },
   { title: 'Country', key: 'country', sortable: false },
-  { title: 'Recipent ID', key: 'recipent', sortable: false },
+  { title: 'Recipent', key: 'recipent', sortable: false, width: "110px" },
+  { title: 'Sender', key: 'sender', sortable: false, width: "100px" },
   { title: 'MWh', key: 'mwh', sortable: false },
   { title: 'Date', key: 'date', sortable: false },
   { title: 'Via', key: 'via', align: 'center', sortable: false },
+  { title: 'block index', key: 'tx_index', align: 'center', sortable: false },
 ],
 dataTransactions = ref([]),
 loading = ref(true),
@@ -392,7 +428,7 @@ txMethodValues = [
   TxMethod.blockchainTransfer
 ],
 
-previewRecipent = ref(null),
+previewUser = ref(null),
 
 dialogFilters = ref(),
 filtersFormRef = ref(),
@@ -468,20 +504,22 @@ async function getData() {
 
     for (const item of data) {
       list.push({
-        transaction_id: item.transactionId,
+        tx_id: item.transactionId,
         type: item.txType,
-        recipent: item.to,
+        recipent: item.to || "---",
+        sender: item.from || "---",
         energy_source: item.assetInfo.deviceDetails.deviceType,
         country: item.assetInfo.specifications.country,
         mwh: item.tokenAmount,
         asset_id: item.assetInfo.tokenId,
         date: item.date.toDateString(),
-        price: item.priceE8S,
+        price: item.priceE8S || "---",
         via: item.method,
+        tx_index: item.txIndex || "---",
       })
     }
 
-    dataTransactions.value = list.sort((a, b) => a.transaction_id - b.transaction_id)
+    dataTransactions.value = list.sort((a, b) => a.tx_id - b.tx_id)
     totalPages.value = total
   } catch (error) {
     console.error(error);
@@ -489,16 +527,6 @@ async function getData() {
   }
 
   loading.value = false
-}
-
-async function getRecipentProfile(value, uid) {
-  if (!value) previewRecipent.value = null
-
-  try {
-    previewRecipent.value = await AgentCanister.getProfile(uid)
-  } catch (error) {
-    toast.error(error)
-  }
 }
 
 function goDetails(){

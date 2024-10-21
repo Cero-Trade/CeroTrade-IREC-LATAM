@@ -712,7 +712,7 @@ shared ({ caller = _owner }) actor class Token(
     };
   };
 
-  public shared ({ caller }) func purchaseInMarketplace(args : T.PurchaseInMarketplaceArgs) : async ICRC1.TransferResult {
+  public shared ({ caller }) func purchaseInMarketplace(args : T.PurchaseInMarketplaceArgs) : async (ICRC1.TransferResult, T.AssetInfo) {
     _callValidation(caller);
 
     // performe comission
@@ -746,7 +746,7 @@ shared ({ caller = _owner }) actor class Token(
     };
 
     // transfer canister token
-    switch (
+    let txIndex = switch (
       await* icrc1().transfer_tokens(
         args.marketplace.owner,
         {
@@ -777,6 +777,8 @@ shared ({ caller = _owner }) actor class Token(
       case (#err(#trappable(err))) D.trap(err);
       case (#err(#awaited(err))) D.trap(err);
     };
+
+    (txIndex, await assetMetadata())
   };
 
   public shared ({ caller }) func burn(args : ICRC1.BurnArgs) : async ICRC1.TransferResult {

@@ -58,7 +58,7 @@ proc expectPassphrase {passphrase} {
 
 # Register wasm module into backend canisters
 puts "====-Register wasm module into backend canisters-===="
-set dynamicCanisters {token users transactions notifications bucket}
+set dynamicCanisters {token users transactions bucket}
 
 foreach canister $dynamicCanisters {
   set command "dfx canister call agent registerWasmModule \"(variant { \\\"$canister\\\" = \\\"$canister\\\" })\" --network $network"

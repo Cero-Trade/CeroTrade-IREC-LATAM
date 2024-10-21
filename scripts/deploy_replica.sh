@@ -33,8 +33,6 @@ cp src/declarations/agent/* .dfx/local/canisters/agent/
 cp src/declarations/marketplace/* .dfx/local/canisters/marketplace/
 cp src/declarations/http_service/* .dfx/local/canisters/http_service/
 cp src/declarations/statistics/* .dfx/local/canisters/statistics/
-cp src/declarations/notifications/* .dfx/local/canisters/notifications/
-cp src/declarations/notification_index/* .dfx/local/canisters/notification_index/
 cp src/declarations/bucket/* .dfx/local/canisters/bucket/
 cp src/declarations/bucket_index/* .dfx/local/canisters/bucket_index/
 
@@ -43,7 +41,8 @@ echo "====-Generate env.mo and deploy canisters-===="
 if [ "$flag" = "clean" ]; then
   npm install
 fi
-dfx canister create --all
+dfx canister create --all --with-cycles 5000000000000
+dfx canister deposit-cycles 9_000_000_000_000 token_index
 dfx build cero_trade_project_frontend
 if [ "$flag" = "clean" ]; then
   dfx canister install cero_trade_project_frontend
@@ -66,8 +65,6 @@ if [ "$flag" = "modules" ] || [ "$flag" = "clean" ]; then
   dfx build users
   dfx canister create transactions
   dfx build transactions
-  dfx canister create notifications
-  dfx build notifications
   dfx canister create bucket
   dfx build bucket
 
@@ -76,7 +73,6 @@ if [ "$flag" = "modules" ] || [ "$flag" = "clean" ]; then
   npm run generate-wasm token local
   npm run generate-wasm users local
   npm run generate-wasm transactions local
-  npm run generate-wasm notifications local
   npm run generate-wasm bucket local
 
   # Push the current ./wasm_modules commit folder to github
@@ -92,5 +88,4 @@ echo "====-Register wasm module into backend canisters-===="
 dfx canister call agent registerWasmModule '(variant { "token" = "token" })'
 dfx canister call agent registerWasmModule '(variant { "users" = "users" })'
 dfx canister call agent registerWasmModule '(variant { "transactions" = "transactions" })'
-dfx canister call agent registerWasmModule '(variant { "notifications" = "notifications" })'
 dfx canister call agent registerWasmModule '(variant { "bucket" = "bucket" })'

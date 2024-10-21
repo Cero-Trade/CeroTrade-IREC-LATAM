@@ -4,7 +4,6 @@
       "dependencies": [
         "user_index",
         "token_index",
-        "notification_index",
         "transaction_index",
         "bucket_index",
         "marketplace",
@@ -154,19 +153,10 @@
       "type": "custom",
       "wasm": ""
     },
-    "notification_index": {
-      "main": "src/cero_trade_project_backend/notification_index/notification_index.mo",
-      "type": "motoko"
-    },
-    "notifications": {
-      "args": "-v --incremental-gc",
-      "gzip": true,
-      "main": "src/cero_trade_project_backend/notifications/notifications.mo",
-      "type": "motoko"
-    },
     "statistics": {
       "dependencies": [
-        "token_index"
+        "token_index",
+        "marketplace"
       ],
       "main": "src/cero_trade_project_backend/statistics/statistics.mo",
       "type": "motoko"

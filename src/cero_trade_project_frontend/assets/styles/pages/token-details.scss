@@ -233,22 +233,19 @@
   }
 
   .container-actions {
-    position: sticky;
-    top: 80px;
-    padding-top: 12px;
-    flex-basis: 300px;
-    height: calc(100dvh - 100px) !important;
-
-    .container-redemptions {
-      overflow: auto;
-      padding: 1px;
-      height: calc(100% - 250px);
-      flex-grow: 1;
-
-      > *:not(:last-child) {
-        margin-bottom: 20px;
-      }
+    .v-btn {
+      --w: clamp(130px, 14vw, 203px);
+      --h: 40px;
     }
+  }
+
+  .container-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 24px;
+    > * { flex-grow: 1 }
   }
 }
 

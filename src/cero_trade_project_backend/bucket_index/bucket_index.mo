@@ -6,6 +6,7 @@ import Blob "mo:base/Blob";
 import Buffer "mo:base/Buffer";
 import Array "mo:base/Array";
 import Nat "mo:base/Nat";
+import Nat8 "mo:base/Nat8";
 import Iter "mo:base/Iter";
 import Error "mo:base/Error";
 import Debug "mo:base/Debug";
@@ -13,6 +14,7 @@ import Debug "mo:base/Debug";
 // interfaces
 import IC_MANAGEMENT "../ic_management_canister_interface";
 import Bucket "../bucket/bucket_interface";
+import HTTP "../http_service/http_service_interface";
 
 // types
 import T "../types";
@@ -43,32 +45,53 @@ actor class BucketIndex() = this {
   /// get canister controllers
   public shared({ caller }) func getControllers(): async ?[Principal] {
     IC_MANAGEMENT.adminValidation(caller, controllers);
-    await IC_MANAGEMENT.getControllers(Principal.fromActor(this));
+    (await IC_MANAGEMENT.ic.canister_status({ canister_id = Principal.fromActor(this) })).settings.controllers;
   };
 
   /// register canister controllers
   public shared({ caller }) func registerControllers(): async () {
     _callValidation(caller);
 
-    controllers := await IC_MANAGEMENT.getControllers(Principal.fromActor(this));
+    controllers := (await IC_MANAGEMENT.ic.canister_status({ canister_id = Principal.fromActor(this) })).settings.controllers;
   };
 
   /// register wasm module to dynamic users canister, only admin can run it
   public shared({ caller }) func registerWasmArray(): async() {
     _callValidation(caller);
 
-    // register wasm
-    wasm_module := await IC_MANAGEMENT.getWasmModule(#bucket("bucket"));
-
-    // update deployed canisters
-    for (canister_id in bucketDirectory.keys()) {
-      await IC_MANAGEMENT.ic.install_code({
-        arg = to_candid();
-        wasm_module;
-        mode = #upgrade;
-        canister_id;
+    try {
+      let wasmModule = await HTTP.canister.get({
+        url = HTTP.apiUrl # "dev/wasm-modules/bucket?githubBranch=" # T.githubBranch();
+        port = null;
+        uid = null;
+        headers = []
       });
-    };
+
+      let parts = Text.split(Text.replace(Text.replace(wasmModule, #char '[', ""), #char ']', ""), #char ',');
+      let wasm_array = Array.map<Text, Nat>(Iter.toArray(parts), func(part) {
+        switch (Nat.fromText(part)) {
+          case null 0;
+          case (?n) n;
+        }
+      });
+      let nums8 : [Nat8] = Array.map<Nat, Nat8>(wasm_array, Nat8.fromNat);
+
+      // register wasm
+      wasm_module := Blob.fromArray(nums8);
+
+      // update deployed canisters
+      for (canister_id in bucketDirectory.keys()) {
+        await IC_MANAGEMENT.ic.install_code({
+          arg = to_candid();
+          wasm_module;
+          mode = #upgrade;
+          canister_id;
+        });
+      };
+    } catch (error) {
+      Debug.print("⭕ Error fetching WASM module: " # Error.message(error));
+      throw error;
+    }
   };
 
 
@@ -137,14 +160,14 @@ actor class BucketIndex() = this {
         Cycles.add<system>(T.cycles);
         await IC_MANAGEMENT.ic.stop_canister({ canister_id });
         await IC_MANAGEMENT.ic.delete_canister({ canister_id });
-        let _ = bucketDirectory.remove(canister_id);
+        bucketDirectory.delete(canister_id);
       };
       case(null) {
         for(canister_id in bucketDirectory.keys()) {
           Cycles.add<system>(T.cycles);
           await IC_MANAGEMENT.ic.stop_canister({ canister_id });
           await IC_MANAGEMENT.ic.delete_canister({ canister_id });
-          let _ = bucketDirectory.remove(canister_id);
+          bucketDirectory.delete(canister_id);
         };
       };
     };
