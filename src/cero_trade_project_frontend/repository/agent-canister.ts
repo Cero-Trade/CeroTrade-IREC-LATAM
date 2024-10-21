@@ -603,6 +603,7 @@ export class AgentCanister {
         item[1].mwh = tokenToNumber(item[1].mwh)
         item[1].assetType = Object.values(item[1].assetType)[0] as AssetType
         item[1].redemptions = tokenToNumber(item[1].redemptions)
+        item[1].priceE8STrend = tokenToNumber(item[1].priceE8STrend['e8s'])
       }
 
       return res
@@ -621,6 +622,7 @@ export class AgentCanister {
       res.assetType = Object.values(res.assetType)[0] as AssetType
       res.redemptions = tokenToNumber(res.redemptions)
       res.sells = tokenToNumber(res.sells)
+      res.priceE8STrend = tokenToNumber(res.priceE8STrend['e8s'])
 
       return res
     } catch (error) {

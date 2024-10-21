@@ -367,13 +367,27 @@ module {
   //
   // statistic types
   //
+  public type AssetStatisticPriceTrend = {
+    seller: UID;
+    priceE8S: Price;
+  };
+
   public type AssetStatistic = {
     mwh: TokenAmount;
     assetType: AssetType;
     redemptions: TokenAmount;
     sells: TokenAmount;
+    priceTrend: ?AssetStatisticPriceTrend;
   };
-  
+
+  public type AssetStatisticResponse = {
+    mwh: TokenAmount;
+    assetType: AssetType;
+    redemptions: TokenAmount;
+    sells: TokenAmount;
+    priceE8STrend: Price;
+  };
+
   //
   // bucket types
   //

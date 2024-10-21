@@ -1092,7 +1092,7 @@
         <span class="great-text mb-6">{{ tokenDetail.totalAmount }} MWh</span>
 
         <h5 class="mb-2">Redeemed by you</h5>
-        <span class="great-text mb-6">{{ redemptions.length }} MWh</span>
+        <span class="great-text mb-6">{{ redeemedByUser }} MWh</span>
 
         <v-btn
           class="btn"
@@ -1290,7 +1290,7 @@
                   :rules="[globalRules.requiredNumber]"
                   class="select hide-spin mb-7"
                 ></v-text-field>
-                <h6 class="h6 mb-4">Platform Redemption Rate: 0%</h6>
+                <h6 class="h6 mb-4">Platform Redemption Rate: {{ stats.find(e => e.id === 'redemption')?.value ?? 0 }}</h6>
                 <h6 class="h6 mb-6">Tokens Available to Redeem: {{ tokenDetail.totalAmount }} Mwh</h6>
 
                 <v-btn
@@ -1534,6 +1534,7 @@ prevRoutePatch  = computed(() => {
 }),
 
 
+redeemedByUser = computed(() => redemptions.value.reduce((a, b) => a + b.tokenAmount, 0)),
 totalPrice = computed(() => dialogPurchaseReview.value ? Number(formBuy.value.price) * Number(formBuy.value.amount) : 0),
 feeInE8S = computed(() => dialogPurchaseReview.value ? 30_000n : 20_000n)
 
@@ -1584,24 +1585,32 @@ async function getData() {
     haveTokenInMarket.value = singlePortfolio.value.tokenInfo.inMarket > 0
     tokenDetail.value = singlePortfolio.value.tokenInfo
     redemptions.value = singlePortfolio.value.redemptions
-    seriesMintedVsProduced.value = [(statistics.value.mwh || 1) / (singlePortfolio.value.tokenInfo.assetInfo.volumeProduced || 1) * 100]
+    seriesMintedVsProduced.value = [
+      singlePortfolio.value.tokenInfo.assetInfo.volumeProduced > 0
+        ? (statistics.value.mwh || 1) / (singlePortfolio.value.tokenInfo.assetInfo.volumeProduced * 100)
+        : 0
+    ]
 
-    const totalInMarketplace = dataMarketplace.value.reduce((a, b) => a + b.mwh, 0) + tokenDetail.value.inMarket
+    const totalInMarketplace = dataMarketplace.value.reduce((a, b) => a + b.mwh, 0) + tokenDetail.value.inMarket,
+    platformRate = statistics.value.redemptions > 0 ? (statistics.value.mwh || 1) / (statistics.value.redemptions * 100) : 0;
+
 
     stats.value = [
       {
+        id: 'produced',
         name: 'Total produced',
         value: `${tokenDetail.value.assetInfo.volumeProduced} MWh`,
       },
       {
+        id: 'market',
         name: 'Total In Market',
         value: `${totalInMarketplace} MWh`,
       },
-      // TODO fill data below
-      // {
-      //   name: 'Platform Redemption Rate',
-      //   value: `${5}%`,
-      // },
+      {
+        id: 'redemption',
+        name: 'Platform Redemption Rate',
+        value: `${platformRate}%`,
+      },
     ]
     marketInsights.value = [
       {
@@ -1616,11 +1625,10 @@ async function getData() {
         name: 'Redeemed on platform',
         value: `${statistics.value.redemptions} MWh`,
       },
-      // TODO fill data below
-      // {
-      //   name: 'Average price trend',
-      //   value: `${2} ICP`,
-      // },
+      {
+        name: 'Average price trend',
+        value: `${statistics.value.priceE8STrend} ICP`,
+      },
     ]
     assetDetails.value = [
       {
