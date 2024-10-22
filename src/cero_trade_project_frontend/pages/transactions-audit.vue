@@ -274,11 +274,11 @@ operationTypes = {
     img: plusCircle
   },
   transfer: {
-    value: 'Mint',
+    value: 'Transfer',
     img: arrowCircleBrokenRight
   },
   burn: {
-    value: 'Mint',
+    value: 'Burn',
     img: minusCircle
   }
 },
