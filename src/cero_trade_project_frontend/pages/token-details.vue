@@ -82,10 +82,12 @@
           <v-card class="card-styled-2 flex-grow-1">
             <aside
               v-for="(item, i) in assetDetails.slice(0, assetDetails.length / 2)" :key="i"
+              class="d-flex flex-column"
               :class="{ 'mb-6': i < (assetDetails.length / 2) - 1 }"
+              style="gap: 10px"
             >
               <label class="label">{{ item.name }}</label>
-              <h6 class="h6 d-flex align-center mb-0" style="gap: 3px">
+              <h6 class="h6 d-flex align-center mb-0" style="gap: 10px">
                 <img :src="item.img" :alt="`${item.name} icon`">
                 {{ item.value }}
               </h6>
@@ -95,10 +97,12 @@
           <v-card class="card-styled-2 flex-grow-1">
             <aside
               v-for="(item, i) in assetDetails.slice(assetDetails.length / 2, assetDetails.length)" :key="i"
+              class="d-flex flex-column"
               :class="{ 'mb-6': i < (assetDetails.length / 2) - 1 }"
+              style="gap: 10px"
             >
               <label class="label">{{item.name}}</label>
-              <h6 class="great-text d-flex align-center mb-0" style="gap: 3px">
+              <h6 class="great-text d-flex align-center mb-0" style="gap: 10px">
                 <img :src="item.img" :alt="`${item.name} icon`">
                 {{ item.value }}
               </h6>
@@ -184,10 +188,14 @@
 
                     <div class="jspace divrow mt-3 mb-1">
                       <span style="color: #475467;">Country</span>
-                      <div>
-                        <img :src="countries[tokenDetail.assetInfo.specifications?.country].flag" :alt="`${tokenDetail.assetInfo.specifications?.country} flag`">
-                        <span>{{ tokenDetail.assetInfo.specifications?.country }}</span>
-                      </div>
+                        <span class="flex-acenter" style="gap: 5px">
+                          <img
+                            :src="countries[tokenDetail.assetInfo.specifications?.country].flag"
+                            :alt="`${tokenDetail.assetInfo.specifications?.country} flag`"
+                            style="width: 1.25em;"
+                          >
+                          {{ tokenDetail.assetInfo.specifications?.country }}
+                        </span>
                     </div>
                   </v-col>
                 </v-row>
@@ -356,7 +364,7 @@
 
         <template #[`item.country`]="{ item }">
           <span class="text-capitalize flex-acenter" style="gap: 5px; text-wrap: nowrap">
-            <img :src="countries[item.country].flag" :alt="`${item.country} Icon`" style="width: 20px;">
+            <img :src="countries[item.country].flag" :alt="`${item.country} Icon`" style="width: 1.25em;">
             {{ item.country }}
           </span>
         </template>
@@ -403,7 +411,7 @@
           <div class="jspace divrow mb-1">
             <span>Country</span>
             <span style="color: #475467;" class="acenter text-capitalize">
-              <img :src="countries[item.country].flag" alt="icon" class="mr-1" style="width: 20px;"> {{ item.country }}
+              <img :src="countries[item.country].flag" alt="icon" class="mr-1" style="width: 1.25em;"> {{ item.country }}
             </span>
           </div>
 
@@ -1083,15 +1091,15 @@
       <v-card class="card dialog-card-detokenize d-flex flex-column" style="min-width: 100% !important">
         <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="dialogTokenInfo = false">
 
-        <span class="great-text mb-6">Your token information</span>
+        <span class="great-text-2 mb-6">Your token information</span>
 
-        <h5 class="mb-2">Currently for sale by you</h5>
+        <h5 class="h5 mb-2">Currently for sale by you</h5>
         <span class="great-text mb-6">{{ tokenDetail.inMarket }} MWh</span>
 
-        <h5 class="mb-2">Owned by you</h5>
+        <h5 class="h5 mb-2">Owned by you</h5>
         <span class="great-text mb-6">{{ tokenDetail.totalAmount }} MWh</span>
 
-        <h5 class="mb-2">Redeemed by you</h5>
+        <h5 class="h5 mb-2">Redeemed by you</h5>
         <span class="great-text mb-6">{{ redeemedByUser }} MWh</span>
 
         <v-btn
@@ -1105,9 +1113,9 @@
     <!-- dialogTrade -->
     <v-dialog v-model="dialogTrade" persistent width="100%" min-width="290" max-width="500">
       <v-card class="card dialog-card-detokenize d-flex flex-column" style="min-width: 100% !important">
-        <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="dialogTrade = false">
+        <img src="@/assets/sources/icons/close.svg" alt="close icon" class="close" @click="clearForms">
 
-        <h3 class="h3">Trade Asset #{{ tokenId }}</h3>
+        <h3 class="h3 mb-6" style="line-height: 1.3">Trade Asset #{{ tokenId }}</h3>
 
         <v-tabs v-model="tradeTab" class="custom-tabs mb-3" hide-slider>
           <v-tab v-for="(item, i) in ['Buy', 'Market', 'Redeem']" :key="i" :style="tradeTab !== i ? 'border: none !important' : null">
@@ -1118,8 +1126,8 @@
         <v-window v-model="tradeTab">
           <v-window-item :value="0">
             <v-form ref="formBuyRef" @submit.prevent>
-              <v-card class="card-styled-2" height="550" style="overflow: auto">
-                <span class="great-text">Buy Tokens</span>
+              <v-card class="card-styled-2" height="570" style="overflow: auto">
+                <span class="great-text-2">Buy Tokens</span>
                 <h6 class="h6 mb-6">Select a seller and specify the quantity to buy.</h6>
 
                 <label class="label mb-2">Filter by Country</label>
@@ -1132,6 +1140,7 @@
                   label="country"
                   variant="outlined"
                   flat elevation="0"
+                  clearable
                   class="select mb-4"
                 >
                   <template #append-inner="{ isFocused }">
@@ -1178,11 +1187,30 @@
                   :max="1000"
                   :step="1"
                   :thumb-label="filters.priceRange ? 'always' : false"
-                  class="select align-center mb-4 mt-3"
+                  class="select align-center mb-2 mt-3"
                   variant="outlined"
                   flat elevation="0"
                   hide-details
                 ></v-range-slider>
+
+                <div class="d-flex mb-4" style="gap: 20px">
+                  <v-btn
+                    class="btn bg-white"
+                    :disabled="Object.values(filters).every(e => e == null)"
+                    style="width: 100% !important; max-width: 130px !important"
+                    @click="() => {
+                      filters.country = null
+                      filters.priceRange = null
+                      getMarketPlace()
+                    }"
+                  >Clear filters</v-btn>
+
+                  <v-btn
+                    class="btn"
+                    style="width: 100% !important; max-width: 130px !important"
+                    @click="getMarketPlace"
+                  >Apply filters</v-btn>
+                </div>
 
                 <label class="label mb-2">Select Seller</label>
                 <v-select
@@ -1193,8 +1221,12 @@
                   item-value="seller"
                   flat elevation="0"
                   class="select mb-6"
+                  :loading="loadingMarketplace"
                   :rules="[globalRules.required]"
-                  @update:model-value="(value) => selectSeller(dataMarketplace.find(e => e.seller == value))"
+                  clearable
+                  @update:model-value="(value) => {
+                    if (value) selectSeller(dataMarketplace.find(e => e.seller == value))
+                  }"
                 ></v-select>
 
                 <label class="label mb-2">Quantity to Buy (MWh)</label>
@@ -1217,68 +1249,74 @@
           </v-window-item>
 
           <v-window-item :value="1">
-            <v-card class="card-styled-2" height="550" style="overflow: auto">
-              <span class="great-text">Manage Market Tokens</span>
+            <v-card class="card-styled-2" height="570" style="overflow: auto">
+              <span class="great-text-2">Manage Market Tokens</span>
               <h6 class="h6 mb-6">Put tokens in the market or remove them.</h6>
 
-              <v-form ref="formSellRef">
-                <label class="label mb-2">Quantity to Put in Market (MWh)</label>
-                <v-text-field
-                  v-model="formSell.amount"
-                  type="number"
-                  variant="outlined"
-                  flat elevation="0"
-                  :rules="[globalRules.requiredNumber]"
-                  class="select hide-spin mb-6"
-                ></v-text-field>
+              <h6 v-if="!haveToken" class="h6 mb-0">
+                You don't have any token owned to sell.<br>
+                First ensure you have balance to put on sell.
+              </h6>
 
-                <label class="label mb-2">Price per MWh (ICP)</label>
-                <v-text-field
-                  v-model="formSell.price"
-                  variant="outlined"
-                  flat elevation="0"
-                  :rules="[globalRules.requiredNumber]"
-                  class="select mb-7"
-                ></v-text-field>
+              <template v-else>
+                <v-form ref="formSellRef">
+                  <label class="label mb-2">Quantity to Put in Market (MWh)</label>
+                  <v-text-field
+                    v-model="formSell.amount"
+                    type="number"
+                    variant="outlined"
+                    flat elevation="0"
+                    :rules="[globalRules.requiredNumber]"
+                    class="select hide-spin mb-6"
+                  ></v-text-field>
 
-                <v-btn
-                  v-if="haveToken"
-                  class="btn bg-black mb-4"
-                  style="--c: white; width: 100% !important; max-width: 130px !important"
-                  @click="showDialog('sell')"
-                >Put in Market</v-btn>
-              </v-form>
+                  <label class="label mb-2">Price per MWh (ICP)</label>
+                  <v-text-field
+                    v-model="formSell.price"
+                    variant="outlined"
+                    flat elevation="0"
+                    :rules="[globalRules.requiredNumber]"
+                    class="select mb-7"
+                  ></v-text-field>
 
-              <h6 class="h6 mb-4">Tokens in Market {{ tokenDetail.inMarket }} MWh</h6>
-              <h6 class="h6 mb-4">Tokens Available to Put in Market: {{ tokenDetail.totalAmount }} MWh</h6>
+                  <v-btn
+                    class="btn bg-black mb-4"
+                    style="--c: white; width: 100% !important; max-width: 130px !important"
+                    @click="showDialog('sell')"
+                  >Put in Market</v-btn>
+                </v-form>
 
-              <label class="label mb-4">Your Market Listings</label>
+                <h6 class="h6 mb-4">Tokens in Market {{ tokenDetail.inMarket }} MWh</h6>
+                <h6 class="h6 mb-4">Tokens Available to Put in Market: {{ tokenDetail.totalAmount }} MWh</h6>
 
-              <h6 v-if="!haveTokenInMarket" class="h6 mb-0">You don't have any tokens in the market.</h6>
+                <label class="label mb-4">Your Market Listings</label>
 
-              <v-form v-else ref="formTakeOffMarketRef">
-                <v-text-field
-                  v-model="formTakeOffMarket.amount"
-                  type="number"
-                  variant="outlined"
-                  flat elevation="0"
-                  :rules="[globalRules.requiredNumber]"
-                  class="select hide-spin mb-7"
-                ></v-text-field>
+                <h6 v-if="!haveTokenInMarket" class="h6 mb-0">You don't have any tokens in the market.</h6>
 
-                <v-btn
-                  class="btn bg-black mt-4"
-                  style="--c: white; width: 100% !important; max-width: 130px !important"
-                  @click="showDialog('takeOff')"
-                >Take off market</v-btn>
-              </v-form>
+                <v-form v-else ref="formTakeOffMarketRef">
+                  <v-text-field
+                    v-model="formTakeOffMarket.amount"
+                    type="number"
+                    variant="outlined"
+                    flat elevation="0"
+                    :rules="[globalRules.requiredNumber]"
+                    class="select hide-spin mb-7"
+                  ></v-text-field>
+
+                  <v-btn
+                    class="btn bg-black mt-4"
+                    style="--c: white; width: 100% !important; max-width: 130px !important"
+                    @click="showDialog('takeOff')"
+                  >Take off market</v-btn>
+                </v-form>
+              </template>
             </v-card>
           </v-window-item>
 
           <v-window-item :value="2">
             <v-form ref="formPreRedeemRef" @submit.prevent>
-              <v-card class="card-styled-2" height="550" style="overflow: auto">
-                <span class="great-text">Redeem Tokens</span>
+              <v-card class="card-styled-2" height="570" style="overflow: auto">
+                <span class="great-text-2">Redeem Tokens</span>
                 <h6 class="h6 mb-6">Redeem your tokens at the current platform rate.</h6>
 
                 <label class="label mb-2">Quantity to Redeem (MWh)</label>
@@ -1476,7 +1514,6 @@ redemptions = ref([]),
 
 filters = ref({
   country: null,
-  companyName: null,
   priceRange: null,
 }),
 tradeTab = ref(0),
@@ -1559,15 +1596,17 @@ onBeforeMount(() => {
     router.replace({ path: '/token-details', query: { tokenId: tokenId.value } })
 
     switch (input) {
-      case 'sell': dialogSellingDetailsReview.value = true
+      case 'sell': tradeTab.value = 1
         break;
 
-      case 'redeem': dialogRedeemSure.value = true
+      case 'redeem': tradeTab.value = 2
         break;
 
-      case 'takeOff': dialogTakeOffMarket.value = true
+      case 'takeOff': tradeTab.value = 1
         break;
     }
+
+    dialogTrade.value = true
   }
 })
 
@@ -1725,6 +1764,8 @@ function selectSeller(item) {
 }
 
 function clearForms() {
+  dialogTrade.value = false
+
   formBuy.value.amount = null
   formBuy.value.price = null
   formBuy.value.sellerId = null
