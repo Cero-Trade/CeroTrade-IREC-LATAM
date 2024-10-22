@@ -350,6 +350,7 @@ async function getData() {
       page: currentPage.value,
       mwhRange: filters.value.mwhRange,
       rangeDates,
+      tokenId: search.value || null
     }),
     list = []
 

@@ -1023,7 +1023,7 @@
           flat elevation="0"
           menu-icon=""
           item-title="name"
-          item-value="name"
+          item-value="code"
           label="country"
           class="select mb-4"
         >
@@ -1136,7 +1136,7 @@
                   :items="Object.values(countries)"
                   menu-icon=""
                   item-title="name"
-                  item-value="name"
+                  item-value="code"
                   label="country"
                   variant="outlined"
                   flat elevation="0"
@@ -1725,7 +1725,7 @@ async function getMarketPlace() {
     const marketplace = await AgentCanister.getMarketplaceSellers({
       tokenId: tokenId.value,
       length: itemsPerPage.value,
-      country: filters.value.country?.toLowerCase(),
+      country: filters.value.country,
       priceRange: filters.value.priceRange,
       page: currentPage.value,
       excludeCaller: true,

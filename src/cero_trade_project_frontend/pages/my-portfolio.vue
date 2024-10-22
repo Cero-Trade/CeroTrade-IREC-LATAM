@@ -209,7 +209,7 @@
           flat elevation="0"
           menu-icon=""
           item-title="name"
-          item-value="name"
+          item-value="code"
           label="country"
           class="select mb-4"
         >
@@ -402,7 +402,7 @@ async function getData() {
     // get getPortfolio
     const { data, totalPages: pages } = await AgentCanister.getPortfolio({
       length: itemsPerPage.value,
-      country: filters.value.country?.toLowerCase(),
+      country: filters.value.country,
       mwhRange: filters.value.mwhRange,
       assetTypes,
       page: currentPage.value,

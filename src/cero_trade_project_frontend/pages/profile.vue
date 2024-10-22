@@ -300,7 +300,7 @@
           flat elevation="0"
           menu-icon=""
           item-title="name"
-          item-value="name"
+          item-value="code"
           label="country"
           class="select mb-4"
         >
