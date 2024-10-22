@@ -254,6 +254,15 @@ actor class TransactionIndex() = this {
     try {
       let errorText = "Error generating canister";
 
+      // TODO request here
+      let txHash = "emptyForNow"/* await HTTP.canister.post({
+        url = "";
+        port = null;
+        uid = null;
+        headers = [];
+        bodyJson = "";
+      }) */;
+
       /// get canister id and generate if need it
       let cid: T.CanisterId = switch(currentCanisterid) {
         case(null) {
@@ -279,7 +288,7 @@ actor class TransactionIndex() = this {
       };
 
       // register transaction
-      let txId: T.TransactionId = await Transactions.canister(cid).registerTransaction(txInfo);
+      let txId: T.TransactionId = await Transactions.canister(cid).registerTransaction({ txInfo with txHash });
 
       transactionsDirectory.put(txId, cid);
       txId
