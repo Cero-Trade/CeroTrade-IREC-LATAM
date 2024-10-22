@@ -48,7 +48,7 @@
         {value: 50, title: '50'},
       ]"
       :headers="headers"
-      :items="filteredDataTransactions"
+      :items="dataTransactions"
       :items-length="totalPages"
       :loading="loading"
       class="mt-6 my-data-table"
@@ -92,7 +92,10 @@
       </template>
 
       <template #[`item.asset_id`]="{ item }">
-        <span class="acenter" :title="item.asset_id">{{ shortString(item.asset_id, {}) }} </span>
+        <span class="pointer acenter" :title="item.asset_id" @click="item.asset_id.copyToClipboard('Token id copied')">
+          {{ shortString(item.asset_id, {}) }}
+          <img src="@/assets/sources/icons/copy.svg" alt="copy icon" class="ml-2" style="width: 18px">
+        </span>
       </template>
 
       <template #[`item.tx_index`]="{ item }">
@@ -255,7 +258,7 @@
 <script setup>
 import '@/assets/styles/pages/transactions-audit.scss'
 
-import { computed, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { AgentCanister } from '@/repository/agent-canister'
 import { TxType } from '@/models/transaction-model'
 import plusCircle from '@/assets/sources/icons/plus-circle.svg'
@@ -312,14 +315,14 @@ filters = ref({
 }),
 
 fromDateMenu = ref(),
-toDateMenu = ref(),
+toDateMenu = ref()
 
 
-filteredDataTransactions = computed(() => {
-  if (!search.value) return dataTransactions.value;
+// filteredDataTransactions = computed(() => {
+//   if (!search.value) return dataTransactions.value;
 
-  return dataTransactions.value.filter(e => e.asset_id.includes(search.value))
-})
+//   return dataTransactions.value.filter(e => e.asset_id.includes(search.value))
+// })
 
 
 
