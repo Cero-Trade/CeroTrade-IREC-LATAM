@@ -576,7 +576,6 @@ async function getRedemptions() {
     }),
     list = []
 
-
     // build redemptions
     for (const item of data) {
       list.push({

@@ -254,7 +254,7 @@ actor class TransactionIndex() = this {
     try {
       let errorText = "Error generating canister";
 
-      // TODO request here
+      // TODO invest hash transaction about operations in icp platform
       let txHash = "emptyForNow"/* await HTTP.canister.post({
         url = "";
         port = null;

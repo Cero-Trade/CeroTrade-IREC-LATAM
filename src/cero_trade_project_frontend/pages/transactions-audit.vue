@@ -297,7 +297,7 @@ headers = [
   { title: 'Token ID', key: 'asset_id', sortable: false, width: "100px" },
   { title: 'From / To', key: 'addresses', sortable: false, width: "110px" },
   { title: 'MWh', key: 'mwh', sortable: false },
-  { title: 'Block Index'/* 'Transaction hash' */, key: 'tx_index', align: 'center', sortable: false, width: "110px" },
+  { title: 'Block Index'/* 'Transaction hash' */, key: 'tx_index'/* 'tx_hash' */, align: 'center', sortable: false, width: "110px" },
   { title: 'Timestamp', key: 'date', sortable: false },
 ],
 dataTransactions = ref([]),
@@ -362,6 +362,7 @@ async function getData() {
         asset_id: item.assetInfo.tokenId,
         date: item.date.toDateString(),
         tx_index: item.txIndex.toString() || "---",
+        tx_hash: item.txHash || "---",
       })
     }
 

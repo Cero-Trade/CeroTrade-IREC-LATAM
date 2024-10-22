@@ -511,7 +511,6 @@ export class AgentCanister {
         const conversion = getFileFromArrayBuffer(item.redemptionPdf, { fileName: 'certificate', fileType: 'application/pdf' })
         item.redemptionPdf = conversion.file
         item['url'] = URL.createObjectURL(conversion.blob)
-        item.txIndex = Number(item.txIndex)
 
         // get nullable object
         item.to = item.to[0]
@@ -573,7 +572,6 @@ export class AgentCanister {
         const conversion = getFileFromArrayBuffer(item.redemptionPdf, { fileName: 'certificate', fileType: 'application/pdf' })
         item.redemptionPdf = conversion.file
         item['url'] = URL.createObjectURL(conversion.blob)
-        item.txIndex = Number(item.txIndex)
 
         // get nullable object
         item.to = item.to[0]

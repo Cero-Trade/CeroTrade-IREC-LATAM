@@ -126,6 +126,13 @@
       <template #item.via="{ item }">
         <span style="text-wrap: nowrap">{{ item.via }}</span>
       </template>
+
+      <template #[`item.tx_index`]="{ item }">
+        <a :title="item.tx_index" :href="`https://www.icpexplorer.org/#/tx/${item.tx_index}`" target="_blank" class="text-label flex-acenter" style="gap: 5px">
+          {{ shortString(item.tx_index, {}) }}
+          <img src="@/assets/sources/icons/share.svg" alt="explorer icon" style="width: 16px">
+        </a>
+      </template>
     </v-data-table>
 
 
@@ -415,7 +422,7 @@ energies = {
   { title: 'MWh', key: 'mwh', sortable: false },
   { title: 'Date', key: 'date', sortable: false },
   { title: 'Via', key: 'via', align: 'center', sortable: false },
-  { title: 'block index', key: 'tx_index', align: 'center', sortable: false },
+  { title: 'block index'/* 'Transaction hash' */, key: 'tx_index'/* 'tx_hash' */, align: 'center', sortable: false },
 ],
 dataTransactions = ref([]),
 loading = ref(true),
@@ -515,7 +522,8 @@ async function getData() {
         date: item.date.toDateString(),
         price: item.priceE8S || "---",
         via: item.method,
-        tx_index: item.txIndex || "---",
+        tx_index: item.txIndex.toString() || "---",
+        tx_hash: item.txHash || "---",
       })
     }
 
