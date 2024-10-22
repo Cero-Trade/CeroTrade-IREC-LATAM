@@ -7,6 +7,7 @@ import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
 import Iter "mo:base/Iter";
 import Error "mo:base/Error";
+import Serde "mo:serde";
 import Debug "mo:base/Debug";
 import Buffer "mo:base/Buffer";
 import Array "mo:base/Array";
@@ -254,14 +255,31 @@ actor class TransactionIndex() = this {
     try {
       let errorText = "Error generating canister";
 
-      // TODO invest hash transaction about operations in icp platform
-      let txHash = "emptyForNow"/* await HTTP.canister.post({
-        url = "";
-        port = null;
-        uid = null;
-        headers = [];
-        bodyJson = "";
-      }) */;
+      let txHash = switch(ENV.DFX_NETWORK) {
+        case("ic") await HTTP.canister.post({
+          url = "0.0.0.0:8082/block";
+          port = null;
+          uid = null;
+          headers = [{
+            name = "Content-Type";
+            value = "application/json";
+          }];
+          bodyJson = switch(Serde.JSON.toText(to_candid({
+            network_identifier = {
+              blockchain = "Internet Computer";
+              network = "mxzaz-hqaaa-aaaar-qaada-cai";
+            };
+            block_identifier = {
+              index = txInfo.txIndex;
+            }
+          }), ["network_identifier", "block_identifier"], null)) {
+            case(#err(error)) throw Error.reject("Cannot serialize data");
+            case(#ok(value)) value;
+          };
+        });
+        case(_) "unknown";
+      };
+      Debug.print("txBlock ⭐ ----> " # debug_show (txHash));
 
       /// get canister id and generate if need it
       let cid: T.CanisterId = switch(currentCanisterid) {
