@@ -48,7 +48,7 @@
         {value: 50, title: '50'},
       ]"
       :headers="headers"
-      :items="filteredDataTransactions"
+      :items="dataTransactions"
       :items-length="totalPages"
       :loading="loading"
       class="mt-6 my-data-table"
@@ -92,11 +92,14 @@
       </template>
 
       <template #[`item.asset_id`]="{ item }">
-        <span class="acenter" :title="item.asset_id">{{ shortString(item.asset_id, {}) }} </span>
+        <span class="pointer acenter" :title="item.asset_id" @click="item.asset_id.copyToClipboard('Token id copied')">
+          {{ shortString(item.asset_id, {}) }}
+          <img src="@/assets/sources/icons/copy.svg" alt="copy icon" class="ml-2" style="width: 18px">
+        </span>
       </template>
 
       <template #[`item.tx_index`]="{ item }">
-        <a :title="item.tx_index" :href="`https://www.icpexplorer.org/#/tx/${item.tx_index}`" target="_blank" class="text-label flex-acenter" style="gap: 5px">
+        <a :title="item.tx_index" :href="`${ckBTCExplorerUrl}/${item.tx_index}`" target="_blank" class="text-label flex-acenter" style="gap: 5px">
           {{ shortString(item.tx_index, {}) }}
           <img src="@/assets/sources/icons/share.svg" alt="explorer icon" style="width: 16px">
         </a>
@@ -255,7 +258,7 @@
 <script setup>
 import '@/assets/styles/pages/transactions-audit.scss'
 
-import { computed, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { AgentCanister } from '@/repository/agent-canister'
 import { TxType } from '@/models/transaction-model'
 import plusCircle from '@/assets/sources/icons/plus-circle.svg'
@@ -264,9 +267,11 @@ import arrowCircleBrokenRight from '@/assets/sources/icons/arrow-circle-broken-r
 import { useToast } from 'vue-toastification'
 import moment from "moment";
 import { shortString } from '@/plugins/functions'
+import variables from '@/mixins/variables'
 
 const
   toast = useToast(),
+  { ckBTCExplorerUrl } = variables,
 
 operationTypes = {
   mint: {
@@ -294,7 +299,7 @@ headers = [
   { title: 'Token ID', key: 'asset_id', sortable: false, width: "100px" },
   { title: 'From / To', key: 'addresses', sortable: false, width: "110px" },
   { title: 'MWh', key: 'mwh', sortable: false },
-  { title: 'Block Index'/* 'Transaction hash' */, key: 'tx_index', align: 'center', sortable: false, width: "110px" },
+  { title: 'Block Index'/* 'Transaction hash' */, key: 'tx_index'/* 'tx_hash' */, align: 'center', sortable: false, width: "110px" },
   { title: 'Timestamp', key: 'date', sortable: false },
 ],
 dataTransactions = ref([]),
@@ -312,14 +317,14 @@ filters = ref({
 }),
 
 fromDateMenu = ref(),
-toDateMenu = ref(),
+toDateMenu = ref()
 
 
-filteredDataTransactions = computed(() => {
-  if (!search.value) return dataTransactions.value;
+// filteredDataTransactions = computed(() => {
+//   if (!search.value) return dataTransactions.value;
 
-  return dataTransactions.value.filter(e => e.asset_id.includes(search.value))
-})
+//   return dataTransactions.value.filter(e => e.asset_id.includes(search.value))
+// })
 
 
 
@@ -347,6 +352,7 @@ async function getData() {
       page: currentPage.value,
       mwhRange: filters.value.mwhRange,
       rangeDates,
+      tokenId: search.value || null
     }),
     list = []
 
@@ -359,6 +365,7 @@ async function getData() {
         asset_id: item.assetInfo.tokenId,
         date: item.date.toDateString(),
         tx_index: item.txIndex.toString() || "---",
+        tx_hash: item.txHash || "---",
       })
     }
 

@@ -20,7 +20,8 @@ export type TxTypeDef = keyof typeof TxType
 
 export interface TransactionInfo {
   transactionId: string;
-  blockHash: number;
+  txIndex: number;
+  txHash: string;
   from: { principal: Principal; name: string };
   to?: { principal: Principal; name: string };
   tokenId: string;
@@ -35,6 +36,7 @@ export interface TransactionInfo {
 export interface TransactionHistoryInfo {
   transactionId: string;
   txIndex: number;
+  txHash: string;
   from: { principal: Principal; name: string };
   to?: { principal: Principal; name: string };
   assetInfo?: AssetInfoModel;

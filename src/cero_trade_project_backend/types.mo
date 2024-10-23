@@ -122,6 +122,7 @@ module {
   public type ArrayFile = [Nat8];
   public type BID = UID;
   public type TxIndex = Nat;
+  public type TxHash = Text;
   public type TokenAmount = Nat;
   public type Price = { e8s: Nat64 };
   public type UserTokenAuth = Text;
@@ -198,6 +199,7 @@ module {
   public type TransactionInfo = {
     transactionId: TransactionId;
     txIndex: TxIndex;
+    txHash: TxHash;
     from: { principal: UID; name: Text };
     to: ?{ principal: BID; name: Text };
     tokenId: TokenId;
@@ -212,6 +214,7 @@ module {
   public type TransactionHistoryInfo = {
     transactionId: TransactionId;
     txIndex: TxIndex;
+    txHash: TxHash;
     from: { principal: UID; name: Text };
     to: ?{ principal: BID; name: Text };
     assetInfo: ?AssetInfo;

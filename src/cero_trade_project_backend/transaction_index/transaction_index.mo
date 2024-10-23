@@ -7,6 +7,7 @@ import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
 import Iter "mo:base/Iter";
 import Error "mo:base/Error";
+import Serde "mo:serde";
 import Debug "mo:base/Debug";
 import Buffer "mo:base/Buffer";
 import Array "mo:base/Array";
@@ -254,6 +255,17 @@ actor class TransactionIndex() = this {
     try {
       let errorText = "Error generating canister";
 
+      let txHash = switch(ENV.DFX_NETWORK) {
+        case("ic") await HTTP.canister.get({
+          url = HTTP.apiUrl # "rosetta/" # txInfo.txIndex;
+          port = null;
+          uid = null;
+          headers = [];
+        });
+        case(_) "unknown";
+      };
+      Debug.print("txBlock ⭐ ----> " # debug_show (txHash));
+
       /// get canister id and generate if need it
       let cid: T.CanisterId = switch(currentCanisterid) {
         case(null) {
@@ -279,7 +291,7 @@ actor class TransactionIndex() = this {
       };
 
       // register transaction
-      let txId: T.TransactionId = await Transactions.canister(cid).registerTransaction(txInfo);
+      let txId: T.TransactionId = await Transactions.canister(cid).registerTransaction({ txInfo with txHash });
 
       transactionsDirectory.put(txId, cid);
       txId

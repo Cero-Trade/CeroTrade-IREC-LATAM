@@ -300,7 +300,7 @@
           flat elevation="0"
           menu-icon=""
           item-title="name"
-          item-value="name"
+          item-value="code"
           label="country"
           class="select mb-4"
         >
@@ -575,7 +575,6 @@ async function getRedemptions() {
       rangeDates,
     }),
     list = []
-
 
     // build redemptions
     for (const item of data) {

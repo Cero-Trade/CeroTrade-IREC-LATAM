@@ -82,6 +82,7 @@ actor class Agent() = this {
         let txInfo: T.TransactionInfo = {
           transactionId = "0";
           txIndex;
+          txHash = "";
           from = { principal = caller; name = callerName };
           to = null;
           tokenId = tokenInfo.tokenId;
@@ -574,6 +575,7 @@ actor class Agent() = this {
     let txInfo: T.TransactionInfo = {
       transactionId = "0";
       txIndex;
+      txHash = "";
       from = { principal = caller; name = callerName; };
       to = ?{ principal = recipent; name = recipentName; };
       tokenId;
@@ -629,6 +631,7 @@ actor class Agent() = this {
     let txInfo: T.TransactionInfo = {
       transactionId = "0";
       txIndex;
+      txHash = "";
       from = { principal = caller; name = sellerName; };
       to = null;
       tokenId;
@@ -685,6 +688,7 @@ actor class Agent() = this {
     let txInfo: T.TransactionInfo = {
       transactionId = "0";
       txIndex;
+      txHash = "";
       from = { principal = uid; name = callerName; };
       to = null;
       tokenId;
@@ -785,6 +789,7 @@ actor class Agent() = this {
       let txInfo: T.TransactionInfo = {
         transactionId = "0";
         txIndex;
+        txHash = "";
         from = { principal = caller; name = profile.companyName; };
         to = ?{ principal = triggeredBy; name = triggeredByProfile.companyName; };
         tokenId;
@@ -842,6 +847,7 @@ actor class Agent() = this {
       let txInfo: T.TransactionInfo = {
         transactionId = "0";
         txIndex;
+        txHash = "";
         from = { principal = caller; name = profile.companyName; };
         to = ?{ principal = caller; name = profile.companyName; };
         tokenId;
@@ -896,6 +902,7 @@ actor class Agent() = this {
       {
         transactionId = item.transactionId;
         txIndex = item.txIndex;
+        txHash = item.txHash;
         txType = item.txType;
         tokenAmount = item.tokenAmount;
         priceE8S = item.priceE8S;
@@ -944,6 +951,7 @@ actor class Agent() = this {
       {
         transactionId = item.transactionId;
         txIndex = item.txIndex;
+        txHash = item.txHash;
         txType = item.txType;
         tokenAmount = item.tokenAmount;
         priceE8S = item.priceE8S;

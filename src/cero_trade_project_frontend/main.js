@@ -1,4 +1,5 @@
 // styles
+import '@/assets/styles/settings.scss'
 import '@/assets/styles/main.scss'
 
 // Components

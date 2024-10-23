@@ -186,7 +186,7 @@
           flat elevation="0"
           menu-icon=""
           item-title="name"
-          item-value="name"
+          item-value="code"
           label="country"
           class="select mb-4"
         >
@@ -353,7 +353,7 @@ async function getData() {
     const { data: marketplace, totalPages: pages } = await AgentCanister.getMarketplace({
       page: currentPage.value,
       length: itemsPerPage.value,
-      country: filters.value.country?.toLowerCase(),
+      country: filters.value.country,
       assetTypes,
       priceRange: filters.value.priceRange,
     }),
