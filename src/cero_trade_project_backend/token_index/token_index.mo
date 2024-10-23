@@ -92,10 +92,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   };
 
   /// get comisison holder
-  public shared({ caller }) func getComisisonHolder(): async ICPTypes.Account {
-    IC_MANAGEMENT.adminValidation(caller, controllers);
-    comissionHolder
-  };
+  public query func getComisisonHolder(): async ICPTypes.Account { comissionHolder };
 
   /// set comisison holder
   public shared({ caller }) func setComisisonHolder(holder: ICPTypes.Account): async () {
@@ -379,7 +376,12 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   };
 
 
-  public shared({ caller }) func importUserTokens(uid: T.UID): async [{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }] {
+  public shared({ caller }) func importUserTokens(uid: T.UID): async [{
+    mwh: T.TokenAmount;
+    assetInfo: T.AssetInfo;
+    txIndex: T.TxIndex;
+    comissionTxHash: T.TxHash;
+  }] {
     _callValidation(caller);
 
     let canister_status = await IC_MANAGEMENT.ic.canister_status({ canister_id = Principal.fromActor(this) });
@@ -397,11 +399,13 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     // used hashmap to find faster elements using Hash
     // this Hash have limitation when data length is too large.
     // In this case, would consider changing to another more effective method.
-    let assetsMetadata = HM.HashMap<T.TokenId, { mwh: T.TokenAmount; assetInfo: T.AssetInfo }>(16, Text.equal, Text.hash);
+    let assetsMetadata = HM.HashMap<T.TokenId, { mwh: T.TokenAmount; assetInfo: T.AssetInfo; txIndex: T.TxIndex; comissionTxHash: T.TxHash; }>(16, Text.equal, Text.hash);
 
     // TODO this code below exists in case need test it
-    assetsMetadata.put("2", {
+    assetsMetadata.put("01J6J1WA03Y6X2HY5S7Q162XBN", {
       mwh = 2_000_000_000;
+      txIndex = 0;
+      comissionTxHash = "unknown";
       assetInfo = {
         tokenId = "01J6J1WA03Y6X2HY5S7Q162XBN";
         startDate = "2024-04-29T19:43:34.000Z";
@@ -436,6 +440,8 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     //           for(assetResponse in items.vals()) {
     //             assetsMetadata.put(assetResponse.asset_assetId, {
     //               mwh = await T.textToToken(assetResponse.item_volume, null);
+    //               txIndex = 0;
+    //               comissionTxHash = "";
     //               assetInfo = await buildAssetInfo(assetResponse);
     //             });
     //           };
@@ -452,7 +458,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       let cid = await registerToken(assetInfo);
 
       // mint tokens to user
-      let transferResult: ICRC1.TransferResult = await Token.canister(cid).mint({
+      let transferResult: T.TokenTxResponse = await Token.canister(cid).mint({
         to = {
           owner = uid;
           subaccount = null;
@@ -462,8 +468,17 @@ shared({ caller = owner }) actor class TokenIndex() = this {
         memo = null;
       });
 
-      switch(transferResult) {
-        case(#Ok(value)) Debug.print("#Ok - minted " # Nat.toText(mwh) # " tokens in tx index: " # Nat.toText(value));
+      switch(transferResult.token_result) {
+        case(#Ok(value)) {
+          Debug.print("#Ok - minted token with id: " # key # " by amount: " # Nat.toText(mwh) # " in tx index: " # Nat.toText(value));
+
+          assetsMetadata.put(key, {
+            mwh;
+            assetInfo;
+            txIndex = value;
+            comissionTxHash = Nat.toText(transferResult.comission_block);
+          });
+        };
 
         case(#Err(error)) {
           Debug.print(switch(error) {
@@ -486,7 +501,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   };
 
 
-  public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, amount: T.TokenAmount): async (T.TxIndex, T.AssetInfo) {
+  public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, amount: T.TokenAmount): async T.MintTxIndexResponse {
     _callValidation(caller);
 
     let assetsJson = await HTTP.canister.get({
@@ -512,7 +527,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     let cid = await registerToken(assetMetadata);
 
     // mint token to user
-    let transferResult: ICRC1.TransferResult = await Token.canister(cid).mint({
+    let transferResult: T.TokenTxResponse = await Token.canister(cid).mint({
       to = {
         owner = recipent;
         subaccount = null;
@@ -522,7 +537,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       memo = null;
     });
 
-    let txIndex = switch(transferResult) {
+    let txIndex = switch(transferResult.token_result) {
       case(#Err(error)) throw Error.reject(switch(error) {
         case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
         case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
@@ -536,7 +551,10 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       case(#Ok(value)) value;
     };
 
-    (txIndex, assetMetadata)
+    {
+      comission_block = transferResult.comission_block;
+      token_block = (txIndex, assetMetadata);
+    }
   };
 
   // helper function used to build [AssetInfo] from AssetResponse

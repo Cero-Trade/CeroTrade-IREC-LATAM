@@ -515,6 +515,8 @@ export class AgentCanister {
         // get nullable object
         item.to = item.to[0]
         item.assetInfo = item.assetInfo[0]
+        item.comissionTxHash = item.comissionTxHash[0]
+        item.ledgerTxHash = item.ledgerTxHash[0]
         item.assetInfo.deviceDetails.deviceType = Object.values(item.assetInfo.deviceDetails.deviceType)[0] as AssetType
         item.assetInfo.volumeProduced = tokenToNumber(item.assetInfo.volumeProduced)
 
@@ -564,6 +566,8 @@ export class AgentCanister {
         // get nullable object
         item.to = item.to[0]
         item.assetInfo = item.assetInfo[0]
+        item.comissionTxHash = item.comissionTxHash[0]
+        item.ledgerTxHash = item.ledgerTxHash[0]
         item.assetInfo.deviceDetails.deviceType = Object.values(item.assetInfo.deviceDetails.deviceType)[0] as AssetType
         item.assetInfo.volumeProduced = tokenToNumber(item.assetInfo.volumeProduced)
 
@@ -625,6 +629,8 @@ export class AgentCanister {
         // get nullable object
         item.to = item.to[0]
         item.assetInfo = item.assetInfo[0]
+        item.comissionTxHash = item.comissionTxHash[0]
+        item.ledgerTxHash = item.ledgerTxHash[0]
         item.assetInfo.deviceDetails.deviceType = Object.values(item.assetInfo.deviceDetails.deviceType)[0] as AssetType
         item.assetInfo.volumeProduced = tokenToNumber(item.assetInfo.volumeProduced)
 

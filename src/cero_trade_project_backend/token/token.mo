@@ -530,15 +530,28 @@ shared ({ caller = _owner }) actor class Token(
     }
   };
 
-  public shared ({ caller }) func mint(args : ICRC1.Mint) : async ICRC1.TransferResult {
+  public shared ({ caller }) func mint(args : ICRC1.Mint) : async T.TokenTxResponse {
     if (caller != owner) { D.trap("Unauthorized") };
 
-    switch (await* icrc1().mint_tokens(caller, args)) {
+    let txResult = switch (await* icrc1().mint_tokens(caller, args)) {
       case (#trappable(val)) val;
       case (#awaited(val)) val;
       case (#err(#trappable(err))) D.trap(err);
       case (#err(#awaited(err))) D.trap(err);
     };
+
+    // performe comission to register block into ledger
+    let comission_block = switch (await ICPTypes.ICPLedger.icrc2_transfer_from({ from = init_args.comissionHolder; to = { owner = _owner; subaccount = null; }; fee = null; spender_subaccount = null; memo = null; created_at_time = ?time64(); amount = 1 })) {
+      case (#Ok(block)) block;
+      case (#Err(err)) {
+        D.trap("cannot performe comission from failed" # debug_show (err));
+      };
+    };
+
+    {
+      comission_block;
+      token_result = txResult;
+    }
   };
 
   private func time64() : Nat64 {

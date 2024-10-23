@@ -424,6 +424,11 @@ module {
     token_block: TxIndex;
   };
 
+  public type MintTxIndexResponse = {
+    comission_block: TxIndex;
+    token_block: (TxIndex, AssetInfo);
+  };
+
   public type TransferInMarketplaceArgs = {
     from: ICPTypes.Account;
     to: ICPTypes.Account;

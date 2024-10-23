@@ -173,19 +173,43 @@ actor class Agent() = this {
 
   /// import user tokens
   public shared({ caller }) func importUserTokens(): async [{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }] {
+    // check if caller exists and return companyName
+    let callerName = await UserIndex.getUserName(caller);
+
     // performe import of tokens
     let transactions = await TokenIndex.importUserTokens(caller);
+
+    let comissionHolder = await TokenIndex.getComisisonHolder();
 
     let mappedTxs = Buffer.Buffer<{ tokenId: T.TokenId; statistics: { mwh: ?T.TokenAmount; redemptions: ?T.TokenAmount; sells: ?T.TokenAmount; priceTrend: ?T.AssetStatisticPriceTrend; } }>(16);
     let mappedAssets = Buffer.Buffer<T.AssetInfo>(16);
 
-    for({ mwh; assetInfo } in transactions.vals()) {
+    for({ mwh; assetInfo; txIndex; comissionTxHash; } in transactions.vals()) {
       mappedAssets.add(assetInfo);
 
       mappedTxs.add({
         tokenId = assetInfo.tokenId;
         statistics = { mwh = ?mwh; redemptions = null; sells = null; priceTrend = null; };
       });
+
+      // build transaction
+      let txInfo: T.TransactionInfo = {
+        transactionId = Nat.toText(txIndex);
+        ledgerTxHash = null;
+        comissionTxHash = ?comissionTxHash;
+        from = { principal = comissionHolder.owner; name = "Cero Trade"; };
+        to = ?{ principal = caller; name = callerName; };
+        tokenId = assetInfo.tokenId;
+        txType = #mint("mint");
+        tokenAmount = mwh;
+        priceE8S = ?{ e8s = 1 };
+        date = DateTime.now().toText();
+        method = #blockchainTransfer("blockchainTransfer");
+        redemptionPdf = null;
+      };
+
+      // register transaction
+      let _txId = await TransactionIndex.registerTransaction(txInfo);
     };
 
     // add user portfolio
@@ -199,22 +223,42 @@ actor class Agent() = this {
 
 
   /// performe mint with tokenId and amount requested
-  public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, tokenAmount: T.TokenAmount): async T.TxIndex {
+  public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, tokenAmount: T.TokenAmount): async T.TransactionId {
     IC_MANAGEMENT.adminValidation(caller, controllers);
 
-    // check if user exists
-    if (not (await UserIndex.checkPrincipal(recipent))) throw Error.reject(notExists);
+    // check if caller exists and return companyName
+    let recipentName = await UserIndex.getUserName(caller);
 
     // mint token to user token collection
-    let (txIndex, assetInfo) = await TokenIndex.mintTokenToUser(recipent, tokenId, tokenAmount);
+    let { comission_block; token_block } = await TokenIndex.mintTokenToUser(recipent, tokenId, tokenAmount);
+    let comissionHolder = await TokenIndex.getComisisonHolder();
+
+    // build transaction
+    let txInfo: T.TransactionInfo = {
+      transactionId = Nat.toText(token_block.0);
+      ledgerTxHash = null;
+      comissionTxHash = ?Nat.toText(comission_block);
+      from = { principal = comissionHolder.owner; name = "Cero Trade"; };
+      to = ?{ principal = recipent; name = recipentName; };
+      tokenId;
+      txType = #mint("mint");
+      tokenAmount;
+      priceE8S = ?{ e8s = 1 };
+      date = DateTime.now().toText();
+      method = #blockchainTransfer("blockchainTransfer");
+      redemptionPdf = null;
+    };
+
+    // register transaction
+    let transactionId = await TransactionIndex.registerTransaction(txInfo);
 
     // add user portfolio
-    await UserIndex.addTokensPortfolio(recipent, [assetInfo]);
+    await UserIndex.addTokensPortfolio(recipent, [token_block.1]);
 
     // register asset statistic
     await Statistics.registerAssetStatistic(tokenId, { mwh = ?tokenAmount; redemptions = null; sells = null; priceTrend = null; });
 
-    txIndex
+    transactionId
   };
 
 
