@@ -98,9 +98,16 @@
         </span>
       </template>
 
-      <template #[`item.tx_index`]="{ item }">
-        <a :title="item.tx_index" :href="`${ckBTCExplorerUrl}/${item.tx_index}`" target="_blank" class="text-label flex-acenter" style="gap: 5px">
-          {{ shortString(item.tx_index, {}) }}
+      <template #[`item.ledger_tx_hash`]="{ item }">
+        <a :title="item.ledger_tx_hash" :href="`${ICPExplorerUrl}/${item.ledger_tx_hash}`" target="_blank" class="text-label flex-acenter" style="gap: 5px">
+          {{ shortString(item.ledger_tx_hash, {}) }}
+          <img src="@/assets/sources/icons/share.svg" alt="explorer icon" style="width: 16px">
+        </a>
+      </template>
+
+      <template #[`item.comission_tx_hash`]="{ item }">
+        <a :title="item.comission_tx_hash" :href="`${ICPExplorerUrl}/${item.comission_tx_hash}`" target="_blank" class="text-label flex-acenter" style="gap: 5px">
+          {{ shortString(item.comission_tx_hash, {}) }}
           <img src="@/assets/sources/icons/share.svg" alt="explorer icon" style="width: 16px">
         </a>
       </template>
@@ -271,7 +278,7 @@ import variables from '@/mixins/variables'
 
 const
   toast = useToast(),
-  { ckBTCExplorerUrl } = variables,
+  { ICPExplorerUrl } = variables,
 
 operationTypes = {
   mint: {
@@ -288,18 +295,22 @@ operationTypes = {
   }
 },
 txTypes = {
-  [TxType.purchase]: operationTypes.mint,
-  [TxType.redemption]: operationTypes.burn,
+  [TxType.purchase]: operationTypes.transfer,
   [TxType.putOnSale]: operationTypes.transfer,
   [TxType.takeOffMarketplace]: operationTypes.transfer,
+  [TxType.redemption]: operationTypes.burn,
+  [TxType.burn]: operationTypes.transfer,
+  [TxType.mint]: operationTypes.mint,
 },
 search = ref(null),
 headers = [
+  { title: 'Tx ID', key: 'tx_id', align: 'center', sortable: false, width: "90px" },
   { title: 'Type', key: 'type', sortable: false },
   { title: 'Token ID', key: 'asset_id', sortable: false, width: "100px" },
   { title: 'From / To', key: 'addresses', sortable: false, width: "110px" },
   { title: 'MWh', key: 'mwh', sortable: false },
-  { title: 'Block Index'/* 'Transaction hash' */, key: 'tx_index'/* 'tx_hash' */, align: 'center', sortable: false, width: "110px" },
+  { title: 'Ledger Tx hash', key: 'ledger_tx_hash', align: 'center', sortable: false, width: "110px" },
+  { title: 'Comission Tx hash', key: 'comission_tx_hash', align: 'center', sortable: false, width: "110px" },
   { title: 'Timestamp', key: 'date', sortable: false },
 ],
 dataTransactions = ref([]),
@@ -347,7 +358,7 @@ async function getData() {
 
   try {
     // get platform transactions
-    const { data, total } = await AgentCanister.getPlatformTransactions({
+    const { data, total } = await AgentCanister.getLedgerTransactions({
       length: itemsPerPage.value,
       page: currentPage.value,
       mwhRange: filters.value.mwhRange,
@@ -365,7 +376,8 @@ async function getData() {
         asset_id: item.assetInfo.tokenId,
         date: item.date.toDateString(),
         tx_index: item.txIndex.toString() || "---",
-        tx_hash: item.txHash || "---",
+        comission_tx_hash: item.comissionTxHash,
+        ledger_tx_hash: item.ledgerTxHash || "---",
       })
     }
 

@@ -15,13 +15,15 @@ export enum TxType {
   purchase = 'purchase',
   takeOffMarketplace = 'takeOffMarketplace',
   redemption = 'redemption',
+  burn = 'burn',
+  mint = 'mint',
 }
 export type TxTypeDef = keyof typeof TxType
 
 export interface TransactionInfo {
   transactionId: string;
-  txIndex: number;
-  txHash: string;
+  comissionTxHash: string;
+  ledgerTxHash?: string;
   from: { principal: Principal; name: string };
   to?: { principal: Principal; name: string };
   tokenId: string;
@@ -35,8 +37,8 @@ export interface TransactionInfo {
 
 export interface TransactionHistoryInfo {
   transactionId: string;
-  txIndex: number;
-  txHash: string;
+  comissionTxHash: string;
+  ledgerTxHash?: string;
   from: { principal: Principal; name: string };
   to?: { principal: Principal; name: string };
   assetInfo?: AssetInfoModel;

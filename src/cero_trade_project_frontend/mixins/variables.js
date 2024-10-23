@@ -34,7 +34,7 @@ export default {
   beneficiaryUrl: computed(() => `${process.env.NODE_ENV === 'production' ? 'https://z2mgf-dqaaa-aaaak-qihbq-cai.icp0.io' : 'http://localhost:5173'}/auth/register?canisterId=z2mgf-dqaaa-aaaak-qihbq-cai&beneficiary=${store.state.profile?.principalId.toString()}`),
   defaultMaxDecimals: 8,
   defaultLocale: 'en-US',
-  ckBTCExplorerUrl: "https://dashboard.internetcomputer.org/bitcoin/transaction",
+  ICPExplorerUrl: "https://dashboard.internetcomputer.org/transaction",
 
   isSafari: /^((?!chrome|android).)*safari/i.test(navigator.userAgent),
   countries: computed(() => store.state.countries),

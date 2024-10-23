@@ -127,9 +127,16 @@
         <span style="text-wrap: nowrap">{{ item.via }}</span>
       </template>
 
-      <template #[`item.tx_index`]="{ item }">
-        <a :title="item.tx_index" :href="`${ckBTCExplorerUrl}/${item.tx_index}`" target="_blank" class="text-label flex-acenter" style="gap: 5px">
-          {{ shortString(item.tx_index, {}) }}
+      <template #[`item.ledger_tx_hash`]="{ item }">
+        <a :title="item.ledger_tx_hash" :href="`${ICPExplorerUrl}/${item.ledger_tx_hash}`" target="_blank" class="text-label flex-acenter" style="gap: 5px">
+          {{ shortString(item.ledger_tx_hash, {}) }}
+          <img src="@/assets/sources/icons/share.svg" alt="explorer icon" style="width: 16px">
+        </a>
+      </template>
+
+      <template #[`item.comission_tx_hash`]="{ item }">
+        <a :title="item.comission_tx_hash" :href="`${ICPExplorerUrl}/${item.comission_tx_hash}`" target="_blank" class="text-label flex-acenter" style="gap: 5px">
+          {{ shortString(item.comission_tx_hash, {}) }}
           <img src="@/assets/sources/icons/share.svg" alt="explorer icon" style="width: 16px">
         </a>
       </template>
@@ -384,7 +391,7 @@ import variables from '@/mixins/variables'
 const
   router = useRouter(),
   toast = useToast(),
-  { countries, ckBTCExplorerUrl } = variables,
+  { countries, ICPExplorerUrl } = variables,
 
 tabsMobile = ref(1),
 windowStep = ref(undefined),
@@ -422,7 +429,8 @@ energies = {
   { title: 'MWh', key: 'mwh', sortable: false },
   { title: 'Date', key: 'date', sortable: false },
   { title: 'Via', key: 'via', align: 'center', sortable: false },
-  { title: 'block index'/* 'Transaction hash' */, key: 'tx_index'/* 'tx_hash' */, align: 'center', sortable: false },
+  { title: 'Ledger Tx hash', key: 'ledger_tx_hash', align: 'center', sortable: false, width: "110px" },
+  { title: 'Comission Tx hash', key: 'comission_tx_hash', align: 'center', sortable: false, width: "110px" },
 ],
 dataTransactions = ref([]),
 loading = ref(true),
@@ -523,7 +531,8 @@ async function getData() {
         price: item.priceE8S || "---",
         via: item.method,
         tx_index: item.txIndex.toString() || "---",
-        tx_hash: item.txHash || "---",
+        comission_tx_hash: item.comissionTxHash,
+        ledger_tx_hash: item.ledgerTxHash || "---",
       })
     }
 
