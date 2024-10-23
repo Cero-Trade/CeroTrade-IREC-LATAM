@@ -403,7 +403,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     // assetsMetadata.put("2", {
     //   mwh = 200_000_000;
     //   assetInfo = {
-    //     tokenId = "2";
+    //     tokenId = "01J6J1WA03Y6X2HY5S7Q162XBN";
     //     startDate = "2024-04-29T19:43:34.000Z";
     //     endDate = "2024-05-29T19:48:31.000Z";
     //     co2Emission = "11.22";
@@ -434,7 +434,6 @@ shared({ caller = owner }) actor class TokenIndex() = this {
           case(?response) {
             for({ items } in response.vals()) {
               for(assetResponse in items.vals()) {
-                // TODO review mwh value assignment
                 assetsMetadata.put(assetResponse.asset_assetId, {
                   mwh = await T.textToToken(assetResponse.item_volume, null);
                   assetInfo = await buildAssetInfo(assetResponse);
