@@ -128,7 +128,7 @@
       </template>
 
       <template #[`item.tx_index`]="{ item }">
-        <a :title="item.tx_index" :href="`https://www.icpexplorer.org/#/tx/${item.tx_index}`" target="_blank" class="text-label flex-acenter" style="gap: 5px">
+        <a :title="item.tx_index" :href="`${ckBTCExplorerUrl}/${item.tx_index}`" target="_blank" class="text-label flex-acenter" style="gap: 5px">
           {{ shortString(item.tx_index, {}) }}
           <img src="@/assets/sources/icons/share.svg" alt="explorer icon" style="width: 16px">
         </a>
@@ -384,7 +384,7 @@ import variables from '@/mixins/variables'
 const
   router = useRouter(),
   toast = useToast(),
-  { countries } = variables,
+  { countries, ckBTCExplorerUrl } = variables,
 
 tabsMobile = ref(1),
 windowStep = ref(undefined),

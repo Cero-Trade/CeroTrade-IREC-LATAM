@@ -99,7 +99,7 @@
       </template>
 
       <template #[`item.tx_index`]="{ item }">
-        <a :title="item.tx_index" :href="`https://www.icpexplorer.org/#/tx/${item.tx_index}`" target="_blank" class="text-label flex-acenter" style="gap: 5px">
+        <a :title="item.tx_index" :href="`${ckBTCExplorerUrl}/${item.tx_index}`" target="_blank" class="text-label flex-acenter" style="gap: 5px">
           {{ shortString(item.tx_index, {}) }}
           <img src="@/assets/sources/icons/share.svg" alt="explorer icon" style="width: 16px">
         </a>
@@ -267,9 +267,11 @@ import arrowCircleBrokenRight from '@/assets/sources/icons/arrow-circle-broken-r
 import { useToast } from 'vue-toastification'
 import moment from "moment";
 import { shortString } from '@/plugins/functions'
+import variables from '@/mixins/variables'
 
 const
   toast = useToast(),
+  { ckBTCExplorerUrl } = variables,
 
 operationTypes = {
   mint: {
