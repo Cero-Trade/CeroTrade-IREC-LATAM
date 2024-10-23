@@ -256,26 +256,11 @@ actor class TransactionIndex() = this {
       let errorText = "Error generating canister";
 
       let txHash = switch(ENV.DFX_NETWORK) {
-        case("ic") await HTTP.canister.post({
-          url = "0.0.0.0:8082/block";
+        case("ic") await HTTP.canister.get({
+          url = HTTP.apiUrl # "rosetta/" # txInfo.txIndex;
           port = null;
           uid = null;
-          headers = [{
-            name = "Content-Type";
-            value = "application/json";
-          }];
-          bodyJson = switch(Serde.JSON.toText(to_candid({
-            network_identifier = {
-              blockchain = "Internet Computer";
-              network = "mxzaz-hqaaa-aaaar-qaada-cai";
-            };
-            block_identifier = {
-              index = txInfo.txIndex;
-            }
-          }), ["network_identifier", "block_identifier"], null)) {
-            case(#err(error)) throw Error.reject("Cannot serialize data");
-            case(#ok(value)) value;
-          };
+          headers = [];
         });
         case(_) "unknown";
       };
