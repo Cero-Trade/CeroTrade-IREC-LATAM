@@ -255,9 +255,9 @@ actor class TransactionIndex() = this {
     try {
       let errorText = "Error generating canister";
 
-      // TODO review this flow part
+      // TODO review this flow part <--
       let txHashes = switch(ENV.DFX_NETWORK) {
-        case("ic") await HTTP.canister.post({
+        case("ic") "unknown"/* await HTTP.canister.post({
           url = HTTP.apiUrl # "rosetta/";
           port = null;
           uid = null;
@@ -268,7 +268,7 @@ actor class TransactionIndex() = this {
             case(#err(error)) throw Error.reject("Cannot serialize data");
             case(#ok(value)) value;
           };
-        });
+        }) */;
         case(_) "unknown";
       };
       Debug.print("txBlock ⭐ ----> " # debug_show (txHashes));
