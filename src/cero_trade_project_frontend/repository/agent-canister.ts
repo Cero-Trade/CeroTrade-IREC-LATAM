@@ -482,6 +482,57 @@ export class AgentCanister {
     }
   }
 
+  static async getLedgerTransactions({ page, length, mwhRange, rangeDates, tokenId }: {
+    page?: number,
+    length?: number,
+    mwhRange?: number[],
+    rangeDates?: Date[],
+    tokenId?: string,
+  }): Promise<{ data: TransactionHistoryInfo[]; totalPages: number; }> {
+    mwhRange ??= []
+    rangeDates ??= []
+
+    try {
+      const response = await agent().getLedgerTransactions(
+        page ? [page] : [],
+        length ? [length] : [],
+        mwhRange.length ? [mwhRange] : [],
+        rangeDates.length ? [rangeDates.map(e => moment(e).format(variables.dateFormat))] : [],
+        tokenId ? [tokenId] : [],
+      ) as { data: TransactionHistoryInfo[]; totalPages: number; }
+
+      for (const item of response.data) {
+        // format record value
+        item.tokenAmount = tokenToNumber(item.tokenAmount)
+        item.txType = Object.values(item.txType)[0] as TxTypeDef
+        item.method = Object.values(item.method)[0] as TxMethodDef
+        item.date = new Date(item.date)
+
+        const conversion = getFileFromArrayBuffer(item.redemptionPdf, { fileName: 'certificate', fileType: 'application/pdf' })
+        item.redemptionPdf = conversion.file
+        item['url'] = URL.createObjectURL(conversion.blob)
+
+        // get nullable object
+        item.to = item.to[0]
+        item.assetInfo = item.assetInfo[0]
+        item.comissionTxHash = item.comissionTxHash[0]
+        item.ledgerTxHash = item.ledgerTxHash[0]
+        item.assetInfo.deviceDetails.deviceType = Object.values(item.assetInfo.deviceDetails.deviceType)[0] as AssetType
+        item.assetInfo.volumeProduced = tokenToNumber(item.assetInfo.volumeProduced)
+
+        // convert e8s to icp
+        item.priceE8S = item.priceE8S[0] ? tokenToNumber(item.priceE8S[0]['e8s']) : null
+      }
+
+      response.totalPages = Number(response.totalPages)
+
+      return response
+    } catch (error) {
+      console.error(error);
+      throw getErrorMessage(error)
+    }
+  }
+
   static async getPlatformTransactions({ page, length, mwhRange, rangeDates, tokenId }: {
     page?: number,
     length?: number,
@@ -515,6 +566,8 @@ export class AgentCanister {
         // get nullable object
         item.to = item.to[0]
         item.assetInfo = item.assetInfo[0]
+        item.comissionTxHash = item.comissionTxHash[0]
+        item.ledgerTxHash = item.ledgerTxHash[0]
         item.assetInfo.deviceDetails.deviceType = Object.values(item.assetInfo.deviceDetails.deviceType)[0] as AssetType
         item.assetInfo.volumeProduced = tokenToNumber(item.assetInfo.volumeProduced)
 
@@ -576,6 +629,8 @@ export class AgentCanister {
         // get nullable object
         item.to = item.to[0]
         item.assetInfo = item.assetInfo[0]
+        item.comissionTxHash = item.comissionTxHash[0]
+        item.ledgerTxHash = item.ledgerTxHash[0]
         item.assetInfo.deviceDetails.deviceType = Object.values(item.assetInfo.deviceDetails.deviceType)[0] as AssetType
         item.assetInfo.volumeProduced = tokenToNumber(item.assetInfo.volumeProduced)
 

@@ -25,13 +25,13 @@ module TokenInterface {
     token_balance: (args: ICRC1.Account) -> async { balance: ICRC1.Balance; assetMetadata: T.AssetInfo; };
     icrc1_supported_standards: query () -> async [ICRC1.SupportedStandard];
     icrc10_supported_standards: query () -> async [ICRC1.SupportedStandard];
-    icrc1_transfer: (args: ICRC1.TransferArgs) -> async ICRC1.TransferResult;
-    mint: (args: ICRC1.Mint) -> async ICRC1.TransferResult;
+    transfer: (args: ICRC1.TransferArgs) -> async T.TokenTxResponse;
+    mint: (args: ICRC1.Mint) -> async T.TokenTxResponse;
     transferInMarketplace: (args : T.TransferInMarketplaceArgs) -> async ICRC1.TransferResult;
-    purchaseInMarketplace: (args : T.PurchaseInMarketplaceArgs) -> async (ICRC1.TransferResult, T.AssetInfo);
+    purchaseInMarketplace: (args : T.PurchaseInMarketplaceArgs) -> async T.PurchaseTxResponse;
     requestRedeem: (args : T.RedeemArgs, { returns: Bool }) -> async ICRC1.TransferResult;
-    redeemRequested: (args : T.RedeemArgs) -> async ICRC1.TransferResult;
-    redeem: (args : T.RedeemArgs) -> async ICRC1.TransferResult;
+    redeemRequested: (args : T.RedeemArgs) -> async T.TokenTxResponse;
+    redeem: (args : T.RedeemArgs) -> async T.TokenTxResponse;
     burnUserTokens: (args : T.RedeemArgs) -> async ICRC1.TransferResult;
     burn: (args: ICRC1.BurnArgs) -> async ICRC1.TransferResult;
     icrc2_allowance: query (args: ICRC2.AllowanceArgs) -> async ICRC2.Allowance;

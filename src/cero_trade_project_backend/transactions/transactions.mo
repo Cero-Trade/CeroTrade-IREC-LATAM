@@ -34,11 +34,8 @@ shared({ caller = transactionIndexCaller }) actor class Transactions() {
   public shared({ caller }) func registerTransaction(txInfo: T.TransactionInfo): async T.TransactionId {
     _callValidation(caller);
 
-    let txId = Nat.toText(transactions.size() + 1);
-    let tx = { txInfo with transactionId = txId };
-
-    transactions.put(txId, tx);
-    txId
+    transactions.put(txInfo.transactionId, txInfo);
+    txInfo.transactionId
   };
 
 
@@ -109,6 +106,65 @@ shared({ caller = transactionIndexCaller }) actor class Transactions() {
           };
 
           if (filterType and filterPrice and filterRange and filterMethod and filterDates and filterTokenId) txs.add(txInfo)
+        };
+      };
+    };
+
+    Buffer.toArray<T.TransactionInfo>(txs);
+  };
+
+  public query func getOutTransactionsById(txIds: [T.TransactionId], mwhRange: ?[T.TokenAmount], rangeDates: ?[Text], tokenId: ?T.TokenId): async [T.TransactionInfo] {
+    let txs = Buffer.Buffer<T.TransactionInfo>(50);
+
+    for(tx in txIds.vals()) {
+      switch(transactions.get(tx)) {
+        case(null) {};
+
+        case(?txInfo) {
+          // filter by mwhRange
+          let filterRange: Bool = switch(mwhRange) {
+            case(null) true;
+            case(?range) txInfo.tokenAmount >= range[0] and txInfo.tokenAmount <= range[1];
+          };
+
+          // filter by txType
+          let filterType: Bool = switch(txInfo.txType) {
+            case(#purchase("purchase")) true;
+            case(#redemption("redemption")) true;
+            case(#mint("mint")) true;
+            case _ false;
+          };
+
+          // filter by dates
+          let filterDates: Bool = switch(rangeDates) {
+            case(null) true;
+            case(?dates) {
+              let txDate = switch(DateTime.fromText(txInfo.date, T.dateFormat)) {
+                case(null) throw Error.reject("Failed to parse datetime");
+                case(?dateTime) dateTime;
+              };
+
+              let compareFrom = switch(DateTime.fromText(dates[0], T.dateFormat)) {
+                case(null) throw Error.reject("Failed to parse datetime");
+                case(?dateTime) dateTime.compare(txDate) == #equal or dateTime.compare(txDate) == #less;
+              };
+
+              let compareTo = switch(DateTime.fromText(dates[1], T.dateFormat)) {
+                case(null) throw Error.reject("Failed to parse datetime");
+                case(?dateTime) dateTime.compare(txDate) == #equal or dateTime.compare(txDate) == #greater;
+              };
+
+              compareFrom and compareTo
+            };
+          };
+
+          // filter by tokenId
+          let filterTokenId: Bool = switch(tokenId) {
+            case(null) true;
+            case(?value) txInfo.tokenId == value;
+          };
+
+          if (filterType and filterRange and filterDates and filterTokenId) txs.add(txInfo)
         };
       };
     };

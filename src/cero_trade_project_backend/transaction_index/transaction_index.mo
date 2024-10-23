@@ -255,16 +255,23 @@ actor class TransactionIndex() = this {
     try {
       let errorText = "Error generating canister";
 
-      let txHash = switch(ENV.DFX_NETWORK) {
-        case("ic") await HTTP.canister.get({
-          url = HTTP.apiUrl # "rosetta/" # txInfo.txIndex;
+      // TODO review this flow part <--
+      let txHashes = switch(ENV.DFX_NETWORK) {
+        case("ic") "unknown"/* await HTTP.canister.post({
+          url = HTTP.apiUrl # "rosetta/";
           port = null;
           uid = null;
           headers = [];
-        });
+          bodyJson = switch(Serde.JSON.toText(to_candid({
+            blocks = [txInfo.comissionTxHash, txInfo.ledgerTxHash];
+          }), ["blocks"], null)) {
+            case(#err(error)) throw Error.reject("Cannot serialize data");
+            case(#ok(value)) value;
+          };
+        }) */;
         case(_) "unknown";
       };
-      Debug.print("txBlock ⭐ ----> " # debug_show (txHash));
+      Debug.print("txBlock ⭐ ----> " # debug_show (txHashes));
 
       /// get canister id and generate if need it
       let cid: T.CanisterId = switch(currentCanisterid) {
@@ -291,13 +298,75 @@ actor class TransactionIndex() = this {
       };
 
       // register transaction
-      let txId: T.TransactionId = await Transactions.canister(cid).registerTransaction({ txInfo with txHash });
+      let txId: T.TransactionId = await Transactions.canister(cid).registerTransaction(txInfo/* { txInfo with txHash } */);
 
       transactionsDirectory.put(txId, cid);
       txId
     } catch (error) {
       throw Error.reject(Error.message(error));
     };
+  };
+
+  public shared({ caller }) func getLedgerTransactions(page: ?Nat, length: ?Nat, mwhRange: ?[T.TokenAmount], rangeDates: ?[Text], tokenId: ?T.TokenId) : async {
+    data: [T.TransactionInfo];
+    totalPages: Nat;
+  } {
+    _callValidation(caller);
+
+    Debug.print(debug_show ("before getPlatformTransactions: " # Nat.toText(Cycles.balance())));
+
+    // define page based on statement
+    let startPage: Nat = switch(page) {
+      case(null) 1;
+      case(?value) value;
+    };
+
+    // define length based on statement
+    let maxLength: Nat = switch(length) {
+      case(null) 50;
+      case(?value) value;
+    };
+
+    // calculate range of elements returned
+    let startIndex: Nat = (startPage - 1) * maxLength;
+    var i: Nat = startPage;
+
+    // convert transactionsDirectory
+    let directory: HM.HashMap<T.CanisterId, [T.TransactionId]> = HM.HashMap(50, Principal.equal, Principal.hash);
+
+    // TODO evaluate if can implements filter by rangeDate in transactionDirectory instead of into Transactions.canister()
+    while (i >= startIndex and i < startIndex + maxLength) {
+      switch(transactionsDirectory.get(Nat.toText(i))) {
+        case (null) {};
+        case(?cid) {
+          let tempTxIds = switch(directory.get(cid)) {
+            case(null) Buffer.Buffer<T.TransactionId>(50);
+            case(?value) Buffer.fromArray<T.TransactionId>(value);
+          };
+          tempTxIds.add(Nat.toText(i));
+
+          directory.put(cid, Buffer.toArray(tempTxIds));
+        };
+      };
+
+      i += 1;
+    };
+
+
+    var txFiltered: [T.TransactionInfo] = [];
+
+    // iterate canisters to get transactions supplied
+    for((cid, txIds) in directory.entries()) {
+      let transactions: [T.TransactionInfo] = await Transactions.canister(cid).getOutTransactionsById(txIds, mwhRange, rangeDates, tokenId);
+      txFiltered := Array.flatten<T.TransactionInfo>([txFiltered, transactions]);
+    };
+
+    var totalPages: Nat = i / maxLength;
+    if (totalPages <= 0) totalPages := 1;
+
+    Debug.print(debug_show ("later getPlatformTransactions: " # Nat.toText(Cycles.balance())));
+
+    { data = Array.reverse(txFiltered); totalPages };
   };
 
   public shared({ caller }) func getPlatformTransactions(page: ?Nat, length: ?Nat, mwhRange: ?[T.TokenAmount], rangeDates: ?[Text], tokenId: ?T.TokenId) : async {
