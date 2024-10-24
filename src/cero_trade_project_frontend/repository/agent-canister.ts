@@ -507,7 +507,7 @@ export class AgentCanister {
         item.txType = Object.values(item.txType)[0] as TxTypeDef
         item.method = Object.values(item.method)[0] as TxMethodDef
         item.date = new Date(item.date)
-        item.tokenTxIndex = exponentToString(item.tokenTxIndex)
+        item.tokenTxIndex = exponentToString(Number(item.tokenTxIndex))
 
         const conversion = getFileFromArrayBuffer(item.redemptionPdf, { fileName: 'certificate', fileType: 'application/pdf' })
         item.redemptionPdf = conversion.file
@@ -559,7 +559,7 @@ export class AgentCanister {
         item.txType = Object.values(item.txType)[0] as TxTypeDef
         item.method = Object.values(item.method)[0] as TxMethodDef
         item.date = new Date(item.date)
-        item.tokenTxIndex = exponentToString(item.tokenTxIndex)
+        item.tokenTxIndex = exponentToString(Number(item.tokenTxIndex))
 
         const conversion = getFileFromArrayBuffer(item.redemptionPdf, { fileName: 'certificate', fileType: 'application/pdf' })
         item.redemptionPdf = conversion.file
@@ -623,7 +623,7 @@ export class AgentCanister {
         item.txType = Object.values(item.txType)[0] as TxTypeDef
         item.method = Object.values(item.method)[0] as TxMethodDef
         item.date = new Date(item.date)
-        item.tokenTxIndex = exponentToString(item.tokenTxIndex)
+        item.tokenTxIndex = exponentToString(Number(item.tokenTxIndex))
 
         const conversion = getFileFromArrayBuffer(item.redemptionPdf, { fileName: 'certificate', fileType: 'application/pdf' })
         item.redemptionPdf = conversion.file
