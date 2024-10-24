@@ -224,14 +224,14 @@ actor class Agent() = this {
 
 
   /// performe mint with tokenId and amount requested
-  public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, tokenAmount: T.TokenAmount): async T.TransactionId {
+  public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, tokenAmount: T.TokenAmount, { debugMode: Bool }): async T.TransactionId {
     IC_MANAGEMENT.adminValidation(caller, controllers);
 
     // check if caller exists and return companyName
     let recipentName = await UserIndex.getUserName(caller);
 
     // mint token to user token collection
-    let { comission_block; token_block } = await TokenIndex.mintTokenToUser(recipent, tokenId, tokenAmount);
+    let { comission_block; token_block } = await TokenIndex.mintTokenToUser(recipent, tokenId, tokenAmount, { debugMode });
     let comissionHolder = await TokenIndex.getComisisonHolder();
 
     // build transaction
