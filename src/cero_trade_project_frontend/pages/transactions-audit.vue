@@ -99,23 +99,27 @@
       </template>
 
       <template #[`item.ledger_tx_hash`]="{ item }">
-        <a :title="item.ledger_tx_hash" :href="`${ICPExplorerUrl}/${item.ledger_tx_hash}`" target="_blank" class="text-label flex-acenter" style="gap: 5px">
+        <span v-if="!item.ledger_tx_hash">---</span>
+
+        <a v-else :title="item.ledger_tx_hash" :href="`${ICPExplorerUrl}/${item.ledger_tx_hash}`" target="_blank" class="text-label flex-center" style="gap: 5px">
           {{ shortString(item.ledger_tx_hash, {}) }}
           <img src="@/assets/sources/icons/share.svg" alt="explorer icon" style="width: 16px">
         </a>
       </template>
 
       <template #[`item.comission_tx_hash`]="{ item }">
-        <a :title="item.comission_tx_hash" :href="`${ICPExplorerUrl}/${item.comission_tx_hash}`" target="_blank" class="text-label flex-acenter" style="gap: 5px">
-          {{ shortString(item.comission_tx_hash, {}) }}
+        <span v-if="!item.comission_tx_hash">---</span>
+
+        <a v-else :title="item.comission_tx_hash" :href="`${ICPExplorerUrl}/${item.comission_tx_hash}`" target="_blank" class="text-label flex-center" style="gap: 5px">
+          {{ item.comission_tx_hash }}
           <img src="@/assets/sources/icons/share.svg" alt="explorer icon" style="width: 16px">
         </a>
       </template>
 
       <template #[`item.mwh`]="{ item }">
-        <span class="flex-acenter">
+        <span class="flex-center">
           <img src="@/assets/sources/icons/lightbulb.svg" alt="lightbulb icon">
-          {{ item.mwh }}
+          {{ exponentToString(item.mwh) }}
         </span>
       </template>
 
@@ -273,7 +277,7 @@ import minusCircle from '@/assets/sources/icons/minus-circle.svg'
 import arrowCircleBrokenRight from '@/assets/sources/icons/arrow-circle-broken-right.svg'
 import { useToast } from 'vue-toastification'
 import moment from "moment";
-import { shortString } from '@/plugins/functions'
+import { exponentToString, shortString } from '@/plugins/functions'
 import variables from '@/mixins/variables'
 
 const
@@ -305,13 +309,13 @@ txTypes = {
 search = ref(null),
 headers = [
   { title: 'Tx ID', key: 'tx_id', align: 'center', sortable: false, width: "90px" },
-  { title: 'Type', key: 'type', sortable: false },
-  { title: 'Token ID', key: 'asset_id', sortable: false, width: "100px" },
-  { title: 'From / To', key: 'addresses', sortable: false, width: "110px" },
-  { title: 'MWh', key: 'mwh', sortable: false },
+  { title: 'Type', key: 'type', align: 'center', sortable: false },
+  { title: 'Token ID', key: 'asset_id', align: 'center', sortable: false, width: "100px" },
+  { title: 'From / To', key: 'addresses', align: 'center', sortable: false, width: "110px" },
+  { title: 'MWh', key: 'mwh', align: 'center', sortable: false },
   { title: 'Ledger Tx hash', key: 'ledger_tx_hash', align: 'center', sortable: false, width: "110px" },
   { title: 'Comission Tx hash', key: 'comission_tx_hash', align: 'center', sortable: false, width: "110px" },
-  { title: 'Timestamp', key: 'date', sortable: false },
+  { title: 'Timestamp', key: 'date', align: 'center', sortable: false },
 ],
 dataTransactions = ref([]),
 loading = ref(true),
@@ -369,15 +373,15 @@ async function getData() {
 
     for (const item of data) {
       list.push({
-        type: item.txType,
-        recipent: item.to || item.from,
+        tx_id: item.transactionId,
+        type: item.txType || "---",
+        recipent: item.to || item.from || "---",
         sender: item.from,
         mwh: item.tokenAmount,
         asset_id: item.assetInfo.tokenId,
         date: item.date.toDateString(),
-        tx_index: item.txIndex.toString() || "---",
         comission_tx_hash: item.comissionTxHash,
-        ledger_tx_hash: item.ledgerTxHash || "---",
+        ledger_tx_hash: item.ledgerTxHash,
       })
     }
 

@@ -37,6 +37,8 @@ shared({ caller = owner }) actor class TokenIndex() = this {
 
   stable var comissionHolder: ICPTypes.Account = { owner; subaccount = null };
 
+  stable let spendAmountToMint: Nat = 1;
+
   var tokenDirectory: HM.HashMap<T.TokenId, T.CanisterId> = HM.HashMap(16, Text.equal, Text.hash);
   stable var tokenDirectoryEntries : [(T.TokenId, T.CanisterId)] = [];
 
@@ -94,11 +96,11 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   /// get comisison holder
   public query func getComisisonHolder(): async ICPTypes.Account { comissionHolder };
 
-  /// set comisison holder
-  public shared({ caller }) func setComisisonHolder(holder: ICPTypes.Account): async () {
-    IC_MANAGEMENT.adminValidation(caller, controllers);
-    comissionHolder := holder
-  };
+  // /// set comisison holder
+  // public shared({ caller }) func setComisisonHolder(holder: ICPTypes.Account): async () {
+  //   IC_MANAGEMENT.adminValidation(caller, controllers);
+  //   comissionHolder := holder
+  // };
 
   /// register canister controllers
   public shared({ caller }) func registerControllers(): async () {
@@ -458,7 +460,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       let cid = await registerToken(assetInfo);
 
       // mint tokens to user
-      let transferResult: T.TokenTxResponse = await Token.canister(cid).mint({
+      let tokenResult: ICRC1.TransferResult = await Token.canister(cid).mint({
         to = {
           owner = uid;
           subaccount = null;
@@ -468,15 +470,30 @@ shared({ caller = owner }) actor class TokenIndex() = this {
         memo = null;
       });
 
-      switch(transferResult.token_result) {
+      switch(tokenResult) {
         case(#Ok(value)) {
           Debug.print("#Ok - minted token with id: " # key # " by amount: " # Nat.toText(mwh) # " in tx index: " # Nat.toText(value));
+
+          // performe comission to register block into ledger
+          let comission_block = switch (await ICPTypes.ICPLedger.icrc1_transfer({
+            from_subaccount = null;
+            to = comissionHolder;
+            fee = null;
+            memo = null;
+            created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
+            amount = spendAmountToMint;
+          })) {
+            case (#Ok(block)) block;
+            case (#Err(err)) {
+              Debug.trap("cannot performe comission from failed" # debug_show (err));
+            };
+          };
 
           assetsMetadata.put(key, {
             mwh;
             assetInfo;
             txIndex = value;
-            comissionTxHash = Nat.toText(transferResult.comission_block);
+            comissionTxHash = Nat.toText(comission_block);
           });
         };
 
@@ -527,7 +544,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     let cid = await registerToken(assetMetadata);
 
     // mint token to user
-    let transferResult: T.TokenTxResponse = await Token.canister(cid).mint({
+    let tokenResult: ICRC1.TransferResult = await Token.canister(cid).mint({
       to = {
         owner = recipent;
         subaccount = null;
@@ -537,7 +554,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       memo = null;
     });
 
-    let txIndex = switch(transferResult.token_result) {
+    let txIndex = switch(tokenResult) {
       case(#Err(error)) throw Error.reject(switch(error) {
         case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
         case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
@@ -551,8 +568,23 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       case(#Ok(value)) value;
     };
 
+    // performe comission to register block into ledger
+    let comission_block = switch (await ICPTypes.ICPLedger.icrc1_transfer({
+      from_subaccount = null;
+      to = comissionHolder;
+      fee = null;
+      memo = null;
+      created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
+      amount = spendAmountToMint;
+    })) {
+      case (#Ok(block)) block;
+      case (#Err(err)) {
+        Debug.trap("cannot performe comission from failed" # debug_show (err));
+      };
+    };
+
     {
-      comission_block = transferResult.comission_block;
+      comission_block;
       token_block = (txIndex, assetMetadata);
     }
   };

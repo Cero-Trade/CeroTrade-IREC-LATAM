@@ -313,7 +313,7 @@ actor class TransactionIndex() = this {
   } {
     _callValidation(caller);
 
-    Debug.print(debug_show ("before getPlatformTransactions: " # Nat.toText(Cycles.balance())));
+    Debug.print(debug_show ("before getOutTransactions: " # Nat.toText(Cycles.balance())));
 
     // define page based on statement
     let startPage: Nat = switch(page) {
@@ -364,7 +364,7 @@ actor class TransactionIndex() = this {
     var totalPages: Nat = i / maxLength;
     if (totalPages <= 0) totalPages := 1;
 
-    Debug.print(debug_show ("later getPlatformTransactions: " # Nat.toText(Cycles.balance())));
+    Debug.print(debug_show ("later getOutTransactions: " # Nat.toText(Cycles.balance())));
 
     { data = Array.reverse(txFiltered); totalPages };
   };

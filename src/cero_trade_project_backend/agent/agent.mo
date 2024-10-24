@@ -209,7 +209,8 @@ actor class Agent() = this {
       };
 
       // register transaction
-      let _txId = await TransactionIndex.registerTransaction(txInfo);
+      let transactionId = await TransactionIndex.registerTransaction(txInfo);
+      await UserIndex.updateTransactions(caller, null, transactionId);
     };
 
     // add user portfolio
@@ -251,6 +252,7 @@ actor class Agent() = this {
 
     // register transaction
     let transactionId = await TransactionIndex.registerTransaction(txInfo);
+    await UserIndex.updateTransactions(caller, null, transactionId);
 
     // add user portfolio
     await UserIndex.addTokensPortfolio(recipent, [token_block.1]);
