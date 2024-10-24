@@ -7,7 +7,6 @@ import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
 import Iter "mo:base/Iter";
 import Error "mo:base/Error";
-import Serde "mo:serde";
 import Debug "mo:base/Debug";
 import Buffer "mo:base/Buffer";
 import Array "mo:base/Array";
@@ -294,7 +293,7 @@ actor class TransactionIndex() = this {
     };
   };
 
-  public shared({ caller }) func getLedgerTransactions(page: ?Nat, length: ?Nat, mwhRange: ?[T.TokenAmount], rangeDates: ?[Text], tokenId: ?T.TokenId) : async {
+  public func getLedgerTransactions(page: ?Nat, length: ?Nat, mwhRange: ?[T.TokenAmount], rangeDates: ?[Text], tokenId: ?T.TokenId) : async {
     data: [T.TransactionInfo];
     totalPages: Nat;
   } {
@@ -354,7 +353,7 @@ actor class TransactionIndex() = this {
     { data = Array.reverse(txFiltered); totalPages };
   };
 
-  public shared({ caller }) func getPlatformTransactions(page: ?Nat, length: ?Nat, mwhRange: ?[T.TokenAmount], rangeDates: ?[Text], tokenId: ?T.TokenId) : async {
+  public func getPlatformTransactions(page: ?Nat, length: ?Nat, mwhRange: ?[T.TokenAmount], rangeDates: ?[Text], tokenId: ?T.TokenId) : async {
     data: [T.TransactionInfo];
     totalPages: Nat;
   } {
@@ -415,7 +414,7 @@ actor class TransactionIndex() = this {
   };
 
   /// get transactions by tx id
-  public shared({ caller }) func getTransactionsById(txIds: [T.TransactionId], txType: ?T.TxType, priceRange: ?[T.Price], mwhRange: ?[T.TokenAmount], method: ?T.TxMethod, rangeDates: ?[Text], tokenId: ?T.TokenId) : async [T.TransactionInfo] {
+  public func getTransactionsById(txIds: [T.TransactionId], txType: ?T.TxType, priceRange: ?[T.Price], mwhRange: ?[T.TokenAmount], method: ?T.TxMethod, rangeDates: ?[Text], tokenId: ?T.TokenId) : async [T.TransactionInfo] {
     var txs: [T.TransactionInfo] = [];
 
     Debug.print(debug_show ("before getTransactionsById: " # Nat.toText(Cycles.balance())));
