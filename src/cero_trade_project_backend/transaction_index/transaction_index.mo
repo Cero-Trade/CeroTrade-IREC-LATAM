@@ -246,6 +246,11 @@ actor class TransactionIndex() = this {
     }
   };
 
+  public shared({ caller }) func getTransactionsInCeroTrade(): async [(T.TransactionId, T.CanisterId)] {
+    IC_MANAGEMENT.adminValidation(caller, controllers);
+    Iter.toArray(transactionsDirectory.entries())
+  };
+
   // ======================================================================================================== //
 
   /// register [transactionsDirectory] collection
@@ -293,8 +298,6 @@ actor class TransactionIndex() = this {
     data: [T.TransactionInfo];
     totalPages: Nat;
   } {
-    _callValidation(caller);
-
     Debug.print(debug_show ("before getOutTransactions: " # Nat.toText(Cycles.balance())));
 
     // define page based on statement
@@ -316,7 +319,7 @@ actor class TransactionIndex() = this {
     // convert transactionsDirectory
     let directory: HM.HashMap<T.CanisterId, [T.TransactionId]> = HM.HashMap(50, Principal.equal, Principal.hash);
 
-    // TODO evaluate if can implements filter by rangeDate in transactionDirectory instead of into Transactions.canister()
+    // TODO evaluate if can implements filter by rangeDate in transactionsDirectory instead of into Transactions.canister()
     while (i >= startIndex and i < startIndex + maxLength) {
       switch(transactionsDirectory.get(Nat.toText(i))) {
         case (null) {};
@@ -355,8 +358,6 @@ actor class TransactionIndex() = this {
     data: [T.TransactionInfo];
     totalPages: Nat;
   } {
-    _callValidation(caller);
-
     Debug.print(debug_show ("before getPlatformTransactions: " # Nat.toText(Cycles.balance())));
 
     // define page based on statement
@@ -378,7 +379,7 @@ actor class TransactionIndex() = this {
     // convert transactionsDirectory
     let directory: HM.HashMap<T.CanisterId, [T.TransactionId]> = HM.HashMap(50, Principal.equal, Principal.hash);
 
-    // TODO evaluate if can implements filter by rangeDate in transactionDirectory instead of into Transactions.canister()
+    // TODO evaluate if can implements filter by rangeDate in transactionsDirectory instead of into Transactions.canister()
     while (i >= startIndex and i < startIndex + maxLength) {
       switch(transactionsDirectory.get(Nat.toText(i))) {
         case (null) {};
@@ -415,8 +416,6 @@ actor class TransactionIndex() = this {
 
   /// get transactions by tx id
   public shared({ caller }) func getTransactionsById(txIds: [T.TransactionId], txType: ?T.TxType, priceRange: ?[T.Price], mwhRange: ?[T.TokenAmount], method: ?T.TxMethod, rangeDates: ?[Text], tokenId: ?T.TokenId) : async [T.TransactionInfo] {
-    _callValidation(caller);
-
     var txs: [T.TransactionInfo] = [];
 
     Debug.print(debug_show ("before getTransactionsById: " # Nat.toText(Cycles.balance())));
