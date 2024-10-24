@@ -709,11 +709,11 @@
             </div>
             <div class="jspace divrow mt-1">
               <span>Cero trade comission</span>
-              <span>{{ tokenToNumber(ceroComisison) }} ICP</span>
+              <span>{{ tokenToNumber(ceroComission) }} ICP</span>
             </div>
             <div class="jspace divrow mt-1">
               <span class="bold">Total</span>
-              <span class="bold">{{ maxDecimals(totalPrice + tokenToNumber(feeInE8S) + tokenToNumber(ceroComisison)) }} ICP</span>
+              <span class="bold">{{ maxDecimals(totalPrice + tokenToNumber(feeInE8S) + tokenToNumber(ceroComission)) }} ICP</span>
             </div>
           </v-card>
 
@@ -874,11 +874,11 @@
           </div>
           <div class="jspace divrow mt-1">
             <span>Cero trade comission</span>
-            <span>{{ tokenToNumber(ceroComisison) }} ICP</span>
+            <span>{{ tokenToNumber(ceroComission) }} ICP</span>
           </div>
           <div class="jspace divrow mt-1">
             <span class="bold">Total</span>
-            <span class="bold">{{ maxDecimals(totalPrice + tokenToNumber(feeInE8S) + tokenToNumber(ceroComisison)) }} ICP</span>
+            <span class="bold">{{ maxDecimals(totalPrice + tokenToNumber(feeInE8S) + tokenToNumber(ceroComission)) }} ICP</span>
           </div>
         </v-card>
 
@@ -1380,7 +1380,7 @@ const
   route = useRoute(),
   router = useRouter(),
   toast = useToast(),
-  { globalRules, ceroComisison, countries, dateFormat, defaultMaxDecimals } = variables,
+  { globalRules, ceroComission, countries, dateFormat, defaultMaxDecimals } = variables,
 
 energiesColored = {
   "Solar": SolarEnergyColorIcon,
