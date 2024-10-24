@@ -179,7 +179,7 @@ actor class Agent() = this {
     // performe import of tokens
     let transactions = await TokenIndex.importUserTokens(caller);
 
-    let comissionHolder = await TokenIndex.getComisisonHolder();
+    let comissionHolder = await TokenIndex.getComissionHolder();
 
     let mappedTxs = Buffer.Buffer<{ tokenId: T.TokenId; statistics: { mwh: ?T.TokenAmount; redemptions: ?T.TokenAmount; sells: ?T.TokenAmount; priceTrend: ?T.AssetStatisticPriceTrend; } }>(16);
     let mappedAssets = Buffer.Buffer<T.AssetInfo>(16);
@@ -224,15 +224,15 @@ actor class Agent() = this {
 
 
   /// performe mint with tokenId and amount requested
-  public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, tokenAmount: T.TokenAmount): async T.TransactionId {
+  public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, tokenAmount: T.TokenAmount, { debugMode: Bool }): async T.TransactionId {
     IC_MANAGEMENT.adminValidation(caller, controllers);
 
     // check if caller exists and return companyName
     let recipentName = await UserIndex.getUserName(caller);
 
     // mint token to user token collection
-    let { comission_block; token_block } = await TokenIndex.mintTokenToUser(recipent, tokenId, tokenAmount);
-    let comissionHolder = await TokenIndex.getComisisonHolder();
+    let { comission_block; token_block } = await TokenIndex.mintTokenToUser(recipent, tokenId, tokenAmount, { debugMode });
+    let comissionHolder = await TokenIndex.getComissionHolder();
 
     // build transaction
     let txInfo: T.TransactionInfo = {

@@ -255,24 +255,6 @@ actor class TransactionIndex() = this {
     try {
       let errorText = "Error generating canister";
 
-      // TODO review this flow part <--
-      let txHashes = switch(ENV.DFX_NETWORK) {
-        case("ic") "unknown"/* await HTTP.canister.post({
-          url = HTTP.apiUrl # "rosetta/";
-          port = null;
-          uid = null;
-          headers = [];
-          bodyJson = switch(Serde.JSON.toText(to_candid({
-            blocks = [txInfo.comissionTxHash, txInfo.ledgerTxHash];
-          }), ["blocks"], null)) {
-            case(#err(error)) throw Error.reject("Cannot serialize data");
-            case(#ok(value)) value;
-          };
-        }) */;
-        case(_) "unknown";
-      };
-      Debug.print("txBlock ⭐ ----> " # debug_show (txHashes));
-
       /// get canister id and generate if need it
       let cid: T.CanisterId = switch(currentCanisterid) {
         case(null) {
@@ -298,7 +280,7 @@ actor class TransactionIndex() = this {
       };
 
       // register transaction
-      let txId: T.TransactionId = await Transactions.canister(cid).registerTransaction(txInfo/* { txInfo with txHash } */);
+      let txId: T.TransactionId = await Transactions.canister(cid).registerTransaction(txInfo);
 
       transactionsDirectory.put(txId, cid);
       txId

@@ -93,11 +93,11 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     (await IC_MANAGEMENT.ic.canister_status({ canister_id = Principal.fromActor(this) })).settings.controllers;
   };
 
-  /// get comisison holder
-  public query func getComisisonHolder(): async ICPTypes.Account { comissionHolder };
+  /// get comission holder
+  public query func getComissionHolder(): async ICPTypes.Account { comissionHolder };
 
-  // /// set comisison holder
-  // public shared({ caller }) func setComisisonHolder(holder: ICPTypes.Account): async () {
+  // /// set comission holder
+  // public shared({ caller }) func setComissionHolder(holder: ICPTypes.Account): async () {
   //   IC_MANAGEMENT.adminValidation(caller, controllers);
   //   comissionHolder := holder
   // };
@@ -389,70 +389,43 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     let canister_status = await IC_MANAGEMENT.ic.canister_status({ canister_id = Principal.fromActor(this) });
     if (canister_status.cycles <= 2_500_000_000_000) throw Error.reject("Token canister have not enough cycles to performe this operation");
 
-    // let assetsJson = await HTTP.canister.post({
-    //   url = HTTP.apiUrl # "transactions/import";
-    //   port = null;
-    //   uid = ?uid;
-    //   headers = [];
-    //   bodyJson = "{}";
-    // });
-    // Debug.print("⭐ imported irecs: " # assetsJson);
+    let assetsJson = await HTTP.canister.post({
+      url = HTTP.apiUrl # "transactions/import";
+      port = null;
+      uid = ?uid;
+      headers = [];
+      bodyJson = "{}";
+    });
+    Debug.print("⭐ imported irecs: " # assetsJson);
 
     // used hashmap to find faster elements using Hash
     // this Hash have limitation when data length is too large.
     // In this case, would consider changing to another more effective method.
     let assetsMetadata = HM.HashMap<T.TokenId, { mwh: T.TokenAmount; assetInfo: T.AssetInfo; txIndex: T.TxIndex; comissionTxHash: T.TxHash; }>(16, Text.equal, Text.hash);
 
-    // TODO this code below exists in case need test it
-    assetsMetadata.put("01J6J1WA03Y6X2HY5S7Q162XBN", {
-      mwh = 2_000_000_000;
-      txIndex = 0;
-      comissionTxHash = "unknown";
-      assetInfo = {
-        tokenId = "01J6J1WA03Y6X2HY5S7Q162XBN";
-        startDate = "2024-04-29T19:43:34.000Z";
-        endDate = "2024-05-29T19:48:31.000Z";
-        co2Emission = "11.22";
-        radioactivityEmission = "10.20";
-        volumeProduced: T.TokenAmount = 200_000_000_000;
-        deviceDetails = {
-          name = "machine";
-          deviceType = #HydroElectric("Hydro-Electric");
-          description = "description";
-        };
-        specifications = {
-          deviceCode = "200";
-          location = "location";
-          latitude = "0.1";
-          longitude = "1.0";
-          country = "CL";
+    switch(Serde.JSON.fromText(assetsJson, null)) {
+      case(#err(_)) throw Error.reject("cannot serialize asset data");
+      case(#ok(blob)) {
+        let transactionResponse: ?[TransactionResponse] = from_candid(blob);
+
+        switch(transactionResponse) {
+          case(null) throw Error.reject("cannot serialize asset data");
+          case(?response) {
+            for({ items } in response.vals()) {
+              for(assetResponse in items.vals()) {
+                assetsMetadata.put(assetResponse.asset_assetId, {
+                  mwh = await T.textToToken(assetResponse.item_volume, null);
+                  txIndex = 0;
+                  comissionTxHash = "";
+                  assetInfo = await buildAssetInfo(assetResponse);
+                });
+              };
+            };
+          };
+
         };
       };
-    });
-
-    // switch(Serde.JSON.fromText(assetsJson, null)) {
-    //   case(#err(_)) throw Error.reject("cannot serialize asset data");
-    //   case(#ok(blob)) {
-    //     let transactionResponse: ?[TransactionResponse] = from_candid(blob);
-
-    //     switch(transactionResponse) {
-    //       case(null) throw Error.reject("cannot serialize asset data");
-    //       case(?response) {
-    //         for({ items } in response.vals()) {
-    //           for(assetResponse in items.vals()) {
-    //             assetsMetadata.put(assetResponse.asset_assetId, {
-    //               mwh = await T.textToToken(assetResponse.item_volume, null);
-    //               txIndex = 0;
-    //               comissionTxHash = "";
-    //               assetInfo = await buildAssetInfo(assetResponse);
-    //             });
-    //           };
-    //         };
-    //       };
-
-    //     };
-    //   };
-    // };
+    };
 
 
     for((key, { mwh; assetInfo }) in assetsMetadata.entries()) {
@@ -518,24 +491,52 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   };
 
 
-  public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, amount: T.TokenAmount): async T.MintTxIndexResponse {
+  public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, amount: T.TokenAmount, { debugMode: Bool }): async T.MintTxIndexResponse {
     _callValidation(caller);
 
-    let assetsJson = await HTTP.canister.get({
-      url = HTTP.apiUrl # "assets/" # tokenId;
-      port = null;
-      uid = null;
-      headers = [];
-    });
+    let assetMetadata: T.AssetInfo = switch(debugMode) {
+      // this code below exists in case need test it
+      case(true) {
+        {
+          tokenId;
+          startDate = "2024-04-29T19:43:34.000Z";
+          endDate = "2024-05-29T19:48:31.000Z";
+          co2Emission = "11.22";
+          radioactivityEmission = "10.20";
+          volumeProduced: T.TokenAmount = 200_000_000_000;
+          deviceDetails = {
+            name = "machine";
+            deviceType = #HydroElectric("Hydro-Electric");
+            description = "description";
+          };
+          specifications = {
+            deviceCode = "200";
+            location = "location";
+            latitude = "0.1";
+            longitude = "1.0";
+            country = "CL";
+          };
+        }
+      };
 
-    let assetMetadata: T.AssetInfo = switch(Serde.JSON.fromText(assetsJson, null)) {
-      case(#err(_)) throw Error.reject("cannot serialize asset data");
-      case(#ok(blob)) {
-        let assetResponse: ?AssetResponse = from_candid(blob);
+      case(false) {
+        let assetsJson = await HTTP.canister.get({
+          url = HTTP.apiUrl # "assets/" # tokenId;
+          port = null;
+          uid = null;
+          headers = [];
+        });
 
-        switch(assetResponse) {
-          case(null) throw Error.reject("cannot serialize asset data");
-          case(?value) await buildAssetInfo(value);
+        switch(Serde.JSON.fromText(assetsJson, null)) {
+          case(#err(_)) throw Error.reject("cannot serialize asset data");
+          case(#ok(blob)) {
+            let assetResponse: ?AssetResponse = from_candid(blob);
+
+            switch(assetResponse) {
+              case(null) throw Error.reject("cannot serialize asset data");
+              case(?value) await buildAssetInfo(value);
+            };
+          };
         };
       };
     };
