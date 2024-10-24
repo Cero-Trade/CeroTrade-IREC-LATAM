@@ -298,8 +298,6 @@ actor class TransactionIndex() = this {
     data: [T.TransactionInfo];
     totalPages: Nat;
   } {
-    _callValidation(caller);
-
     Debug.print(debug_show ("before getOutTransactions: " # Nat.toText(Cycles.balance())));
 
     // define page based on statement
@@ -360,8 +358,6 @@ actor class TransactionIndex() = this {
     data: [T.TransactionInfo];
     totalPages: Nat;
   } {
-    _callValidation(caller);
-
     Debug.print(debug_show ("before getPlatformTransactions: " # Nat.toText(Cycles.balance())));
 
     // define page based on statement
@@ -420,8 +416,6 @@ actor class TransactionIndex() = this {
 
   /// get transactions by tx id
   public shared({ caller }) func getTransactionsById(txIds: [T.TransactionId], txType: ?T.TxType, priceRange: ?[T.Price], mwhRange: ?[T.TokenAmount], method: ?T.TxMethod, rangeDates: ?[Text], tokenId: ?T.TokenId) : async [T.TransactionInfo] {
-    _callValidation(caller);
-
     var txs: [T.TransactionInfo] = [];
 
     Debug.print(debug_show ("before getTransactionsById: " # Nat.toText(Cycles.balance())));
