@@ -93,11 +93,11 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     (await IC_MANAGEMENT.ic.canister_status({ canister_id = Principal.fromActor(this) })).settings.controllers;
   };
 
-  /// get comisison holder
-  public query func getComisisonHolder(): async ICPTypes.Account { comissionHolder };
+  /// get comission holder
+  public query func getComissionHolder(): async ICPTypes.Account { comissionHolder };
 
-  // /// set comisison holder
-  // public shared({ caller }) func setComisisonHolder(holder: ICPTypes.Account): async () {
+  // /// set comission holder
+  // public shared({ caller }) func setComissionHolder(holder: ICPTypes.Account): async () {
   //   IC_MANAGEMENT.adminValidation(caller, controllers);
   //   comissionHolder := holder
   // };
