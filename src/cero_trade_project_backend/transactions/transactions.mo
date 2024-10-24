@@ -132,7 +132,7 @@ shared({ caller = transactionIndexCaller }) actor class Transactions() {
             case(#purchase("purchase")) true;
             case(#redemption("redemption")) true;
             case(#mint("mint")) true;
-            case _ false;
+            case(_) false;
           };
 
           // filter by dates

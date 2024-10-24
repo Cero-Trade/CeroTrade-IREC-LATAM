@@ -26,7 +26,7 @@ module TokenInterface {
     icrc1_supported_standards: query () -> async [ICRC1.SupportedStandard];
     icrc10_supported_standards: query () -> async [ICRC1.SupportedStandard];
     transfer: (args: ICRC1.TransferArgs) -> async T.TokenTxResponse;
-    mint: (args: ICRC1.Mint) -> async T.TokenTxResponse;
+    mint: (args: ICRC1.Mint) -> async ICRC1.TransferResult;
     transferInMarketplace: (args : T.TransferInMarketplaceArgs) -> async ICRC1.TransferResult;
     purchaseInMarketplace: (args : T.PurchaseInMarketplaceArgs) -> async T.PurchaseTxResponse;
     requestRedeem: (args : T.RedeemArgs, { returns: Bool }) -> async ICRC1.TransferResult;
