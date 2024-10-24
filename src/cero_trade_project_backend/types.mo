@@ -14,6 +14,7 @@ import Text "mo:base/Text";
 import Error "mo:base/Error";
 import Debug "mo:base/Debug";
 import Array "mo:base/Array";
+import ICRC1 "mo:icrc1-mo/ICRC1";
 
 // interfaces
 import ICPTypes "./ICPTypes";
@@ -122,6 +123,7 @@ module {
   public type ArrayFile = [Nat8];
   public type BID = UID;
   public type TxIndex = Nat;
+  public type TxHash = Text;
   public type TokenAmount = Nat;
   public type Price = { e8s: Nat64 };
   public type UserTokenAuth = Text;
@@ -197,7 +199,8 @@ module {
 
   public type TransactionInfo = {
     transactionId: TransactionId;
-    txIndex: TxIndex;
+    ledgerTxHash: ?TxHash;
+    comissionTxHash: ?TxHash;
     from: { principal: UID; name: Text };
     to: ?{ principal: BID; name: Text };
     tokenId: TokenId;
@@ -211,7 +214,8 @@ module {
 
   public type TransactionHistoryInfo = {
     transactionId: TransactionId;
-    txIndex: TxIndex;
+    ledgerTxHash: ?TxHash;
+    comissionTxHash: ?TxHash;
     from: { principal: UID; name: Text };
     to: ?{ principal: BID; name: Text };
     assetInfo: ?AssetInfo;
@@ -229,6 +233,7 @@ module {
     #takeOffMarketplace: Text;
     #redemption: Text;
     #burn: Text;
+    #mint: Text;
   };
 
   //
@@ -280,6 +285,7 @@ module {
   public type RedemptionItemPdf = {
     id: TokenId;
     txIndex: TxIndex;
+    comissionBlock: TxIndex;
     volume: TokenAmount;
     pdf: ArrayFile;
   };
@@ -396,6 +402,33 @@ module {
   //
   // ICP Types
   //
+  public type PurchaseTxResponse = {
+    comission_block: TxIndex;
+    ledger_block: TxIndex;
+    token_result: (ICRC1.TransferResult, AssetInfo);
+  };
+
+  public type TokenTxResponse = {
+    comission_block: TxIndex;
+    token_result: ICRC1.TransferResult;
+  };
+
+  public type PurchaseTxIndexResponse = {
+    comission_block: TxIndex;
+    ledger_block: TxIndex;
+    token_block: (TxIndex, AssetInfo);
+  };
+
+  public type TokenTxIndexResponse = {
+    comission_block: TxIndex;
+    token_block: TxIndex;
+  };
+
+  public type MintTxIndexResponse = {
+    comission_block: TxIndex;
+    token_block: (TxIndex, AssetInfo);
+  };
+
   public type TransferInMarketplaceArgs = {
     from: ICPTypes.Account;
     to: ICPTypes.Account;

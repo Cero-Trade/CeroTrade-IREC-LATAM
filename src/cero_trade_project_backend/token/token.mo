@@ -507,9 +507,9 @@ shared ({ caller = _owner }) actor class Token(
     icrc1().supported_standards();
   };
 
-  public shared ({ caller }) func icrc1_transfer(args : ICRC1.TransferArgs) : async ICRC1.TransferResult {
+  public shared ({ caller }) func transfer(args : ICRC1.TransferArgs) : async T.TokenTxResponse {
     // performe comission
-    let _comisison_block = switch (await ICPTypes.ICPLedger.icrc2_transfer_from({ from = { owner = caller; subaccount = null }; to = init_args.comissionHolder; fee = null; spender_subaccount = null; memo = null; created_at_time = ?time64(); amount = init_args.comission })) {
+    let comission_block = switch (await ICPTypes.ICPLedger.icrc2_transfer_from({ from = { owner = caller; subaccount = null }; to = init_args.comissionHolder; fee = null; spender_subaccount = null; memo = null; created_at_time = ?time64(); amount = init_args.comission })) {
       case (#Ok(block)) block;
       case (#Err(err)) {
         D.trap("cannot performe comission from failed" # debug_show (err));
@@ -517,12 +517,17 @@ shared ({ caller = _owner }) actor class Token(
     };
 
     // transfer tokens
-    switch (await* icrc1().transfer_tokens(caller, args, false, null)) {
+    let txResult = switch (await* icrc1().transfer_tokens(caller, args, false, null)) {
       case (#trappable(val)) val;
       case (#awaited(val)) val;
       case (#err(#trappable(err))) D.trap(err);
       case (#err(#awaited(err))) D.trap(err);
     };
+
+    {
+      comission_block;
+      token_result = txResult;
+    }
   };
 
   public shared ({ caller }) func mint(args : ICRC1.Mint) : async ICRC1.TransferResult {
@@ -624,18 +629,18 @@ shared ({ caller = _owner }) actor class Token(
     };
   };
 
-  public shared ({ caller }) func redeemRequested(args : T.RedeemArgs) : async ICRC1.TransferResult {
+  public shared ({ caller }) func redeemRequested(args : T.RedeemArgs) : async T.TokenTxResponse {
     _callValidation(caller);
 
     // performe comission
-    let _comisison_block = switch (await ICPTypes.ICPLedger.icrc2_transfer_from({ from = args.owner; to = init_args.comissionHolder; fee = null; spender_subaccount = null; memo = null; created_at_time = ?time64(); amount = init_args.comission })) {
+    let comission_block = switch (await ICPTypes.ICPLedger.icrc2_transfer_from({ from = args.owner; to = init_args.comissionHolder; fee = null; spender_subaccount = null; memo = null; created_at_time = ?time64(); amount = init_args.comission })) {
       case (#Ok(block)) block;
       case (#Err(err)) {
         D.trap("cannot performe comission from failed" # debug_show (err));
       };
     };
 
-    switch (
+    let txResult = switch (
       await* icrc1().burn_tokens(
         Principal.fromActor(this),
         {
@@ -652,20 +657,25 @@ shared ({ caller = _owner }) actor class Token(
       case (#err(#trappable(err))) D.trap(err);
       case (#err(#awaited(err))) D.trap(err);
     };
+
+    {
+      comission_block;
+      token_result = txResult;
+    }
   };
 
-  public shared ({ caller }) func redeem(args : T.RedeemArgs) : async ICRC1.TransferResult {
+  public shared ({ caller }) func redeem(args : T.RedeemArgs) : async T.TokenTxResponse {
     _callValidation(caller);
 
     // performe comission
-    let _comisison_block = switch (await ICPTypes.ICPLedger.icrc2_transfer_from({ from = args.owner; to = init_args.comissionHolder; fee = null; spender_subaccount = null; memo = null; created_at_time = ?time64(); amount = init_args.comission })) {
+    let comission_block = switch (await ICPTypes.ICPLedger.icrc2_transfer_from({ from = args.owner; to = init_args.comissionHolder; fee = null; spender_subaccount = null; memo = null; created_at_time = ?time64(); amount = init_args.comission })) {
       case (#Ok(block)) block;
       case (#Err(err)) {
         D.trap("cannot performe comission from failed" # debug_show (err));
       };
     };
 
-    switch (
+    let txResult = switch (
       await* icrc1().burn_tokens(
         args.owner.owner,
         {
@@ -685,6 +695,11 @@ shared ({ caller = _owner }) actor class Token(
       case (#err(#trappable(err))) D.trap(err);
       case (#err(#awaited(err))) D.trap(err);
     };
+
+    {
+      comission_block;
+      token_result = txResult;
+    }
   };
 
   public shared ({ caller }) func burnUserTokens(args : T.RedeemArgs) : async ICRC1.TransferResult {
@@ -712,11 +727,11 @@ shared ({ caller = _owner }) actor class Token(
     };
   };
 
-  public shared ({ caller }) func purchaseInMarketplace(args : T.PurchaseInMarketplaceArgs) : async (ICRC1.TransferResult, T.AssetInfo) {
+  public shared ({ caller }) func purchaseInMarketplace(args : T.PurchaseInMarketplaceArgs) : async T.PurchaseTxResponse {
     _callValidation(caller);
 
     // performe comission
-    let _comisison_block = switch (await ICPTypes.ICPLedger.icrc2_transfer_from({ from = args.buyer; to = init_args.comissionHolder; fee = null; spender_subaccount = null; memo = null; created_at_time = ?time64(); amount = init_args.comission })) {
+    let comission_block = switch (await ICPTypes.ICPLedger.icrc2_transfer_from({ from = args.buyer; to = init_args.comissionHolder; fee = null; spender_subaccount = null; memo = null; created_at_time = ?time64(); amount = init_args.comission })) {
       case (#Ok(block)) block;
       case (#Err(err)) {
         D.trap("cannot performe comission from failed" # debug_show (err));
@@ -738,7 +753,7 @@ shared ({ caller = _owner }) actor class Token(
       D.trap("cannot transfer from failed" # Error.message(e));
     };
 
-    let _block = switch (result) {
+    let ledger_block = switch (result) {
       case (#Ok(block)) block;
       case (#Err(err)) {
         D.trap("cannot transfer from failed" # debug_show (err));
@@ -746,7 +761,7 @@ shared ({ caller = _owner }) actor class Token(
     };
 
     // transfer canister token
-    let txIndex = switch (
+    let txResult = switch (
       await* icrc1().transfer_tokens(
         args.marketplace.owner,
         {
@@ -778,7 +793,11 @@ shared ({ caller = _owner }) actor class Token(
       case (#err(#awaited(err))) D.trap(err);
     };
 
-    (txIndex, await assetMetadata())
+    {
+      comission_block;
+      ledger_block;
+      token_result = (txResult, await assetMetadata());
+    }
   };
 
   public shared ({ caller }) func burn(args : ICRC1.BurnArgs) : async ICRC1.TransferResult {

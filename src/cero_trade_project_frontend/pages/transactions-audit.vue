@@ -48,7 +48,7 @@
         {value: 50, title: '50'},
       ]"
       :headers="headers"
-      :items="filteredDataTransactions"
+      :items="dataTransactions"
       :items-length="totalPages"
       :loading="loading"
       class="mt-6 my-data-table"
@@ -92,20 +92,34 @@
       </template>
 
       <template #[`item.asset_id`]="{ item }">
-        <span class="acenter" :title="item.asset_id">{{ shortString(item.asset_id, {}) }} </span>
+        <span class="pointer acenter" :title="item.asset_id" @click="item.asset_id.copyToClipboard('Token id copied')">
+          {{ shortString(item.asset_id, {}) }}
+          <img src="@/assets/sources/icons/copy.svg" alt="copy icon" class="ml-2" style="width: 18px">
+        </span>
       </template>
 
-      <template #[`item.tx_index`]="{ item }">
-        <a :title="item.tx_index" :href="`https://www.icpexplorer.org/#/tx/${item.tx_index}`" target="_blank" class="text-label flex-acenter" style="gap: 5px">
-          {{ shortString(item.tx_index, {}) }}
+      <template #[`item.ledger_tx_hash`]="{ item }">
+        <span v-if="!item.ledger_tx_hash">---</span>
+
+        <a v-else :title="item.ledger_tx_hash" :href="`${ICPExplorerUrl}/${item.ledger_tx_hash}`" target="_blank" class="text-label flex-center" style="gap: 5px">
+          {{ shortString(item.ledger_tx_hash, {}) }}
+          <img src="@/assets/sources/icons/share.svg" alt="explorer icon" style="width: 16px">
+        </a>
+      </template>
+
+      <template #[`item.comission_tx_hash`]="{ item }">
+        <span v-if="!item.comission_tx_hash">---</span>
+
+        <a v-else :title="item.comission_tx_hash" :href="`${ICPExplorerUrl}/${item.comission_tx_hash}`" target="_blank" class="text-label flex-center" style="gap: 5px">
+          {{ item.comission_tx_hash }}
           <img src="@/assets/sources/icons/share.svg" alt="explorer icon" style="width: 16px">
         </a>
       </template>
 
       <template #[`item.mwh`]="{ item }">
-        <span class="flex-acenter">
+        <span class="flex-center">
           <img src="@/assets/sources/icons/lightbulb.svg" alt="lightbulb icon">
-          {{ item.mwh }}
+          {{ exponentToString(item.mwh) }}
         </span>
       </template>
 
@@ -255,7 +269,7 @@
 <script setup>
 import '@/assets/styles/pages/transactions-audit.scss'
 
-import { computed, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { AgentCanister } from '@/repository/agent-canister'
 import { TxType } from '@/models/transaction-model'
 import plusCircle from '@/assets/sources/icons/plus-circle.svg'
@@ -263,10 +277,12 @@ import minusCircle from '@/assets/sources/icons/minus-circle.svg'
 import arrowCircleBrokenRight from '@/assets/sources/icons/arrow-circle-broken-right.svg'
 import { useToast } from 'vue-toastification'
 import moment from "moment";
-import { shortString } from '@/plugins/functions'
+import { exponentToString, shortString } from '@/plugins/functions'
+import variables from '@/mixins/variables'
 
 const
   toast = useToast(),
+  { ICPExplorerUrl } = variables,
 
 operationTypes = {
   mint: {
@@ -274,28 +290,32 @@ operationTypes = {
     img: plusCircle
   },
   transfer: {
-    value: 'Mint',
+    value: 'Transfer',
     img: arrowCircleBrokenRight
   },
   burn: {
-    value: 'Mint',
+    value: 'Burn',
     img: minusCircle
   }
 },
 txTypes = {
-  [TxType.purchase]: operationTypes.mint,
-  [TxType.redemption]: operationTypes.burn,
+  [TxType.purchase]: operationTypes.transfer,
   [TxType.putOnSale]: operationTypes.transfer,
   [TxType.takeOffMarketplace]: operationTypes.transfer,
+  [TxType.redemption]: operationTypes.burn,
+  [TxType.burn]: operationTypes.transfer,
+  [TxType.mint]: operationTypes.mint,
 },
 search = ref(null),
 headers = [
-  { title: 'Type', key: 'type', sortable: false },
-  { title: 'Token ID', key: 'asset_id', sortable: false, width: "100px" },
-  { title: 'From / To', key: 'addresses', sortable: false, width: "110px" },
-  { title: 'MWh', key: 'mwh', sortable: false },
-  { title: 'Block Index'/* 'Transaction hash' */, key: 'tx_index', align: 'center', sortable: false, width: "110px" },
-  { title: 'Timestamp', key: 'date', sortable: false },
+  { title: 'Tx ID', key: 'tx_id', align: 'center', sortable: false, width: "90px" },
+  { title: 'Type', key: 'type', align: 'center', sortable: false },
+  { title: 'Token ID', key: 'asset_id', align: 'center', sortable: false, width: "100px" },
+  { title: 'From / To', key: 'addresses', align: 'center', sortable: false, width: "110px" },
+  { title: 'MWh', key: 'mwh', align: 'center', sortable: false },
+  { title: 'Ledger Tx Block', key: 'ledger_tx_hash', align: 'center', sortable: false, width: "110px" },
+  { title: 'Comission Tx Block', key: 'comission_tx_hash', align: 'center', sortable: false, width: "110px" },
+  { title: 'Timestamp', key: 'date', align: 'center', sortable: false },
 ],
 dataTransactions = ref([]),
 loading = ref(true),
@@ -312,14 +332,14 @@ filters = ref({
 }),
 
 fromDateMenu = ref(),
-toDateMenu = ref(),
+toDateMenu = ref()
 
 
-filteredDataTransactions = computed(() => {
-  if (!search.value) return dataTransactions.value;
+// filteredDataTransactions = computed(() => {
+//   if (!search.value) return dataTransactions.value;
 
-  return dataTransactions.value.filter(e => e.asset_id.includes(search.value))
-})
+//   return dataTransactions.value.filter(e => e.asset_id.includes(search.value))
+// })
 
 
 
@@ -342,23 +362,26 @@ async function getData() {
 
   try {
     // get platform transactions
-    const { data, total } = await AgentCanister.getPlatformTransactions({
+    const { data, total } = await AgentCanister.getLedgerTransactions({
       length: itemsPerPage.value,
       page: currentPage.value,
       mwhRange: filters.value.mwhRange,
       rangeDates,
+      tokenId: search.value || null
     }),
     list = []
 
     for (const item of data) {
       list.push({
-        type: item.txType,
-        recipent: item.to || item.from,
+        tx_id: item.transactionId,
+        type: item.txType || "---",
+        recipent: item.to || item.from || "---",
         sender: item.from,
         mwh: item.tokenAmount,
         asset_id: item.assetInfo.tokenId,
         date: item.date.toDateString(),
-        tx_index: item.txIndex.toString() || "---",
+        comission_tx_hash: item.comissionTxHash,
+        ledger_tx_hash: item.ledgerTxHash,
       })
     }
 

@@ -28,13 +28,16 @@ export class CeroSystemApi {
   //   }
   // }
 
-  static async mintTokenToUser({ user, tokenId, tokenAmount }: {
+  static async mintTokenToUser({ user, tokenId, tokenAmount, debugMode }: {
     user: string,
     tokenId: string,
     tokenAmount: number,
+    debugMode: boolean,
   }): Promise<void> {
+    debugMode ||= false
+
     try {
-      await agent().mintTokenToUser(Principal.fromText(user), tokenId, tokenAmount)
+      await agent().mintTokenToUser(Principal.fromText(user), tokenId, tokenAmount, { debugMode })
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)

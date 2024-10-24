@@ -67,7 +67,7 @@ const
   emit = defineEmits(['approve', 'close', 'decline']),
   instance = getCurrentInstance(),
   toast = useToast(),
-  { ceroComisison } = variables,
+  { ceroComission } = variables,
 
 model = ref(false),
 modelParameter = ref(null),
@@ -75,7 +75,7 @@ loading = ref(false),
 hasCancelEmit = !!instance?.vnode.props?.onCancel,
 
 tokenId = computed(() => props.tokenId),
-totalInE8S = computed(() => props.amountInE8s + props.feeTxInE8s + ceroComisison),
+totalInE8S = computed(() => props.amountInE8s + props.feeTxInE8s + ceroComission),
 totalPreview = computed(() => tokenToNumber(totalInE8S.value))
 
 function showModal(parameter) {

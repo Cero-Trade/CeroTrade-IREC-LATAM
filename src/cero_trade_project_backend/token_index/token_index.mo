@@ -37,6 +37,8 @@ shared({ caller = owner }) actor class TokenIndex() = this {
 
   stable var comissionHolder: ICPTypes.Account = { owner; subaccount = null };
 
+  stable let spendAmountToMint: Nat = 1;
+
   var tokenDirectory: HM.HashMap<T.TokenId, T.CanisterId> = HM.HashMap(16, Text.equal, Text.hash);
   stable var tokenDirectoryEntries : [(T.TokenId, T.CanisterId)] = [];
 
@@ -91,17 +93,14 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     (await IC_MANAGEMENT.ic.canister_status({ canister_id = Principal.fromActor(this) })).settings.controllers;
   };
 
-  /// get comisison holder
-  public shared({ caller }) func getComisisonHolder(): async ICPTypes.Account {
-    IC_MANAGEMENT.adminValidation(caller, controllers);
-    comissionHolder
-  };
+  /// get comission holder
+  public query func getComissionHolder(): async ICPTypes.Account { comissionHolder };
 
-  /// set comisison holder
-  public shared({ caller }) func setComisisonHolder(holder: ICPTypes.Account): async () {
-    IC_MANAGEMENT.adminValidation(caller, controllers);
-    comissionHolder := holder
-  };
+  // /// set comission holder
+  // public shared({ caller }) func setComissionHolder(holder: ICPTypes.Account): async () {
+  //   IC_MANAGEMENT.adminValidation(caller, controllers);
+  //   comissionHolder := holder
+  // };
 
   /// register canister controllers
   public shared({ caller }) func registerControllers(): async () {
@@ -379,7 +378,12 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   };
 
 
-  public shared({ caller }) func importUserTokens(uid: T.UID): async [{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }] {
+  public shared({ caller }) func importUserTokens(uid: T.UID): async [{
+    mwh: T.TokenAmount;
+    assetInfo: T.AssetInfo;
+    txIndex: T.TxIndex;
+    comissionTxHash: T.TxHash;
+  }] {
     _callValidation(caller);
 
     let canister_status = await IC_MANAGEMENT.ic.canister_status({ canister_id = Principal.fromActor(this) });
@@ -397,32 +401,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     // used hashmap to find faster elements using Hash
     // this Hash have limitation when data length is too large.
     // In this case, would consider changing to another more effective method.
-    let assetsMetadata = HM.HashMap<T.TokenId, { mwh: T.TokenAmount; assetInfo: T.AssetInfo }>(16, Text.equal, Text.hash);
-
-    // TODO this code below exists in case need test it
-    // assetsMetadata.put("2", {
-    //   mwh = 200_000_000;
-    //   assetInfo = {
-    //     tokenId = "2";
-    //     startDate = "2024-04-29T19:43:34.000Z";
-    //     endDate = "2024-05-29T19:48:31.000Z";
-    //     co2Emission = "11.22";
-    //     radioactivityEmission = "10.20";
-    //     volumeProduced: T.TokenAmount = 200_000_000_000;
-    //     deviceDetails = {
-    //       name = "machine";
-    //       deviceType = #HydroElectric("Hydro-Electric");
-    //       description = "description";
-    //     };
-    //     specifications = {
-    //       deviceCode = "200";
-    //       location = "location";
-    //       latitude = "0.1";
-    //       longitude = "1.0";
-    //       country = "CL";
-    //     };
-    //   };
-    // });
+    let assetsMetadata = HM.HashMap<T.TokenId, { mwh: T.TokenAmount; assetInfo: T.AssetInfo; txIndex: T.TxIndex; comissionTxHash: T.TxHash; }>(16, Text.equal, Text.hash);
 
     switch(Serde.JSON.fromText(assetsJson, null)) {
       case(#err(_)) throw Error.reject("cannot serialize asset data");
@@ -434,9 +413,10 @@ shared({ caller = owner }) actor class TokenIndex() = this {
           case(?response) {
             for({ items } in response.vals()) {
               for(assetResponse in items.vals()) {
-                // TODO review mwh value assignment
                 assetsMetadata.put(assetResponse.asset_assetId, {
                   mwh = await T.textToToken(assetResponse.item_volume, null);
+                  txIndex = 0;
+                  comissionTxHash = "";
                   assetInfo = await buildAssetInfo(assetResponse);
                 });
               };
@@ -453,7 +433,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       let cid = await registerToken(assetInfo);
 
       // mint tokens to user
-      let transferResult: ICRC1.TransferResult = await Token.canister(cid).mint({
+      let tokenResult: ICRC1.TransferResult = await Token.canister(cid).mint({
         to = {
           owner = uid;
           subaccount = null;
@@ -463,8 +443,32 @@ shared({ caller = owner }) actor class TokenIndex() = this {
         memo = null;
       });
 
-      switch(transferResult) {
-        case(#Ok(value)) Debug.print("#Ok - minted " # Nat.toText(mwh) # " tokens in tx index: " # Nat.toText(value));
+      switch(tokenResult) {
+        case(#Ok(value)) {
+          Debug.print("#Ok - minted token with id: " # key # " by amount: " # Nat.toText(mwh) # " in tx index: " # Nat.toText(value));
+
+          // performe comission to register block into ledger
+          let comission_block = switch (await ICPTypes.ICPLedger.icrc1_transfer({
+            from_subaccount = null;
+            to = comissionHolder;
+            fee = null;
+            memo = null;
+            created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
+            amount = spendAmountToMint;
+          })) {
+            case (#Ok(block)) block;
+            case (#Err(err)) {
+              Debug.trap("cannot performe comission from failed" # debug_show (err));
+            };
+          };
+
+          assetsMetadata.put(key, {
+            mwh;
+            assetInfo;
+            txIndex = value;
+            comissionTxHash = Nat.toText(comission_block);
+          });
+        };
 
         case(#Err(error)) {
           Debug.print(switch(error) {
@@ -487,24 +491,52 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   };
 
 
-  public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, amount: T.TokenAmount): async (T.TxIndex, T.AssetInfo) {
+  public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, amount: T.TokenAmount, { debugMode: Bool }): async T.MintTxIndexResponse {
     _callValidation(caller);
 
-    let assetsJson = await HTTP.canister.get({
-      url = HTTP.apiUrl # "assets/" # tokenId;
-      port = null;
-      uid = null;
-      headers = [];
-    });
+    let assetMetadata: T.AssetInfo = switch(debugMode) {
+      // this code below exists in case need test it
+      case(true) {
+        {
+          tokenId;
+          startDate = "2024-04-29T19:43:34.000Z";
+          endDate = "2024-05-29T19:48:31.000Z";
+          co2Emission = "11.22";
+          radioactivityEmission = "10.20";
+          volumeProduced: T.TokenAmount = 200_000_000_000;
+          deviceDetails = {
+            name = "machine";
+            deviceType = #HydroElectric("Hydro-Electric");
+            description = "description";
+          };
+          specifications = {
+            deviceCode = "200";
+            location = "location";
+            latitude = "0.1";
+            longitude = "1.0";
+            country = "CL";
+          };
+        }
+      };
 
-    let assetMetadata: T.AssetInfo = switch(Serde.JSON.fromText(assetsJson, null)) {
-      case(#err(_)) throw Error.reject("cannot serialize asset data");
-      case(#ok(blob)) {
-        let assetResponse: ?AssetResponse = from_candid(blob);
+      case(false) {
+        let assetsJson = await HTTP.canister.get({
+          url = HTTP.apiUrl # "assets/" # tokenId;
+          port = null;
+          uid = null;
+          headers = [];
+        });
 
-        switch(assetResponse) {
-          case(null) throw Error.reject("cannot serialize asset data");
-          case(?value) await buildAssetInfo(value);
+        switch(Serde.JSON.fromText(assetsJson, null)) {
+          case(#err(_)) throw Error.reject("cannot serialize asset data");
+          case(#ok(blob)) {
+            let assetResponse: ?AssetResponse = from_candid(blob);
+
+            switch(assetResponse) {
+              case(null) throw Error.reject("cannot serialize asset data");
+              case(?value) await buildAssetInfo(value);
+            };
+          };
         };
       };
     };
@@ -513,7 +545,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     let cid = await registerToken(assetMetadata);
 
     // mint token to user
-    let transferResult: ICRC1.TransferResult = await Token.canister(cid).mint({
+    let tokenResult: ICRC1.TransferResult = await Token.canister(cid).mint({
       to = {
         owner = recipent;
         subaccount = null;
@@ -523,7 +555,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       memo = null;
     });
 
-    let txIndex = switch(transferResult) {
+    let txIndex = switch(tokenResult) {
       case(#Err(error)) throw Error.reject(switch(error) {
         case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
         case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
@@ -537,7 +569,25 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       case(#Ok(value)) value;
     };
 
-    (txIndex, assetMetadata)
+    // performe comission to register block into ledger
+    let comission_block = switch (await ICPTypes.ICPLedger.icrc1_transfer({
+      from_subaccount = null;
+      to = comissionHolder;
+      fee = null;
+      memo = null;
+      created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
+      amount = spendAmountToMint;
+    })) {
+      case (#Ok(block)) block;
+      case (#Err(err)) {
+        Debug.trap("cannot performe comission from failed" # debug_show (err));
+      };
+    };
+
+    {
+      comission_block;
+      token_block = (txIndex, assetMetadata);
+    }
   };
 
   // helper function used to build [AssetInfo] from AssetResponse
@@ -858,10 +908,10 @@ shared({ caller = owner }) actor class TokenIndex() = this {
   };
 
 
-  public shared({ caller }) func purchaseToken(buyer: T.UID, seller: T.BID, tokenId: T.TokenId, amount: T.TokenAmount, priceE8S: T.Price): async (T.TxIndex, T.AssetInfo) {
+  public shared({ caller }) func purchaseToken(buyer: T.UID, seller: T.BID, tokenId: T.TokenId, amount: T.TokenAmount, priceE8S: T.Price): async T.PurchaseTxIndexResponse {
     _callValidation(caller);
 
-    let (transferResult, assetInfo): (ICRC1.TransferResult, T.AssetInfo) = switch (tokenDirectory.get(tokenId)) {
+    let { comission_block; ledger_block; token_result; }: T.PurchaseTxResponse = switch (tokenDirectory.get(tokenId)) {
       case (null) throw Error.reject("Token not found");
       case (?cid) await Token.canister(cid).purchaseInMarketplace({
         marketplace = { owner = Principal.fromText(ENV.CANISTER_ID_MARKETPLACE); subaccount = null };
@@ -872,7 +922,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       });
     };
 
-    let txIndex = switch(transferResult) {
+    let txIndex = switch(token_result.0) {
       case(#Err(error)) throw Error.reject(switch(error) {
         case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
         case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
@@ -886,7 +936,11 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       case(#Ok(value)) value;
     };
 
-    (txIndex, assetInfo)
+    {
+      comission_block;
+      ledger_block;
+      token_block = (txIndex, token_result.1);
+    }
   };
 
   public shared ({ caller }) func requestRedeem(owner: T.UID, items: [T.RedemptionItem], { returns: Bool }) : async [T.RedemptionRequest] {
@@ -987,13 +1041,13 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     // recover all pdf parts
     while (parts > 0) {
       let pdfJson = await HTTP.canister.post({
-          url = HTTP.apiUrl # "redemptions";
-          port = null;
-          uid = null;
-          headers;
-          bodyJson;
-        });
-        Debug.print("✅ response --> " # debug_show (pdfJson));
+        url = HTTP.apiUrl # "redemptions";
+        port = null;
+        uid = null;
+        headers;
+        bodyJson;
+      });
+      Debug.print("✅ response --> " # debug_show (pdfJson));
 
       switch(Serde.JSON.fromText(pdfJson, null)) {
         case(#err(_)) throw Error.reject("cannot serialize PDF file data");
@@ -1014,7 +1068,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     let redemptionItems = Buffer.Buffer<T.RedemptionItemPdf>(16);
 
     for({ id; volume } in items.vals()) {
-      let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(id)) {
+      let transferResult: T.TokenTxResponse = switch (tokenDirectory.get(id)) {
         case (null) throw Error.reject("Token not found");
         case (?cid) await Token.canister(cid).redeemRequested({
           owner = {
@@ -1025,7 +1079,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
         });
       };
 
-      let txIndex = switch(transferResult) {
+      let txIndex = switch(transferResult.token_result) {
         case(#Err(error)) throw Error.reject(switch(error) {
           case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
           case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
@@ -1044,7 +1098,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       //   case(?value) value;
       // };
 
-      redemptionItems.add({ id; txIndex; volume; pdf = Array.map<Nat, Nat8>(pdf, func x = Nat8.fromNat(x)); });
+      redemptionItems.add({ id; txIndex; comissionBlock = transferResult.comission_block; volume; pdf = Array.map<Nat, Nat8>(pdf, func x = Nat8.fromNat(x)); });
     };
 
     Buffer.toArray<T.RedemptionItemPdf>(redemptionItems);
@@ -1123,7 +1177,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     let redemptionItems = Buffer.Buffer<T.RedemptionItemPdf>(16);
 
     for({ id; volume; } in items.vals()) {
-      let transferResult: ICRC1.TransferResult = switch (tokenDirectory.get(id)) {
+      let transferResult: T.TokenTxResponse = switch (tokenDirectory.get(id)) {
         case (null) throw Error.reject("Token not found");
         case (?cid) await Token.canister(cid).redeem({
           owner = {
@@ -1134,7 +1188,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
         });
       };
 
-      let txIndex = switch(transferResult) {
+      let txIndex = switch(transferResult.token_result) {
         case(#Err(error)) throw Error.reject(switch(error) {
           case (#BadBurn {min_burn_amount}) "#BadBurn: " # Nat.toText(min_burn_amount);
           case (#BadFee {expected_fee}) "#BadFee: " # Nat.toText(expected_fee);
@@ -1153,7 +1207,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
       //   case(?value) value;
       // };
 
-      redemptionItems.add({ id; txIndex; volume; pdf = Array.map<Nat, Nat8>(pdf, func x = Nat8.fromNat(x)); });
+      redemptionItems.add({ id; txIndex; comissionBlock = transferResult.comission_block; volume; pdf = Array.map<Nat, Nat8>(pdf, func x = Nat8.fromNat(x)); });
     };
 
     Buffer.toArray<T.RedemptionItemPdf>(redemptionItems);

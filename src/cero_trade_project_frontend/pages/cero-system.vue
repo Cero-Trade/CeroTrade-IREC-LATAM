@@ -82,6 +82,12 @@
         :rules="[globalRules.required]"
         @keyup="({ key }) => { if (key === 'Enter') mintToUserCall() }"
       ></v-text-field>
+      <v-checkbox
+        v-model="mintToUserForm.debugMode"
+        label="debug mode"
+        variant="outlined"
+        density="compact"
+      ></v-checkbox>
     </v-form>
     <v-btn
       width="150px"
@@ -124,6 +130,7 @@ mintToUserForm = ref({
   user: null,
   tokenId: null,
   tokenAmount: null,
+  debugMode: false,
 })
 
 

@@ -80,8 +80,9 @@ actor class Agent() = this {
       for({ tokenAmount; txIndex; } in txs.vals()) {
         // build transaction
         let txInfo: T.TransactionInfo = {
-          transactionId = "0";
-          txIndex;
+          transactionId = Nat.toText(txIndex);
+          ledgerTxHash = null;
+          comissionTxHash = null;
           from = { principal = caller; name = callerName };
           to = null;
           tokenId = tokenInfo.tokenId;
@@ -172,19 +173,44 @@ actor class Agent() = this {
 
   /// import user tokens
   public shared({ caller }) func importUserTokens(): async [{ mwh: T.TokenAmount; assetInfo: T.AssetInfo }] {
+    // check if caller exists and return companyName
+    let callerName = await UserIndex.getUserName(caller);
+
     // performe import of tokens
     let transactions = await TokenIndex.importUserTokens(caller);
+
+    let comissionHolder = await TokenIndex.getComissionHolder();
 
     let mappedTxs = Buffer.Buffer<{ tokenId: T.TokenId; statistics: { mwh: ?T.TokenAmount; redemptions: ?T.TokenAmount; sells: ?T.TokenAmount; priceTrend: ?T.AssetStatisticPriceTrend; } }>(16);
     let mappedAssets = Buffer.Buffer<T.AssetInfo>(16);
 
-    for({ mwh; assetInfo } in transactions.vals()) {
+    for({ mwh; assetInfo; txIndex; comissionTxHash; } in transactions.vals()) {
       mappedAssets.add(assetInfo);
 
       mappedTxs.add({
         tokenId = assetInfo.tokenId;
         statistics = { mwh = ?mwh; redemptions = null; sells = null; priceTrend = null; };
       });
+
+      // build transaction
+      let txInfo: T.TransactionInfo = {
+        transactionId = Nat.toText(txIndex);
+        ledgerTxHash = null;
+        comissionTxHash = ?comissionTxHash;
+        from = { principal = comissionHolder.owner; name = "Cero Trade"; };
+        to = ?{ principal = caller; name = callerName; };
+        tokenId = assetInfo.tokenId;
+        txType = #mint("mint");
+        tokenAmount = mwh;
+        priceE8S = ?{ e8s = 1 };
+        date = DateTime.now().toText();
+        method = #blockchainTransfer("blockchainTransfer");
+        redemptionPdf = null;
+      };
+
+      // register transaction
+      let transactionId = await TransactionIndex.registerTransaction(txInfo);
+      await UserIndex.updateTransactions(caller, null, transactionId);
     };
 
     // add user portfolio
@@ -198,22 +224,43 @@ actor class Agent() = this {
 
 
   /// performe mint with tokenId and amount requested
-  public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, tokenAmount: T.TokenAmount): async T.TxIndex {
+  public shared({ caller }) func mintTokenToUser(recipent: T.BID, tokenId: T.TokenId, tokenAmount: T.TokenAmount, { debugMode: Bool }): async T.TransactionId {
     IC_MANAGEMENT.adminValidation(caller, controllers);
 
-    // check if user exists
-    if (not (await UserIndex.checkPrincipal(recipent))) throw Error.reject(notExists);
+    // check if caller exists and return companyName
+    let recipentName = await UserIndex.getUserName(caller);
 
     // mint token to user token collection
-    let (txIndex, assetInfo) = await TokenIndex.mintTokenToUser(recipent, tokenId, tokenAmount);
+    let { comission_block; token_block } = await TokenIndex.mintTokenToUser(recipent, tokenId, tokenAmount, { debugMode });
+    let comissionHolder = await TokenIndex.getComissionHolder();
+
+    // build transaction
+    let txInfo: T.TransactionInfo = {
+      transactionId = Nat.toText(token_block.0);
+      ledgerTxHash = null;
+      comissionTxHash = ?Nat.toText(comission_block);
+      from = { principal = comissionHolder.owner; name = "Cero Trade"; };
+      to = ?{ principal = recipent; name = recipentName; };
+      tokenId;
+      txType = #mint("mint");
+      tokenAmount;
+      priceE8S = ?{ e8s = 1 };
+      date = DateTime.now().toText();
+      method = #blockchainTransfer("blockchainTransfer");
+      redemptionPdf = null;
+    };
+
+    // register transaction
+    let transactionId = await TransactionIndex.registerTransaction(txInfo);
+    await UserIndex.updateTransactions(caller, null, transactionId);
 
     // add user portfolio
-    await UserIndex.addTokensPortfolio(recipent, [assetInfo]);
+    await UserIndex.addTokensPortfolio(recipent, [token_block.1]);
 
     // register asset statistic
     await Statistics.registerAssetStatistic(tokenId, { mwh = ?tokenAmount; redemptions = null; sells = null; priceTrend = null; });
 
-    txIndex
+    transactionId
   };
 
 
@@ -568,12 +615,13 @@ actor class Agent() = this {
     };
 
     // performe ICP transfer and update token canister
-    let (txIndex, assetInfo) = await TokenIndex.purchaseToken(caller, recipent, tokenId, tokenAmount, totalPriceE8S);
+    let { comission_block; ledger_block; token_block; } = await TokenIndex.purchaseToken(caller, recipent, tokenId, tokenAmount, totalPriceE8S);
 
     // build transaction
     let txInfo: T.TransactionInfo = {
-      transactionId = "0";
-      txIndex;
+      transactionId = Nat.toText(token_block.0);
+      ledgerTxHash = ?Nat.toText(ledger_block);
+      comissionTxHash = ?Nat.toText(comission_block);
       from = { principal = caller; name = callerName; };
       to = ?{ principal = recipent; name = recipentName; };
       tokenId;
@@ -595,7 +643,7 @@ actor class Agent() = this {
     await Statistics.registerAssetStatistic(tokenId, { mwh = null; redemptions = null; sells = ?tokenAmount; priceTrend = null; });
 
     // store to caller and recipent
-    await UserIndex.updateMarketplace(caller, { amountInMarket; transaction = { txInfo with transactionId } }, ?{ recipent; assetInfo; });
+    await UserIndex.updateMarketplace(caller, { amountInMarket; transaction = { txInfo with transactionId } }, ?{ recipent; assetInfo = token_block.1; });
 
     { txInfo with transactionId }
   };
@@ -627,8 +675,9 @@ actor class Agent() = this {
 
     // build transaction
     let txInfo: T.TransactionInfo = {
-      transactionId = "0";
-      txIndex;
+      transactionId = Nat.toText(txIndex);
+      ledgerTxHash = null;
+      comissionTxHash = null;
       from = { principal = caller; name = sellerName; };
       to = null;
       tokenId;
@@ -683,8 +732,9 @@ actor class Agent() = this {
 
     // build transaction
     let txInfo: T.TransactionInfo = {
-      transactionId = "0";
-      txIndex;
+      transactionId = Nat.toText(txIndex);
+      ledgerTxHash = null;
+      comissionTxHash = null;
       from = { principal = uid; name = callerName; };
       to = null;
       tokenId;
@@ -780,11 +830,12 @@ actor class Agent() = this {
 
     let transactions = Buffer.Buffer<T.TransactionInfo>(16);
 
-    for({ id = tokenId; txIndex; pdf; volume; } in redemptions.vals()) {
+    for({ id = tokenId; txIndex; comissionBlock; pdf; volume; } in redemptions.vals()) {
       // build transaction
       let txInfo: T.TransactionInfo = {
-        transactionId = "0";
-        txIndex;
+        transactionId = Nat.toText(txIndex);
+        ledgerTxHash = null;
+        comissionTxHash = ?Nat.toText(comissionBlock);
         from = { principal = caller; name = profile.companyName; };
         to = ?{ principal = triggeredBy; name = triggeredByProfile.companyName; };
         tokenId;
@@ -837,11 +888,12 @@ actor class Agent() = this {
 
     let transactions = Buffer.Buffer<T.TransactionInfo>(16);
 
-    for({ id = tokenId; txIndex; pdf; volume; } in redemptions.vals()) {
+    for({ id = tokenId; txIndex; comissionBlock; pdf; volume; } in redemptions.vals()) {
       // build transaction
       let txInfo: T.TransactionInfo = {
-        transactionId = "0";
-        txIndex;
+        transactionId = Nat.toText(txIndex);
+        ledgerTxHash = null;
+        comissionTxHash = ?Nat.toText(comissionBlock);
         from = { principal = caller; name = profile.companyName; };
         to = ?{ principal = caller; name = profile.companyName; };
         tokenId;
@@ -869,6 +921,50 @@ actor class Agent() = this {
     Buffer.toArray<T.TransactionInfo>(transactions);
   };
 
+  // get ledger transactions
+  public func getLedgerTransactions(page: ?Nat, length: ?Nat, mwhRange: ?[T.TokenAmount], rangeDates: ?[Text], tokenId: ?T.TokenId): async {
+    data: [T.TransactionHistoryInfo];
+    totalPages: Nat;
+  } {
+    let transactionsInfo: {
+      data: [T.TransactionInfo];
+      totalPages: Nat;
+    } = await TransactionIndex.getLedgerTransactions(page, length, mwhRange, rangeDates, tokenId);
+
+    // get tokens info
+    let tokensInfo: [T.AssetInfo] = await TokenIndex.getTokensInfo(Array.map<T.TransactionInfo, Text>(transactionsInfo.data, func x = x.tokenId));
+
+    // Convert tokensInfo to a HashMap for faster lookup
+    let tokensInfoMap = HM.fromIter<T.TokenId, T.AssetInfo>(Iter.fromArray(Array.map<T.AssetInfo, (T.TokenId, T.AssetInfo)>(tokensInfo, func info = (info.tokenId, info))), 16, Text.equal, Text.hash);
+
+
+    // map market and asset values to marketplace info
+    let transactions: [T.TransactionHistoryInfo] = Array.map<T.TransactionInfo, T.TransactionHistoryInfo>(transactionsInfo.data, func (item) {
+      let assetInfo = tokensInfoMap.get(item.tokenId);
+
+
+      // build TransactionHistoryInfo object
+      {
+        transactionId = item.transactionId;
+        ledgerTxHash = item.ledgerTxHash;
+        comissionTxHash = item.comissionTxHash;
+        txType = item.txType;
+        tokenAmount = item.tokenAmount;
+        priceE8S = item.priceE8S;
+        date = item.date;
+        method = item.method;
+        from = item.from;
+        to = item.to;
+        redemptionPdf = item.redemptionPdf;
+        assetInfo;
+      }
+    });
+
+    {
+      data = transactions;
+      totalPages = transactionsInfo.totalPages;
+    }
+  };
 
   // get platform transactions
   public func getPlatformTransactions(page: ?Nat, length: ?Nat, mwhRange: ?[T.TokenAmount], rangeDates: ?[Text], tokenId: ?T.TokenId): async {
@@ -895,7 +991,8 @@ actor class Agent() = this {
       // build TransactionHistoryInfo object
       {
         transactionId = item.transactionId;
-        txIndex = item.txIndex;
+        ledgerTxHash = item.ledgerTxHash;
+        comissionTxHash = item.comissionTxHash;
         txType = item.txType;
         tokenAmount = item.tokenAmount;
         priceE8S = item.priceE8S;
@@ -943,7 +1040,8 @@ actor class Agent() = this {
       // build TransactionHistoryInfo object
       {
         transactionId = item.transactionId;
-        txIndex = item.txIndex;
+        ledgerTxHash = item.ledgerTxHash;
+        comissionTxHash = item.comissionTxHash;
         txType = item.txType;
         tokenAmount = item.tokenAmount;
         priceE8S = item.priceE8S;

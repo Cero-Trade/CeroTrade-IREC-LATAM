@@ -10,5 +10,6 @@ module TransactionsInterface {
     length: query () -> async Nat;
     registerTransaction: (tx: T.TransactionInfo) -> async T.TransactionId;
     getTransactionsById: query (txIds: [T.TransactionId], txType: ?T.TxType, priceRange: ?[T.Price], mwhRange: ?[T.TokenAmount], method: ?T.TxMethod, rangeDates: ?[Text], tokenId: ?T.TokenId) -> async [T.TransactionInfo];
+    getOutTransactionsById: query (txIds: [T.TransactionId], mwhRange: ?[T.TokenAmount], rangeDates: ?[Text], tokenId: ?T.TokenId) -> async [T.TransactionInfo];
   };
 }

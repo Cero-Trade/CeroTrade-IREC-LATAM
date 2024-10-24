@@ -4,7 +4,6 @@ import Text "mo:base/Text";
 import Iter "mo:base/Iter";
 import Error "mo:base/Error";
 import Array "mo:base/Array";
-import Debug "mo:base/Debug";
 
 
 // canisters

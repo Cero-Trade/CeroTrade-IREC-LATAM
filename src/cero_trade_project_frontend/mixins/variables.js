@@ -29,11 +29,12 @@ export default {
   dateFormat: 'YYYY-MM-DDTHH:mm:ss.sssssssssZ',
   evidentDateFormat: 'YYYY-MM-DDTHH:mm:ssZ',
   // amount in e8s equal to 1 ICP
-  ceroComisison: BigInt(process.env.CERO_COMISSION),
+  ceroComission: BigInt(process.env.CERO_COMISSION),
   isProduction: process.env.NODE_ENV === 'production',
   beneficiaryUrl: computed(() => `${process.env.NODE_ENV === 'production' ? 'https://z2mgf-dqaaa-aaaak-qihbq-cai.icp0.io' : 'http://localhost:5173'}/auth/register?canisterId=z2mgf-dqaaa-aaaak-qihbq-cai&beneficiary=${store.state.profile?.principalId.toString()}`),
   defaultMaxDecimals: 8,
   defaultLocale: 'en-US',
+  ICPExplorerUrl: "https://dashboard.internetcomputer.org/transaction",
 
   isSafari: /^((?!chrome|android).)*safari/i.test(navigator.userAgent),
   countries: computed(() => store.state.countries),

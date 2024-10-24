@@ -100,8 +100,10 @@
       </template>
 
       <template #[`item.price`]="{ item }">
-        <span class="divrow jspace acenter">
-          {{ item.price }} <v-sheet v-if="item.price != '---'" class="chip-currency bold">ICP</v-sheet>
+        <span v-if="!item.price">---</span>
+
+        <span v-else class="flex-center">
+          {{ exponentToString(item.price) }} <v-sheet class="chip-currency bold">ICP</v-sheet>
         </span>
       </template>
 
@@ -119,12 +121,30 @@
       <template #[`item.mwh`]="{ item }">
         <span class="flex-acenter">
           <img src="@/assets/sources/icons/lightbulb.svg" alt="lightbulb icon">
-          {{ item.mwh }}
+          {{ exponentToString(item.mwh) }}
         </span>
       </template>
       
       <template #item.via="{ item }">
         <span style="text-wrap: nowrap">{{ item.via }}</span>
+      </template>
+
+      <template #[`item.ledger_tx_hash`]="{ item }">
+        <span v-if="!item.ledger_tx_hash">---</span>
+
+        <a v-else :title="item.ledger_tx_hash" :href="`${ICPExplorerUrl}/${item.ledger_tx_hash}`" target="_blank" class="text-label flex-center" style="gap: 5px">
+          {{ shortString(item.ledger_tx_hash, {}) }}
+          <img src="@/assets/sources/icons/share.svg" alt="explorer icon" style="width: 16px">
+        </a>
+      </template>
+
+      <template #[`item.comission_tx_hash`]="{ item }">
+        <span v-if="!item.comission_tx_hash">---</span>
+
+        <a v-else :title="item.comission_tx_hash" :href="`${ICPExplorerUrl}/${item.comission_tx_hash}`" target="_blank" class="text-label flex-center" style="gap: 5px">
+          {{ shortString(item.comission_tx_hash, {}) }}
+          <img src="@/assets/sources/icons/share.svg" alt="explorer icon" style="width: 16px">
+        </a>
       </template>
     </v-data-table>
 
@@ -244,7 +264,7 @@
             flat elevation="0"
             menu-icon=""
             item-title="name"
-            item-value="name"
+            item-value="code"
             label="country"
             class="select mb-4"
           >
@@ -371,13 +391,13 @@ import { TxType, TxMethod } from '@/models/transaction-model'
 import { useToast } from 'vue-toastification'
 import { useRouter } from 'vue-router'
 import moment from "moment";
-import { shortPrincipalId, shortString } from '@/plugins/functions'
+import { exponentToString, shortPrincipalId, shortString } from '@/plugins/functions'
 import variables from '@/mixins/variables'
 
 const
   router = useRouter(),
   toast = useToast(),
-  { countries } = variables,
+  { countries, ICPExplorerUrl } = variables,
 
 tabsMobile = ref(1),
 windowStep = ref(undefined),
@@ -405,17 +425,18 @@ energies = {
   headers = [
   // { title: '', key: 'checkbox', sortable: false, align: 'center'},
   { title: 'Tx ID', key: 'tx_id', align: 'center', sortable: false, width: "90px" },
-  { title: 'Type', key: 'type', sortable: false },
-  { title: 'Asset ID', key: 'asset_id', sortable: false },
-  { title: 'Energy source', key: 'energy_source', sortable: false },
+  { title: 'Type', key: 'type', align: 'center', sortable: false },
+  { title: 'Asset ID', key: 'asset_id', align: 'center', sortable: false },
+  { title: 'Energy source', key: 'energy_source', align: 'center', sortable: false },
   { title: 'Price (ICP)', key: 'price', align: 'center', sortable: false },
-  { title: 'Country', key: 'country', sortable: false },
-  { title: 'Recipent', key: 'recipent', sortable: false, width: "110px" },
-  { title: 'Sender', key: 'sender', sortable: false, width: "100px" },
-  { title: 'MWh', key: 'mwh', sortable: false },
-  { title: 'Date', key: 'date', sortable: false },
+  { title: 'Country', key: 'country', align: 'center', sortable: false },
+  { title: 'Recipent', key: 'recipent', align: 'center', sortable: false, width: "110px" },
+  { title: 'Sender', key: 'sender', align: 'center', sortable: false, width: "100px" },
+  { title: 'MWh', key: 'mwh', align: 'center', sortable: false },
+  { title: 'Date', key: 'date', align: 'center', sortable: false },
   { title: 'Via', key: 'via', align: 'center', sortable: false },
-  { title: 'block index', key: 'tx_index', align: 'center', sortable: false },
+  { title: 'Ledger Tx Block', key: 'ledger_tx_hash', align: 'center', sortable: false, width: "110px" },
+  { title: 'Comission Tx Block', key: 'comission_tx_hash', align: 'center', sortable: false, width: "110px" },
 ],
 dataTransactions = ref([]),
 loading = ref(true),
@@ -513,9 +534,10 @@ async function getData() {
         mwh: item.tokenAmount,
         asset_id: item.assetInfo.tokenId,
         date: item.date.toDateString(),
-        price: item.priceE8S || "---",
+        price: item.priceE8S,
         via: item.method,
-        tx_index: item.txIndex || "---",
+        comission_tx_hash: item.comissionTxHash,
+        ledger_tx_hash: item.ledgerTxHash,
       })
     }
 

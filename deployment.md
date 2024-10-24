@@ -1,13 +1,14 @@
 <!-- TODO subdomain integration with `cerotrade.cl/alfa` -->
 <!-- TODO performe logic to check how many allowance have and determinate how many to spend in allowance or not -->
 <!-- TODO invest hash transaction about operations in icp platform -->
-<!-- TODO fill missing data into token details page -->
 
 # Cero Trade
 
 Public frontend url: https://z2mgf-dqaaa-aaaak-qihbq-cai.icp0.io?canisterId=z2mgf-dqaaa-aaaak-qihbq-cai
 
 Public candid url: https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=<canister_id>
+
+ICP canisters search: https://dashboard.internetcomputer.org/canister/<canister_id>
 
 ## Deployment Commands
 
