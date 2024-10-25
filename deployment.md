@@ -1,6 +1,4 @@
 <!-- TODO subdomain integration with `cerotrade.cl/alfa` -->
-<!-- TODO performe logic to check how many allowance have and determinate how many to spend in allowance or not -->
-<!-- TODO invest hash transaction about operations in icp platform -->
 
 # Cero Trade
 
