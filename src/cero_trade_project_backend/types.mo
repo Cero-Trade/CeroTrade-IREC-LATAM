@@ -199,6 +199,7 @@ module {
 
   public type TransactionInfo = {
     transactionId: TransactionId;
+    tokenTxIndex: TxIndex;
     ledgerTxHash: ?TxHash;
     comissionTxHash: ?TxHash;
     from: { principal: UID; name: Text };
@@ -214,6 +215,7 @@ module {
 
   public type TransactionHistoryInfo = {
     transactionId: TransactionId;
+    tokenTxIndex: TxIndex;
     ledgerTxHash: ?TxHash;
     comissionTxHash: ?TxHash;
     from: { principal: UID; name: Text };

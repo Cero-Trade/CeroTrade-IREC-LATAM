@@ -98,6 +98,15 @@
         </span>
       </template>
 
+      <template #[`item.token_tx_index`]="{ item }">
+        <span v-if="!item.token_tx_index">---</span>
+
+        <span v-else class="pointer acenter" :title="item.token_tx_index" @click="item.token_tx_index.copyToClipboard('Token Tx Block copied')">
+          {{ shortString(item.token_tx_index, {}) }}
+          <img src="@/assets/sources/icons/copy.svg" alt="copy icon" class="ml-2" style="width: 18px">
+        </span>
+      </template>
+
       <template #[`item.ledger_tx_hash`]="{ item }">
         <span v-if="!item.ledger_tx_hash">---</span>
 
@@ -313,6 +322,7 @@ headers = [
   { title: 'Token ID', key: 'asset_id', align: 'center', sortable: false, width: "100px" },
   { title: 'From / To', key: 'addresses', align: 'center', sortable: false, width: "110px" },
   { title: 'MWh', key: 'mwh', align: 'center', sortable: false },
+  { title: 'Token Tx Block', key: 'token_tx_index', align: 'center', sortable: false, width: "110px" },
   { title: 'Ledger Tx Block', key: 'ledger_tx_hash', align: 'center', sortable: false, width: "110px" },
   { title: 'Comission Tx Block', key: 'comission_tx_hash', align: 'center', sortable: false, width: "110px" },
   { title: 'Timestamp', key: 'date', align: 'center', sortable: false },
@@ -380,6 +390,7 @@ async function getData() {
         mwh: item.tokenAmount,
         asset_id: item.assetInfo.tokenId,
         date: item.date.toDateString(),
+        token_tx_index: item.tokenTxIndex,
         comission_tx_hash: item.comissionTxHash,
         ledger_tx_hash: item.ledgerTxHash,
       })
