@@ -34,8 +34,9 @@ shared({ caller = transactionIndexCaller }) actor class Transactions() {
   public shared({ caller }) func registerTransaction(txInfo: T.TransactionInfo): async T.TransactionId {
     _callValidation(caller);
 
-    transactions.put(txInfo.transactionId, txInfo);
-    txInfo.transactionId
+    let transactionId = Nat.toText(transactions.size() + 1);
+    transactions.put(transactionId, { txInfo with transactionId });
+    transactionId
   };
 
 

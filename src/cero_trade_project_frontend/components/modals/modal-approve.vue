@@ -94,20 +94,29 @@ async function approve() {
   loading.value = true
 
   try {
+    const allowance = await LedgerCanister.allowanceICPFromToken({ tokenId: tokenId.value })
+    if (allowance.allowance >= totalInE8S.value) return completeApproval({ haveApprove: false })
+
     const txBlock = await LedgerCanister.approveICPFromToken({
       tokenId: tokenId.value,
       amount: { e8s: totalInE8S.value },
     })
-    console.log(txBlock);
+    console.log("approval block", txBlock);
 
-    loading.value = false
-    model.value = false
-    toast.info(`You have approved to spend ${totalPreview.value} ICP`)
-
-    emit('approve', modelParameter.value)
+    completeApproval({ haveApprove: true })
   } catch (error) {
     loading.value = false
     toast.error(error)
   }
+}
+
+function completeApproval({ haveApprove }) {
+  haveApprove ||= false
+
+  loading.value = false
+  model.value = false
+  if (haveApprove) toast.info(`You have approved to spend ${totalPreview.value} ICP`)
+
+  emit('approve', modelParameter.value)
 }
 </script>

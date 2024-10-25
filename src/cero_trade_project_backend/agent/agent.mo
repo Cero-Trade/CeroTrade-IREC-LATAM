@@ -80,7 +80,8 @@ actor class Agent() = this {
       for({ tokenAmount; txIndex; } in txs.vals()) {
         // build transaction
         let txInfo: T.TransactionInfo = {
-          transactionId = Nat.toText(txIndex);
+          transactionId = "0";
+          tokenTxIndex = txIndex;
           ledgerTxHash = null;
           comissionTxHash = null;
           from = { principal = caller; name = callerName };
@@ -194,7 +195,8 @@ actor class Agent() = this {
 
       // build transaction
       let txInfo: T.TransactionInfo = {
-        transactionId = Nat.toText(txIndex);
+        transactionId = "0";
+        tokenTxIndex = txIndex;
         ledgerTxHash = null;
         comissionTxHash = ?comissionTxHash;
         from = { principal = comissionHolder.owner; name = "Cero Trade"; };
@@ -236,7 +238,8 @@ actor class Agent() = this {
 
     // build transaction
     let txInfo: T.TransactionInfo = {
-      transactionId = Nat.toText(token_block.0);
+      transactionId = "0";
+      tokenTxIndex = token_block.0;
       ledgerTxHash = null;
       comissionTxHash = ?Nat.toText(comission_block);
       from = { principal = comissionHolder.owner; name = "Cero Trade"; };
@@ -619,7 +622,8 @@ actor class Agent() = this {
 
     // build transaction
     let txInfo: T.TransactionInfo = {
-      transactionId = Nat.toText(token_block.0);
+      transactionId = "0";
+      tokenTxIndex = token_block.0;
       ledgerTxHash = ?Nat.toText(ledger_block);
       comissionTxHash = ?Nat.toText(comission_block);
       from = { principal = caller; name = callerName; };
@@ -675,7 +679,8 @@ actor class Agent() = this {
 
     // build transaction
     let txInfo: T.TransactionInfo = {
-      transactionId = Nat.toText(txIndex);
+      transactionId = "0";
+      tokenTxIndex = txIndex;
       ledgerTxHash = null;
       comissionTxHash = null;
       from = { principal = caller; name = sellerName; };
@@ -732,7 +737,8 @@ actor class Agent() = this {
 
     // build transaction
     let txInfo: T.TransactionInfo = {
-      transactionId = Nat.toText(txIndex);
+      transactionId = "0";
+      tokenTxIndex = txIndex;
       ledgerTxHash = null;
       comissionTxHash = null;
       from = { principal = uid; name = callerName; };
@@ -833,7 +839,8 @@ actor class Agent() = this {
     for({ id = tokenId; txIndex; comissionBlock; pdf; volume; } in redemptions.vals()) {
       // build transaction
       let txInfo: T.TransactionInfo = {
-        transactionId = Nat.toText(txIndex);
+        transactionId = "0";
+        tokenTxIndex = txIndex;
         ledgerTxHash = null;
         comissionTxHash = ?Nat.toText(comissionBlock);
         from = { principal = caller; name = profile.companyName; };
@@ -891,7 +898,8 @@ actor class Agent() = this {
     for({ id = tokenId; txIndex; comissionBlock; pdf; volume; } in redemptions.vals()) {
       // build transaction
       let txInfo: T.TransactionInfo = {
-        transactionId = Nat.toText(txIndex);
+        transactionId = "0";
+        tokenTxIndex = txIndex;
         ledgerTxHash = null;
         comissionTxHash = ?Nat.toText(comissionBlock);
         from = { principal = caller; name = profile.companyName; };
@@ -946,6 +954,7 @@ actor class Agent() = this {
       // build TransactionHistoryInfo object
       {
         transactionId = item.transactionId;
+        tokenTxIndex = item.tokenTxIndex;
         ledgerTxHash = item.ledgerTxHash;
         comissionTxHash = item.comissionTxHash;
         txType = item.txType;
@@ -991,6 +1000,7 @@ actor class Agent() = this {
       // build TransactionHistoryInfo object
       {
         transactionId = item.transactionId;
+        tokenTxIndex = item.tokenTxIndex;
         ledgerTxHash = item.ledgerTxHash;
         comissionTxHash = item.comissionTxHash;
         txType = item.txType;
@@ -1040,6 +1050,7 @@ actor class Agent() = this {
       // build TransactionHistoryInfo object
       {
         transactionId = item.transactionId;
+        tokenTxIndex = item.tokenTxIndex;
         ledgerTxHash = item.ledgerTxHash;
         comissionTxHash = item.comissionTxHash;
         txType = item.txType;

@@ -1,9 +1,30 @@
 import { Tokens } from "@/models/transaction-model";
 import { getLedgerCanister as ledger } from "@/services/icp-provider";
-import { Account, ApproveResult, Icrc1BlockIndex } from "src/declarations/nns-ledger/nns-ledger.did";
+import { Account, Allowance, ApproveResult, Icrc1BlockIndex } from "src/declarations/nns-ledger/nns-ledger.did";
 import { AgentCanister } from "./agent-canister";
+import { AuthClientApi } from "./auth-client-api";
 
 export class LedgerCanister {
+  static async allowanceICP({ spender }: { spender: Account }): Promise<Allowance> {
+    try {
+      const principal = AuthClientApi.getPrincipal(),
+      result = await ledger().icrc2_allowance({
+        account: {
+          owner: principal,
+          subaccount: [],
+        },
+        spender
+      }) as Allowance;
+      if (result['Err']) throw result['Err']
+
+      return result['Ok'];
+    } catch (error) {
+      console.error(error);
+      throw error.toString()
+    }
+  }
+
+
   static async approveICP({ spender, amount }: { spender: Account, amount: Tokens }): Promise<Icrc1BlockIndex> {
     try {
       const result = await ledger().icrc2_approve({
@@ -14,14 +35,34 @@ export class LedgerCanister {
         amount: amount.e8s,
         expected_allowance: [],
         expires_at: [],
-        spender: {
-          owner: spender.owner,
-          subaccount: spender.subaccount?.length ? [spender.subaccount] : [],
-        },
+        spender,
       }) as ApproveResult;
       if (result['Err']) throw result['Err']
 
       return result['Ok'];
+    } catch (error) {
+      console.error(error);
+      throw error.toString()
+    }
+  }
+
+
+  static async allowanceICPFromToken({ tokenId }: { tokenId: string }): Promise<Allowance> {
+    try {
+      const principal = AuthClientApi.getPrincipal(),
+      tokenCanister = await AgentCanister.getTokenCanister(tokenId),
+      result = await ledger().icrc2_allowance({
+        account: {
+          owner: principal,
+          subaccount: [],
+        },
+        spender: {
+          owner: tokenCanister,
+          subaccount: [],
+        }
+      }) as Allowance;
+
+      return result;
     } catch (error) {
       console.error(error);
       throw error.toString()

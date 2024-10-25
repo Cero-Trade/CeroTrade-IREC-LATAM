@@ -1,4 +1,4 @@
-import { fileCompression, getUrlFromArrayBuffer, getImageArrayBuffer, getFileFromArrayBuffer, tokenToNumber, numberToToken } from "@/plugins/functions";
+import { fileCompression, getUrlFromArrayBuffer, getImageArrayBuffer, getFileFromArrayBuffer, tokenToNumber, numberToToken, exponentToString } from "@/plugins/functions";
 import { useAgentCanister as agent, getErrorMessage } from "@/services/icp-provider";
 import avatar from '@/assets/sources/images/avatar-online.svg'
 import store from "@/store";
@@ -507,6 +507,7 @@ export class AgentCanister {
         item.txType = Object.values(item.txType)[0] as TxTypeDef
         item.method = Object.values(item.method)[0] as TxMethodDef
         item.date = new Date(item.date)
+        item.tokenTxIndex = exponentToString(Number(item.tokenTxIndex))
 
         const conversion = getFileFromArrayBuffer(item.redemptionPdf, { fileName: 'certificate', fileType: 'application/pdf' })
         item.redemptionPdf = conversion.file
@@ -558,6 +559,7 @@ export class AgentCanister {
         item.txType = Object.values(item.txType)[0] as TxTypeDef
         item.method = Object.values(item.method)[0] as TxMethodDef
         item.date = new Date(item.date)
+        item.tokenTxIndex = exponentToString(Number(item.tokenTxIndex))
 
         const conversion = getFileFromArrayBuffer(item.redemptionPdf, { fileName: 'certificate', fileType: 'application/pdf' })
         item.redemptionPdf = conversion.file
@@ -621,6 +623,7 @@ export class AgentCanister {
         item.txType = Object.values(item.txType)[0] as TxTypeDef
         item.method = Object.values(item.method)[0] as TxMethodDef
         item.date = new Date(item.date)
+        item.tokenTxIndex = exponentToString(Number(item.tokenTxIndex))
 
         const conversion = getFileFromArrayBuffer(item.redemptionPdf, { fileName: 'certificate', fileType: 'application/pdf' })
         item.redemptionPdf = conversion.file
