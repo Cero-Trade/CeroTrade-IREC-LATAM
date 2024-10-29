@@ -497,6 +497,14 @@ shared({ caller = owner }) actor class TokenIndex() = this {
     let assetMetadata: T.AssetInfo = switch(debugMode) {
       // this code below exists in case need test it
       case(true) {
+        let deviceType = switch(tokenId) {
+          case("1") #Solar("Solar");
+          case("2") #Wind("Wind");
+          case("3") #HydroElectric("Hydro-Electric");
+          case("4") #Thermal("Thermal");
+          case _ #Other("Other");
+        };
+
         {
           tokenId;
           startDate = "2024-04-29T19:43:34.000Z";
@@ -506,7 +514,7 @@ shared({ caller = owner }) actor class TokenIndex() = this {
           volumeProduced: T.TokenAmount = 200_000_000_000;
           deviceDetails = {
             name = "machine";
-            deviceType = #HydroElectric("Hydro-Electric");
+            deviceType;
             description = "description";
           };
           specifications = {
