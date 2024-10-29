@@ -1286,8 +1286,8 @@
                   >Put in Market</v-btn>
                 </v-form>
 
-                <h6 class="h6 mb-4">Tokens in Market {{ tokenDetail.inMarket }} MWh</h6>
-                <h6 class="h6 mb-4">Tokens Available to Put in Market: {{ tokenDetail.totalAmount }} MWh</h6>
+                <h6 class="h6 mb-4">Tokens in Market {{ exponentToString(tokenDetail.inMarket) }} MWh</h6>
+                <h6 class="h6 mb-4">Tokens Available to Put in Market: {{ exponentToString(tokenDetail.totalAmount) }} MWh</h6>
 
                 <label class="label mb-4">Your Market Listings</label>
 
@@ -1329,7 +1329,7 @@
                   class="select hide-spin mb-7"
                 ></v-text-field>
                 <h6 class="h6 mb-4">Platform Redemption Rate: {{ stats.find(e => e.id === 'redemption')?.value ?? 0 }}</h6>
-                <h6 class="h6 mb-6">Tokens Available to Redeem: {{ tokenDetail.totalAmount }} Mwh</h6>
+                <h6 class="h6 mb-6">Tokens Available to Redeem: {{ exponentToString(tokenDetail.totalAmount) }} Mwh</h6>
 
                 <v-btn
                   v-if="haveToken"
@@ -1374,7 +1374,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import variables from '@/mixins/variables'
 import moment from 'moment'
-import { closeLoader, tokenToNumber, numberToToken, showLoader, maxDecimals, shortString, formatBytes } from '@/plugins/functions'
+import { closeLoader, tokenToNumber, numberToToken, showLoader, maxDecimals, shortString, formatBytes, exponentToString } from '@/plugins/functions'
 
 const
   route = useRoute(),
@@ -1638,12 +1638,12 @@ async function getData() {
       {
         id: 'produced',
         name: 'Total produced',
-        value: `${tokenDetail.value.assetInfo.volumeProduced} MWh`,
+        value: `${exponentToString(tokenDetail.value.assetInfo.volumeProduced)} MWh`,
       },
       {
         id: 'market',
         name: 'Total In Market',
-        value: `${totalInMarketplace} MWh`,
+        value: `${exponentToString(totalInMarketplace)} MWh`,
       },
       {
         id: 'redemption',
@@ -1654,19 +1654,19 @@ async function getData() {
     marketInsights.value = [
       {
         name: 'Hosted on platform',
-        value: `${statistics.value.mwh} MWh`,
+        value: `${exponentToString(statistics.value.mwh)} MWh`,
       },
       {
         name: 'Sold on platform',
-        value: `${statistics.value.sells} MWh`,
+        value: `${exponentToString(statistics.value.sells)} MWh`,
       },
       {
         name: 'Redeemed on platform',
-        value: `${statistics.value.redemptions} MWh`,
+        value: `${exponentToString(statistics.value.redemptions)} MWh`,
       },
       {
         name: 'Average price trend',
-        value: `${statistics.value.priceE8STrend} ICP`,
+        value: `${exponentToString(statistics.value.priceE8STrend)} ICP`,
       },
     ]
     assetDetails.value = [
@@ -1698,7 +1698,7 @@ async function getData() {
       {
         name: 'Volume produced',
         img: volumeProducedIcon,
-        value: `${tokenDetail.value.assetInfo.volumeProduced} MWh`,
+        value: `${exponentToString(tokenDetail.value.assetInfo.volumeProduced)} MWh`,
       },
     ]
   } catch (error) {
