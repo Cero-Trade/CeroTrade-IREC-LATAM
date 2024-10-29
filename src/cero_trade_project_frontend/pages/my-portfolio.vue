@@ -36,12 +36,12 @@
       <v-col xl="2" lg="2" md="4" cols="12" class="delete-mobile d-flex flex-column" style="gap: 20px;">
         <v-card class="card card-mwh d-flex flex-column-jcenter flex-grow-1">
           <h6>Total MWh</h6>
-          <h5 >{{ totalMwh }} MWh</h5>
+          <h5 >{{ exponentToString(Number(totalMwh)) }} MWh</h5>
         </v-card>
 
         <v-card class="card card-mwh d-flex flex-column-jcenter flex-grow-1">
           <h6>Redeemed MWh</h6>
-          <h5>{{ totalRedeemed }} MWh</h5>
+          <h5>{{ exponentToString(Number(totalRedeemed)) }} MWh</h5>
         </v-card>
       </v-col>
     </v-row>
@@ -101,7 +101,7 @@
           <template #[`item.mwh`]="{ item }">
             <span class="divrow acenter">
               <img src="@/assets/sources/icons/lightbulb.svg" alt="lightbulb icon">
-              {{ item.mwh }}
+              {{ exponentToString(item.mwh) }}
             </span>
           </template>
 
@@ -306,7 +306,7 @@ import { AgentCanister } from '@/repository/agent-canister'
 import { ref, computed, watch, onBeforeMount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
-import { formatAmount, shortString } from '@/plugins/functions'
+import { exponentToString, formatAmount, shortString } from '@/plugins/functions'
 import variables from '@/mixins/variables'
 // import { closeLoader, showLoader } from '@/plugins/functions'
 
