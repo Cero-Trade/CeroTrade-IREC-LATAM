@@ -1286,8 +1286,8 @@
                   >Put in Market</v-btn>
                 </v-form>
 
-                <h6 class="h6 mb-4">Tokens in Market {{ tokenDetail.inMarket }} MWh</h6>
-                <h6 class="h6 mb-4">Tokens Available to Put in Market: {{ tokenDetail.totalAmount }} MWh</h6>
+                <h6 class="h6 mb-4">Tokens in Market {{ exponentToString(tokenDetail.inMarket) }} MWh</h6>
+                <h6 class="h6 mb-4">Tokens Available to Put in Market: {{ exponentToString(tokenDetail.totalAmount) }} MWh</h6>
 
                 <label class="label mb-4">Your Market Listings</label>
 
@@ -1329,7 +1329,7 @@
                   class="select hide-spin mb-7"
                 ></v-text-field>
                 <h6 class="h6 mb-4">Platform Redemption Rate: {{ stats.find(e => e.id === 'redemption')?.value ?? 0 }}</h6>
-                <h6 class="h6 mb-6">Tokens Available to Redeem: {{ tokenDetail.totalAmount }} Mwh</h6>
+                <h6 class="h6 mb-6">Tokens Available to Redeem: {{ exponentToString(tokenDetail.totalAmount) }} Mwh</h6>
 
                 <v-btn
                   v-if="haveToken"
