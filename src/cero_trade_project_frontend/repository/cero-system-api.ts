@@ -1,4 +1,4 @@
-import { getImageArrayBuffer, getUrlFromArrayBuffer } from "@/plugins/functions";
+import { getImageArrayBuffer, getUrlFromArrayBuffer, numberToToken } from "@/plugins/functions";
 import { useAgentCanister as agent, getErrorMessage } from "@/services/icp-provider";
 import { Principal } from "@dfinity/principal";
 
@@ -37,7 +37,7 @@ export class CeroSystemApi {
     debugMode ||= false
 
     try {
-      await agent().mintTokenToUser(Principal.fromText(user), tokenId, tokenAmount, { debugMode })
+      await agent().mintTokenToUser(Principal.fromText(user), tokenId, numberToToken(tokenAmount), { debugMode })
     } catch (error) {
       console.error(error);
       throw getErrorMessage(error)
