@@ -1,5 +1,7 @@
 @use "sass:list";
 @use "sass:map";
+@use "sass:meta";
+@use "sass:string";
 
 /*                     notes:
   str-index($name, '-text') --> to know content value
@@ -22,19 +24,19 @@ $breakpoints: (
   // if doble parameters
   @if $dir1 and $key1 and $dir2 and $key2 {
     // if number + number
-    @if type-of($key1) == 'number' and type-of($key2) == 'number' {
+    @if meta.type-of($key1) == 'number' and meta.type-of($key2) == 'number' {
       @media (#{$dir1}-width: $key1) and (#{$dir2}-width: $key2) {@content};
     }
     // if variable + variable
-    @else if type-of($key1) == 'string' and type-of($key2) == 'string' {
+    @else if meta.type-of($key1) == 'string' and meta.type-of($key2) == 'string' {
       @media (#{$dir1}-width: $size1) and (#{$dir2}-width: $size2) {@content};
     }
     // if variable + number
-    @else if type-of($key1) == 'string' and type-of($key2) == 'number' {
+    @else if meta.type-of($key1) == 'string' and meta.type-of($key2) == 'number' {
       @media (#{$dir1}-width: $size1) and (#{$dir2}-width: $key2) {@content};
     }
     // if number + variable
-    @else if type-of($key1) == 'number' and type-of($key2) == 'string' {
+    @else if meta.type-of($key1) == 'number' and meta.type-of($key2) == 'string' {
       @media (#{$dir1}-width: $key1) and (#{$dir2}-width: $size2) {@content};
     }
   }
@@ -42,11 +44,11 @@ $breakpoints: (
   // if single parameter
   @if $dir1 and $key1 {
     // if numeric
-    @if type-of($key1) == 'number' {
+    @if meta.type-of($key1) == 'number' {
       @media (#{$dir1}-width: $key1) {@content};
     }
     // if variable
-    @else if type-of($key1) == 'string' {
+    @else if meta.type-of($key1) == 'string' {
       @media (#{$dir1}-width: $size1) {@content};
     }
   }
@@ -81,7 +83,7 @@ $breakpoints: (
 //==================================== unique animations ======================================//
 //---------------------------------------------------------------------------------------------//
 @mixin animation($values) {
-  $name: #{unique-id()};
+  $name: #{string.unique-id()};
   animation: $name $values;
   @keyframes #{$name} {
     @content;
@@ -102,7 +104,7 @@ $breakpoints: (
 @mixin color($bg, $text:fixed) {
   // if both parameters
   @if $bg and $text {
-    @if type-of($bg) == 'color' {
+    @if meta.type-of($bg) == 'color' {
       background-color: $bg !important;
     } @else if list.length($bg) > 1 {
       background-image: linear-gradient(to top left, $bg) !important;
@@ -113,7 +115,7 @@ $breakpoints: (
   }
   // if single parameter
   @if $bg {
-    @if type-of($bg) == 'color' {
+    @if meta.type-of($bg) == 'color' {
       background-color: $bg !important;
     } @else if list.length($bg) > 1 {
       background-image: linear-gradient(to top left, $bg) !important;
@@ -132,7 +134,7 @@ $breakpoints: (
 //======================================= text color ==========================================//
 //---------------------------------------------------------------------------------------------//
 @mixin colorText($color) {
-  @if type-of($color) == 'color' {
+  @if meta.type-of($color) == 'color' {
     color: $color !important; & :is(span, i) {color: $color !important}
   } @else if list.length($color) > 1 {
     background-image: linear-gradient(to top left, $color) !important;
